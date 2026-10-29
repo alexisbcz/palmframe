@@ -4,6 +4,8 @@ Palmframe is an open-source alternative to Anifusion for making comics with AI.
 
 Live at [www.palmframe.com](https://www.palmframe.com).
 
+![The Palmframe editor: a five-slide Instagram carousel, with the selected panel's prompt and AI edit tools](docs/editor.png)
+
 ## Stack
 
 - [React Router](https://reactrouter.com) app in `apps/web`
