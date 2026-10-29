@@ -1,5 +1,5 @@
 import * as React from "react"
-import { useFetcher, useNavigate } from "react-router"
+import { useNavigate } from "react-router"
 import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -15,7 +15,6 @@ import {
 
 import {
   Command,
-  CommandDialog,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -28,19 +27,8 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { useBalance } from "@/components/account/account-menu"
 import { useLocale, useT } from "@/i18n/core"
 import { COSTS, isActive, type PlanId } from "@/lib/credits"
-import type { loader } from "@/routes/pricing"
+import type { BillingData } from "@/routes/api.billing"
 import { messages } from "@/routes/pricing.messages"
-
-export type PricingData = Awaited<ReturnType<typeof loader>>
-
-const OPEN = "palmframe:billing"
-// Opens the credits palette from anywhere: menus, buttons, other palettes.
-export const openBilling = () => window.dispatchEvent(new Event(OPEN))
-
-export const BILLING_SHORTCUT =
-  typeof navigator !== "undefined" && /Mac|iP/.test(navigator.platform)
-    ? "⌘⇧P"
-    : "Ctrl+Shift+P"
 
 const POPULAR: PlanId = "creator"
 
@@ -61,59 +49,16 @@ function post(action: string, lookupKey?: string) {
   form.submit()
 }
 
-// ⌘⇧P (Ctrl+Shift+P) anywhere: credits and plans as a command palette.
-// The data is the /pricing loader's, fetched each time it opens.
-export function BillingPalette() {
-  const t = useT(messages)
-  const [open, setOpen] = React.useState(false)
-  const fetcher = useFetcher<PricingData>()
-  const { load } = fetcher
-
-  React.useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (
-        (e.metaKey || e.ctrlKey) &&
-        e.shiftKey &&
-        !e.altKey &&
-        e.key.toLowerCase() === "p"
-      ) {
-        e.preventDefault()
-        setOpen((o) => !o)
-      }
-    }
-    const onOpen = () => setOpen(true)
-    window.addEventListener("keydown", onKey)
-    window.addEventListener(OPEN, onOpen)
-    return () => {
-      window.removeEventListener("keydown", onKey)
-      window.removeEventListener(OPEN, onOpen)
-    }
-  }, [])
-
-  React.useEffect(() => {
-    if (open) void load("/pricing")
-  }, [open, load])
-
+// While the data loads.
+export function BillingSkeleton() {
   return (
-    <CommandDialog
-      open={open}
-      onOpenChange={setOpen}
-      title={t("title")}
-      description={t("subtitle")}
-      className="top-[12vh] sm:max-w-2xl"
-    >
-      {fetcher.data ? (
-        <BillingPanel data={fetcher.data} onClose={() => setOpen(false)} />
-      ) : (
-        <div className="flex flex-col gap-3 p-4">
-          <Skeleton className="h-10 w-40" />
-          <Skeleton className="h-8 w-full" />
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      )}
-    </CommandDialog>
+    <div className="flex flex-col gap-3 p-4">
+      <Skeleton className="h-10 w-40" />
+      <Skeleton className="h-8 w-full" />
+      {Array.from({ length: 4 }, (_, i) => (
+        <Skeleton key={i} className="h-14 w-full" />
+      ))}
+    </div>
   )
 }
 
@@ -144,13 +89,15 @@ function Action({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Balance, plans, packs, prices and history in one searchable list. Used by
-// the palette and by the /pricing page.
+// Balance, plans, packs, prices and history in one searchable list: the
+// Settings dialog's billing section. `success` is a Stripe checkout return.
 export function BillingPanel({
   data,
+  success,
   onClose,
 }: {
-  data: PricingData
+  data: BillingData
+  success?: boolean
   onClose?: () => void
 }) {
   const t = useT(messages)
@@ -241,7 +188,7 @@ export function BillingPanel({
             </span>
           )}
         </div>
-        {data.success && (
+        {success && (
           <p
             role="status"
             className="relative mt-3 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400"
@@ -283,7 +230,7 @@ export function BillingPanel({
       <CommandList
         onAction={run}
         aria-label={t("title")}
-        className="max-h-[min(58vh,34rem)] px-1 pb-1"
+        className="max-h-none min-h-0 flex-1 px-1 pb-1"
         renderEmptyState={() => (
           <p className="py-8 text-center text-sm text-muted-foreground">
             {t("palette.empty")}
@@ -511,12 +458,10 @@ export function BillingPanel({
           <Kbd>↵</Kbd>
           {t("palette.keys.select")}
         </span>
-        {onClose && (
-          <span className="flex items-center gap-1">
-            <Kbd>esc</Kbd>
-            {t("palette.keys.close")}
-          </span>
-        )}
+        <span className="flex items-center gap-1">
+          <Kbd>esc</Kbd>
+          {t("palette.keys.close")}
+        </span>
         <span className="ms-auto">{t("refundNote")}</span>
       </div>
     </Command>

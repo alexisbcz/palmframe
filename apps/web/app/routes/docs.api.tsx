@@ -1,6 +1,7 @@
 import { Link } from "react-router"
 
 import { Logo } from "@/components/auth/auth-ui"
+import { openSettings } from "@/components/settings/settings-dialog"
 import { DEFAULT_LOCALE, isLocale, translate, useT } from "@/i18n/core"
 
 import type { Route } from "./+types/docs.api"
@@ -82,7 +83,14 @@ export default function ApiDocs({ loaderData }: Route.ComponentProps) {
           <h2 className="font-medium">{t("auth.title")}</h2>
           <p className="text-sm text-muted-foreground">
             {t("auth.body")}{" "}
-            <Link to="/settings" className="underline underline-offset-4">
+            <Link
+              to="/settings"
+              className="underline underline-offset-4"
+              onClick={(e) => {
+                e.preventDefault()
+                openSettings("api")
+              }}
+            >
               {t("auth.settings")}
             </Link>
           </p>

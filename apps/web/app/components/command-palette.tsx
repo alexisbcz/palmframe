@@ -26,23 +26,19 @@ import {
 import { useTheme } from "@workspace/ui/components/theme-provider"
 
 import { useViewer } from "@/components/account/account-menu"
-import {
-  BILLING_SHORTCUT,
-  openBilling,
-} from "@/components/billing/billing-palette"
 import { Flag } from "@/components/flag"
 import { GitHubIcon, REPO } from "@/components/github-button"
+import {
+  SETTINGS_SHORTCUT,
+  openSettings,
+} from "@/components/settings/settings-dialog"
 import { messages as toggles } from "@/components/toggles.messages"
 import { LOCALES, LOCALE_NAMES, isLocale, useLocale, useT } from "@/i18n/core"
 import { messages } from "./command-palette.messages"
 
-const MOD =
-  typeof navigator !== "undefined" && /Mac|iP/.test(navigator.platform)
-    ? "⌘"
-    : "Ctrl "
 const FLAG = "h-3 w-[1.125rem] rounded-[2px] ring-1 ring-foreground/15"
 
-// ⌘K (or Ctrl+K, with or without Shift) anywhere; ⌘, opens Settings.
+// ⌘K (or Ctrl+K, with or without Shift) anywhere.
 export function CommandPalette() {
   const t = useT(messages)
   const tt = useT(toggles)
@@ -59,14 +55,11 @@ export function CommandPalette() {
       if (e.key.toLowerCase() === "k") {
         e.preventDefault()
         setOpen((o) => !o)
-      } else if (e.key === "," && viewer) {
-        e.preventDefault()
-        navigate("/settings")
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [navigate, viewer])
+  }, [])
 
   const run = (key: React.Key) => {
     setOpen(false)
@@ -78,10 +71,11 @@ export function CommandPalette() {
     }
     switch (k) {
       case "pricing":
-        return openBilling()
-      case "projects":
+        return openSettings("billing")
       case "settings":
-        return navigate(`/${k}`)
+        return openSettings()
+      case "projects":
+        return navigate("/projects")
       case "new":
         return viewer
           ? submit({ intent: "new" }, { method: "post", action: "/projects" })
@@ -130,13 +124,12 @@ export function CommandPalette() {
             <CommandItem id="pricing" textValue={t("pricing")}>
               <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
               {t("pricing")}
-              <CommandShortcut>{BILLING_SHORTCUT}</CommandShortcut>
             </CommandItem>
             {viewer && (
               <CommandItem id="settings" textValue={t("settings")}>
                 <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
                 {t("settings")}
-                <CommandShortcut>{MOD},</CommandShortcut>
+                <CommandShortcut>{SETTINGS_SHORTCUT}</CommandShortcut>
               </CommandItem>
             )}
             <CommandItem id="github" textValue={t("github")}>

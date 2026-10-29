@@ -10,6 +10,7 @@ export default [
   route("auth/callback", "routes/auth.callback.ts"),
   route("logout", "routes/logout.ts"),
   route("pricing", "routes/pricing.tsx"),
+  route("api/billing", "routes/api.billing.ts"),
   route("settings", "routes/settings.tsx"),
   route("billing/success", "routes/billing.success.ts"),
   route("api/billing/checkout", "routes/api.billing.checkout.ts"),

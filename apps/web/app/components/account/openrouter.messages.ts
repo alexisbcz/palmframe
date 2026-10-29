@@ -51,8 +51,10 @@ export const messages = defineMessages({
       "Déconnecter OpenRouter ? Palmframe oublie la clé et les crédits reprennent le relais.",
     errors: {
       generic: "Une erreur est survenue. Réessayez.",
-      connect: "La connexion à OpenRouter a échoué. Réessayez, ou collez une clé.",
-      unreadable: "Impossible de lire les dépenses de cette clé sur OpenRouter.",
+      connect:
+        "La connexion à OpenRouter a échoué. Réessayez, ou collez une clé.",
+      unreadable:
+        "Impossible de lire les dépenses de cette clé sur OpenRouter.",
     },
   },
   es: {
@@ -70,7 +72,8 @@ export const messages = defineMessages({
     pay: "Pagar con OpenRouter",
     payOn:
       "Los renders, las ediciones con IA y los planes de historia se cobran en tu cuenta de OpenRouter.",
-    payOff: "La clave se conserva, pero los créditos de Palmframe lo pagan todo.",
+    payOff:
+      "La clave se conserva, pero los créditos de Palmframe lo pagan todo.",
     imageModel: "Modelo de imagen",
     textModel: "Modelo de planificación",
     disconnect: "Desconectar",
@@ -136,7 +139,8 @@ export const messages = defineMessages({
     errors: {
       generic: "Qualcosa è andato storto. Riprova.",
       connect: "OpenRouter non si è collegato. Riprova o incolla una chiave.",
-      unreadable: "Impossibile leggere la spesa di questa chiave da OpenRouter.",
+      unreadable:
+        "Impossibile leggere la spesa di questa chiave da OpenRouter.",
     },
   },
   ja: {

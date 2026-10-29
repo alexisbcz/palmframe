@@ -21,6 +21,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { Link } from "react-router"
 
 import { messages as accountMessages } from "@/components/account/account.messages"
+import { openSettings } from "@/components/settings/settings-dialog"
 import { linkClass } from "@/components/auth/auth-ui"
 import { useT } from "@/i18n/core"
 import { INSUFFICIENT_CREDITS } from "@/lib/credits-store"
@@ -215,7 +216,14 @@ export function Composer({
           {generator.errors[panel.id] === INSUFFICIENT_CREDITS ? (
             <>
               {ta("credits.insufficient")}{" "}
-              <Link to="/pricing" className={linkClass}>
+              <Link
+                to="/pricing"
+                className={linkClass}
+                onClick={(e) => {
+                  e.preventDefault()
+                  openSettings("billing")
+                }}
+              >
                 {ta("credits.getMore")}
               </Link>
             </>

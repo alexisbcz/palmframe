@@ -37,6 +37,7 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { useOpenRouter } from "@/components/account/account-menu"
+import { openSettings } from "@/components/settings/settings-dialog"
 import { useT } from "@/i18n/core"
 import {
   INSUFFICIENT_CREDITS,
@@ -471,7 +472,14 @@ function StoryDialog({
                 {state.error === INSUFFICIENT_CREDITS ? (
                   <>
                     {t("errors.insufficient")}{" "}
-                    <Link to="/pricing" className={linkClass}>
+                    <Link
+                      to="/pricing"
+                      className={linkClass}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        openSettings("billing")
+                      }}
+                    >
                       {t("getMore")}
                     </Link>
                   </>
@@ -541,7 +549,14 @@ function StoryDialog({
                 {short ? (
                   <>
                     {t("insufficient")}{" "}
-                    <Link to="/pricing" className={linkClass}>
+                    <Link
+                      to="/pricing"
+                      className={linkClass}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        openSettings("billing")
+                      }}
+                    >
                       {t("getMore")}
                     </Link>
                   </>
