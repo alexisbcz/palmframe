@@ -224,7 +224,8 @@ export function BillingPanel({
         )}
       </div>
 
-      <div className="px-2 pt-2">
+      {/* A ring when focused, like the app's other fields. */}
+      <div className="px-2 pt-2 [&_[data-slot=input-group]]:has-[input:focus-visible]:border-ring [&_[data-slot=input-group]]:has-[input:focus-visible]:ring-3 [&_[data-slot=input-group]]:has-[input:focus-visible]:ring-ring/50">
         <CommandInput placeholder={t("palette.placeholder")} />
       </div>
       <CommandList
@@ -323,18 +324,23 @@ export function BillingPanel({
                 <span className="ms-auto flex flex-col items-end">
                   <span className="font-semibold whitespace-nowrap tabular-nums">
                     {plan.price ? money(plan.price) : "–"}
-                    <span className="ms-0.5 text-xs font-normal text-muted-foreground">
-                      {t("perMonth")}
-                    </span>
+                    {plan.price && (
+                      <span className="ms-0.5 text-xs font-normal text-muted-foreground">
+                        {t("perMonth")}
+                      </span>
+                    )}
                   </span>
-                  <Action>
-                    {pending === key && <Spinner className="size-3" />}
-                    {current
-                      ? t("manage")
-                      : subscribed
-                        ? t("switchPlan")
-                        : t("subscribe")}
-                  </Action>
+                  {/* Nothing to do while payments are down. */}
+                  {(!signedIn || canBuy) && (
+                    <Action>
+                      {pending === key && <Spinner className="size-3" />}
+                      {current
+                        ? t("manage")
+                        : subscribed
+                          ? t("switchPlan")
+                          : t("subscribe")}
+                    </Action>
+                  )}
                 </span>
               </CommandItem>
             )
@@ -377,10 +383,12 @@ export function BillingPanel({
                   <span className="font-semibold tabular-nums">
                     {pack.price ? money(pack.price) : "–"}
                   </span>
-                  <Action>
-                    {pending === key && <Spinner className="size-3" />}
-                    {t("buy")}
-                  </Action>
+                  {(!signedIn || canBuy) && (
+                    <Action>
+                      {pending === key && <Spinner className="size-3" />}
+                      {t("buy")}
+                    </Action>
+                  )}
                 </span>
               </CommandItem>
             )

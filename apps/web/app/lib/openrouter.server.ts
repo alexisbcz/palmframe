@@ -1,4 +1,9 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto"
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+} from "node:crypto"
 
 import { supabaseAdmin } from "./supabase-admin.server"
 
@@ -48,7 +53,11 @@ function encrypt(key: string) {
 
 function decrypt(stored: string) {
   const raw = Buffer.from(stored, "base64")
-  const decipher = createDecipheriv("aes-256-gcm", secret(), raw.subarray(0, 12))
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    secret(),
+    raw.subarray(0, 12)
+  )
   decipher.setAuthTag(raw.subarray(-16))
   return Buffer.concat([
     decipher.update(raw.subarray(12, -16)),
@@ -189,17 +198,88 @@ export async function exchangeCode(code: string, verifier: string) {
   return key
 }
 
+export interface ModelOption {
+  id: string
+  name: string
+  // What sets it apart in the picker: references taken, or context size.
+  refs?: number
+  context?: number
+  // USD per million tokens, for text models.
+  price?: { input: number; output: number }
+  created: number
+}
+
+// Both lists change rarely; kept an hour.
+const lists = new Map<string, { at: number; models: ModelOption[] }>()
+async function cached(key: string, load: () => Promise<ModelOption[]>) {
+  const hit = lists.get(key)
+  if (hit && Date.now() - hit.at < 3_600_000) return hit.models
+  const models = await load()
+  if (models.length) lists.set(key, { at: Date.now(), models })
+  return models
+}
+
 // The models people can pick from: image models that take reference images,
 // so cast model sheets and edits work.
-export async function imageModels() {
-  const res = await fetch(`${API}/images/models`)
-  if (!res.ok) return []
-  const { data } = (await res.json()) as {
-    data: { id: string; name?: string; architecture?: { input_modalities?: string[] } }[]
-  }
-  return data
-    .filter((m) => m.architecture?.input_modalities?.includes("image"))
-    .map((m) => ({ id: m.id, name: m.name ?? m.id }))
+export function imageModels() {
+  return cached("image", async () => {
+    const res = await fetch(`${API}/images/models`)
+    if (!res.ok) return []
+    const { data } = (await res.json()) as {
+      data: {
+        id: string
+        name?: string
+        created?: number
+        architecture?: { input_modalities?: string[] }
+        supported_parameters?: { input_references?: { max?: number } }
+      }[]
+    }
+    return data
+      .filter((m) => m.architecture?.input_modalities?.includes("image"))
+      .map((m) => ({
+        id: m.id,
+        name: m.name ?? m.id,
+        refs: m.supported_parameters?.input_references?.max,
+        created: m.created ?? 0,
+      }))
+  })
+}
+
+// Story planning asks for JSON against a schema, so only models that
+// support structured outputs.
+export function textModels() {
+  return cached("text", async () => {
+    const res = await fetch(`${API}/models`)
+    if (!res.ok) return []
+    const { data } = (await res.json()) as {
+      data: {
+        id: string
+        name?: string
+        created?: number
+        context_length?: number
+        architecture?: { output_modalities?: string[] }
+        pricing?: { prompt?: string; completion?: string }
+        supported_parameters?: string[]
+      }[]
+    }
+    const perMillion = (v?: string) => Math.max(0, Number(v ?? 0) * 1e6)
+    return data
+      .filter(
+        (m) =>
+          m.architecture?.output_modalities?.includes("text") &&
+          m.supported_parameters?.includes("structured_outputs")
+      )
+      .map((m) => ({
+        id: m.id,
+        name: m.name ?? m.id,
+        context: m.context_length,
+        price: {
+          input: perMillion(m.pricing?.prompt),
+          output: perMillion(m.pricing?.completion),
+        },
+        created: m.created ?? 0,
+      }))
+  })
 }
 
 // Aspect ratios each model accepts, from its endpoints. Kept an hour.
@@ -347,7 +427,8 @@ export async function imageResponse(
       },
     })
   } catch (e) {
-    if (signal.aborted) return Response.json({ error: "Cancelled" }, { status: 499 })
+    if (signal.aborted)
+      return Response.json({ error: "Cancelled" }, { status: 499 })
     const status =
       e instanceof OpenRouterError ? (e.status === 402 ? 402 : 502) : 502
     return Response.json(

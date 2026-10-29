@@ -235,7 +235,7 @@ export function Composer({
       <div
         data-roving-group
         onKeyDown={roving()}
-        className="mx-auto flex max-w-5xl gap-2 rounded-2xl bg-muted/60 p-2 ring-1 ring-foreground/10"
+        className="mx-auto flex max-w-5xl gap-2 rounded-2xl bg-muted/60 p-2 ring-1 ring-foreground/10 transition-shadow has-[textarea:focus]:ring-3 has-[textarea:focus]:ring-ring/50"
       >
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <textarea

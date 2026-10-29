@@ -258,7 +258,7 @@ export function SettingsDialog() {
             </button>
           )}
 
-          <label className="flex h-8 items-center gap-2 rounded-lg bg-background px-2.5 ring-1 ring-foreground/10 focus-within:ring-2 focus-within:ring-ring/50">
+          <label className="flex h-8 items-center gap-2 rounded-lg border border-input bg-background px-2.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
             <HugeiconsIcon
               icon={SearchIcon}
               strokeWidth={2}

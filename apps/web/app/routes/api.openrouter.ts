@@ -5,6 +5,8 @@ import {
   disconnect,
   getConnection,
   imageModels,
+  textModels,
+  type ModelOption,
   keyInfo,
   openRouterAvailable,
   saveKey,
@@ -14,6 +16,8 @@ import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/api.openrouter"
 
+export type { ModelOption }
+
 const error = (message: string, status: number) =>
   Response.json({ error: message }, { status })
 
@@ -22,7 +26,8 @@ export type OpenRouterStatus =
   | {
       available: true
       connected: false
-      models: { id: string; name: string }[]
+      models: ModelOption[]
+      textModels: ModelOption[]
     }
   | {
       available: true
@@ -37,7 +42,8 @@ export type OpenRouterStatus =
         limit: number | null
         remaining: number | null
       } | null
-      models: { id: string; name: string }[]
+      models: ModelOption[]
+      textModels: ModelOption[]
     }
 
 // The Settings section: whether a key is connected, its spend, the models.
@@ -46,15 +52,17 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!viewer) return error("Sign in first.", 401)
   if (!openRouterAvailable())
     return Response.json({ available: false } satisfies OpenRouterStatus)
-  const [c, models] = await Promise.all([
+  const [c, models, texts] = await Promise.all([
     getConnection(viewer.id),
     imageModels().catch(() => []),
+    textModels().catch(() => []),
   ])
   if (!c)
     return Response.json({
       available: true,
       connected: false,
       models,
+      textModels: texts,
     } satisfies OpenRouterStatus)
   const info = await keyInfo(c.key, request.signal).catch(() => null)
   return Response.json({
@@ -70,6 +78,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       remaining: info.limit_remaining,
     },
     models,
+    textModels: texts,
   } satisfies OpenRouterStatus)
 }
 

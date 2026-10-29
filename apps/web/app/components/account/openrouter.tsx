@@ -3,16 +3,13 @@ import { useRevalidator } from "react-router"
 
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@workspace/ui/components/native-select"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Switch } from "@workspace/ui/components/switch"
 
 import { useLocale, useT } from "@/i18n/core"
 import type { OpenRouterStatus } from "@/routes/api.openrouter"
 
+import { ModelPicker } from "./model-picker"
 import { messages } from "./openrouter.messages"
 
 // Settings section for paying with your own OpenRouter account instead of
@@ -169,61 +166,35 @@ export function OpenRouter({ result }: { result?: string | null }) {
             >
               {t("imageModel")}
             </label>
-            <NativeSelect
+            <ModelPicker
               id="openrouter-image-model"
               value={status.imageModel}
-              disabled={busy === "imageModel"}
-              onChange={(e) =>
-                void run("imageModel", "PATCH", {
-                  imageModel: e.target.value,
-                })
+              models={status.models}
+              isDisabled={busy === "imageModel"}
+              onChange={(imageModel) =>
+                void run("imageModel", "PATCH", { imageModel })
               }
-            >
-              {(status.models.some((m) => m.id === status.imageModel)
-                ? status.models
-                : [
-                    { id: status.imageModel, name: status.imageModel },
-                    ...status.models,
-                  ]
-              ).map((m) => (
-                <NativeSelectOption key={m.id} value={m.id}>
-                  {m.name}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
+            />
           </div>
 
-          <form
-            className="flex flex-col gap-1.5"
-            onSubmit={(e) => {
-              e.preventDefault()
-              const value = new FormData(e.currentTarget).get("textModel")
-              void run("textModel", "PATCH", { textModel: value })
-            }}
-          >
+          <div className="flex flex-col gap-1.5">
             <label
               htmlFor="openrouter-text-model"
               className="text-sm text-muted-foreground"
             >
               {t("textModel")}
             </label>
-            <div className="flex gap-2">
-              <Input
-                id="openrouter-text-model"
-                name="textModel"
-                key={status.textModel}
-                defaultValue={status.textModel}
-              />
-              <Button
-                type="submit"
-                variant="outline"
-                isDisabled={busy === "textModel"}
-              >
-                {busy === "textModel" && <Spinner />}
-                {t("save")}
-              </Button>
-            </div>
-          </form>
+            <ModelPicker
+              id="openrouter-text-model"
+              value={status.textModel}
+              models={status.textModels}
+              isDisabled={busy === "textModel"}
+              custom
+              onChange={(textModel) =>
+                void run("textModel", "PATCH", { textModel })
+              }
+            />
+          </div>
 
           <Button
             variant="ghost"

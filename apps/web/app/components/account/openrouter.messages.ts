@@ -2,6 +2,15 @@ import { defineMessages } from "@/i18n/core"
 
 export const messages = defineMessages({
   en: {
+    picker: {
+      search: "Search models",
+      empty: "No model matches.",
+      custom: "Use “{id}”",
+      refs: "Up to {n} reference images",
+      context: "{n} context",
+      price: "{input} in · {output} out per 1M tokens",
+      free: "Free",
+    },
     title: "OpenRouter",
     intro:
       "Pay for panel renders, AI edits and story planning with your own OpenRouter account instead of Palmframe credits. Upscale, background removal, face fix and restyle run on Palmframe's machines and still use credits.",
@@ -29,6 +38,15 @@ export const messages = defineMessages({
     },
   },
   fr: {
+    picker: {
+      search: "Rechercher un modèle",
+      empty: "Aucun modèle ne correspond.",
+      custom: "Utiliser « {id} »",
+      refs: "Jusqu’à {n} images de référence",
+      context: "Contexte de {n}",
+      price: "{input} en entrée · {output} en sortie par million de tokens",
+      free: "Gratuit",
+    },
     title: "OpenRouter",
     intro:
       "Payez les rendus de cases, les retouches IA et la planification d’histoires avec votre propre compte OpenRouter au lieu des crédits Palmframe. L’agrandissement, le détourage, la retouche des visages et le restyle tournent sur les machines de Palmframe et utilisent toujours des crédits.",
@@ -58,6 +76,15 @@ export const messages = defineMessages({
     },
   },
   es: {
+    picker: {
+      search: "Buscar modelos",
+      empty: "Ningún modelo coincide.",
+      custom: "Usar «{id}»",
+      refs: "Hasta {n} imágenes de referencia",
+      context: "Contexto de {n}",
+      price: "{input} entrada · {output} salida por millón de tokens",
+      free: "Gratis",
+    },
     title: "OpenRouter",
     intro:
       "Paga los renders de viñetas, las ediciones con IA y la planificación de historias con tu propia cuenta de OpenRouter en lugar de los créditos de Palmframe. Ampliar, quitar el fondo, corregir caras y reestilizar se ejecutan en las máquinas de Palmframe y siguen usando créditos.",
@@ -86,6 +113,15 @@ export const messages = defineMessages({
     },
   },
   de: {
+    picker: {
+      search: "Modelle durchsuchen",
+      empty: "Kein Modell passt.",
+      custom: "„{id}“ verwenden",
+      refs: "Bis zu {n} Referenzbilder",
+      context: "{n} Kontext",
+      price: "{input} Eingabe · {output} Ausgabe pro 1 Mio. Tokens",
+      free: "Kostenlos",
+    },
     title: "OpenRouter",
     intro:
       "Bezahle Panel-Renderings, KI-Bearbeitungen und Story-Planung mit deinem eigenen OpenRouter-Konto statt mit Palmframe-Credits. Hochskalieren, Hintergrund entfernen, Gesichter verbessern und Restyle laufen auf Palmframes Rechnern und kosten weiterhin Credits.",
@@ -116,6 +152,15 @@ export const messages = defineMessages({
     },
   },
   it: {
+    picker: {
+      search: "Cerca modelli",
+      empty: "Nessun modello corrisponde.",
+      custom: "Usa «{id}»",
+      refs: "Fino a {n} immagini di riferimento",
+      context: "Contesto di {n}",
+      price: "{input} input · {output} output per milione di token",
+      free: "Gratis",
+    },
     title: "OpenRouter",
     intro:
       "Paga i render delle vignette, le modifiche IA e la pianificazione delle storie con il tuo account OpenRouter invece dei crediti Palmframe. Ingrandimento, rimozione dello sfondo, ritocco dei volti e restyle girano sulle macchine di Palmframe e usano ancora i crediti.",
@@ -144,6 +189,15 @@ export const messages = defineMessages({
     },
   },
   ja: {
+    picker: {
+      search: "モデルを検索",
+      empty: "一致するモデルがありません。",
+      custom: "「{id}」を使う",
+      refs: "参照画像は最大 {n} 枚",
+      context: "コンテキスト {n}",
+      price: "100万トークンあたり 入力 {input} · 出力 {output}",
+      free: "無料",
+    },
     title: "OpenRouter",
     intro:
       "コマの生成、AI編集、ストーリー構成をPalmframeクレジットの代わりにご自身のOpenRouterアカウントで支払えます。アップスケール、背景除去、顔の補正、リスタイルはPalmframeのマシンで動くため、引き続きクレジットを使います。",

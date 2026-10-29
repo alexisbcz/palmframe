@@ -111,12 +111,12 @@ export function CastRow({
                 aria-pressed={on}
                 aria-label={t(on ? "remove" : "add", { name: c.name })}
                 title={c.tags.join(", ")}
-                className="block w-full cursor-pointer outline-none"
+                className="group/pick block w-full cursor-pointer outline-none"
                 onClick={() => toggle(c.id)}
               >
                 <span
                   className={cn(
-                    "relative block size-12 rounded-full ring-1 ring-foreground/10 transition group-hover/cast:ring-foreground/40",
+                    "relative block size-12 rounded-full ring-1 ring-foreground/10 transition group-hover/cast:ring-foreground/40 group-focus-visible/pick:ring-3 group-focus-visible/pick:ring-ring/50",
                     on &&
                       "ring-2 ring-amber-500 group-hover/cast:ring-amber-500"
                   )}
@@ -158,13 +158,13 @@ export function CastRow({
         })}
         <button
           type="button"
-          className="w-12 shrink-0 cursor-pointer outline-none"
+          className="group/pick w-12 shrink-0 cursor-pointer outline-none"
           data-roving
           onClick={() =>
             setEditing({ id: uid(), name: "", kind: "girl", tags: [] })
           }
         >
-          <span className="flex size-12 items-center justify-center rounded-full border border-dashed text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground">
+          <span className="flex size-12 items-center justify-center rounded-full border border-dashed text-muted-foreground transition-colors group-focus-visible/pick:border-ring group-focus-visible/pick:ring-3 group-focus-visible/pick:ring-ring/50 hover:border-foreground/40 hover:text-foreground">
             <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
           </span>
           <span className="mt-1 block text-center text-[10px] text-muted-foreground">
