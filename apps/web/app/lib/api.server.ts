@@ -14,7 +14,7 @@ import {
   renderSize,
   sheetCast,
 } from "@/components/comic-canvas/use-generator"
-import { operation, render, type GenerateRequest } from "@/routes/api.generate"
+import { operation, render, type GenerateRequest } from "./generate.server"
 
 import { COSTS } from "./credits"
 import { COMICS_BUCKET, type ApiJobRow } from "./database"
