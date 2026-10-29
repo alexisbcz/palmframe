@@ -1,8 +1,10 @@
 import { Link, useNavigate, useRouteLoaderData, useSubmit } from "react-router"
 import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
+import * as React from "react"
 import {
   ComputerIcon,
+  CreditCardIcon,
   FolderLibraryIcon,
   LanguageSkillIcon,
   Logout01Icon,
@@ -28,6 +30,7 @@ import { Flag } from "@/components/flag"
 import { GitHubIcon, REPO } from "@/components/github-button"
 import { messages as toggles } from "@/components/toggles.messages"
 import { LOCALES, LOCALE_NAMES, isLocale, useLocale, useT } from "@/i18n/core"
+import { setCredits, useCredits } from "@/lib/credits-store"
 import type { Viewer } from "@/lib/database"
 import { messages } from "./account.messages"
 
@@ -37,6 +40,14 @@ const THEMES = [
   { id: "dark", icon: Moon02Icon },
   { id: "system", icon: ComputerIcon },
 ] as const
+
+// The balance from the last page load, kept current by renders afterwards.
+export function useBalance() {
+  const loaded = useRouteLoaderData("root")?.credits as
+    number | null | undefined
+  React.useEffect(() => setCredits(loaded ?? null), [loaded])
+  return useCredits() ?? loaded ?? null
+}
 
 export function useViewer() {
   return (useRouteLoaderData("root")?.viewer ?? null) as Viewer | null
@@ -59,6 +70,7 @@ export function AccountMenu() {
   const viewer = useViewer()
   const { theme, setTheme } = useTheme()
   const { locale, setLocale } = useLocale()
+  const balance = useBalance()
   const navigate = useNavigate()
   const submit = useSubmit()
 
@@ -87,6 +99,7 @@ export function AccountMenu() {
         className="w-max max-w-[calc(100vw-2rem)] min-w-52"
         onAction={(key) => {
           if (key === "projects") navigate("/projects")
+          if (key === "billing") navigate("/pricing")
           if (key === "github") window.open(REPO, "_blank", "noreferrer")
           if (key === "logout")
             submit(null, { method: "post", action: "/logout" })
@@ -99,6 +112,18 @@ export function AccountMenu() {
             </span>
             <span className="truncate font-normal">{viewer.email}</span>
           </DropdownMenuLabel>
+          <DropdownMenuItem id="billing" textValue={t("account.billing")}>
+            <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
+            {t("account.billing")}
+            {balance !== null && (
+              <span className="ms-auto ps-3 text-xs text-muted-foreground tabular-nums">
+                {t("credits.balance", {
+                  count: balance,
+                  n: balance.toLocaleString(locale),
+                })}
+              </span>
+            )}
+          </DropdownMenuItem>
           <DropdownMenuItem id="projects">
             <HugeiconsIcon icon={FolderLibraryIcon} strokeWidth={2} />
             {t("account.projects")}

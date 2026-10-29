@@ -10,6 +10,8 @@ import {
   type PanelLayer,
   type StyleId,
 } from "./model"
+import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
+
 import { readImageFile } from "./render"
 import type { ComicEditor } from "./use-editor"
 
@@ -23,6 +25,8 @@ export const STYLES: Record<
   {
     tags: string
     negative: string
+    // The same look in words, for Klein, which reads sentences, not tags.
+    prose: string
     // Whether the palette and saturation controls mean anything for it.
     palette: boolean
     saturation: boolean
@@ -31,18 +35,24 @@ export const STYLES: Record<
   graphic: {
     tags: `limited palette, (flat color:1.2), ${COMIC}, black outline`,
     negative: "gradient, photo, realistic, 3d",
+    prose:
+      "Modern graphic novel art: clean confident black ink linework with variable line weight, solid spot blacks, flat cel colors with a single shadow tone, subtle halftone dots in the shadows, no gradients.",
     palette: true,
     saturation: true,
   },
   color: {
     tags: "comic, western comics (style), flat color, bold lines, black outline, heavy black shadows, spot blacks",
     negative: "gradient, soft shading, photo, realistic, 3d",
+    prose:
+      "Classic comic book art: bold black outlines, flat colors, heavy black shadows and spot blacks.",
     palette: true,
     saturation: true,
   },
   retro: {
     tags: "retro artstyle, 1990s (style), halftone, comic, western comics (style), flat color, limited palette, bold lines, black outline",
     negative: "gradient, photo, realistic, 3d",
+    prose:
+      "1990s retro comic book art: halftone dots, flat colors, limited palette, bold black outlines.",
     palette: true,
     saturation: true,
   },
@@ -51,24 +61,30 @@ export const STYLES: Record<
   spot: {
     tags: "(monochrome:1.2), greyscale, (spot color:1.5), comic, western comics (style), (high contrast:1.3), heavy black shadows, bold lines",
     negative: "photo, realistic, 3d",
+    prose:
+      "Black and white ink comic art with a single spot color, high contrast, heavy black shadows.",
     palette: true,
     saturation: false,
   },
   noir: {
     tags: `monochrome, greyscale, traditional media, ${COMIC}`,
     negative: "color, colorful, gradient, soft shading, photo, realistic, 3d",
+    prose:
+      "Black and white noir comic art: heavy black ink, hatching, high contrast, no color at all.",
     palette: false,
     saturation: false,
   },
   anime: {
     tags: "anime screencap, anime coloring",
     negative: "photo, realistic, 3d, sketch",
+    prose: "Anime screenshot style with anime cel coloring.",
     palette: true,
     saturation: true,
   },
   raw: {
     tags: "",
     negative: "",
+    prose: "",
     palette: false,
     saturation: false,
   },
@@ -127,6 +143,81 @@ function lookTags(panel: PanelLayer, look: Look) {
     negative: negative.filter(Boolean),
     spot,
   }
+}
+
+// Klein's version of the look: style, palette and saturation in words.
+function lookProse(panel: PanelLayer, look: Look) {
+  const style = STYLES[look.style]
+  const parts = [style.prose]
+  if (look.style === "spot" && look.palette)
+    parts.push(
+      `The spot color is ${look.palette === "sepia" ? "brown" : look.palette}${panel.spotOn?.trim() ? `, only on the ${panel.spotOn.trim()}` : ""}.`
+    )
+  else if (style.palette && look.palette)
+    parts.push(
+      look.palette === "sepia"
+        ? "Sepia tones."
+        : `Limited palette dominated by ${look.palette} tones, with warm light accents.`
+    )
+  if (style.saturation && look.saturation === "vivid")
+    parts.push("Vivid, saturated colors.")
+  if (style.saturation && look.saturation === "muted")
+    parts.push("Muted, desaturated colors.")
+  return parts.filter(Boolean).join(" ")
+}
+
+const KIND: Record<Character["kind"], string> = {
+  girl: "a woman",
+  boy: "a man",
+  other: "a character",
+}
+
+// Lettering is done in the canvas, never generated.
+const KLEIN_NO_TEXT =
+  "No text, no letters, no speech bubbles, no panel borders, a single image."
+
+// The cast members of a panel who have a model sheet, in reference order.
+export function sheetCast(panel: PanelLayer, cast: Character[] = []) {
+  return (panel.cast ?? [])
+    .map((id) => cast.find((c) => c.id === id))
+    .filter((c): c is Character => !!c?.sheet)
+}
+
+// For Klein: the shot in sentences, each sheet-backed character pointed at
+// their reference image, and the look spelled out.
+export function buildKleinPrompt(
+  panel: PanelLayer,
+  { cast = [], look }: { cast?: Character[]; look?: Look } = {}
+) {
+  const effective = lookOf(panel, look)
+  const drawn = sheetCast(panel, cast)
+  const others = (panel.cast ?? [])
+    .map((id) => cast.find((c) => c.id === id))
+    .filter((c): c is Character => !!c && !c.sheet)
+  const tags = (panel.tags ?? []).filter((t) => !COUNT_TAGS.has(t))
+  const many = drawn.length > 1
+  const characters = [
+    ...drawn.map(
+      (c, i) =>
+        `${c.name.trim() || KIND[c.kind]} is the person in ${many ? `reference image ${i + 1}` : "the reference image"}: keep the same face, hair, skin and outfit${c.tags.length ? ` (${c.tags.join(", ")})` : ""}.`
+    ),
+    ...others.map(
+      (c) =>
+        `${c.name.trim() || KIND[c.kind]}: ${KIND[c.kind]}, ${c.tags.join(", ")}.`
+    ),
+  ]
+  return [
+    "Comic book panel.",
+    panel.prompt?.trim(),
+    tags.length ? `Details: ${tags.join(", ")}.` : "",
+    ...characters,
+    drawn.length ? "Keep the art style of the reference images." : "",
+    lookProse(panel, effective),
+    panel.negative?.trim() ? `Avoid: ${panel.negative.trim()}.` : "",
+    KLEIN_NO_TEXT,
+  ]
+    .filter(Boolean)
+    .join(" ")
 }
 
 const QUALITY = "masterpiece, best quality, score_7, safe"
@@ -216,6 +307,8 @@ async function render(
     height: number
     seed: number
     steps: number
+    engine?: "anima" | "klein"
+    refs?: string[]
   },
   signal?: AbortSignal
 ) {
@@ -225,8 +318,12 @@ async function render(
     signal,
     body: JSON.stringify(body),
   })
+  const credits = res.headers.get("x-credits")
+  if (credits !== null) setCredits(Number(credits))
   if (!res.ok) {
     const json = await res.json().catch(() => null)
+    if (json?.code === INSUFFICIENT_CREDITS)
+      throw new Error(INSUFFICIENT_CREDITS)
     throw new Error(json?.error ?? `HTTP ${res.status}`)
   }
   const blob = await res.blob()
@@ -261,6 +358,46 @@ export async function renderPortrait(
     steps: DEFAULT_STEPS,
   })
   return src
+}
+
+// A model sheet: front, three-quarter and close-up of one character, drawn
+// with Klein so later panels can be drawn from it.
+export async function renderSheet(
+  character: Character,
+  seed: number,
+  look: Look = DEFAULT_LOOK
+) {
+  const panel = createPanel({ x: 0, y: 0, width: 3, height: 2 })
+  const prompt = [
+    `Character model sheet of ${character.name.trim() || "a character"}, ${KIND[character.kind]}, on a plain off-white background:`,
+    "full body front view, full body three-quarter view, and a large head-and-shoulders close-up. Same person in every view.",
+    character.tags.length ? `Look: ${character.tags.join(", ")}.` : "",
+    lookProse(panel, lookOf(panel, look)),
+    "No text, no labels.",
+  ]
+    .filter(Boolean)
+    .join(" ")
+  const { src } = await render({
+    prompt,
+    negative: "",
+    width: 1536,
+    height: 1024,
+    seed,
+    steps: 4,
+    engine: "klein",
+  })
+  return src
+}
+
+// Klein is slower per pixel; ~0.9 MP keeps a panel near a minute.
+const KLEIN_AREA = 1024 * 896
+
+function kleinSize(width: number, height: number) {
+  const ratio = Math.min(2.5, Math.max(0.4, width / height))
+  const snap = (n: number) =>
+    Math.min(1536, Math.max(256, Math.round(n / 64) * 64))
+  const w = Math.sqrt(KLEIN_AREA * ratio)
+  return { width: snap(w), height: snap(KLEIN_AREA / w) }
 }
 
 export interface Take {
@@ -301,13 +438,26 @@ export function useGenerator(editor: ComicEditor) {
               ? panel.seed + take - 1
               : randomSeed()
           setJobs((j) => ({ ...j, [panelId]: { startedAt, take, of: count } }))
+          const project = editor.projectRef.current
+          // Characters with a model sheet are drawn from it, with Klein.
+          const sheets = sheetCast(panel, project.cast)
           const result = await render(
-            {
-              ...buildPrompt(panel, editor.projectRef.current),
-              ...renderSize(panel.width, panel.height),
-              seed,
-              steps: panel.steps ?? DEFAULT_STEPS,
-            },
+            sheets.length
+              ? {
+                  prompt: buildKleinPrompt(panel, project),
+                  negative: "",
+                  ...kleinSize(panel.width, panel.height),
+                  seed,
+                  steps: 4,
+                  engine: "klein",
+                  refs: sheets.map((c) => c.sheet!),
+                }
+              : {
+                  ...buildPrompt(panel, project),
+                  ...renderSize(panel.width, panel.height),
+                  seed,
+                  steps: panel.steps ?? DEFAULT_STEPS,
+                },
             controller.signal
           )
           setTakes((t) => ({

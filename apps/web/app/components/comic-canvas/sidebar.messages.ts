@@ -27,6 +27,7 @@ export const messages = defineMessages({
       thought: "Thought",
       shout: "Shout",
       caption: "Caption",
+      message: "Message",
       sfx: "SFX",
     },
     layouts: {
@@ -65,6 +66,7 @@ export const messages = defineMessages({
       thought: "Pensée",
       shout: "Cri",
       caption: "Récitatif",
+      message: "Message",
       sfx: "Onomatopée",
     },
     layouts: {
@@ -103,6 +105,7 @@ export const messages = defineMessages({
       thought: "Pensamiento",
       shout: "Grito",
       caption: "Cartucho",
+      message: "Mensaje",
       sfx: "Onomatopeya",
     },
     layouts: {
@@ -140,6 +143,7 @@ export const messages = defineMessages({
       thought: "Gedanke",
       shout: "Schrei",
       caption: "Textkasten",
+      message: "Nachricht",
       sfx: "Soundeffekt",
     },
     layouts: {
@@ -178,6 +182,7 @@ export const messages = defineMessages({
       thought: "Pensiero",
       shout: "Urlo",
       caption: "Didascalia",
+      message: "Messaggio",
       sfx: "Onomatopea",
     },
     layouts: {

@@ -88,6 +88,7 @@ export const messages = defineMessages({
       thought: "Thought",
       shout: "Shout",
       caption: "Caption",
+      message: "Message",
     },
     formats: {
       carousel: "Carousel 4:5",
@@ -203,6 +204,7 @@ export const messages = defineMessages({
       thought: "Pensée",
       shout: "Cri",
       caption: "Récitatif",
+      message: "Message",
     },
     formats: {
       carousel: "Carrousel 4:5",
@@ -318,6 +320,7 @@ export const messages = defineMessages({
       thought: "Pensamiento",
       shout: "Grito",
       caption: "Cartucho",
+      message: "Mensaje",
     },
     formats: {
       carousel: "Carrusel 4:5",
@@ -433,6 +436,7 @@ export const messages = defineMessages({
       thought: "Gedanke",
       shout: "Schrei",
       caption: "Textkasten",
+      message: "Nachricht",
     },
     formats: {
       carousel: "Karussell 4:5",
@@ -548,6 +552,7 @@ export const messages = defineMessages({
       thought: "Pensiero",
       shout: "Urlo",
       caption: "Didascalia",
+      message: "Messaggio",
     },
     formats: {
       carousel: "Carosello 4:5",

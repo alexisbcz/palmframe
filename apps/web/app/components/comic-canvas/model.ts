@@ -1,5 +1,6 @@
 export type ImageFit = "cover" | "contain" | "fill"
-export type BubbleShape = "speech" | "thought" | "shout" | "caption"
+// `message` is a text read on a phone: a rounded chat bubble in sentence case.
+export type BubbleShape = "speech" | "thought" | "shout" | "caption" | "message"
 export type TextAlign = "left" | "center" | "right"
 export type FontId = "comic" | "bangers" | "inter"
 export type StyleId =
@@ -197,6 +198,12 @@ const BUBBLE_DEFAULTS: Record<
     fill: "#ffffff",
   },
   shout: { name: "Shout", text: "Ship it!", size: [440, 300], fill: "#ffffff" },
+  message: {
+    name: "Message",
+    text: "Are you still up?",
+    size: [440, 130],
+    fill: "#e9e9ef",
+  },
   caption: {
     name: "Caption",
     text: "Meanwhile, at 2:14 AM…",
@@ -221,13 +228,13 @@ export function createBubble(
     type: "bubble",
     shape,
     text: d.text,
-    font: "comic",
-    fontSize: shape === "shout" ? 52 : 40,
-    uppercase: true,
+    font: shape === "message" ? "inter" : "comic",
+    fontSize: shape === "shout" ? 52 : shape === "message" ? 34 : 40,
+    uppercase: shape !== "message",
     textColor: "#111111",
     fill: d.fill,
     borderColor: "#111111",
-    borderWidth: 5,
+    borderWidth: shape === "message" ? 0 : 5,
     tail: shape !== "caption",
     tailX: -width * 0.2,
     tailY: height * 0.85,
@@ -354,6 +361,9 @@ export interface Character {
   kind: "girl" | "boy" | "other"
   tags: string[]
   portrait?: string
+  // A model sheet (front, three-quarter, close-up). Panels they're cast in
+  // are drawn from it, so face and outfit hold from panel to panel.
+  sheet?: string
   seed?: number
 }
 

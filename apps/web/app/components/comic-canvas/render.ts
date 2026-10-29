@@ -134,6 +134,8 @@ function bubbleBody(l: BubbleLayer) {
   const p = new Path2D()
   if (l.shape === "caption") {
     p.rect(-rx, -ry, l.width, l.height)
+  } else if (l.shape === "message") {
+    p.roundRect(-rx, -ry, l.width, l.height, Math.min(ry, 44))
   } else if (l.shape === "speech") {
     p.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2)
   } else if (l.shape === "thought") {
@@ -180,9 +182,35 @@ function bubbleTail(l: BubbleLayer) {
   const tx = l.tailX
   const ty = l.tailY
   // Tip inside the body: nothing to draw.
-  if ((tx / rx) ** 2 + (ty / ry) ** 2 < 1) return null
+  if (l.shape !== "message" && (tx / rx) ** 2 + (ty / ry) ** 2 < 1) return null
 
   const p = new Path2D()
+  // A chat bubble's tail curls off the bottom corner on the sender's side.
+  if (l.shape === "message") {
+    const side = tx < 0 ? -1 : 1
+    const r = Math.min(ry, 44)
+    p.moveTo(side * (rx - r * 1.4), ry - 2)
+    p.quadraticCurveTo(
+      side * (rx - r * 0.2),
+      ry - 2,
+      side * (rx - r * 0.35),
+      ry - r * 0.9
+    )
+    p.quadraticCurveTo(
+      side * (rx - r * 0.15),
+      ry + r * 0.15,
+      side * (rx + r * 0.25),
+      ry + r * 0.3
+    )
+    p.quadraticCurveTo(
+      side * (rx - r * 0.6),
+      ry + r * 0.35,
+      side * (rx - r * 1.4),
+      ry - 2
+    )
+    p.closePath()
+    return p
+  }
   if (l.shape === "thought") {
     const a = Math.atan2(ty / ry, tx / rx)
     const sx = Math.cos(a) * rx * 0.95
@@ -305,9 +333,10 @@ function drawBubble(ctx: Ctx, l: BubbleLayer) {
   ctx.fill(body)
   if (tail) ctx.fill(tail)
 
-  const inset = l.shape === "caption" ? 0.86 : l.shape === "shout" ? 0.56 : 0.7
-  const boxW = l.width * inset - (l.shape === "caption" ? 24 : 0)
-  const boxH = l.height * inset - (l.shape === "caption" ? 16 : 0)
+  const boxed = l.shape === "caption" || l.shape === "message"
+  const inset = boxed ? 0.86 : l.shape === "shout" ? 0.56 : 0.7
+  const boxW = l.width * inset - (boxed ? 24 : 0)
+  const boxH = l.height * inset - (boxed ? 16 : 0)
   const text = l.uppercase ? l.text.toUpperCase() : l.text
   const { lines, size } = fitText(
     ctx,

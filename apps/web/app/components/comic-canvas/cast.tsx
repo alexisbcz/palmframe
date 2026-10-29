@@ -32,7 +32,7 @@ import { uid, type Character, type Look, type PanelLayer } from "./model"
 import { roving } from "./roving"
 import { TagField } from "./tag-field"
 import type { ComicEditor } from "./use-editor"
-import { renderPortrait } from "./use-generator"
+import { renderPortrait, renderSheet } from "./use-generator"
 
 export function Avatar({
   character,
@@ -219,6 +219,8 @@ function CharacterDialog({
   const [draft, setDraft] = React.useState(character)
   const [rendering, setRendering] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [sheeting, setSheeting] = React.useState(false)
+  const [sheetError, setSheetError] = React.useState<string | null>(null)
   const valid = !!draft.name.trim()
   const t = useT(messages)
 
@@ -236,6 +238,24 @@ function CharacterDialog({
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setRendering(false)
+    }
+  }
+
+  // The sheet keeps the portrait's seed, so both show the same person.
+  const sheet = async (newSeed: boolean) => {
+    const seed =
+      newSeed || draft.seed === undefined
+        ? Math.floor(Math.random() * 2 ** 32)
+        : draft.seed
+    setSheeting(true)
+    setSheetError(null)
+    try {
+      const src = await renderSheet(draft, seed, look)
+      setDraft((d) => ({ ...d, sheet: src, seed }))
+    } catch (e) {
+      setSheetError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setSheeting(false)
     }
   }
 
@@ -363,6 +383,68 @@ function CharacterDialog({
             </p>
           </div>
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {t("dialog.sheet")}
+          </span>
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              isDisabled={sheeting || !draft.tags.length}
+              onPress={() => sheet(false)}
+            >
+              <HugeiconsIcon
+                icon={SparklesIcon}
+                strokeWidth={2}
+                data-icon="inline-start"
+              />
+              {draft.sheet ? t("dialog.redrawSheet") : t("dialog.drawSheet")}
+            </Button>
+            {draft.sheet && (
+              <Button
+                size="icon-sm"
+                variant="outline"
+                aria-label={t("dialog.sheetNewSeed")}
+                isDisabled={sheeting}
+                onPress={() => sheet(true)}
+              >
+                <HugeiconsIcon icon={DiceIcon} strokeWidth={2} />
+              </Button>
+            )}
+          </div>
+        </div>
+        <div className="relative aspect-[3/2] overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10">
+          {draft.sheet ? (
+            <img
+              src={draft.sheet}
+              alt={t("dialog.sheetOf", {
+                name: draft.name.trim() || t("dialog.portraitUnnamed"),
+              })}
+              className="size-full object-contain"
+            />
+          ) : (
+            <span className="flex size-full items-center justify-center p-4 text-center text-xs text-balance text-muted-foreground">
+              {t("dialog.noSheet")}
+            </span>
+          )}
+          {sheeting && (
+            <span className="absolute inset-0 flex items-center justify-center bg-background/60">
+              <Spinner />
+            </span>
+          )}
+        </div>
+        <p className="text-[11px] text-muted-foreground">
+          {t("dialog.sheetHelp")}
+        </p>
+        {sheetError && (
+          <p className="text-xs text-destructive">
+            {t("dialog.sheetFailed", { error: sheetError })}
+          </p>
+        )}
       </div>
 
       <DialogFooter>

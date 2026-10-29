@@ -1,3 +1,7 @@
+import { COSTS, type Operation } from "@/lib/credits"
+import { kleinAvailable, renderKlein } from "@/lib/klein.server"
+import { getViewer } from "@/lib/supabase.server"
+
 import type { Route } from "./+types/api.generate"
 
 // Renders a comic panel with Anima Turbo through a local ComfyUI.
@@ -12,6 +16,10 @@ export interface GenerateRequest {
   height: number
   seed: number
   steps: number
+  // "klein" draws with FLUX.2 Klein from `refs` (character model sheets),
+  // for faces and outfits that hold from panel to panel.
+  engine: "anima" | "klein"
+  refs: string[]
 }
 
 function workflow(r: GenerateRequest) {
@@ -99,12 +107,26 @@ function parse(body: unknown): GenerateRequest | null {
     height: Math.round(height / 64) * 64,
     seed,
     steps,
+    engine: b.engine === "klein" ? "klein" : "anima",
+    refs: Array.isArray(b.refs)
+      ? b.refs.filter((x): x is string => typeof x === "string").slice(0, 4)
+      : [],
   }
 }
 
 const error = (message: string, status: number) =>
   Response.json({ error: message }, { status })
 
+// What a request costs, from what it asks for: sheets are Klein without
+// references, reference panels are Klein with them.
+function operation(r: GenerateRequest): Operation {
+  if (r.engine === "klein") return r.refs.length ? "panel_ref" : "sheet"
+  return "panel"
+}
+
+// Signed in, every render is paid for in credits: charged before it starts,
+// refunded if it fails or is cancelled. Signed out, it's only allowed off
+// Vercel, for local work.
 export async function action({ request }: Route.ActionArgs) {
   if (request.method !== "POST") return error("Method not allowed", 405)
   const r = parse(await request.json().catch(() => null))
@@ -113,8 +135,66 @@ export async function action({ request }: Route.ActionArgs) {
       "Invalid request: prompt, width, height, seed and steps are required.",
       400
     )
+  const { supabase, viewer } = await getViewer(request)
+  if (!viewer) {
+    if (process.env.VERCEL) return error("Sign in to generate.", 401)
+    return render(r, request)
+  }
 
+  const job = crypto.randomUUID()
+  const op = operation(r)
+  const spent = await supabase.rpc("spend_credits", {
+    p_cost: COSTS[op],
+    p_kind: op,
+    p_job: job,
+  })
+  if (spent.error)
+    return spent.error.code === "P0402"
+      ? Response.json(
+          { error: spent.error.message, code: "insufficient_credits" },
+          { status: 402 }
+        )
+      : error(`Could not charge credits: ${spent.error.message}`, 500)
+
+  let res: Response
+  try {
+    res = await render(r, request)
+  } catch (e) {
+    res = error(e instanceof Error ? e.message : String(e), 500)
+  }
+  if (res.ok) {
+    res.headers.set("x-credits", String(spent.data))
+    return res
+  }
+  const refunded = await supabase.rpc("refund_credits", { p_job: job })
+  if (!refunded.error) res.headers.set("x-credits", String(refunded.data))
+  return res
+}
+
+async function render(r: GenerateRequest, request: Request): Promise<Response> {
   const t0 = performance.now()
+  if (r.engine === "klein") {
+    if (!kleinAvailable())
+      return error(
+        "FLUX.2 Klein is not installed: install mflux (uv tool install mflux), or set MFLUX_BIN.",
+        501
+      )
+    try {
+      const png = await renderKlein(r, request.signal)
+      return new Response(new Uint8Array(png), {
+        headers: {
+          "content-type": "image/png",
+          "x-render-ms": String(Math.round(performance.now() - t0)),
+          "x-seed": String(r.seed),
+          "cache-control": "no-store",
+        },
+      })
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e)
+      return error(message, message === "Cancelled" ? 499 : 502)
+    }
+  }
+
   let queued: Response
   try {
     queued = await fetch(`${COMFY}/prompt`, {

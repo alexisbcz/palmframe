@@ -13,6 +13,7 @@ import {
   FlipHorizontalIcon,
   FlipVerticalIcon,
   ImageUploadIcon,
+  Message01Icon,
   Note01Icon,
   RotateCcwIcon,
   RotateCwIcon,
@@ -519,6 +520,7 @@ const SHAPES: { id: BubbleShape; icon: typeof CloudIcon }[] = [
   { id: "thought", icon: CloudIcon },
   { id: "shout", icon: FlashIcon },
   { id: "caption", icon: Note01Icon },
+  { id: "message", icon: Message01Icon },
 ]
 
 function LetteringRows({

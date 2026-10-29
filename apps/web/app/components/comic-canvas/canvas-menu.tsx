@@ -63,7 +63,13 @@ export interface LayerClipboard {
   paste: (at?: { x: number; y: number }) => void
 }
 
-const SHAPES: BubbleShape[] = ["speech", "thought", "shout", "caption"]
+const SHAPES: BubbleShape[] = [
+  "speech",
+  "thought",
+  "shout",
+  "caption",
+  "message",
+]
 
 function focusLayerText() {
   // Let the popover hand focus back before taking it.

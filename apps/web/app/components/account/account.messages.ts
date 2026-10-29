@@ -8,6 +8,12 @@ export const messages = defineMessages({
       signUp: "Sign up",
       projects: "My projects",
       signOut: "Sign out",
+      billing: "Credits & plans",
+    },
+    credits: {
+      balance: { one: "{n} credit", other: "{n} credits" },
+      insufficient: "You're out of credits for this render.",
+      getMore: "Get more credits",
     },
     sync: {
       saved: "Saved",
@@ -51,6 +57,12 @@ export const messages = defineMessages({
       signUp: "S’inscrire",
       projects: "Mes projets",
       signOut: "Se déconnecter",
+      billing: "Crédits et abonnements",
+    },
+    credits: {
+      balance: { one: "{n} crédit", other: "{n} crédits" },
+      insufficient: "Il ne vous reste pas assez de crédits pour ce rendu.",
+      getMore: "Obtenir des crédits",
     },
     sync: {
       saved: "Enregistré",
@@ -95,6 +107,12 @@ export const messages = defineMessages({
       signUp: "Registrarse",
       projects: "Mis proyectos",
       signOut: "Cerrar sesión",
+      billing: "Créditos y planes",
+    },
+    credits: {
+      balance: { one: "{n} crédito", other: "{n} créditos" },
+      insufficient: "No te quedan créditos suficientes para este render.",
+      getMore: "Conseguir créditos",
     },
     sync: {
       saved: "Guardado",
@@ -138,6 +156,12 @@ export const messages = defineMessages({
       signUp: "Registrieren",
       projects: "Meine Projekte",
       signOut: "Abmelden",
+      billing: "Credits und Abos",
+    },
+    credits: {
+      balance: { one: "{n} Credit", other: "{n} Credits" },
+      insufficient: "Für dieses Rendering reichen deine Credits nicht.",
+      getMore: "Credits holen",
     },
     sync: {
       saved: "Gespeichert",
@@ -182,6 +206,12 @@ export const messages = defineMessages({
       signUp: "Registrati",
       projects: "I miei progetti",
       signOut: "Esci",
+      billing: "Crediti e piani",
+    },
+    credits: {
+      balance: { one: "{n} credito", other: "{n} crediti" },
+      insufficient: "Non hai abbastanza crediti per questo render.",
+      getMore: "Ottieni crediti",
     },
     sync: {
       saved: "Salvato",

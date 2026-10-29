@@ -18,7 +18,12 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { Link } from "react-router"
+
+import { messages as accountMessages } from "@/components/account/account.messages"
+import { linkClass } from "@/components/auth/auth-ui"
 import { useT } from "@/i18n/core"
+import { INSUFFICIENT_CREDITS } from "@/lib/credits-store"
 
 import { Avatar, CastRow } from "./cast"
 import { messages } from "./composer.messages"
@@ -126,6 +131,7 @@ export function Composer({
   generator: Generator
 }) {
   const t = useT(messages)
+  const ta = useT(accountMessages)
   const tl = useT(lookMessages)
   const panel = editor.selected?.type === "panel" ? editor.selected : null
   const look = editor.project.look ?? DEFAULT_LOOK
@@ -206,7 +212,16 @@ export function Composer({
           role="alert"
           className="mx-auto mb-2 max-w-5xl rounded-lg bg-destructive/10 px-3 py-2 text-sm break-words text-destructive"
         >
-          {generator.errors[panel.id]}
+          {generator.errors[panel.id] === INSUFFICIENT_CREDITS ? (
+            <>
+              {ta("credits.insufficient")}{" "}
+              <Link to="/pricing" className={linkClass}>
+                {ta("credits.getMore")}
+              </Link>
+            </>
+          ) : (
+            generator.errors[panel.id]
+          )}
         </p>
       )}
       <div

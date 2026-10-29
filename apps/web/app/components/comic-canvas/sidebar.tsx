@@ -7,6 +7,7 @@ import {
   FlashIcon,
   Image01Icon,
   LockIcon,
+  Message01Icon,
   Note01Icon,
   SquareIcon,
   SquareUnlock02Icon,
@@ -53,6 +54,7 @@ function layerIcon(layer: Layer) {
     thought: CloudIcon,
     shout: FlashIcon,
     caption: Note01Icon,
+    message: Message01Icon,
   }[layer.shape]
 }
 
@@ -319,6 +321,7 @@ function Library({ editor }: { editor: ComicEditor }) {
         ["thought", CloudIcon],
         ["shout", FlashIcon],
         ["caption", Note01Icon],
+        ["message", Message01Icon],
       ] as const
     ).map(([shape, icon]) => ({
       id: shape,

@@ -22,9 +22,12 @@ export const links: Route.LinksFunction = () => [
 
 // The publishable key is meant for browsers; row-level security guards the data.
 export async function loader({ request }: Route.LoaderArgs) {
-  const { viewer, headers } = await getViewer(request)
+  const { viewer, supabase, headers } = await getViewer(request)
+  const credits = viewer
+    ? ((await supabase.rpc("my_credits")).data ?? null)
+    : null
   return data(
-    { locale: detectLocale(request), supabase: supabaseEnv(), viewer },
+    { locale: detectLocale(request), supabase: supabaseEnv(), viewer, credits },
     { headers }
   )
 }
