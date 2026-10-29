@@ -160,7 +160,7 @@ export function AccountMenu() {
           {tt("github")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem id="logout">
+        <DropdownMenuItem id="logout" variant="destructive">
           <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
           {t("account.signOut")}
         </DropdownMenuItem>
