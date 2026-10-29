@@ -203,7 +203,7 @@ export function PageStrip({
               <span className="pointer-events-none absolute start-1.5 bottom-1.5 rounded-sm bg-foreground/80 px-1 text-[10px] leading-4 font-medium text-background tabular-nums">
                 {i + 1}
               </span>
-              <div className="absolute end-1 top-1 opacity-0 transition-opacity group-focus-within/slide:opacity-100 group-hover/slide:opacity-100">
+              <div className="absolute end-1 top-1 opacity-0 transition-opacity group-focus-within/slide:opacity-100 group-hover/slide:opacity-100 pointer-coarse:opacity-100">
                 <DropdownMenuTrigger>
                   <Button
                     variant="secondary"

@@ -144,7 +144,7 @@ export function CastRow({
               <button
                 type="button"
                 aria-label={t("edit", { name: c.name })}
-                className="absolute -end-1 -top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition group-focus-within/cast:opacity-100 group-hover/cast:opacity-100 hover:text-foreground"
+                className="absolute -end-1 -top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition group-focus-within/cast:opacity-100 group-hover/cast:opacity-100 hover:text-foreground pointer-coarse:opacity-100"
                 onClick={() => setEditing(c)}
               >
                 <HugeiconsIcon
@@ -274,7 +274,7 @@ function CharacterDialog({
         <DialogDescription>{t("dialog.description")}</DialogDescription>
       </DialogHeader>
 
-      <div className="grid grid-cols-[8rem_minmax(0,1fr)] gap-4">
+      <div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
         <div className="flex flex-col gap-2">
           <div className="relative aspect-[4/5] overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10">
             {draft.portrait ? (

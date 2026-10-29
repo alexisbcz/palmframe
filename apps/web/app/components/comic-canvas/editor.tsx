@@ -1,5 +1,6 @@
 import * as React from "react"
 import { useSubmit } from "react-router"
+import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowDown01Icon,
@@ -8,9 +9,11 @@ import {
   FloppyDiskIcon,
   FolderOpenIcon,
   ImageAdd01Icon,
+  Layers01Icon,
   PaintBoardIcon,
   Redo02Icon,
   SparklesIcon,
+  SlidersHorizontalIcon,
   SquareIcon,
   TextIcon,
   Undo02Icon,
@@ -25,6 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { Separator } from "@workspace/ui/components/separator"
+import { Sheet } from "@workspace/ui/components/sheet"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { AccountMenu, useViewer } from "@/components/account/account-menu"
@@ -138,6 +142,9 @@ export function ComicCanvasEditor({
   const [tab, setTab] = React.useState<SidebarTab>("layers")
   const tp = useT(postprocessMessages)
   const [restyling, setRestyling] = React.useState(false)
+  const [sheet, setSheet] = React.useState<"layers" | "inspect" | null>(null)
+  // Tablets get the properties as a side sheet, phones from the bottom.
+  const wide = useMedia("(min-width: 768px)")
   const composerRef = React.useRef<ComposerHandle>(null)
   // The composer mounts with the selection, so wait a frame before focusing.
   const focusComposer = React.useCallback(
@@ -247,9 +254,9 @@ export function ComicCanvasEditor({
   const busy = Object.keys(generator.jobs).length > 0
 
   return (
-    <div className="grid h-svh grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-background text-foreground">
-      <header className="flex h-12 items-center justify-between gap-2 border-b px-2.5">
-        <div className="flex items-center gap-2">
+    <div className="grid h-svh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-background text-foreground">
+      <header className="flex h-12 items-center justify-between gap-1.5 border-b px-2 sm:gap-2 sm:px-2.5">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
           <DropdownMenuTrigger>
             <Button variant="secondary">
               {t("menu.open")}
@@ -317,14 +324,16 @@ export function ComicCanvasEditor({
           <StoryButton editor={editor} generator={generator} />
           {cloud && <CloudBar editor={editor} cloud={cloud} images={images} />}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Signed in, these live in the account menu. */}
           {!viewer && (
-            <>
-              <GitHubButton />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="contents max-sm:hidden">
+                <GitHubButton />
+              </span>
               <LanguageToggle />
               <ModeToggle />
-            </>
+            </div>
           )}
           <ExportButton editor={editor} images={images} />
           {instagram && viewer && (
@@ -362,6 +371,7 @@ export function ComicCanvasEditor({
             <Toolbar
               editor={editor}
               zoom={view.zoom}
+              onPanel={setSheet}
               onZoomAction={(key) => {
                 if (key === "in") zoomBy(1)
                 else if (key === "out") zoomBy(-1)
@@ -385,6 +395,41 @@ export function ComicCanvasEditor({
         onOpenGenerate={focusComposer}
         onFit={fitView}
       />
+      {/* Below md and lg the side panels are hidden; on phones and tablets
+          they open as sheets from the toolbar instead. */}
+      <Sheet
+        side="bottom"
+        isOpen={sheet === "layers"}
+        onOpenChange={(o) => !o && setSheet(null)}
+        className="gap-0 rounded-t-2xl pt-8 data-[side=bottom]:h-[min(75svh,40rem)] md:hidden"
+      >
+        <Sidebar
+          editor={editor}
+          tab={tab}
+          onTabChange={setTab}
+          onContextMenu={openMenu}
+        />
+      </Sheet>
+      <Sheet
+        side={wide ? "right" : "bottom"}
+        isOpen={sheet === "inspect"}
+        onOpenChange={(o) => !o && setSheet(null)}
+        isDismissable
+        className={cn(
+          "gap-0 pt-10 lg:hidden",
+          wide
+            ? "data-[side=right]:w-80"
+            : "rounded-t-2xl data-[side=bottom]:h-[min(75svh,40rem)]"
+        )}
+      >
+        <Inspector
+          editor={editor}
+          onGenerate={() => {
+            setSheet(null)
+            focusComposer()
+          }}
+        />
+      </Sheet>
       {restyling && (
         <RestyleDialog editor={editor} onClose={() => setRestyling(false)} />
       )}
@@ -429,14 +474,28 @@ function ToolButton({
   )
 }
 
+function useMedia(query: string) {
+  return React.useSyncExternalStore(
+    (onChange) => {
+      const mql = window.matchMedia(query)
+      mql.addEventListener("change", onChange)
+      return () => mql.removeEventListener("change", onChange)
+    },
+    () => window.matchMedia(query).matches,
+    () => false
+  )
+}
+
 function Toolbar({
   editor,
   zoom,
   onZoomAction,
+  onPanel,
 }: {
   editor: ComicEditor
   zoom: number
   onZoomAction: (key: string) => void
+  onPanel: (panel: "layers" | "inspect") => void
 }) {
   const t = useT(messages)
   const { doc } = editor
@@ -449,8 +508,16 @@ function Toolbar({
       data-roving-group
       // Capture: react-aria buttons stop keydown from bubbling.
       onKeyDownCapture={roving({ axis: "x" })}
-      className="absolute start-1/2 bottom-4 flex -translate-x-1/2 items-center gap-0.5 rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg rtl:translate-x-1/2"
+      className="absolute start-1/2 bottom-3 flex max-w-[calc(100%-1rem)] -translate-x-1/2 [scrollbar-width:none] items-center gap-0.5 overflow-x-auto rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg sm:bottom-4 rtl:translate-x-1/2"
     >
+      <span className="contents md:hidden">
+        <ToolButton
+          label={t("toolbar.layers")}
+          icon={Layers01Icon}
+          onPress={() => onPanel("layers")}
+        />
+        <Separator orientation="vertical" className="mx-0.5 my-1.5 sm:mx-1" />
+      </span>
       <ToolButton
         label={t("toolbar.undo")}
         shortcut="⌘Z"
@@ -465,7 +532,7 @@ function Toolbar({
         onPress={editor.redo}
         isDisabled={!editor.canRedo}
       />
-      <Separator orientation="vertical" className="mx-1 my-1.5" />
+      <Separator orientation="vertical" className="mx-0.5 my-1.5 sm:mx-1" />
       <ToolButton
         label={t("toolbar.panel")}
         icon={SquareIcon}
@@ -497,15 +564,19 @@ function Toolbar({
           pickFile("image/*").then((f) => f && insertImageFile(editor, f))
         }
       />
-      <Separator orientation="vertical" className="mx-1 my-1.5" />
+      <Separator orientation="vertical" className="mx-0.5 my-1.5 sm:mx-1" />
       <DropdownMenuTrigger>
-        <Button variant="ghost" className="w-20 tabular-nums" data-roving>
+        <Button
+          variant="ghost"
+          className="w-14 px-1.5 tabular-nums sm:w-20"
+          data-roving
+        >
           {Math.round(zoom * 100)}%
           <HugeiconsIcon
             icon={ArrowDown01Icon}
             strokeWidth={2}
             data-icon="inline-end"
-            className="rotate-180"
+            className="rotate-180 max-sm:hidden"
           />
         </Button>
         <DropdownMenu
@@ -531,6 +602,14 @@ function Toolbar({
           <DropdownMenuItem id="2">200%</DropdownMenuItem>
         </DropdownMenu>
       </DropdownMenuTrigger>
+      <span className="contents lg:hidden">
+        <Separator orientation="vertical" className="mx-0.5 my-1.5 sm:mx-1" />
+        <ToolButton
+          label={t("toolbar.inspect")}
+          icon={SlidersHorizontalIcon}
+          onPress={() => onPanel("inspect")}
+        />
+      </span>
     </div>
   )
 }

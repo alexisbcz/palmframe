@@ -293,7 +293,11 @@ export function StoryButton({
     !!story.rendering || Object.values(story.pages).some((p) => p.planning)
   return (
     <>
-      <Button variant="outline" onPress={() => setOpen(true)}>
+      <Button
+        variant="outline"
+        className="max-sm:px-2"
+        onPress={() => setOpen(true)}
+      >
         {busy ? (
           <Spinner data-icon="inline-start" />
         ) : (
@@ -303,7 +307,7 @@ export function StoryButton({
             data-icon="inline-start"
           />
         )}
-        {t("button")}
+        <span className="max-sm:sr-only">{t("button")}</span>
       </Button>
       {open && (
         <StoryDialog
@@ -380,7 +384,7 @@ function StoryDialog({
         </DialogDescription>
       </DialogHeader>
 
-      <div className="-mx-4 flex max-h-[calc(100svh-15rem)] min-h-0 flex-col gap-4 overflow-y-auto px-4 pb-1">
+      <div className="-mx-4 flex max-h-[calc(100svh-19rem)] min-h-0 flex-col gap-4 overflow-y-auto px-4 pb-1 sm:max-h-[calc(100svh-15rem)]">
         {!panels.length ? (
           <div className="flex flex-col gap-4">
             <Empty className="border border-dashed">

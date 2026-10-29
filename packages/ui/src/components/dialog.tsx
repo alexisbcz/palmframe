@@ -78,13 +78,13 @@ function Dialog({
       <ModalPrimitive
         data-slot="dialog-content"
         className={cn(
-          "fixed start-1/2 top-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-entering:animate-in data-entering:fade-in-0 data-entering:zoom-in-95 data-exiting:animate-out data-exiting:fade-out-0 data-exiting:zoom-out-95 sm:max-w-sm rtl:translate-x-1/2",
+          "fixed start-1/2 top-1/2 z-50 grid max-h-[calc(100svh-2rem)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 grid-cols-[minmax(0,1fr)] gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-entering:animate-in data-entering:fade-in-0 data-entering:zoom-in-95 data-exiting:animate-out data-exiting:fade-out-0 data-exiting:zoom-out-95 sm:max-w-sm rtl:translate-x-1/2",
           className
         )}
       >
         <DialogPrimitive
           data-slot="dialog"
-          className="[display:inherit] [gap:inherit] outline-none"
+          className="[display:inherit] [grid-template-columns:inherit] [gap:inherit] outline-none"
         >
           {children}
           {showCloseButton && (

@@ -69,13 +69,17 @@ export function PublishButton({
   const [open, setOpen] = React.useState(false)
   return (
     <>
-      <Button variant="outline" onPress={() => setOpen(true)}>
+      <Button
+        variant="outline"
+        className="max-sm:px-2"
+        onPress={() => setOpen(true)}
+      >
         <HugeiconsIcon
           icon={InstagramIcon}
           strokeWidth={2}
           data-icon="inline-start"
         />
-        {t("button")}
+        <span className="max-sm:sr-only">{t("button")}</span>
       </Button>
       {open && (
         <PublishDialog

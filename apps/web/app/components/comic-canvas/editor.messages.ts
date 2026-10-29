@@ -11,6 +11,8 @@ export const messages = defineMessages({
       generateAll: "Generate all panels ({count})",
     },
     toolbar: {
+      layers: "Layers and library",
+      inspect: "Properties",
       label: "Canvas tools",
       undo: "Undo",
       redo: "Redo",
@@ -33,6 +35,8 @@ export const messages = defineMessages({
       generateAll: "Générer toutes les cases ({count})",
     },
     toolbar: {
+      layers: "Calques et bibliothèque",
+      inspect: "Propriétés",
       label: "Outils du canevas",
       undo: "Annuler",
       redo: "Rétablir",
@@ -55,6 +59,8 @@ export const messages = defineMessages({
       generateAll: "Generar todas las viñetas ({count})",
     },
     toolbar: {
+      layers: "Capas y biblioteca",
+      inspect: "Propiedades",
       label: "Herramientas del lienzo",
       undo: "Deshacer",
       redo: "Rehacer",
@@ -77,6 +83,8 @@ export const messages = defineMessages({
       generateAll: "Alle Panels generieren ({count})",
     },
     toolbar: {
+      layers: "Ebenen und Bibliothek",
+      inspect: "Eigenschaften",
       label: "Leinwand-Werkzeuge",
       undo: "Rückgängig",
       redo: "Wiederholen",
@@ -99,6 +107,8 @@ export const messages = defineMessages({
       generateAll: "Genera tutte le vignette ({count})",
     },
     toolbar: {
+      layers: "Livelli e libreria",
+      inspect: "Proprietà",
       label: "Strumenti della tela",
       undo: "Annulla",
       redo: "Ripristina",
@@ -121,6 +131,8 @@ export const messages = defineMessages({
       generateAll: "すべてのコマを生成（{count}）",
     },
     toolbar: {
+      layers: "レイヤーとライブラリ",
+      inspect: "プロパティ",
       label: "キャンバスツール",
       undo: "元に戻す",
       redo: "やり直す",

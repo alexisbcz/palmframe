@@ -21,7 +21,7 @@ export function CloudBar({
   const t = useT(messages)
   const sync = useCloudSync(editor, cloud, images)
   return (
-    <div className="flex min-w-0 items-center gap-2">
+    <div className="flex min-w-0 items-center gap-1 sm:gap-2">
       <input
         aria-label={t("sync.titleLabel")}
         defaultValue={sync.title}
@@ -38,7 +38,7 @@ export function CloudBar({
             e.currentTarget.blur()
           }
         }}
-        className="[field-sizing:content] h-8 max-w-64 min-w-24 truncate rounded-md bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground hover:bg-muted focus-visible:bg-background focus-visible:ring-3 focus-visible:ring-ring/50"
+        className="[field-sizing:content] h-8 max-w-64 min-w-0 truncate rounded-md bg-transparent px-2 text-sm outline-none placeholder:text-muted-foreground hover:bg-muted focus-visible:bg-background focus-visible:ring-3 focus-visible:ring-ring/50 sm:min-w-24"
       />
       <SyncStatus status={sync.status} />
     </div>

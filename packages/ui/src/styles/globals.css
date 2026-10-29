@@ -135,3 +135,12 @@
     cursor: pointer;
     }
 }
+/* iOS zooms the page into any field with text under 16px. On touch screens
+   fields get 16px; unlayered, so it wins over text-size utilities. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}

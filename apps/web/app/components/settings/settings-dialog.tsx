@@ -170,6 +170,14 @@ export function SettingsDialog() {
     if (open && section === "billing") void load("/api/billing")
   }, [open, section, load])
 
+  // On phones the sections are a row of tabs; keep the current one in view.
+  const navRef = React.useRef<HTMLElement>(null)
+  React.useEffect(() => {
+    navRef.current
+      ?.querySelector("[aria-current=page]")
+      ?.scrollIntoView({ block: "nearest", inline: "nearest" })
+  }, [open, section])
+
   const label = (s: SettingsSection) =>
     s === "billing"
       ? tb("title")
@@ -217,7 +225,7 @@ export function SettingsDialog() {
       className="h-[min(46rem,calc(100svh-2rem))] gap-0 overflow-hidden p-0 sm:max-w-5xl"
     >
       <div className="flex h-full min-h-0 flex-col md:flex-row">
-        <aside className="flex shrink-0 flex-col gap-3 border-b bg-muted/40 p-3 md:w-64 md:border-e md:border-b-0 dark:bg-background/40">
+        <aside className="flex min-w-0 shrink-0 flex-col gap-3 border-b bg-muted/40 p-3 md:w-64 md:border-e md:border-b-0 dark:bg-background/40">
           <div className="flex items-center justify-between gap-2 px-1 pe-8 md:pe-1">
             <Heading slot="title" className="text-base font-semibold">
               {t("title")}
@@ -258,7 +266,11 @@ export function SettingsDialog() {
             />
             <input
               type="search"
-              autoFocus
+              // Not on touch screens, where it would raise the keyboard.
+              autoFocus={
+                typeof window !== "undefined" &&
+                matchMedia("(pointer: fine)").matches
+              }
               value={query}
               placeholder={t("nav.search")}
               aria-label={t("nav.search")}
@@ -271,6 +283,7 @@ export function SettingsDialog() {
           </label>
 
           <nav
+            ref={navRef}
             aria-label={t("title")}
             className="-mx-1 flex gap-1 overflow-x-auto px-1 md:mx-0 md:flex-1 md:flex-col md:gap-3 md:overflow-y-auto md:px-0"
           >

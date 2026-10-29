@@ -219,9 +219,11 @@ export function Stage({
     const el = containerRef.current
     if (!el || !fit) return
     const measure = () => {
+      // Phones get tighter margins, matching the board's padding below.
+      const narrow = el.clientWidth < 640
       const z = Math.min(
-        (el.clientWidth - 96) / doc.width,
-        (el.clientHeight - 176) / doc.height
+        (el.clientWidth - (narrow ? 32 : 96)) / doc.width,
+        (el.clientHeight - (narrow ? 112 : 176)) / doc.height
       )
       onZoom(Math.max(0.05, Math.floor(z * 100) / 100), true)
     }
@@ -243,6 +245,111 @@ export function Stage({
     el.addEventListener("wheel", onWheel, { passive: false })
     return () => el.removeEventListener("wheel", onWheel)
   }, [onZoom])
+
+  // Two fingers pinch to zoom and pan, around the point between them. A
+  // drag the first finger started is dropped.
+  React.useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    let pinch: {
+      dist: number
+      zoom: number
+      x: number
+      y: number
+      left: number
+      top: number
+    } | null = null
+    const read = (t: TouchList) => {
+      const a = t[0]!
+      const b = t[1]!
+      const rect = el.getBoundingClientRect()
+      return {
+        dist: Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY),
+        x: (a.clientX + b.clientX) / 2 - rect.left,
+        y: (a.clientY + b.clientY) / 2 - rect.top,
+      }
+    }
+    const onStart = (e: TouchEvent) => {
+      if (e.touches.length !== 2) return
+      cancelPress()
+      dragRef.current = null
+      setDragging(false)
+      setGuides({ x: [], y: [] })
+      pinch = {
+        ...read(e.touches),
+        zoom: zoomRef.current,
+        left: el.scrollLeft,
+        top: el.scrollTop,
+      }
+    }
+    const onMove = (e: TouchEvent) => {
+      if (!pinch || e.touches.length !== 2) return
+      e.preventDefault()
+      const now = read(e.touches)
+      const zoom = Math.min(
+        4,
+        Math.max(0.05, (pinch.zoom * now.dist) / pinch.dist)
+      )
+      const ratio = zoom / pinch.zoom
+      const { left, top, x, y } = pinch
+      onZoom(zoom, false)
+      requestAnimationFrame(() => {
+        el.scrollLeft = (left + x) * ratio - now.x
+        el.scrollTop = (top + y) * ratio - now.y
+      })
+    }
+    const onEnd = (e: TouchEvent) => {
+      if (e.touches.length < 2) pinch = null
+    }
+    el.addEventListener("touchstart", onStart, { passive: true })
+    el.addEventListener("touchmove", onMove, { passive: false })
+    el.addEventListener("touchend", onEnd)
+    el.addEventListener("touchcancel", onEnd)
+    return () => {
+      el.removeEventListener("touchstart", onStart)
+      el.removeEventListener("touchmove", onMove)
+      el.removeEventListener("touchend", onEnd)
+      el.removeEventListener("touchcancel", onEnd)
+    }
+  }, [onZoom])
+
+  // A long press on a touch screen opens the canvas menu, as a right-click
+  // does; phones don't all send contextmenu.
+  const pressRef = React.useRef<{
+    timer: number
+    x: number
+    y: number
+  } | null>(null)
+  const pressedAt = React.useRef(0)
+  const cancelPress = () => {
+    if (pressRef.current) window.clearTimeout(pressRef.current.timer)
+    pressRef.current = null
+  }
+  const startPress = (e: React.PointerEvent) => {
+    cancelPress()
+    if (e.pointerType !== "touch") return
+    const { clientX, clientY } = e
+    pressRef.current = {
+      x: clientX,
+      y: clientY,
+      timer: window.setTimeout(() => {
+        pressRef.current = null
+        pressedAt.current = Date.now()
+        // The press shouldn't also have moved what's under it.
+        dragRef.current = null
+        setDragging(false)
+        setGuides({ x: [], y: [] })
+        const point = toPagePoint({ clientX, clientY })
+        const target = hitTest(editor.docRef.current, point.x, point.y)
+        editor.select(target?.id ?? null)
+        onContextMenu({ clientX, clientY, point, layerId: target?.id ?? null })
+      }, 500),
+    }
+  }
+  const movePress = (e: React.PointerEvent) => {
+    const p = pressRef.current
+    if (p && Math.hypot(e.clientX - p.x, e.clientY - p.y) > 8) cancelPress()
+  }
 
   const toPagePoint = (e: { clientX: number; clientY: number }) => {
     const rect = boardRef.current!.getBoundingClientRect()
@@ -302,9 +409,11 @@ export function Stage({
       setGuides({ x: [], y: [] })
       window.removeEventListener("pointermove", onMove)
       window.removeEventListener("pointerup", onUp)
+      window.removeEventListener("pointercancel", onUp)
     }
     window.addEventListener("pointermove", onMove)
     window.addEventListener("pointerup", onUp)
+    window.addEventListener("pointercancel", onUp)
   }
 
   // Clicking inside the current selection keeps it, even under other layers.
@@ -325,6 +434,7 @@ export function Stage({
   const onBoardPointerDown = (e: React.PointerEvent) => {
     e.stopPropagation()
     if (e.button !== 0) return
+    startPress(e)
     const p = toPagePoint(e)
     const target = pickTarget(p)
     editor.select(target?.id ?? null)
@@ -340,6 +450,7 @@ export function Stage({
   }
 
   const onBoardPointerMove = (e: React.PointerEvent) => {
+    movePress(e)
     if (dragRef.current) return
     const p = toPagePoint(e)
     setHoverId(hitTest(doc, p.x, p.y)?.id ?? null)
@@ -386,10 +497,13 @@ export function Stage({
     <div
       ref={containerRef}
       data-slot="comic-stage"
-      className="relative min-h-0 min-w-0 flex-1 [scrollbar-width:thin] overflow-auto bg-muted/60 dark:bg-muted/30"
+      className="relative min-h-0 min-w-0 flex-1 touch-pan-x touch-pan-y [scrollbar-width:thin] overflow-auto bg-muted/60 dark:bg-muted/30"
       onPointerDown={() => editor.select(null)}
+      onPointerUp={cancelPress}
+      onPointerCancel={cancelPress}
       onContextMenu={(e) => {
         e.preventDefault()
+        if (Date.now() - pressedAt.current < 1000) return
         editor.select(null)
         onContextMenu({
           clientX: e.clientX,
@@ -401,10 +515,15 @@ export function Stage({
       onDragOver={(e) => e.preventDefault()}
       onDrop={onDrop}
     >
-      <div className="flex h-max min-h-full w-max min-w-full items-center justify-center px-12 pt-12 pb-32">
+      <div className="flex h-max min-h-full w-max min-w-full items-center justify-center px-4 pt-6 pb-22 sm:px-12 sm:pt-12 sm:pb-32">
         <div
           ref={boardRef}
-          className="relative shrink-0 shadow-xl ring-1 ring-foreground/10 select-none"
+          className={cn(
+            "relative shrink-0 shadow-xl ring-1 ring-foreground/10 select-none [-webkit-touch-callout:none]",
+            // With a layer selected, a finger on the page moves it; without,
+            // it scrolls. Pinching is handled above either way.
+            selected ? "touch-none" : "touch-pan-x touch-pan-y"
+          )}
           style={{ width: doc.width * zoom, height: doc.height * zoom }}
           onPointerDown={onBoardPointerDown}
           onPointerMove={onBoardPointerMove}
@@ -413,6 +532,7 @@ export function Stage({
           onContextMenu={(e) => {
             e.preventDefault()
             e.stopPropagation()
+            if (Date.now() - pressedAt.current < 1000) return
             const point = toPagePoint(e)
             // Right-click acts on what's visibly under the cursor.
             const target = hitTest(doc, point.x, point.y)
@@ -523,7 +643,7 @@ function SelectionBox({
   const h = layer.height * zoom
   const small = Math.min(w, h) < 48
   const handle =
-    "pointer-events-auto absolute size-2.5 -translate-1/2 rounded-full border-[1.5px] border-amber-500 bg-white shadow-sm"
+    "pointer-events-auto absolute size-2.5 -translate-1/2 touch-none rounded-full border-[1.5px] border-amber-500 bg-white shadow-sm pointer-coarse:size-4"
 
   return (
     <div
@@ -541,7 +661,7 @@ function SelectionBox({
             role="presentation"
             className={cn(
               handle,
-              "start-1/2 -top-7 size-3 cursor-grab active:cursor-grabbing"
+              "start-1/2 -top-7 size-3 cursor-grab active:cursor-grabbing pointer-coarse:size-5"
             )}
             onPointerDown={(e) => onHandle(e, { kind: "rotate" })}
           />
@@ -566,7 +686,7 @@ function SelectionBox({
               <div
                 role="presentation"
                 title={t("tailHint")}
-                className="pointer-events-auto absolute size-3.5 -translate-1/2 cursor-crosshair rounded-full border-2 border-white bg-amber-500 shadow-md"
+                className="pointer-events-auto absolute size-3.5 -translate-1/2 cursor-crosshair touch-none rounded-full border-2 border-white bg-amber-500 shadow-md pointer-coarse:size-5"
                 style={{
                   left: w / 2 + layer.tailX * zoom,
                   top: h / 2 + layer.tailY * zoom,

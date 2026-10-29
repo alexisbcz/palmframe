@@ -449,16 +449,16 @@ export function BillingPanel({
       </CommandList>
 
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t px-3 py-2 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1 pointer-coarse:hidden">
           <Kbd>↑</Kbd>
           <Kbd>↓</Kbd>
           {t("palette.keys.navigate")}
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1 pointer-coarse:hidden">
           <Kbd>↵</Kbd>
           {t("palette.keys.select")}
         </span>
-        <span className="flex items-center gap-1">
+        <span className="flex items-center gap-1 pointer-coarse:hidden">
           <Kbd>esc</Kbd>
           {t("palette.keys.close")}
         </span>

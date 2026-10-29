@@ -144,6 +144,7 @@ export function ExportButton({
     <div ref={rootRef} className="relative">
       <Button
         variant="outline"
+        className="max-sm:px-2"
         aria-expanded={open}
         aria-haspopup="dialog"
         onPress={() => setOpen((o) => !o)}
@@ -153,12 +154,15 @@ export function ExportButton({
           strokeWidth={2}
           data-icon="inline-start"
         />
-        {t("button")}
+        <span className="max-sm:sr-only">{t("button")}</span>
         <HugeiconsIcon
           icon={ArrowDown01Icon}
           strokeWidth={2}
           data-icon="inline-end"
-          className={cn("transition-transform", open && "rotate-180")}
+          className={cn(
+            "transition-transform max-sm:hidden",
+            open && "rotate-180"
+          )}
         />
       </Button>
       {open && <ExportPanel editor={editor} images={images} />}
@@ -369,7 +373,7 @@ function ExportPanel({
     <div
       role="dialog"
       aria-label={t("title")}
-      className="absolute end-0 top-full z-50 mt-2 flex w-[22rem] max-w-[calc(100vw-1.5rem)] animate-in flex-col gap-4 rounded-xl bg-popover p-4 text-popover-foreground shadow-xl ring-1 ring-foreground/10 duration-100 fade-in-0 zoom-in-95"
+      className="absolute end-0 top-full z-50 mt-2 flex max-h-[calc(100svh-4rem)] w-[22rem] max-w-[calc(100vw-1.5rem)] animate-in flex-col gap-4 overflow-y-auto rounded-xl bg-popover p-4 text-popover-foreground shadow-xl ring-1 ring-foreground/10 duration-100 fade-in-0 zoom-in-95 max-sm:fixed max-sm:inset-x-3 max-sm:top-12 max-sm:w-auto max-sm:max-w-none"
       onKeyDown={(e) => {
         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault()

@@ -398,7 +398,7 @@ export function Composer({
           type="button"
           data-roving
           onClick={() => setOpen(open === "setup" ? null : "setup")}
-          className="group/setup relative hidden w-48 shrink-0 cursor-pointer flex-col justify-end overflow-hidden rounded-xl bg-background p-2.5 text-start ring-1 ring-foreground/10 transition outline-none hover:ring-foreground/30 focus-visible:ring-2 focus-visible:ring-ring sm:flex dark:bg-foreground/5"
+          className="group/setup relative hidden w-48 shrink-0 cursor-pointer flex-col justify-end overflow-hidden rounded-xl bg-background p-2.5 text-start ring-1 ring-foreground/10 transition outline-none hover:ring-foreground/30 focus-visible:ring-2 focus-visible:ring-ring xl:flex dark:bg-foreground/5"
         >
           <img
             src={`/anima-styles/${setup.style}.webp`}
@@ -425,13 +425,13 @@ export function Composer({
               : !prompted || anyBusy
           }
           className={cn(
-            "flex w-36 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-amber-400 text-amber-950 shadow-[inset_0_-3px_0_rgb(0_0_0/0.15)] transition outline-none hover:bg-amber-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-400",
+            "flex w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-amber-400 text-amber-950 shadow-[inset_0_-3px_0_rgb(0_0_0/0.15)] transition outline-none hover:bg-amber-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-400 sm:w-36",
             job && "bg-amber-300"
           )}
         >
           {job ? (
             <>
-              <span className="flex items-center gap-1.5 text-sm font-bold tracking-wide uppercase">
+              <span className="flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase sm:text-sm">
                 <Spinner className="size-4" />
                 {job.of > 1 ? t("take", { take: job.take, of: job.of }) : ""}
               </span>
@@ -446,7 +446,7 @@ export function Composer({
             </>
           ) : (
             <>
-              <span className="text-sm font-extrabold tracking-wide uppercase">
+              <span className="text-xs font-extrabold tracking-wide uppercase sm:text-sm">
                 {panel ? t("generate") : t("generateAll")}
               </span>
               <span className="flex items-center gap-1 text-xs font-semibold tabular-nums">
