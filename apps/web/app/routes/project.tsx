@@ -23,7 +23,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
   // Row-level security already limits this to the viewer's own projects.
   const { data: row } = await supabase
     .from("comic_projects")
-    .select("id, title, data, revision")
+    .select("id, title, data, revision, cover")
     .eq("id", params.id)
     .maybeSingle()
   const project = row && toProject(row.data)
@@ -34,6 +34,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       userId: viewer.id,
       title: row.title,
       revision: row.revision,
+      hasCover: !!row.cover,
       project,
       zernio: zernioEnabled(),
     },

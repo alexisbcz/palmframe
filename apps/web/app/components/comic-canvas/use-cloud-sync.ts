@@ -12,6 +12,8 @@ export interface CloudProject {
   userId: string
   title: string
   revision: number
+  // Created, duplicated or imported projects have none until first drawn.
+  hasCover: boolean
 }
 
 // conflict: another tab or device saved a newer version; we stop writing.
@@ -110,6 +112,12 @@ export function useCloudSync(
           .eq("id", cloud.id)
     } catch {}
   }
+
+  React.useEffect(() => {
+    if (!cloud.hasCover) void refreshCover(editor.projectRef.current)
+    // Once per opened project.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   React.useEffect(() => {
     if (editor.project === saved.current || stopped.current) return
