@@ -5,6 +5,7 @@ import {
   Cancel01Icon,
   Copy01Icon,
   Delete02Icon,
+  Download01Icon,
   ImageUploadIcon,
   Layers01Icon,
   LayoutGridIcon,
@@ -34,7 +35,7 @@ import {
   ContextMenuSubTrigger,
 } from "@workspace/ui/components/context-menu"
 
-import { insertImageFile, pickFile } from "./actions"
+import { download, insertImageFile, pickFile } from "./actions"
 import {
   LAYOUTS,
   createBubble,
@@ -156,6 +157,8 @@ export function CanvasMenu({
         return void generator.generate(layer.id)
       case "prompt":
         return onOpenGenerate()
+      case "export-image":
+        return void exportImage(layer)
       case "remove-image":
         return editor.update(layer.id, { src: null })
       case "tail":
@@ -223,6 +226,21 @@ export function CanvasMenu({
   )
 }
 
+const IMAGE_EXT: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+}
+
+async function exportImage(layer: Layer) {
+  if (layer.type !== "panel" || !layer.src) return
+  const blob = await (await fetch(layer.src)).blob()
+  const ext = IMAGE_EXT[blob.type] ?? "png"
+  const name = layer.name.trim().replace(/[^\w-]+/g, "-").toLowerCase()
+  download(blob, `${name || "panel"}.${ext}`)
+}
+
 function Icon({ icon }: { icon: typeof SquareIcon }) {
   return <HugeiconsIcon icon={icon} strokeWidth={2} />
 }
@@ -265,6 +283,12 @@ function LayerItems({
             <ContextMenuItem id="prompt">
               <Icon icon={SparklesIcon} />
               {t("generateWith")}
+            </ContextMenuItem>
+          )}
+          {layer.src && (
+            <ContextMenuItem id="export-image">
+              <Icon icon={Download01Icon} />
+              {t("exportImage")}
             </ContextMenuItem>
           )}
           {layer.src && (
