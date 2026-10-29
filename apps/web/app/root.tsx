@@ -13,6 +13,7 @@ import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 
 import type { Route } from "./+types/root"
 import { DEFAULT_LOCALE, I18nProvider, detectLocale } from "./i18n/core"
+import { isActive, type PlanId } from "./lib/credits"
 import { getViewer, supabaseEnv } from "./lib/supabase.server"
 import "@workspace/ui/globals.css"
 
@@ -23,11 +24,31 @@ export const links: Route.LinksFunction = () => [
 // The publishable key is meant for browsers; row-level security guards the data.
 export async function loader({ request }: Route.LoaderArgs) {
   const { viewer, supabase, headers } = await getViewer(request)
-  const credits = viewer
-    ? ((await supabase.rpc("my_credits")).data ?? null)
-    : null
+  // Balance and plan for the account menu; one round trip each, in parallel.
+  const [credits, billing] = viewer
+    ? await Promise.all([
+        supabase.rpc("my_credits").then((r) => r.data ?? null),
+        supabase
+          .from("billing_customers")
+          .select("subscription")
+          .eq("user_id", viewer.id)
+          .maybeSingle()
+          .then((r) => r.data?.subscription ?? null),
+      ])
+    : [null, null]
+  const plan: PlanId | "free" =
+    billing && isActive(billing) && "plan" in billing && billing.plan
+      ? billing.plan
+      : "free"
+
   return data(
-    { locale: detectLocale(request), supabase: supabaseEnv(), viewer, credits },
+    {
+      locale: detectLocale(request),
+      supabase: supabaseEnv(),
+      viewer,
+      credits,
+      plan,
+    },
     { headers }
   )
 }
