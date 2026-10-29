@@ -183,18 +183,22 @@ export default function Login() {
               >
                 {withPassword ? t("fields.useLink") : t("login.withPassword")}
               </TextButton>
-              <p className="text-center text-sm text-muted-foreground">
-                {t("login.noAccount")}{" "}
-                <TextLink
-                  to={
-                    next === "/projects"
-                      ? "/signup"
-                      : `/signup?next=${encodeURIComponent(next)}`
-                  }
-                >
-                  {t("login.createAccount")}
-                </TextLink>
-              </p>
+              {/* An email link signs in or creates the account, so only
+                  the password form needs a way to sign up. */}
+              {withPassword && (
+                <p className="text-center text-sm text-muted-foreground">
+                  {t("login.noAccount")}{" "}
+                  <TextLink
+                    to={
+                      next === "/projects"
+                        ? "/signup"
+                        : `/signup?next=${encodeURIComponent(next)}`
+                    }
+                  >
+                    {t("login.createAccount")}
+                  </TextLink>
+                </p>
+              )}
             </Field>
           </FieldGroup>
         </form>

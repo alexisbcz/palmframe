@@ -109,8 +109,17 @@ export function LegalNote({ template }: { template: string }) {
   return (
     <p className="px-6 text-center text-sm text-balance text-muted-foreground">
       {rich(template, {
-        terms: <TextLink to="/terms">{t("legal.terms")}</TextLink>,
-        privacy: <TextLink to="/privacy">{t("legal.privacy")}</TextLink>,
+        // Each link stays on one line; the sentence wraps around them.
+        terms: (
+          <TextLink to="/terms" className="whitespace-nowrap">
+            {t("legal.terms")}
+          </TextLink>
+        ),
+        privacy: (
+          <TextLink to="/privacy" className="whitespace-nowrap">
+            {t("legal.privacy")}
+          </TextLink>
+        ),
       })}
     </p>
   )
