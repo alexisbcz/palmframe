@@ -27,7 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import { Input } from "@workspace/ui/components/input"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -50,6 +49,7 @@ import { renderToBlob, type ImageCache } from "../comic-canvas/render"
 import type { ComicEditor } from "../comic-canvas/use-editor"
 import { roving } from "../comic-canvas/roving"
 import { messages } from "./publish.messages"
+import { SchedulePicker } from "./schedule-picker"
 
 const MAX_CAROUSEL = 10
 const MAX_CAPTION = 2200
@@ -498,12 +498,7 @@ function PublishDialog({
                   </ToggleGroupItem>
                 </ToggleGroup>
                 {mode === "schedule" && (
-                  <Input
-                    type="datetime-local"
-                    aria-label={t("scheduleAt")}
-                    value={when}
-                    onChange={(e) => setWhen(e.target.value)}
-                  />
+                  <SchedulePicker value={when} onChange={setWhen} />
                 )}
               </Field>
 
@@ -626,7 +621,8 @@ function SlidePreview({
           <div
             key={i}
             className={cn(
-              "relative overflow-hidden rounded-md bg-muted ring-1 ring-foreground/10",
+              // Drawn inside the tile: an outer ring is clipped by the scrolling column.
+              "relative overflow-hidden rounded-md bg-muted after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:ring-1 after:ring-foreground/10 after:ring-inset",
               as === "feed" && i >= MAX_CAROUSEL && "opacity-40"
             )}
             style={{ aspectRatio: ratio }}
