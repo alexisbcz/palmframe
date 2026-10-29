@@ -38,23 +38,53 @@ export function drawDoc(ctx: Ctx, doc: ComicDoc, opts: RenderOptions) {
   ctx.restore()
 }
 
+// One layer, or one part of it, in the context's current transform. Opacity
+// and visibility are left to the caller (a PSD group carries them).
+export function drawLayerPart(
+  ctx: Ctx,
+  layer: Layer,
+  opts: RenderOptions,
+  part?: LayerPart
+) {
+  ctx.save()
+  ctx.translate(layer.x + layer.width / 2, layer.y + layer.height / 2)
+  ctx.rotate((layer.rotation * Math.PI) / 180)
+  if (layer.type === "panel") drawPanel(ctx, layer, opts, part)
+  else if (layer.type === "bubble") drawBubble(ctx, layer, part)
+  else drawText(ctx, layer)
+  ctx.restore()
+}
+
 function roundedRect(x: number, y: number, w: number, h: number, r: number) {
   const p = new Path2D()
   p.roundRect(x, y, w, h, Math.max(0, Math.min(r, w / 2, h / 2)))
   return p
 }
 
-function drawPanel(ctx: Ctx, l: PanelLayer, opts: RenderOptions) {
+// Pieces of a layer drawn on their own, for layered (PSD) export: a panel's
+// frame, its art unclipped, and its border; a bubble's balloon and lettering.
+export type LayerPart = "frame" | "art" | "border" | "balloon" | "lettering"
+
+function drawPanel(
+  ctx: Ctx,
+  l: PanelLayer,
+  opts: RenderOptions,
+  part?: LayerPart
+) {
   const w = l.width
   const h = l.height
   const shape = roundedRect(-w / 2, -h / 2, w, h, l.radius)
   ctx.save()
-  ctx.clip(shape)
-  ctx.fillStyle = l.fill
-  ctx.fill(shape)
+  if (part !== "art") ctx.clip(shape)
+  if (!part || part === "frame") {
+    ctx.fillStyle = l.fill
+    ctx.fill(shape)
+  }
 
   const img = l.src ? opts.images.get(l.src) : undefined
-  if (img?.complete && img.naturalWidth) {
+  if (part === "frame" || part === "border") {
+    // Drawn by its own part.
+  } else if (img?.complete && img.naturalWidth) {
     const iw = img.naturalWidth
     const ih = img.naturalHeight
     const zoom = l.imageZoom / 100
@@ -100,7 +130,7 @@ function drawPanel(ctx: Ctx, l: PanelLayer, opts: RenderOptions) {
   }
   ctx.restore()
 
-  if (l.borderWidth > 0) {
+  if (l.borderWidth > 0 && (!part || part === "border")) {
     const bw = l.borderWidth
     ctx.lineWidth = bw
     ctx.strokeStyle = l.borderColor
@@ -316,22 +346,25 @@ function drawLines(
   }
 }
 
-function drawBubble(ctx: Ctx, l: BubbleLayer) {
+function drawBubble(ctx: Ctx, l: BubbleLayer, part?: LayerPart) {
   const body = bubbleBody(l)
   const tail = l.tail && l.shape !== "caption" ? bubbleTail(l) : null
   ctx.lineJoin = "round"
   ctx.lineCap = "round"
   // Stroke at twice the width then fill on top: the outline of the union
   // of body and tail survives, with no seam where they meet.
-  if (l.borderWidth > 0) {
+  if (l.borderWidth > 0 && part !== "lettering") {
     ctx.lineWidth = l.borderWidth * 2
     ctx.strokeStyle = l.borderColor
     ctx.stroke(body)
     if (tail) ctx.stroke(tail)
   }
-  ctx.fillStyle = l.fill
-  ctx.fill(body)
-  if (tail) ctx.fill(tail)
+  if (part !== "lettering") {
+    ctx.fillStyle = l.fill
+    ctx.fill(body)
+    if (tail) ctx.fill(tail)
+  }
+  if (part === "balloon") return
 
   const boxed = l.shape === "caption" || l.shape === "message"
   const inset = boxed ? 0.86 : l.shape === "shout" ? 0.56 : 0.7
@@ -445,9 +478,9 @@ export function loadImages(
 export async function renderToBlob(
   doc: ComicDoc,
   cache: ImageCache,
-  type: "image/png" | "image/jpeg",
+  type: "image/png" | "image/jpeg" | "image/webp",
   scale = 1,
-  // JPEG only, 0 to 1.
+  // JPEG and WebP only, 0 to 1.
   quality = 0.92
 ) {
   await Promise.all([fontsReady(), loadImages(doc, cache)])

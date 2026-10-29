@@ -1,11 +1,11 @@
 import {
-  ZernioError,
+  errorResponse,
   publish,
-  zernioEnabled,
+  requireProfile,
   type PublishRequest,
-} from "@/lib/zernio.server"
+} from "@/lib/instagram.server"
 
-import type { Route } from "./+types/api.zernio.publish"
+import type { Route } from "./+types/api.instagram.publish"
 
 const MAX_FEED_SLIDES = 10
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024
@@ -16,8 +16,7 @@ function parse(raw: unknown): PublishRequest | null {
   const r = raw as Partial<PublishRequest> | null
   if (!r || typeof r.accountId !== "string" || !r.accountId) return null
   if (r.as !== "feed" && r.as !== "story") return null
-  if (r.mode !== "now" && r.mode !== "schedule" && r.mode !== "draft")
-    return null
+  if (r.mode !== "now" && r.mode !== "schedule") return null
   if (r.mode === "schedule" && Number.isNaN(Date.parse(r.scheduledFor ?? "")))
     return null
   return {
@@ -35,8 +34,13 @@ function parse(raw: unknown): PublishRequest | null {
 
 // multipart: `request` (JSON) plus one `slide` file per slide, in order.
 export async function action({ request }: Route.ActionArgs) {
-  if (!zernioEnabled()) return new Response("Not found", { status: 404 })
   if (request.method !== "POST") return error("Method not allowed", 405)
+  let profileId: string
+  try {
+    ;({ profileId } = await requireProfile(request))
+  } catch (e) {
+    return errorResponse(e)
+  }
   const form = await request.formData().catch(() => null)
   const r = parse(JSON.parse(String(form?.get("request") ?? "null")))
   const files = (form?.getAll("slide") ?? []).filter(
@@ -53,9 +57,8 @@ export async function action({ request }: Route.ActionArgs) {
 
   const key = request.headers.get("idempotency-key") ?? crypto.randomUUID()
   try {
-    return Response.json(await publish(r, files, key))
+    return Response.json(await publish(profileId, r, files, key))
   } catch (e) {
-    if (e instanceof ZernioError) return error(e.message, e.status, e.code)
-    return error((e as Error).message, 500)
+    return errorResponse(e)
   }
 }

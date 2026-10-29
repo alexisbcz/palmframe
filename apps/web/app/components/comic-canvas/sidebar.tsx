@@ -33,18 +33,17 @@ import {
 import { useT } from "@/i18n/core"
 
 import {
-  LAYOUTS,
   createBubble,
   createPanel,
   createText,
-  layoutRects,
   type BubbleShape,
   type Layer,
 } from "./model"
 import type { CanvasMenuRequest } from "./canvas-menu"
 import { roving } from "./roving"
 import type { ComicEditor } from "./use-editor"
-import { isLayoutId, messages } from "./sidebar.messages"
+import { messages } from "./sidebar.messages"
+import { LayoutPicker } from "./layout-picker"
 
 function layerIcon(layer: Layer) {
   if (layer.type === "panel") return layer.src ? Image01Icon : SquareIcon
@@ -337,52 +336,13 @@ function Library({ editor }: { editor: ComicEditor }) {
     },
   ]
 
-  const layoutLabel = (layout: (typeof LAYOUTS)[number]) =>
-    isLayoutId(layout.id) ? t(`layouts.${layout.id}`) : layout.label
-
   return (
     <div className="flex flex-col gap-5 pt-1">
       <div className="flex flex-col gap-2">
         <h3 className="text-xs font-medium text-muted-foreground">
           {t("library.layouts")}
         </h3>
-        <div
-          className="grid grid-cols-3 gap-2"
-          data-roving-group
-          onKeyDown={roving()}
-        >
-          {LAYOUTS.map((layout) => (
-            <button
-              key={layout.id}
-              type="button"
-              title={layoutLabel(layout)}
-              className="group/layout flex cursor-pointer flex-col items-center gap-1.5 rounded-lg p-1.5 text-xs text-muted-foreground transition-colors outline-none hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
-              data-roving
-              onClick={() => editor.applyLayout(layout.id)}
-            >
-              <div
-                className="relative w-full rounded-sm bg-background ring-1 ring-border transition-shadow group-hover/layout:ring-foreground/30"
-                style={{ aspectRatio: `${doc.width} / ${doc.height}` }}
-              >
-                {layoutRects(layout.cells, doc.width, doc.height).map(
-                  (r, i) => (
-                    <div
-                      key={i}
-                      className="absolute rounded-[1px] bg-foreground/15 ring-1 ring-foreground/40"
-                      style={{
-                        left: `${(r.x / doc.width) * 100}%`,
-                        top: `${(r.y / doc.height) * 100}%`,
-                        width: `${(r.width / doc.width) * 100}%`,
-                        height: `${(r.height / doc.height) * 100}%`,
-                      }}
-                    />
-                  )
-                )}
-              </div>
-              <span className="truncate">{layoutLabel(layout)}</span>
-            </button>
-          ))}
-        </div>
+        <LayoutPicker editor={editor} />
         <p className="text-xs text-muted-foreground">
           {t("library.layoutNote")}
         </p>

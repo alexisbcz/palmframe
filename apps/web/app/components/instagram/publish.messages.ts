@@ -4,11 +4,24 @@ export const messages = defineMessages({
   en: {
     button: "Post",
     title: "Post to Instagram",
-    description: "Publishes through Zernio to a connected Instagram account.",
+    description: "Post to one of your connected Instagram accounts.",
     account: "Account",
     loadingAccounts: "Loading accounts…",
-    noAccounts: "No Instagram account is connected in Zernio yet.",
-    connect: "Connect one in Zernio",
+    noAccounts:
+      "Connect your Instagram account to post your comics straight from Palmframe.",
+    connect: "Connect Instagram",
+    connecting: "Waiting for Instagram…",
+    addAccount: "Add another account",
+    disconnect: "Disconnect {name}",
+    confirmDisconnect: "Disconnect?",
+    connectError: {
+      cancelled: "Connection cancelled.",
+      personal:
+        "Personal accounts can't be posted to. Switch to a Business or Creator account in Instagram's settings, then try again.",
+      unavailable:
+        "Connecting Instagram is unavailable right now. Try again later.",
+      failed: "Couldn't connect Instagram. Try again.",
+    },
     accountsError: "Couldn't load your Instagram accounts",
     retry: "Retry",
     postAs: "Post as",
@@ -24,7 +37,6 @@ export const messages = defineMessages({
     when: "When",
     now: "Now",
     schedule: "Schedule",
-    draft: "Draft",
     scheduleAt: "Date and time",
     scheduleInPast: "Pick a time in the future.",
     altText: "Alt text",
@@ -38,7 +50,6 @@ export const messages = defineMessages({
       "Feed posts are cropped to 4:5. Post this 9:16 format as Stories instead.",
     publishNow: "Publish now",
     scheduleSubmit: "Schedule post",
-    saveDraft: "Save draft",
     cancel: "Cancel",
     close: "Close",
     rendering: "Rendering slides…",
@@ -46,11 +57,9 @@ export const messages = defineMessages({
     published: "Published on Instagram",
     view: "View on Instagram",
     scheduled: "Scheduled for {date}",
-    savedDraft: "Saved as a draft in Zernio",
     retrying:
-      "Instagram was briefly unavailable. Zernio will retry on its own.",
+      "Instagram was briefly unavailable. We'll keep trying on our own.",
     errorTitle: "Couldn't post",
-    openZernio: "Open Zernio",
     alt: {
       slide: "Comic, slide {n} of {total}.",
       caption: "Caption",
@@ -64,11 +73,24 @@ export const messages = defineMessages({
   fr: {
     button: "Publier",
     title: "Publier sur Instagram",
-    description: "Publie via Zernio sur un compte Instagram connecté.",
+    description: "Publiez sur l'un de vos comptes Instagram connectés.",
     account: "Compte",
     loadingAccounts: "Chargement des comptes…",
-    noAccounts: "Aucun compte Instagram n'est encore connecté à Zernio.",
-    connect: "En connecter un dans Zernio",
+    noAccounts:
+      "Connectez votre compte Instagram pour publier vos BD directement depuis Palmframe.",
+    connect: "Connecter Instagram",
+    connecting: "En attente d'Instagram…",
+    addAccount: "Ajouter un autre compte",
+    disconnect: "Déconnecter {name}",
+    confirmDisconnect: "Déconnecter ?",
+    connectError: {
+      cancelled: "Connexion annulée.",
+      personal:
+        "Impossible de publier sur un compte personnel. Passez à un compte professionnel ou créateur dans les paramètres d'Instagram, puis réessayez.",
+      unavailable:
+        "La connexion à Instagram est indisponible pour le moment. Réessayez plus tard.",
+      failed: "Impossible de connecter Instagram. Réessayez.",
+    },
     accountsError: "Impossible de charger vos comptes Instagram",
     retry: "Réessayer",
     postAs: "Publier en",
@@ -84,7 +106,6 @@ export const messages = defineMessages({
     when: "Quand",
     now: "Maintenant",
     schedule: "Programmer",
-    draft: "Brouillon",
     scheduleAt: "Date et heure",
     scheduleInPast: "Choisissez un moment dans le futur.",
     altText: "Texte alternatif",
@@ -98,7 +119,6 @@ export const messages = defineMessages({
       "Le fil recadre les publications en 4:5. Publiez plutôt ce format 9:16 en stories.",
     publishNow: "Publier maintenant",
     scheduleSubmit: "Programmer",
-    saveDraft: "Enregistrer le brouillon",
     cancel: "Annuler",
     close: "Fermer",
     rendering: "Rendu des diapos…",
@@ -106,11 +126,9 @@ export const messages = defineMessages({
     published: "Publié sur Instagram",
     view: "Voir sur Instagram",
     scheduled: "Programmé pour le {date}",
-    savedDraft: "Enregistré comme brouillon dans Zernio",
     retrying:
-      "Instagram était momentanément indisponible. Zernio va réessayer de lui-même.",
+      "Instagram était momentanément indisponible. Nous réessayons automatiquement.",
     errorTitle: "Publication impossible",
-    openZernio: "Ouvrir Zernio",
     alt: {
       slide: "BD, diapo {n} sur {total}.",
       caption: "Récitatif",
@@ -124,13 +142,24 @@ export const messages = defineMessages({
   es: {
     button: "Publicar",
     title: "Publicar en Instagram",
-    description:
-      "Publica a través de Zernio en una cuenta de Instagram conectada.",
+    description: "Publica en una de tus cuentas de Instagram conectadas.",
     account: "Cuenta",
     loadingAccounts: "Cargando cuentas…",
     noAccounts:
-      "Todavía no hay ninguna cuenta de Instagram conectada en Zernio.",
-    connect: "Conecta una en Zernio",
+      "Conecta tu cuenta de Instagram para publicar tus cómics directamente desde Palmframe.",
+    connect: "Conectar Instagram",
+    connecting: "Esperando a Instagram…",
+    addAccount: "Añadir otra cuenta",
+    disconnect: "Desconectar {name}",
+    confirmDisconnect: "¿Desconectar?",
+    connectError: {
+      cancelled: "Conexión cancelada.",
+      personal:
+        "No se puede publicar en cuentas personales. Cambia a una cuenta de empresa o de creador en la configuración de Instagram y vuelve a intentarlo.",
+      unavailable:
+        "Ahora mismo no se puede conectar Instagram. Inténtalo más tarde.",
+      failed: "No se pudo conectar Instagram. Inténtalo de nuevo.",
+    },
     accountsError: "No se pudieron cargar tus cuentas de Instagram",
     retry: "Reintentar",
     postAs: "Publicar como",
@@ -146,7 +175,6 @@ export const messages = defineMessages({
     when: "Cuándo",
     now: "Ahora",
     schedule: "Programar",
-    draft: "Borrador",
     scheduleAt: "Fecha y hora",
     scheduleInPast: "Elige un momento en el futuro.",
     altText: "Texto alternativo",
@@ -160,7 +188,6 @@ export const messages = defineMessages({
       "El feed recorta las publicaciones a 4:5. Publica este formato 9:16 como historias.",
     publishNow: "Publicar ahora",
     scheduleSubmit: "Programar",
-    saveDraft: "Guardar borrador",
     cancel: "Cancelar",
     close: "Cerrar",
     rendering: "Renderizando diapositivas…",
@@ -168,11 +195,9 @@ export const messages = defineMessages({
     published: "Publicado en Instagram",
     view: "Ver en Instagram",
     scheduled: "Programado para el {date}",
-    savedDraft: "Guardado como borrador en Zernio",
     retrying:
-      "Instagram no estuvo disponible un momento. Zernio lo reintentará por su cuenta.",
+      "Instagram no estuvo disponible un momento. Seguiremos intentándolo automáticamente.",
     errorTitle: "No se pudo publicar",
-    openZernio: "Abrir Zernio",
     alt: {
       slide: "Cómic, diapositiva {n} de {total}.",
       caption: "Cartucho",
@@ -186,12 +211,24 @@ export const messages = defineMessages({
   de: {
     button: "Posten",
     title: "Auf Instagram posten",
-    description:
-      "Veröffentlicht über Zernio auf einem verbundenen Instagram-Konto.",
+    description: "Poste auf eines deiner verbundenen Instagram-Konten.",
     account: "Konto",
     loadingAccounts: "Konten werden geladen…",
-    noAccounts: "In Zernio ist noch kein Instagram-Konto verbunden.",
-    connect: "In Zernio verbinden",
+    noAccounts:
+      "Verbinde dein Instagram-Konto, um deine Comics direkt aus Palmframe zu posten.",
+    connect: "Instagram verbinden",
+    connecting: "Warte auf Instagram…",
+    addAccount: "Weiteres Konto hinzufügen",
+    disconnect: "{name} trennen",
+    confirmDisconnect: "Trennen?",
+    connectError: {
+      cancelled: "Verbindung abgebrochen.",
+      personal:
+        "Auf private Konten kann nicht gepostet werden. Wechsle in den Instagram-Einstellungen zu einem Business- oder Creator-Konto und versuche es erneut.",
+      unavailable:
+        "Instagram kann gerade nicht verbunden werden. Versuche es später erneut.",
+      failed: "Instagram konnte nicht verbunden werden. Versuche es erneut.",
+    },
     accountsError: "Instagram-Konten konnten nicht geladen werden",
     retry: "Erneut versuchen",
     postAs: "Posten als",
@@ -207,7 +244,6 @@ export const messages = defineMessages({
     when: "Wann",
     now: "Jetzt",
     schedule: "Planen",
-    draft: "Entwurf",
     scheduleAt: "Datum und Uhrzeit",
     scheduleInPast: "Wähle einen Zeitpunkt in der Zukunft.",
     altText: "Alternativtext",
@@ -221,7 +257,6 @@ export const messages = defineMessages({
       "Feed-Beiträge werden auf 4:5 zugeschnitten. Poste dieses 9:16-Format lieber als Storys.",
     publishNow: "Jetzt veröffentlichen",
     scheduleSubmit: "Beitrag planen",
-    saveDraft: "Entwurf speichern",
     cancel: "Abbrechen",
     close: "Schließen",
     rendering: "Slides werden gerendert…",
@@ -229,11 +264,9 @@ export const messages = defineMessages({
     published: "Auf Instagram veröffentlicht",
     view: "Auf Instagram ansehen",
     scheduled: "Geplant für {date}",
-    savedDraft: "Als Entwurf in Zernio gespeichert",
     retrying:
-      "Instagram war kurz nicht erreichbar. Zernio versucht es selbst erneut.",
+      "Instagram war kurz nicht erreichbar. Wir versuchen es automatisch weiter.",
     errorTitle: "Posten fehlgeschlagen",
-    openZernio: "Zernio öffnen",
     alt: {
       slide: "Comic, Slide {n} von {total}.",
       caption: "Textkasten",
@@ -247,11 +280,24 @@ export const messages = defineMessages({
   it: {
     button: "Pubblica",
     title: "Pubblica su Instagram",
-    description: "Pubblica tramite Zernio su un account Instagram collegato.",
+    description: "Pubblica su uno dei tuoi account Instagram collegati.",
     account: "Account",
     loadingAccounts: "Caricamento account…",
-    noAccounts: "Nessun account Instagram è ancora collegato a Zernio.",
-    connect: "Collegane uno in Zernio",
+    noAccounts:
+      "Collega il tuo account Instagram per pubblicare i tuoi fumetti direttamente da Palmframe.",
+    connect: "Collega Instagram",
+    connecting: "In attesa di Instagram…",
+    addAccount: "Aggiungi un altro account",
+    disconnect: "Scollega {name}",
+    confirmDisconnect: "Scollegare?",
+    connectError: {
+      cancelled: "Collegamento annullato.",
+      personal:
+        "Non si può pubblicare su un account personale. Passa a un account aziendale o creator dalle impostazioni di Instagram e riprova.",
+      unavailable:
+        "Al momento non è possibile collegare Instagram. Riprova più tardi.",
+      failed: "Impossibile collegare Instagram. Riprova.",
+    },
     accountsError: "Impossibile caricare i tuoi account Instagram",
     retry: "Riprova",
     postAs: "Pubblica come",
@@ -267,7 +313,6 @@ export const messages = defineMessages({
     when: "Quando",
     now: "Ora",
     schedule: "Programma",
-    draft: "Bozza",
     scheduleAt: "Data e ora",
     scheduleInPast: "Scegli un momento nel futuro.",
     altText: "Testo alternativo",
@@ -281,7 +326,6 @@ export const messages = defineMessages({
       "Il feed ritaglia i post in 4:5. Pubblica questo formato 9:16 come storie.",
     publishNow: "Pubblica ora",
     scheduleSubmit: "Programma post",
-    saveDraft: "Salva bozza",
     cancel: "Annulla",
     close: "Chiudi",
     rendering: "Rendering delle slide…",
@@ -289,11 +333,9 @@ export const messages = defineMessages({
     published: "Pubblicato su Instagram",
     view: "Vedi su Instagram",
     scheduled: "Programmato per il {date}",
-    savedDraft: "Salvato come bozza in Zernio",
     retrying:
-      "Instagram non era disponibile per un momento. Zernio riproverà da solo.",
+      "Instagram non era disponibile per un momento. Continueremo a riprovare da soli.",
     errorTitle: "Pubblicazione non riuscita",
-    openZernio: "Apri Zernio",
     alt: {
       slide: "Fumetto, slide {n} di {total}.",
       caption: "Didascalia",
@@ -307,11 +349,24 @@ export const messages = defineMessages({
   ja: {
     button: "投稿",
     title: "Instagramに投稿",
-    description: "Zernio経由で、連携済みのInstagramアカウントに公開します。",
+    description: "連携済みのInstagramアカウントに投稿します。",
     account: "アカウント",
     loadingAccounts: "アカウントを読み込み中…",
-    noAccounts: "ZernioにまだInstagramアカウントが連携されていません。",
-    connect: "Zernioで連携する",
+    noAccounts:
+      "Instagramアカウントを連携すると、Palmframeから直接マンガを投稿できます。",
+    connect: "Instagramを連携",
+    connecting: "Instagramの応答を待っています…",
+    addAccount: "別のアカウントを追加",
+    disconnect: "{name}の連携を解除",
+    confirmDisconnect: "解除しますか？",
+    connectError: {
+      cancelled: "連携をキャンセルしました。",
+      personal:
+        "個人アカウントには投稿できません。Instagramの設定でビジネスまたはクリエイターアカウントに切り替えてから、もう一度お試しください。",
+      unavailable:
+        "現在Instagramを連携できません。しばらくしてからお試しください。",
+      failed: "Instagramを連携できませんでした。もう一度お試しください。",
+    },
     accountsError: "Instagramアカウントを読み込めませんでした",
     retry: "再試行",
     postAs: "投稿形式",
@@ -327,7 +382,6 @@ export const messages = defineMessages({
     when: "タイミング",
     now: "今すぐ",
     schedule: "予約",
-    draft: "下書き",
     scheduleAt: "日時",
     scheduleInPast: "未来の日時を選んでください。",
     altText: "代替テキスト",
@@ -341,7 +395,6 @@ export const messages = defineMessages({
       "フィード投稿は4:5にトリミングされます。この9:16の形式はストーリーズとして投稿してください。",
     publishNow: "今すぐ公開",
     scheduleSubmit: "投稿を予約",
-    saveDraft: "下書きを保存",
     cancel: "キャンセル",
     close: "閉じる",
     rendering: "スライドを書き出し中…",
@@ -349,11 +402,8 @@ export const messages = defineMessages({
     published: "Instagramに公開しました",
     view: "Instagramで見る",
     scheduled: "{date} に予約済み",
-    savedDraft: "Zernioに下書きとして保存しました",
-    retrying:
-      "Instagramが一時的に利用できません。Zernioが自動で再試行します。",
+    retrying: "Instagramが一時的に利用できません。自動で再試行します。",
     errorTitle: "投稿できませんでした",
-    openZernio: "Zernioを開く",
     alt: {
       slide: "マンガ、スライド {n}／{total}。",
       caption: "ナレーション",

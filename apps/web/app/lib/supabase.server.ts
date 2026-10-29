@@ -47,6 +47,14 @@ export function toViewer(user: User): Viewer {
     email,
     name:
       String(meta.name ?? meta.full_name ?? "").trim() || email.split("@")[0]!,
+    // Only our own bucket: metadata is user-editable, so never trust any URL.
+    avatarUrl:
+      typeof meta.avatar_url === "string" &&
+      meta.avatar_url.startsWith(
+        `${supabaseEnv().url}/storage/v1/object/public/avatars/`
+      )
+        ? meta.avatar_url
+        : null,
   }
 }
 

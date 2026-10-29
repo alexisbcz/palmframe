@@ -1,5 +1,6 @@
 import { COSTS, type Operation } from "@/lib/credits"
 import { kleinAvailable, renderKlein } from "@/lib/klein.server"
+import { imageResponse, payingConnection } from "@/lib/openrouter.server"
 import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/api.generate"
@@ -119,7 +120,7 @@ const error = (message: string, status: number) =>
 
 // What a request costs, from what it asks for: sheets are Klein without
 // references, reference panels are Klein with them.
-function operation(r: GenerateRequest): Operation {
+export function operation(r: GenerateRequest): Operation {
   if (r.engine === "klein") return r.refs.length ? "panel_ref" : "sheet"
   return "panel"
 }
@@ -140,6 +141,21 @@ export async function action({ request }: Route.ActionArgs) {
     if (process.env.VERCEL) return error("Sign in to generate.", 401)
     return render(r, request)
   }
+
+  // A connected OpenRouter account pays instead of credits.
+  const openrouter = await payingConnection(viewer.id)
+  if (openrouter)
+    return imageResponse(
+      openrouter,
+      {
+        prompt: `${r.prompt}\n\nNo text, no letters, no speech bubbles, no captions, no panel borders.`,
+        width: r.width,
+        height: r.height,
+        refs: r.refs,
+        seed: r.seed,
+      },
+      request.signal
+    )
 
   const job = crypto.randomUUID()
   const op = operation(r)
@@ -171,7 +187,10 @@ export async function action({ request }: Route.ActionArgs) {
   return res
 }
 
-async function render(r: GenerateRequest, request: Request): Promise<Response> {
+export async function render(
+  r: GenerateRequest,
+  request: Request
+): Promise<Response> {
   const t0 = performance.now()
   if (r.engine === "klein") {
     if (!kleinAvailable())

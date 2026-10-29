@@ -392,7 +392,7 @@ export async function renderSheet(
 // Klein is slower per pixel; ~0.9 MP keeps a panel near a minute.
 const KLEIN_AREA = 1024 * 896
 
-function kleinSize(width: number, height: number) {
+export function kleinSize(width: number, height: number) {
   const ratio = Math.min(2.5, Math.max(0.4, width / height))
   const snap = (n: number) =>
     Math.min(1536, Math.max(256, Math.round(n / 64) * 64))

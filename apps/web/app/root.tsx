@@ -13,7 +13,9 @@ import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 
 import type { Route } from "./+types/root"
 import { DEFAULT_LOCALE, I18nProvider, detectLocale } from "./i18n/core"
+import { CommandPalette } from "./components/command-palette"
 import { isActive, type PlanId } from "./lib/credits"
+import { payingConnection } from "./lib/openrouter.server"
 import { getViewer, supabaseEnv } from "./lib/supabase.server"
 import "@workspace/ui/globals.css"
 
@@ -25,7 +27,7 @@ export const links: Route.LinksFunction = () => [
 export async function loader({ request }: Route.LoaderArgs) {
   const { viewer, supabase, headers } = await getViewer(request)
   // Balance and plan for the account menu; one round trip each, in parallel.
-  const [credits, billing] = viewer
+  const [credits, billing, openrouter] = viewer
     ? await Promise.all([
         supabase.rpc("my_credits").then((r) => r.data ?? null),
         supabase
@@ -34,8 +36,12 @@ export async function loader({ request }: Route.LoaderArgs) {
           .eq("user_id", viewer.id)
           .maybeSingle()
           .then((r) => r.data?.subscription ?? null),
+        // Whether the person's OpenRouter account pays instead of credits.
+        payingConnection(viewer.id)
+          .then((c) => !!c)
+          .catch(() => false),
       ])
-    : [null, null]
+    : [null, null, false]
   const plan: PlanId | "free" =
     billing && isActive(billing) && "plan" in billing && billing.plan
       ? billing.plan
@@ -48,6 +54,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       viewer,
       credits,
       plan,
+      openrouter,
     },
     { headers }
   )
@@ -81,7 +88,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  return <Outlet />
+  return (
+    <>
+      <Outlet />
+      <CommandPalette />
+    </>
+  )
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

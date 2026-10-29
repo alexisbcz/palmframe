@@ -38,6 +38,16 @@ export const COSTS = {
   panel_ref: 20, // FLUX.2 Klein, drawn from model sheets
   portrait: 8,
   sheet: 40,
+  edit: 20, // FLUX.2 Klein instruction edit of a panel
+  vary: 8, // Anima Turbo img2img
+  inpaint: 8, // Anima Turbo on a masked crop
+  erase: 8,
+  outpaint: 8,
+  upscale: 3, // anime ESRGAN, 2x or 4x
+  remove_bg: 2, // BiRefNet cut-out
+  face_fix: 6, // up to four faces redrawn with Anima Turbo
+  restyle: 8, // Anima Turbo img2img of a whole panel
+  story_plan: 2, // the story planner's LLM call, per slide
 } as const
 
 export type Operation = keyof typeof COSTS

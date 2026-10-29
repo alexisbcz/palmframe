@@ -5,7 +5,9 @@ import {
   CheckmarkCircle02Icon,
   Copy01Icon,
   Download01Icon,
+  Image02Icon,
   Jpg01Icon,
+  Layers01Icon,
   Pdf01Icon,
   Png01Icon,
   Tick02Icon,
@@ -19,20 +21,24 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { useLocale, useT } from "@/i18n/core"
 
-import { download, pdf, zip } from "./actions"
+import { download, pdf, withDpi, zip } from "./actions"
 import { SliderInput } from "./controls"
 import { messages } from "./export.messages"
 import { pageDoc } from "./model"
+import { renderPsd } from "./psd"
 import { renderToBlob, type ImageCache } from "./render"
 import { roving } from "./roving"
 import type { ComicEditor } from "./use-editor"
 
 type Scope = "all" | "current"
-type Format = "jpeg" | "png" | "pdf"
+type Format = "jpeg" | "png" | "webp" | "pdf" | "psd"
+type Size = "1" | "2" | "3" | "300" | "600"
 interface Settings {
   scope: Scope
   format: Format
   scale: 1 | 2 | 3
+  // Print resolution; 0 means screen size, picked by `scale`.
+  dpi: 0 | 300 | 600
   quality: number
   name: string
 }
@@ -41,11 +47,26 @@ const DEFAULTS: Settings = {
   scope: "all",
   format: "jpeg",
   scale: 1,
+  dpi: 0,
   quality: 90,
   name: "palmframe-carousel",
 }
 const STORAGE_KEY = "palmframe:export"
-const FORMAT_ICON = { jpeg: Jpg01Icon, png: Png01Icon, pdf: Pdf01Icon }
+const FORMATS = ["jpeg", "png", "webp", "pdf", "psd"] as const
+const FORMAT_ICON = {
+  jpeg: Jpg01Icon,
+  png: Png01Icon,
+  webp: Image02Icon,
+  pdf: Pdf01Icon,
+  psd: Layers01Icon,
+}
+const MIME = {
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+} as const
+// Slides are laid out at CSS 96 dpi, like the PDF: 1080 px is 11.25 in.
+const CSS_DPI = 96
 
 function readSettings(): Settings {
   try {
@@ -235,7 +256,10 @@ function ExportPanel({
       ? [editor.pageIndex]
       : project.pages.flatMap((p, i) => (excluded.has(p.id) ? [] : [i]))
   const busy = status.step === "rendering" || status.step === "packing"
-  const lossy = settings.format !== "png"
+  const lossy = ["jpeg", "webp", "pdf"].includes(settings.format)
+  const scale = settings.dpi ? settings.dpi / CSS_DPI : settings.scale
+  const pixelWidth = Math.round(project.width * scale)
+  const pixelHeight = Math.round(project.height * scale)
   const ext = settings.format === "jpeg" ? "jpg" : settings.format
   const name = slug(settings.name)
   // Several images travel as one .zip; a PDF or a single image downloads as is.
@@ -269,22 +293,30 @@ function ExportPanel({
     }
   }, [project, images])
 
+  const formatName = t(`formats.${settings.format}.name`)
+  const inches = (px: number) =>
+    (px / CSS_DPI).toLocaleString(locale, { maximumFractionDigits: 2 })
+
   const run = async () => {
     if (!pages.length) return
-    const type = settings.format === "png" ? "image/png" : "image/jpeg"
+    const { format, dpi } = settings
+    const type =
+      format === "pdf" || format === "psd" ? "image/jpeg" : MIME[format]
     const quality = settings.quality / 100
     try {
       const blobs: Blob[] = []
       for (const [n, i] of pages.entries()) {
         setStatus({ step: "rendering", done: n, total: pages.length })
-        const blob = await renderToBlob(
-          pageDoc(project, i),
-          images,
-          type,
-          settings.scale,
-          quality
-        )
+        const doc = pageDoc(project, i)
+        let blob =
+          format === "psd"
+            ? await renderPsd(doc, images, scale, dpi || 72)
+            : await renderToBlob(doc, images, type, scale, quality)
         if (!blob) throw new Error("canvas")
+        // Browsers that can't encode a type quietly fall back to PNG.
+        if (format !== "psd" && blob.type !== type)
+          throw new Error(t("unsupported", { format: formatName }))
+        if (dpi && format !== "pdf") blob = await withDpi(blob, dpi)
         blobs.push(blob)
       }
       setStatus({ step: "packing" })
@@ -295,8 +327,8 @@ function ExportPanel({
             jpeg,
             width: project.width,
             height: project.height,
-            pixelWidth: Math.round(project.width * settings.scale),
-            pixelHeight: Math.round(project.height * settings.scale),
+            pixelWidth,
+            pixelHeight,
           }))
         )
       } else if (blobs.length > 1) {
@@ -320,7 +352,7 @@ function ExportPanel({
       pageDoc(project, editor.pageIndex),
       images,
       "image/png",
-      settings.scale
+      scale
     )
     if (!blob) return
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
@@ -328,7 +360,6 @@ function ExportPanel({
     setTimeout(() => setCopied(false), 1500)
   }
 
-  const formatName = t(`formats.${settings.format}.name`)
   const primary =
     settings.format === "pdf"
       ? t("exportPdf", { count: pages.length })
@@ -380,7 +411,7 @@ function ExportPanel({
           onKeyDown={roving({ axis: "x", select: true })}
           className="grid grid-cols-3 gap-1.5"
         >
-          {(["jpeg", "png", "pdf"] as const).map((f) => {
+          {FORMATS.map((f) => {
             const on = settings.format === f
             return (
               <button
@@ -415,18 +446,34 @@ function ExportPanel({
 
       <div className="flex flex-col gap-2">
         <Label
-          aside={`${Math.round(project.width * settings.scale)} × ${Math.round(project.height * settings.scale)} px`}
+          aside={
+            settings.dpi
+              ? t("printSize", {
+                  width: inches(project.width),
+                  height: inches(project.height),
+                  pixels: `${pixelWidth} × ${pixelHeight}`,
+                })
+              : `${pixelWidth} × ${pixelHeight} px`
+          }
         >
           {t("size")}
         </Label>
-        <Segmented<"1" | "2" | "3">
+        <Segmented<Size>
           label={t("size")}
-          value={String(settings.scale) as "1" | "2" | "3"}
-          onChange={(v) => set({ scale: Number(v) as 1 | 2 | 3 })}
+          value={String(settings.dpi || settings.scale) as Size}
+          onChange={(v) =>
+            set(
+              v === "300" || v === "600"
+                ? { dpi: Number(v) as 300 | 600 }
+                : { dpi: 0, scale: Number(v) as 1 | 2 | 3 }
+            )
+          }
           options={[
             { id: "1", label: "1×" },
             { id: "2", label: "2×" },
             { id: "3", label: "3×" },
+            { id: "300", label: t("dpi", { dpi: 300 }) },
+            { id: "600", label: t("dpi", { dpi: 600 }) },
           ]}
         />
       </div>

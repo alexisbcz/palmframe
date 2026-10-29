@@ -1,7 +1,9 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  Add01Icon,
   ArrowDown01Icon,
+  Cancel01Icon,
   CheckmarkCircle02Icon,
   InstagramIcon,
   LinkSquare02Icon,
@@ -41,7 +43,7 @@ import type {
   PublishAs,
   PublishMode,
   PublishResult,
-} from "@/lib/zernio.server"
+} from "@/lib/instagram.server"
 
 import { pageDoc, type ComicProject } from "../comic-canvas/model"
 import { renderToBlob, type ImageCache } from "../comic-canvas/render"
@@ -52,7 +54,6 @@ import { messages } from "./publish.messages"
 const MAX_CAROUSEL = 10
 const MAX_CAPTION = 2200
 const MAX_HASHTAGS = 30
-const ZERNIO_APP = "https://zernio.com/dashboard"
 const CAPTION_KEY = "palmframe:caption"
 // Outline toggles: the chosen option gets the muted fill, not the primary black.
 const SELECTED = "data-selected:bg-muted data-selected:text-foreground"
@@ -123,25 +124,104 @@ type AccountsState =
   | { status: "error"; message: string }
   | { status: "ready"; accounts: InstagramAccount[] }
 
+async function fetchAccounts(init?: RequestInit, query = "") {
+  const res = await fetch(`/api/instagram/accounts${query}`, init)
+  const body = await res.json()
+  if (!res.ok) throw new Error(body.error ?? res.statusText)
+  return body.accounts as InstagramAccount[]
+}
+
 function useAccounts() {
   const [state, setState] = React.useState<AccountsState>({
     status: "loading",
   })
-  const load = React.useCallback(async () => {
-    setState({ status: "loading" })
+  const load = React.useCallback(async (quiet = false) => {
+    if (!quiet) setState({ status: "loading" })
     try {
-      const res = await fetch("/api/zernio/accounts")
-      const body = await res.json()
-      if (!res.ok) throw new Error(body.error ?? res.statusText)
-      setState({ status: "ready", accounts: body.accounts })
+      const accounts = await fetchAccounts()
+      setState({ status: "ready", accounts })
+      return accounts
     } catch (e) {
       setState({ status: "error", message: (e as Error).message })
+      return null
     }
   }, [])
   React.useEffect(() => {
     load()
   }, [load])
-  return [state, load] as const
+  const disconnect = React.useCallback(async (id: string) => {
+    const accounts = await fetchAccounts(
+      { method: "DELETE" },
+      `?id=${encodeURIComponent(id)}`
+    )
+    setState({ status: "ready", accounts })
+  }, [])
+  return { state, load, disconnect }
+}
+
+// Instagram's login runs in a popup, so the dialog keeps its caption and
+// settings; the callback page posts the outcome back and closes.
+const CONNECT_ERRORS: Record<string, ConnectError> = {
+  oauth_denied: "cancelled",
+  connection_cancelled: "cancelled",
+  personal_account_not_supported: "personal",
+  account_limit_exceeded: "unavailable",
+  profile_limit_exceeded: "unavailable",
+  payment_required: "unavailable",
+}
+type ConnectError = "cancelled" | "personal" | "unavailable" | "failed"
+
+function useConnect(onConnected: (username: string) => void) {
+  const [connecting, setConnecting] = React.useState(false)
+  const [error, setError] = React.useState<ConnectError | null>(null)
+  const popup = React.useRef<Window | null>(null)
+  const done = React.useRef(onConnected)
+  done.current = onConnected
+
+  React.useEffect(() => {
+    const onMessage = (e: MessageEvent) => {
+      if (
+        e.origin !== location.origin ||
+        e.data?.type !== "palmframe:instagram"
+      )
+        return
+      setConnecting(false)
+      popup.current = null
+      if (e.data.ok) done.current(String(e.data.username ?? ""))
+      else setError(CONNECT_ERRORS[e.data.error] ?? "failed")
+    }
+    window.addEventListener("message", onMessage)
+    return () => window.removeEventListener("message", onMessage)
+  }, [])
+
+  // Closed without an answer: maybe it connected anyway, so look again.
+  React.useEffect(() => {
+    if (!connecting) return
+    const id = setInterval(() => {
+      if (popup.current?.closed) {
+        popup.current = null
+        setConnecting(false)
+        done.current("")
+      }
+    }, 600)
+    return () => clearInterval(id)
+  }, [connecting])
+
+  const connect = () => {
+    setError(null)
+    const next = encodeURIComponent(location.pathname + location.search)
+    const url = `/api/instagram/connect?popup=1&next=${next}`
+    const w = window.open(
+      url,
+      "palmframe-instagram",
+      "popup,width=520,height=720"
+    )
+    // Popups blocked: do the same in this tab and come back here after.
+    if (!w) return void location.assign(`/api/instagram/connect?next=${next}`)
+    popup.current = w
+    setConnecting(true)
+  }
+  return { connect, connecting, error }
 }
 
 // An hour from now, rounded to the quarter, as a datetime-local value.
@@ -168,8 +248,13 @@ function PublishDialog({
 }) {
   const t = useT(messages)
   const { locale } = useLocale()
-  const [accounts, reloadAccounts] = useAccounts()
+  const { state: accounts, load: reloadAccounts, disconnect } = useAccounts()
   const [accountId, setAccountId] = React.useState<string | null>(null)
+  const connection = useConnect(async (username) => {
+    const list = await reloadAccounts(true)
+    const added = username && list?.find((a) => a.username === username)
+    if (added) setAccountId(added.id)
+  })
   const count = project.pages.length
   const tall = project.height / project.width > 1.25 + 0.01
   const [as, setAs] = React.useState<PublishAs>(
@@ -192,8 +277,12 @@ function PublishDialog({
   const [error, setError] = React.useState<string | null>(null)
   const idempotencyKey = React.useRef(crypto.randomUUID())
 
+  // Keep a valid choice as accounts come and go.
   React.useEffect(() => {
-    if (accounts.status === "ready" && !accountId)
+    if (
+      accounts.status === "ready" &&
+      !accounts.accounts.some((a) => a.id === accountId)
+    )
       setAccountId(accounts.accounts[0]?.id ?? null)
   }, [accounts, accountId])
 
@@ -270,7 +359,7 @@ function PublishDialog({
         form.append("slide", blob, `slide-${i + 1}.jpg`)
       }
       setPhase({ step: "uploading" })
-      const res = await fetch("/api/zernio/publish", {
+      const res = await fetch("/api/instagram/publish", {
         method: "POST",
         headers: { "idempotency-key": idempotencyKey.current },
         body: form,
@@ -329,7 +418,12 @@ function PublishDialog({
                   state={accounts}
                   value={accountId}
                   onChange={setAccountId}
-                  onRetry={reloadAccounts}
+                  onRetry={() => reloadAccounts()}
+                  onConnect={connection.connect}
+                  onDisconnect={disconnect}
+                  connecting={connection.connecting}
+                  connectError={connection.error}
+                  isDisabled={busy}
                   t={t}
                 />
               </Field>
@@ -402,9 +496,6 @@ function PublishDialog({
                   <ToggleGroupItem className={SELECTED} id="schedule">
                     {t("schedule")}
                   </ToggleGroupItem>
-                  <ToggleGroupItem className={SELECTED} id="draft">
-                    {t("draft")}
-                  </ToggleGroupItem>
                 </ToggleGroup>
                 {mode === "schedule" && (
                   <Input
@@ -475,11 +566,7 @@ function PublishDialog({
               {t("cancel")}
             </Button>
             <Button variant="outline" isDisabled={!canSubmit} onPress={submit}>
-              {mode === "now"
-                ? t("publishNow")
-                : mode === "schedule"
-                  ? t("scheduleSubmit")
-                  : t("saveDraft")}
+              {mode === "now" ? t("publishNow") : t("scheduleSubmit")}
             </Button>
           </DialogFooter>
         </>
@@ -569,14 +656,29 @@ function AccountPicker({
   value,
   onChange,
   onRetry,
+  onConnect,
+  onDisconnect,
+  connecting,
+  connectError,
+  isDisabled,
   t,
 }: {
   state: AccountsState
   value: string | null
   onChange: (id: string) => void
   onRetry: () => void
+  onConnect: () => void
+  onDisconnect: (id: string) => Promise<void>
+  connecting: boolean
+  connectError: ConnectError | null
+  isDisabled: boolean
   t: Translate<(typeof messages)["en"]>
 }) {
+  // Disconnecting asks once more on the same button.
+  const [confirming, setConfirming] = React.useState<string | null>(null)
+  const [removing, setRemoving] = React.useState<string | null>(null)
+  const [removeError, setRemoveError] = React.useState<string | null>(null)
+
   if (state.status === "loading")
     return (
       <div className="flex items-center gap-2 rounded-lg border p-2 text-sm text-muted-foreground">
@@ -596,76 +698,132 @@ function AccountPicker({
         </AlertDescription>
       </Alert>
     )
+
+  const connectButton = (
+    <Button
+      size="sm"
+      variant="outline"
+      isDisabled={connecting || isDisabled}
+      onPress={onConnect}
+    >
+      {connecting ? (
+        <Spinner data-icon="inline-start" />
+      ) : (
+        <HugeiconsIcon
+          icon={state.accounts.length ? Add01Icon : InstagramIcon}
+          strokeWidth={2}
+          data-icon="inline-start"
+        />
+      )}
+      {connecting
+        ? t("connecting")
+        : state.accounts.length
+          ? t("addAccount")
+          : t("connect")}
+    </Button>
+  )
+  const feedback = (connectError || removeError) && (
+    <p className="text-xs text-destructive">
+      {removeError ?? t(`connectError.${connectError!}`)}
+    </p>
+  )
+
   if (!state.accounts.length)
     return (
       <div className="flex flex-col items-start gap-2 rounded-lg border border-dashed p-3 text-sm">
         <span className="text-muted-foreground">{t("noAccounts")}</span>
-        <LinkButton
-          size="sm"
-          variant="outline"
-          href={ZERNIO_APP}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("connect")}
-          <HugeiconsIcon
-            icon={LinkSquare02Icon}
-            strokeWidth={2}
-            data-icon="inline-end"
-          />
-        </LinkButton>
+        {connectButton}
+        {feedback}
       </div>
     )
+
+  const remove = async (id: string) => {
+    if (confirming !== id) return setConfirming(id)
+    setConfirming(null)
+    setRemoving(id)
+    setRemoveError(null)
+    try {
+      await onDisconnect(id)
+    } catch (e) {
+      setRemoveError((e as Error).message)
+    } finally {
+      setRemoving(null)
+    }
+  }
+
   return (
-    <div
-      role="radiogroup"
-      data-roving-group
-      onKeyDown={roving({ axis: "y", select: true })}
-      aria-label={t("account")}
-      className="flex flex-col gap-1"
-    >
-      {state.accounts.map((a) => {
-        const on = a.id === value
-        return (
-          <button
-            key={a.id}
-            type="button"
-            role="radio"
-            data-roving
-            tabIndex={on ? 0 : -1}
-            aria-checked={on}
-            className={cn(
-              "flex cursor-pointer items-center gap-2.5 rounded-lg border p-2 text-start transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
-              on && "border-amber-500 bg-amber-500/10 hover:bg-amber-500/15"
-            )}
-            onClick={() => onChange(a.id)}
-          >
-            <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
-              {a.picture ? (
-                <img
-                  src={a.picture}
-                  alt=""
-                  className="size-full object-cover"
-                />
-              ) : (
-                <HugeiconsIcon
-                  icon={InstagramIcon}
-                  strokeWidth={2}
-                  className="size-4"
-                />
+    <div className="flex flex-col items-start gap-2">
+      <div
+        role="radiogroup"
+        data-roving-group
+        onKeyDown={roving({ axis: "y", select: true })}
+        aria-label={t("account")}
+        className="flex w-full flex-col gap-1"
+      >
+        {state.accounts.map((a) => {
+          const on = a.id === value
+          const name = a.displayName || a.username
+          return (
+            <div
+              key={a.id}
+              className={cn(
+                "flex items-center gap-1 rounded-lg border pe-1 transition-colors",
+                on && "border-amber-500 bg-amber-500/10"
               )}
-            </span>
-            <span className="flex min-w-0 flex-col">
-              <span className="truncate text-sm font-medium">
-                {a.displayName || a.username}
-              </span>
-              <span className="truncate text-xs text-muted-foreground">
-                @{a.username}
-              </span>
-            </span>
-          </button>
-        )
-      })}
+            >
+              <button
+                type="button"
+                role="radio"
+                data-roving
+                tabIndex={on ? 0 : -1}
+                aria-checked={on}
+                className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 rounded-lg p-2 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() => onChange(a.id)}
+              >
+                <span className="flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
+                  {a.picture ? (
+                    <img
+                      src={a.picture}
+                      alt=""
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <HugeiconsIcon
+                      icon={InstagramIcon}
+                      strokeWidth={2}
+                      className="size-4"
+                    />
+                  )}
+                </span>
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate text-sm font-medium">{name}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    @{a.username}
+                  </span>
+                </span>
+              </button>
+              <Button
+                size={confirming === a.id ? "xs" : "icon-xs"}
+                variant={confirming === a.id ? "destructive" : "ghost"}
+                aria-label={t("disconnect", { name: `@${a.username}` })}
+                isDisabled={isDisabled || removing === a.id}
+                onPress={() => remove(a.id)}
+                onBlur={() => setConfirming((c) => (c === a.id ? null : c))}
+              >
+                {removing === a.id ? (
+                  <Spinner />
+                ) : confirming === a.id ? (
+                  t("confirmDisconnect")
+                ) : (
+                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+                )}
+              </Button>
+            </div>
+          )
+        })}
+      </div>
+      {connectButton}
+      {feedback}
     </div>
   )
 }
@@ -684,18 +842,16 @@ function Done({
   onClose: () => void
 }) {
   const title =
-    mode === "draft"
-      ? t("savedDraft")
-      : mode === "schedule" && result.scheduledFor
-        ? t("scheduled", {
-            date: new Date(result.scheduledFor).toLocaleString(locale, {
-              dateStyle: "long",
-              timeStyle: "short",
-            }),
-          })
-        : result.status === "published"
-          ? t("published")
-          : t("retrying")
+    mode === "schedule" && result.scheduledFor
+      ? t("scheduled", {
+          date: new Date(result.scheduledFor).toLocaleString(locale, {
+            dateStyle: "long",
+            timeStyle: "short",
+          }),
+        })
+      : result.status === "published"
+        ? t("published")
+        : t("retrying")
   return (
     <>
       <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -712,14 +868,6 @@ function Done({
         ))}
       </div>
       <DialogFooter>
-        <LinkButton
-          variant="outline"
-          href={ZERNIO_APP}
-          target="_blank"
-          rel="noreferrer"
-        >
-          {t("openZernio")}
-        </LinkButton>
         {result.url && (
           <LinkButton href={result.url} target="_blank" rel="noreferrer">
             {t("view")}

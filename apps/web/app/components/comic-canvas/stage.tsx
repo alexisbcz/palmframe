@@ -16,6 +16,7 @@ import {
 import type { ComicEditor } from "./use-editor"
 import { useT } from "@/i18n/core"
 import { messages } from "./stage.messages"
+import { EditOverlay } from "./mask-overlay"
 
 const MIN_SIZE = 24
 const HANDLES = [
@@ -449,6 +450,8 @@ export function Stage({
                 </div>
               )
           )}
+
+          <EditOverlay editor={editor} zoom={zoom} />
 
           {guides.x.map((x) => (
             <div

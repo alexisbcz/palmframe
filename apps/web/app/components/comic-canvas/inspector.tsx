@@ -68,6 +68,8 @@ import {
 import type { ComicEditor } from "./use-editor"
 import { hasPrompt } from "./use-generator"
 import { messages } from "./inspector.messages"
+import { EditSection } from "./edit-section"
+import { PostprocessSection } from "./postprocess-tools"
 
 type Setter<L extends Layer> = <K extends keyof L>(key: K, value: L[K]) => void
 
@@ -471,6 +473,9 @@ function PanelSections({
           </>
         )}
       </Section>
+
+      {layer.src && <EditSection panel={layer} editor={editor} />}
+      {layer.src && <PostprocessSection panel={layer} editor={editor} />}
 
       {layer.src && (
         <Section title={t("sections.filters")}>

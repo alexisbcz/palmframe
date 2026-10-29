@@ -409,6 +409,11 @@ const KINDS = [
   "panel_ref",
   "portrait",
   "sheet",
+  "story_plan",
+  "upscale",
+  "remove_bg",
+  "face_fix",
+  "restyle",
 ] as const
 
 function kindLabel(t: T, kind: string) {

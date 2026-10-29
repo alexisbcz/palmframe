@@ -8,7 +8,9 @@ import {
   FolderLibraryIcon,
   LanguageSkillIcon,
   Logout01Icon,
+  CommandIcon,
   Moon02Icon,
+  Settings01Icon,
   Sun03Icon,
 } from "@hugeicons/core-free-icons"
 
@@ -19,6 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -31,10 +34,14 @@ import { GitHubIcon, REPO } from "@/components/github-button"
 import { messages as toggles } from "@/components/toggles.messages"
 import { LOCALES, LOCALE_NAMES, isLocale, useLocale, useT } from "@/i18n/core"
 import { setCredits, useCredits } from "@/lib/credits-store"
-import { PLANS, type PlanId } from "@/lib/credits"
+import type { PlanId } from "@/lib/credits"
 import type { Viewer } from "@/lib/database"
 import { messages } from "./account.messages"
 
+const MOD =
+  typeof navigator !== "undefined" && /Mac|iP/.test(navigator.platform)
+    ? "⌘"
+    : "Ctrl "
 const FLAG = "h-3 w-[1.125rem] rounded-[2px] ring-1 ring-foreground/15"
 const THEMES = [
   { id: "light", icon: Sun03Icon },
@@ -48,6 +55,12 @@ export function useBalance() {
     number | null | undefined
   React.useEffect(() => setCredits(loaded ?? null), [loaded])
   return useCredits() ?? loaded ?? null
+}
+
+// True when the person's OpenRouter account pays for renders, edits and
+// story plans; credits then only pay for the local tools.
+export function useOpenRouter() {
+  return !!useRouteLoaderData("root")?.openrouter
 }
 
 export function usePlan() {
@@ -77,13 +90,30 @@ export function Avatar({
   return (
     <span
       aria-hidden
-      style={avatarStyle(viewer.id)}
+      style={viewer.avatarUrl ? undefined : avatarStyle(viewer.id)}
       className={cn(
         "flex shrink-0 items-center justify-center rounded-full font-semibold text-white ring-1 ring-foreground/10 [text-shadow:0_1px_1px_rgb(0_0_0/0.25)]",
         className
       )}
     >
-      {initials(viewer.name)}
+      {viewer.avatarUrl ? (
+        <img
+          src={viewer.avatarUrl}
+          alt=""
+          className="size-full rounded-full object-cover"
+        />
+      ) : (
+        initials(viewer.name)
+      )}
+    </span>
+  )
+}
+
+// The balance as a slanted badge, Higgsfield-style, in the app's amber.
+function CreditsPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="ms-auto inline-flex shrink-0 -skew-x-[8deg] items-center rounded-[5px] bg-amber-400 px-1.5 py-px text-xs font-extrabold whitespace-nowrap text-amber-950 italic tabular-nums">
+      {children}
     </span>
   )
 }
@@ -94,63 +124,6 @@ function Tile({ children }: { children: React.ReactNode }) {
     <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-foreground ring-1 ring-foreground/5 [&_svg]:size-3.5">
       {children}
     </span>
-  )
-}
-
-// Balance, plan and the next step, as one menu item.
-function CreditsCard({
-  balance,
-  plan,
-}: {
-  balance: number | null
-  plan: PlanId | "free"
-}) {
-  const t = useT(messages)
-  const { locale } = useLocale()
-  const allowance = plan === "free" ? 100 : PLANS[plan].credits
-  const fill =
-    balance === null ? 0 : Math.min(1, Math.max(0, balance / allowance))
-  const n = (x: number) => x.toLocaleString(locale)
-  return (
-    <div className="flex w-full flex-col gap-2 rounded-lg border bg-muted/40 p-3 transition-colors group-data-focused/dropdown-menu-item:border-foreground/25 group-data-focused/dropdown-menu-item:bg-muted/70">
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-xs text-muted-foreground">
-          {t("credits.label")}
-        </span>
-        <span
-          className={cn(
-            "rounded px-1.5 py-0.5 text-[10px] leading-none font-bold tracking-wide uppercase italic",
-            plan === "free"
-              ? "bg-foreground/10 text-muted-foreground"
-              : "bg-gradient-to-r from-amber-300 to-orange-500 text-black"
-          )}
-        >
-          {t(`credits.plans.${plan}`)}
-        </span>
-      </div>
-      <span className="text-2xl leading-none font-semibold tabular-nums">
-        {balance === null ? "–" : n(balance)}
-      </span>
-      <span className="h-1.5 overflow-hidden rounded-full bg-foreground/10">
-        <span
-          className="block h-full rounded-full bg-gradient-to-r from-amber-300 to-orange-500"
-          style={{ width: `${Math.round(fill * 100)}%` }}
-        />
-      </span>
-      <span className="text-xs text-muted-foreground">
-        {plan === "free"
-          ? t("credits.allowanceFree")
-          : t("credits.allowance", { n: n(allowance) })}
-      </span>
-      <span
-        className={cn(
-          buttonVariants({ variant: "outline", size: "sm" }),
-          "w-full bg-background"
-        )}
-      >
-        {plan === "free" ? t("credits.upgrade") : t("credits.buy")}
-      </span>
-    </div>
   )
 }
 
@@ -172,7 +145,6 @@ export function AccountMenu() {
   const { theme, setTheme } = useTheme()
   const { locale, setLocale } = useLocale()
   const balance = useBalance()
-  const plan = usePlan()
   const navigate = useNavigate()
   const submit = useSubmit()
 
@@ -198,10 +170,16 @@ export function AccountMenu() {
       </Button>
       <DropdownMenu
         placement="bottom end"
-        className="w-72 max-w-[calc(100vw-2rem)]"
+        // Roomier rows than the default menu: this one is read, not scanned.
+        className="w-80 max-w-[calc(100vw-2rem)] **:data-[slot=dropdown-menu-item]:gap-2.5 **:data-[slot=dropdown-menu-item]:py-2 **:data-[slot=dropdown-menu-sub-trigger]:gap-2.5 **:data-[slot=dropdown-menu-sub-trigger]:py-2 **:[[role=menu]]:flex **:[[role=menu]]:flex-col **:[[role=menu]]:gap-0.5"
         onAction={(key) => {
           if (key === "projects") navigate("/projects")
-          if (key === "billing" || key === "pricing") navigate("/pricing")
+          if (key === "billing") navigate("/pricing")
+          if (key === "settings") navigate("/settings")
+          if (key === "commands")
+            window.dispatchEvent(
+              new KeyboardEvent("keydown", { key: "k", metaKey: true })
+            )
           if (key === "github") window.open(REPO, "_blank", "noreferrer")
           if (key === "logout")
             submit(null, { method: "post", action: "/logout" })
@@ -217,31 +195,39 @@ export function AccountMenu() {
               <span className="truncate font-normal">{viewer.email}</span>
             </span>
           </DropdownMenuLabel>
-          <DropdownMenuItem
-            id="billing"
-            textValue={`${t("account.billing")}: ${
-              balance === null
-                ? ""
-                : t("credits.balance", {
-                    count: balance,
-                    n: balance.toLocaleString(locale),
-                  })
-            }`}
-            className="mb-1 p-0 focus:bg-transparent"
-          >
-            <CreditsCard balance={balance} plan={plan} />
-          </DropdownMenuItem>
-          <DropdownMenuItem id="pricing" textValue={t("account.billing")}>
+          <DropdownMenuItem id="billing" textValue={t("account.billing")}>
             <Tile>
               <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
             </Tile>
-            {t("account.billing")}
+            <span className="min-w-0 truncate">{t("account.billing")}</span>
+            {balance !== null && (
+              <CreditsPill>
+                {t("credits.balance", {
+                  count: balance,
+                  n: balance.toLocaleString(locale),
+                })}
+              </CreditsPill>
+            )}
           </DropdownMenuItem>
           <DropdownMenuItem id="projects" textValue={t("account.projects")}>
             <Tile>
               <HugeiconsIcon icon={FolderLibraryIcon} strokeWidth={2} />
             </Tile>
             {t("account.projects")}
+          </DropdownMenuItem>
+          <DropdownMenuItem id="settings" textValue={t("account.settings")}>
+            <Tile>
+              <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />
+            </Tile>
+            {t("account.settings")}
+            <DropdownMenuShortcut>{MOD},</DropdownMenuShortcut>
+          </DropdownMenuItem>
+          <DropdownMenuItem id="commands" textValue={t("account.commands")}>
+            <Tile>
+              <HugeiconsIcon icon={CommandIcon} strokeWidth={2} />
+            </Tile>
+            {t("account.commands")}
+            <DropdownMenuShortcut>{MOD}K</DropdownMenuShortcut>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
@@ -255,11 +241,6 @@ export function AccountMenu() {
               />
             </Tile>
             {tt("theme.label")}
-            <span className="ms-auto ps-3 text-xs text-muted-foreground">
-              {tt(
-                `theme.${theme === "light" || theme === "dark" ? theme : "system"}`
-              )}
-            </span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent
             className="w-36"
@@ -281,9 +262,6 @@ export function AccountMenu() {
               <HugeiconsIcon icon={LanguageSkillIcon} strokeWidth={2} />
             </Tile>
             {tt("language")}
-            <span className="ms-auto ps-3 text-xs text-muted-foreground">
-              {LOCALE_NAMES[locale]}
-            </span>
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent
             className="w-40"

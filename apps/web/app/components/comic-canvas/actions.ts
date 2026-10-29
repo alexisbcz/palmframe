@@ -196,3 +196,46 @@ export async function pdf(
   )
   return new Blob(parts, { type: "application/pdf" })
 }
+
+// Stamps print resolution into a PNG (pHYs chunk) or JPEG (JFIF density),
+// so layout apps place the image at its physical size. Other types pass.
+export async function withDpi(blob: Blob, dpi: number) {
+  const data = new Uint8Array(await blob.arrayBuffer())
+  if (blob.type === "image/png") {
+    const ppm = Math.round(dpi / 0.0254)
+    const chunk = new Uint8Array(21)
+    const view = new DataView(chunk.buffer)
+    view.setUint32(0, 9)
+    chunk.set(new TextEncoder().encode("pHYs"), 4)
+    view.setUint32(8, ppm)
+    view.setUint32(12, ppm)
+    chunk[16] = 1
+    view.setUint32(17, crc32(chunk.subarray(4, 17)))
+    // Right after the signature (8 bytes) and IHDR (25 bytes).
+    return new Blob([data.subarray(0, 33), chunk, data.subarray(33)], {
+      type: blob.type,
+    })
+  }
+  if (blob.type === "image/jpeg") {
+    const view = new DataView(data.buffer)
+    const jfif =
+      view.getUint16(2) === 0xffe0 && view.getUint32(6) === 0x4a464946
+    if (jfif) {
+      data[13] = 1
+      view.setUint16(14, dpi)
+      view.setUint16(16, dpi)
+      return new Blob([data], { type: blob.type })
+    }
+    const app0 = new Uint8Array(18)
+    const head = new DataView(app0.buffer)
+    head.setUint16(0, 0xffe0)
+    head.setUint16(2, 16)
+    app0.set([0x4a, 0x46, 0x49, 0x46, 0, 1, 1, 1], 4)
+    head.setUint16(12, dpi)
+    head.setUint16(14, dpi)
+    return new Blob([data.subarray(0, 2), app0, data.subarray(2)], {
+      type: blob.type,
+    })
+  }
+  return blob
+}

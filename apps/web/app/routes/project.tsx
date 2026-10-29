@@ -3,7 +3,7 @@ import { data, redirect } from "react-router"
 import { ComicCanvasEditor } from "@/components/comic-canvas/editor"
 import { toProject } from "@/components/comic-canvas/model"
 import { getViewer } from "@/lib/supabase.server"
-import { zernioEnabled } from "@/lib/zernio.server"
+import { instagramEnabled } from "@/lib/instagram.server"
 
 import type { Route } from "./+types/project"
 
@@ -36,7 +36,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       revision: row.revision,
       hasCover: !!row.cover,
       project,
-      zernio: zernioEnabled(),
+      instagram: instagramEnabled(),
     },
     { headers }
   )
@@ -46,7 +46,9 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 export const shouldRevalidate = () => false
 
 export default function Project({ loaderData }: Route.ComponentProps) {
-  const { zernio, ...cloud } = loaderData
+  const { instagram, ...cloud } = loaderData
   // A new key per project, so switching projects starts a fresh editor.
-  return <ComicCanvasEditor key={cloud.id} zernio={zernio} cloud={cloud} />
+  return (
+    <ComicCanvasEditor key={cloud.id} instagram={instagram} cloud={cloud} />
+  )
 }

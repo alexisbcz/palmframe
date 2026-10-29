@@ -38,9 +38,11 @@ export const messages = defineMessages({
     },
     sent: {
       title: "Check your inbox",
-      link: "We sent a sign-in link to {email}. Open it in this browser to sign in.",
+      link: "We sent a sign-in link to {email}.",
+      linkHint: "Open it in this browser to sign in.",
       confirm:
-        "We sent a link to confirm your address to {email}. Open it in this browser to finish.",
+        "We sent a link to confirm your address to {email}.",
+      confirmHint: "Open it in this browser to finish.",
       reset: "We sent a link to choose a new password to {email}.",
       resend: "Resend",
       resent: "Sent again.",
@@ -73,6 +75,7 @@ export const messages = defineMessages({
       terms: "terms of use",
       privacy: "privacy policy",
       back: "Back to home",
+      goBack: "Go back",
       termsTitle: "Terms of use",
       termsP1:
         "Palmframe lets you write, draw and publish comics. You keep ownership of what you make. When you post a comic, you allow Palmframe to show it.",
@@ -84,7 +87,7 @@ export const messages = defineMessages({
       privacyP1:
         "We keep your email address, your name and what you make in the editor, to run your account. We never sell or share any of it for advertising.",
       privacyP2:
-        "Supabase stores accounts, projects and images, and Vercel hosts the site, for this service only. When you post to Instagram, the images go through Zernio.",
+        "Supabase stores accounts, projects and images, and Vercel hosts the site, for this service only. When you post to Instagram, the images go through the publishing service that delivers them to Instagram.",
       privacyP3:
         "You can ask us to export or delete your data at any time by writing to us.",
     },
@@ -125,9 +128,11 @@ export const messages = defineMessages({
     },
     sent: {
       title: "Vérifiez votre boîte mail",
-      link: "Nous avons envoyé un lien de connexion à {email}. Ouvrez-le dans ce navigateur pour vous connecter.",
+      link: "Nous avons envoyé un lien de connexion à {email}.",
+      linkHint: "Ouvrez-le dans ce navigateur pour vous connecter.",
       confirm:
-        "Nous avons envoyé un lien pour confirmer votre adresse à {email}. Ouvrez-le dans ce navigateur pour terminer.",
+        "Nous avons envoyé un lien pour confirmer votre adresse à {email}.",
+      confirmHint: "Ouvrez-le dans ce navigateur pour terminer.",
       reset:
         "Nous avons envoyé un lien pour choisir un nouveau mot de passe à {email}.",
       resend: "Renvoyer",
@@ -161,6 +166,7 @@ export const messages = defineMessages({
       terms: "conditions d’utilisation",
       privacy: "politique de confidentialité",
       back: "Retour à l’accueil",
+      goBack: "Retour",
       termsTitle: "Conditions d’utilisation",
       termsP1:
         "Palmframe permet d’écrire, de dessiner et de publier des bandes dessinées. Vous restez propriétaire de ce que vous créez ; en publiant une BD, vous autorisez Palmframe à l’afficher.",
@@ -172,7 +178,7 @@ export const messages = defineMessages({
       privacyP1:
         "Nous conservons votre adresse e-mail, votre nom et ce que vous créez dans l’éditeur, pour faire fonctionner votre compte. Rien n’est revendu ni partagé à des fins publicitaires.",
       privacyP2:
-        "Supabase stocke les comptes, les projets et les images, et Vercel héberge le site, dans le cadre de ce service uniquement. Quand vous publiez sur Instagram, les images passent par Zernio.",
+        "Supabase stocke les comptes, les projets et les images, et Vercel héberge le site, dans le cadre de ce service uniquement. Quand vous publiez sur Instagram, les images passent par le service de publication qui les transmet à Instagram.",
       privacyP3:
         "Vous pouvez demander l’export ou la suppression de vos données à tout moment en nous écrivant.",
     },
@@ -213,9 +219,11 @@ export const messages = defineMessages({
     },
     sent: {
       title: "Revisa tu correo",
-      link: "Hemos enviado un enlace de acceso a {email}. Ábrelo en este navegador para iniciar sesión.",
+      link: "Hemos enviado un enlace de acceso a {email}.",
+      linkHint: "Ábrelo en este navegador para iniciar sesión.",
       confirm:
-        "Hemos enviado un enlace para confirmar tu dirección a {email}. Ábrelo en este navegador para terminar.",
+        "Hemos enviado un enlace para confirmar tu dirección a {email}.",
+      confirmHint: "Ábrelo en este navegador para terminar.",
       reset:
         "Hemos enviado un enlace para elegir una contraseña nueva a {email}.",
       resend: "Reenviar",
@@ -249,6 +257,7 @@ export const messages = defineMessages({
       terms: "condiciones de uso",
       privacy: "política de privacidad",
       back: "Volver al inicio",
+      goBack: "Volver",
       termsTitle: "Condiciones de uso",
       termsP1:
         "Palmframe te permite escribir, dibujar y publicar cómics. Lo que creas sigue siendo tuyo. Al publicar un cómic, permites que Palmframe lo muestre.",
@@ -260,7 +269,7 @@ export const messages = defineMessages({
       privacyP1:
         "Guardamos tu correo, tu nombre y lo que creas en el editor para que tu cuenta funcione. Nunca lo vendemos ni lo compartimos con fines publicitarios.",
       privacyP2:
-        "Supabase guarda las cuentas, los proyectos y las imágenes, y Vercel aloja el sitio, solo para este servicio. Cuando publicas en Instagram, las imágenes pasan por Zernio.",
+        "Supabase guarda las cuentas, los proyectos y las imágenes, y Vercel aloja el sitio, solo para este servicio. Cuando publicas en Instagram, las imágenes pasan por el servicio de publicación que las envía a Instagram.",
       privacyP3:
         "Puedes pedirnos en cualquier momento que exportemos o borremos tus datos escribiéndonos.",
     },
@@ -302,9 +311,11 @@ export const messages = defineMessages({
     },
     sent: {
       title: "Sieh in deinem Postfach nach",
-      link: "Wir haben einen Anmeldelink an {email} geschickt. Öffne ihn in diesem Browser, um dich anzumelden.",
+      link: "Wir haben einen Anmeldelink an {email} geschickt.",
+      linkHint: "Öffne ihn in diesem Browser, um dich anzumelden.",
       confirm:
-        "Wir haben einen Link zur Bestätigung deiner Adresse an {email} geschickt. Öffne ihn in diesem Browser, um fertig zu werden.",
+        "Wir haben einen Link zur Bestätigung deiner Adresse an {email} geschickt.",
+      confirmHint: "Öffne ihn in diesem Browser, um fertig zu werden.",
       reset:
         "Wir haben einen Link für ein neues Passwort an {email} geschickt.",
       resend: "Erneut senden",
@@ -342,6 +353,7 @@ export const messages = defineMessages({
       terms: "Nutzungsbedingungen",
       privacy: "Datenschutzerklärung",
       back: "Zurück zur Startseite",
+      goBack: "Zurück",
       termsTitle: "Nutzungsbedingungen",
       termsP1:
         "Mit Palmframe schreibst, zeichnest und veröffentlichst du Comics. Was du erstellst, gehört dir. Wenn du einen Comic veröffentlichst, erlaubst du Palmframe, ihn zu zeigen.",
@@ -353,7 +365,7 @@ export const messages = defineMessages({
       privacyP1:
         "Wir speichern deine E-Mail-Adresse, deinen Namen und was du im Editor erstellst, damit dein Konto funktioniert. Nichts davon wird verkauft oder für Werbung geteilt.",
       privacyP2:
-        "Supabase speichert Konten, Projekte und Bilder, Vercel hostet die Website, nur für diesen Dienst. Wenn du auf Instagram postest, laufen die Bilder über Zernio.",
+        "Supabase speichert Konten, Projekte und Bilder, Vercel hostet die Website, nur für diesen Dienst. Wenn du auf Instagram postest, laufen die Bilder über den Veröffentlichungsdienst, der sie an Instagram übergibt.",
       privacyP3:
         "Du kannst jederzeit per Nachricht an uns den Export oder die Löschung deiner Daten verlangen.",
     },
@@ -394,9 +406,11 @@ export const messages = defineMessages({
     },
     sent: {
       title: "Controlla la tua casella",
-      link: "Abbiamo inviato un link di accesso a {email}. Aprilo in questo browser per accedere.",
+      link: "Abbiamo inviato un link di accesso a {email}.",
+      linkHint: "Aprilo in questo browser per accedere.",
       confirm:
-        "Abbiamo inviato un link per confermare l’indirizzo a {email}. Aprilo in questo browser per finire.",
+        "Abbiamo inviato un link per confermare l’indirizzo a {email}.",
+      confirmHint: "Aprilo in questo browser per finire.",
       reset:
         "Abbiamo inviato un link per scegliere una nuova password a {email}.",
       resend: "Invia di nuovo",
@@ -430,6 +444,7 @@ export const messages = defineMessages({
       terms: "termini d’uso",
       privacy: "informativa sulla privacy",
       back: "Torna alla home",
+      goBack: "Indietro",
       termsTitle: "Termini d’uso",
       termsP1:
         "Palmframe ti permette di scrivere, disegnare e pubblicare fumetti. Ciò che crei resta tuo. Pubblicando un fumetto, autorizzi Palmframe a mostrarlo.",
@@ -441,7 +456,7 @@ export const messages = defineMessages({
       privacyP1:
         "Conserviamo la tua email, il tuo nome e ciò che crei nell’editor per far funzionare il tuo account. Non vendiamo né condividiamo nulla a fini pubblicitari.",
       privacyP2:
-        "Supabase conserva account, progetti e immagini, e Vercel ospita il sito, solo per questo servizio. Quando pubblichi su Instagram, le immagini passano da Zernio.",
+        "Supabase conserva account, progetti e immagini, e Vercel ospita il sito, solo per questo servizio. Quando pubblichi su Instagram, le immagini passano dal servizio di pubblicazione che le consegna a Instagram.",
       privacyP3:
         "Puoi chiederci in qualsiasi momento di esportare o cancellare i tuoi dati scrivendoci.",
     },
@@ -482,9 +497,11 @@ export const messages = defineMessages({
     },
     sent: {
       title: "メールをご確認ください",
-      link: "{email} にログインリンクを送信しました。このブラウザで開いてログインしてください。",
+      link: "{email} にログインリンクを送信しました。",
+      linkHint: "このブラウザで開いてログインしてください。",
       confirm:
-        "{email} にアドレス確認用のリンクを送信しました。このブラウザで開いて完了してください。",
+        "{email} にアドレス確認用のリンクを送信しました。",
+      confirmHint: "このブラウザで開いて完了してください。",
       reset: "{email} に新しいパスワード設定用のリンクを送信しました。",
       resend: "再送信",
       resent: "再送信しました。",
@@ -519,6 +536,7 @@ export const messages = defineMessages({
       terms: "利用規約",
       privacy: "プライバシーポリシー",
       back: "ホームに戻る",
+      goBack: "戻る",
       termsTitle: "利用規約",
       termsP1:
         "Palmframeは、マンガを書き、描き、公開するためのサービスです。作成したコンテンツの権利はお客様に帰属します。マンガを投稿することにより、お客様はPalmframeがそれを表示することを許諾するものとします。",
@@ -530,7 +548,7 @@ export const messages = defineMessages({
       privacyP1:
         "当社は、アカウントの運営のため、お客様のメールアドレス、お名前、およびエディターで作成されたコンテンツを保管します。これらを販売したり、広告目的で第三者と共有したりすることは一切ありません。",
       privacyP2:
-        "本サービスの提供のみを目的として、Supabaseがアカウント、プロジェクトおよび画像を保管し、Vercelがサイトをホストします。Instagramに投稿する場合、画像はZernioを経由します。",
+        "本サービスの提供のみを目的として、Supabaseがアカウント、プロジェクトおよび画像を保管し、Vercelがサイトをホストします。Instagramに投稿する場合、画像はInstagramへ配信する投稿サービスを経由します。",
       privacyP3:
         "お客様はいつでも当社にご連絡いただくことで、データのエクスポートまたは削除を請求できます。",
     },

@@ -79,6 +79,26 @@ export interface PanelLayer extends BaseLayer {
   seed?: number
   lockSeed?: boolean
   steps?: number
+  // Images the panel had before and after AI edits, newest first, so an
+  // edit can be compared and reverted.
+  versions?: PanelVersion[]
+}
+
+export interface PanelVersion {
+  src: string
+  // "original" is what the panel showed before its first edit.
+  kind:
+    | "original"
+    | "edit"
+    | "vary"
+    | "inpaint"
+    | "erase"
+    | "outpaint"
+    // Post-processing (postprocess-tools.tsx).
+    | "upscale"
+    | "remove_bg"
+    | "face_fix"
+    | "restyle"
 }
 
 export interface BubbleLayer extends BaseLayer {
@@ -375,6 +395,8 @@ export interface ComicProject {
   pages: ComicPage[]
   cast?: Character[]
   look?: Look
+  // Pages read right to left, manga style: layouts mirror, panels number from the right.
+  rtl?: boolean
 }
 
 // The single-slide view the renderer and the editor panels work on.
@@ -451,6 +473,7 @@ export function toProject(value: unknown): ComicProject | null {
     layers?: Layer[]
     cast?: Character[]
     look?: Look
+    rtl?: boolean
   } | null
   if (!v || typeof v.width !== "number" || typeof v.height !== "number")
     return null
@@ -467,6 +490,7 @@ export function toProject(value: unknown): ComicProject | null {
       pages,
       ...(cast && { cast }),
       ...(v.look && typeof v.look === "object" && { look: v.look }),
+      ...(v.rtl === true && { rtl: true }),
     }
   }
   if (v.version === 1 && Array.isArray(v.layers)) {

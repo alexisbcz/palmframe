@@ -52,9 +52,18 @@ The canvas can post carousels and Stories to Instagram through
 ZERNIO_API_KEY=sk_...
 ```
 
-The key stays on the server. Connect your Instagram account in Zernio first; the
-**Post** button then appears in the canvas header. `ZERNIO_API_URL` overrides the
-API base (default `https://zernio.com/api/v1`).
+The key stays on the server, and users never see Zernio. Each signed-in user
+gets their own Zernio profile (keyed by their user id) and connects one or more
+Instagram accounts from the **Post** dialog, in a popup. The server checks
+every account and post against the user's profile, because Zernio's posts API
+accepts any account on the key.
+
+Optional:
+
+- `INSTAGRAM_OAUTH_APP_ID`: the id of your own Meta app registered in Zernio
+  (`GET /v1/connect/oauth-apps`), so Instagram's consent screen names Palmframe
+  instead of Zernio.
+- `ZERNIO_API_URL` overrides the API base (default `https://zernio.com/api/v1`).
 
 ## Adding components
 

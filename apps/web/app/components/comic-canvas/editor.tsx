@@ -8,6 +8,7 @@ import {
   FloppyDiskIcon,
   FolderOpenIcon,
   ImageAdd01Icon,
+  PaintBoardIcon,
   Redo02Icon,
   SparklesIcon,
   SquareIcon,
@@ -31,10 +32,11 @@ import { CloudBar } from "@/components/account/cloud-bar"
 import { GitHubButton } from "@/components/github-button"
 import { LanguageToggle } from "@/components/language-toggle"
 import { ModeToggle } from "@/components/mode-toggle"
-import { PublishButton } from "@/components/zernio/publish-dialog"
+import { PublishButton } from "@/components/instagram/publish-dialog"
 
 import { Composer, type ComposerHandle } from "./composer"
 import { ExportButton } from "./export-panel"
+import { StoryButton } from "./story-panel"
 import { roving } from "./roving"
 import { download, insertImageFile, pickFile } from "./actions"
 import {
@@ -55,6 +57,7 @@ import {
 } from "./model"
 import type { ImageCache } from "./render"
 import { PageStrip } from "./page-strip"
+import { RestyleDialog, postprocessMessages } from "./postprocess-tools"
 import { Sidebar, type SidebarTab } from "./sidebar"
 import { Stage } from "./stage"
 import type { CloudProject } from "./use-cloud-sync"
@@ -117,13 +120,14 @@ function isTyping(target: EventTarget | null) {
   )
 }
 
-// `zernio` is on when the server has a ZERNIO_API_KEY: it adds posting to Instagram.
+// `instagram` is on when the server can post: signed-in users then connect
+// their own accounts from the Post dialog.
 // With `cloud`, the carousel is a project of the signed-in account and saves there.
 export function ComicCanvasEditor({
-  zernio = false,
+  instagram = false,
   cloud,
 }: {
-  zernio?: boolean
+  instagram?: boolean
   cloud?: CloudProject & { project: ComicProject }
 }) {
   const t = useT(messages)
@@ -132,6 +136,8 @@ export function ComicCanvasEditor({
   const viewer = useViewer()
   const generator = useGenerator(editor)
   const [tab, setTab] = React.useState<SidebarTab>("layers")
+  const tp = useT(postprocessMessages)
+  const [restyling, setRestyling] = React.useState(false)
   const composerRef = React.useRef<ComposerHandle>(null)
   // The composer mounts with the selection, so wait a frame before focusing.
   const focusComposer = React.useCallback(
@@ -268,6 +274,7 @@ export function ComicCanvasEditor({
                 }
                 if (key === "open") openProject()
                 if (key === "generate-all") generator.generateAll()
+                if (key === "restyle-all") setRestyling(true)
                 if (key === "save") saveProject()
                 if (key === "image")
                   pickFile("image/*").then(
@@ -295,6 +302,10 @@ export function ComicCanvasEditor({
                 <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
                 {t("menu.generateAll", { count: prompted })}
               </DropdownMenuItem>
+              <DropdownMenuItem id="restyle-all" isDisabled={busy}>
+                <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
+                {tp("restyle.menu")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem id="image">
                 <HugeiconsIcon icon={ImageAdd01Icon} strokeWidth={2} />
@@ -303,6 +314,7 @@ export function ComicCanvasEditor({
               </DropdownMenuItem>
             </DropdownMenu>
           </DropdownMenuTrigger>
+          <StoryButton editor={editor} generator={generator} />
           {cloud && <CloudBar editor={editor} cloud={cloud} images={images} />}
         </div>
         <div className="flex items-center gap-2">
@@ -315,7 +327,9 @@ export function ComicCanvasEditor({
             </>
           )}
           <ExportButton editor={editor} images={images} />
-          {zernio && <PublishButton editor={editor} images={images} />}
+          {instagram && viewer && (
+            <PublishButton editor={editor} images={images} />
+          )}
           <AccountMenu />
         </div>
       </header>
@@ -371,6 +385,9 @@ export function ComicCanvasEditor({
         onOpenGenerate={focusComposer}
         onFit={fitView}
       />
+      {restyling && (
+        <RestyleDialog editor={editor} onClose={() => setRestyling(false)} />
+      )}
     </div>
   )
 }

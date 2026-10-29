@@ -85,10 +85,13 @@ export function AuthShell({ children }: { children: React.ReactNode }) {
 }
 
 export function AuthCard({
+  icon,
   title,
   description,
   children,
 }: {
+  // Shown above the title, in a ring.
+  icon?: typeof Mail01Icon
   title: string
   description?: React.ReactNode
   children: React.ReactNode
@@ -96,6 +99,11 @@ export function AuthCard({
   return (
     <Card>
       <CardHeader className="text-center">
+        {icon && (
+          <span className="mx-auto mb-2 flex size-10 items-center justify-center rounded-full border text-foreground">
+            <HugeiconsIcon icon={icon} strokeWidth={2} className="size-5" />
+          </span>
+        )}
         <CardTitle className="text-xl">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
@@ -178,19 +186,25 @@ export function MailSent({
   const [note, setNote] = React.useState<string | null>(null)
   return (
     <AuthCard
+      icon={Mail01Icon}
       title={t("sent.title")}
       description={
         <>
-          <span className="mx-auto mb-3 flex size-10 items-center justify-center rounded-full border text-foreground">
-            <HugeiconsIcon
-              icon={Mail01Icon}
-              strokeWidth={2}
-              className="size-5"
-            />
+          {/* Balanced lines, the address in one piece, the next step apart. */}
+          <span className="block text-balance">
+            {rich(t(`sent.${kind}`), {
+              email: (
+                <strong className="inline-block max-w-full font-medium [overflow-wrap:anywhere] text-foreground">
+                  {to}
+                </strong>
+              ),
+            })}
           </span>
-          {rich(t(`sent.${kind}`), {
-            email: <strong className="text-foreground">{to}</strong>,
-          })}
+          {kind !== "reset" && (
+            <span className="mt-1.5 block text-balance">
+              {t(`sent.${kind}Hint`)}
+            </span>
+          )}
         </>
       }
     >

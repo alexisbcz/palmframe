@@ -59,6 +59,49 @@ export interface Database {
         Update: never
         Relationships: []
       }
+      api_keys: {
+        Row: ApiKeyRow
+        Insert: { name?: string; prefix: string; hash: string }
+        Update: { revoked_at?: string | null; last_used_at?: string | null }
+        Relationships: []
+      }
+      api_jobs: {
+        Row: ApiJobRow
+        Insert: Omit<
+          ApiJobRow,
+          | "id"
+          | "status"
+          | "idempotency_key"
+          | "result"
+          | "error"
+          | "started_at"
+          | "finished_at"
+          | "created_at"
+          | "updated_at"
+        >
+        Update: Partial<
+          Pick<
+            ApiJobRow,
+            | "status"
+            | "idempotency_key"
+            | "result"
+            | "error"
+            | "started_at"
+            | "finished_at"
+          >
+        >
+        Relationships: []
+      }
+      openrouter_connections: {
+        Row: OpenRouterConnectionRow
+        Insert: Omit<OpenRouterConnectionRow, "created_at" | "updated_at"> & {
+          updated_at?: string
+        }
+        Update: Partial<
+          Omit<OpenRouterConnectionRow, "user_id" | "created_at">
+        >
+        Relationships: []
+      }
     }
     Views: {}
     Functions: {
@@ -78,6 +121,20 @@ export interface Database {
         }
         Returns: boolean
       }
+      credits_for: { Args: { p_user: string }; Returns: number }
+      spend_credits_for: {
+        Args: {
+          p_user: string
+          p_cost: number
+          p_kind: string
+          p_job: string
+        }
+        Returns: number
+      }
+      refund_credits_for: {
+        Args: { p_user: string; p_job: string }
+        Returns: number
+      }
     }
     Enums: {}
     CompositeTypes: {}
@@ -96,11 +153,62 @@ export type ComicProjectRow = {
   updated_at: string
 }
 
+// Developer API keys; only a hash of each is stored.
+export type ApiKeyRow = {
+  id: string
+  user_id: string
+  name: string
+  prefix: string
+  hash: string
+  last_used_at: string | null
+  revoked_at: string | null
+  created_at: string
+}
+
+export type ApiJobStatus =
+  "estimated" | "queued" | "running" | "succeeded" | "failed" | "cancelled"
+
+// An API estimate, and the job it becomes once started.
+export type ApiJobRow = {
+  id: string
+  user_id: string
+  key_id: string | null
+  status: ApiJobStatus
+  operation: string
+  cost: number
+  project_id: string
+  page_id: string
+  panel_id: string
+  page_version: number
+  params: Record<string, unknown>
+  idempotency_key: string | null
+  result: { image_url: string; seed: number; render_ms: number } | null
+  error: string | null
+  expires_at: string
+  started_at: string | null
+  finished_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 // What the pages know about the signed-in person.
 export interface Viewer {
   id: string
   email: string
   name: string
+  // Public URL of their profile picture, if they set one.
+  avatarUrl: string | null
 }
 
 export const COMICS_BUCKET = "comics"
+
+export type OpenRouterConnectionRow = {
+  user_id: string
+  key_ciphertext: string
+  key_hint: string
+  enabled: boolean
+  image_model: string
+  text_model: string
+  created_at: string
+  updated_at: string
+}
