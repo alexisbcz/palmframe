@@ -121,7 +121,7 @@ function CreditsPill({ children }: { children: React.ReactNode }) {
 // Menu icons sit in small tiles, Higgsfield-style.
 function Tile({ children }: { children: React.ReactNode }) {
   return (
-    <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-foreground ring-1 ring-foreground/5 [&_svg]:size-3.5">
+    <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-muted text-foreground ring-1 ring-foreground/15 dark:ring-foreground/20 [&_svg]:size-3.5">
       {children}
     </span>
   )
@@ -285,7 +285,7 @@ export function AccountMenu() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem id="logout" variant="destructive">
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-destructive/10 [&_svg]:size-3.5">
+          <span className="flex size-6 shrink-0 items-center justify-center rounded-md bg-destructive/10 ring-1 ring-destructive/25 [&_svg]:size-3.5">
             <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
           </span>
           {t("account.signOut")}
