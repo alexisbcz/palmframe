@@ -3,6 +3,17 @@ import { defineMessages } from "@/i18n/core"
 export const messages = defineMessages({
   en: {
     meta: "Credits & plans",
+    palette: {
+      plans: "Plans",
+      placeholder: "Search plans, packs and prices…",
+      empty: "Nothing matches.",
+      popular: "Popular",
+      credits: "credits",
+      freeNow: "You're on Free",
+      subNow: "You're on {plan}",
+      signIn: "Sign in to buy credits",
+      keys: { navigate: "navigate", select: "select", close: "close" },
+    },
     title: "Credits & plans",
     subtitle:
       "Every render costs credits. Subscribe for a monthly allowance, or buy a pack. Credits never expire.",
@@ -83,6 +94,17 @@ export const messages = defineMessages({
   },
   fr: {
     meta: "Crédits et abonnements",
+    palette: {
+      plans: "Abonnements",
+      placeholder: "Chercher un abonnement, un pack, un prix…",
+      empty: "Aucun résultat.",
+      popular: "Populaire",
+      credits: "crédits",
+      freeNow: "Vous êtes en Gratuit",
+      subNow: "Vous êtes en {plan}",
+      signIn: "Connectez-vous pour acheter des crédits",
+      keys: { navigate: "naviguer", select: "choisir", close: "fermer" },
+    },
     title: "Crédits et abonnements",
     subtitle:
       "Chaque rendu coûte des crédits. Abonnez-vous pour un quota mensuel, ou achetez un pack. Les crédits n’expirent jamais.",
@@ -165,6 +187,17 @@ export const messages = defineMessages({
   },
   es: {
     meta: "Créditos y planes",
+    palette: {
+      plans: "Planes",
+      placeholder: "Busca planes, packs y precios…",
+      empty: "No hay resultados.",
+      popular: "Popular",
+      credits: "créditos",
+      freeNow: "Tienes el plan Gratis",
+      subNow: "Tienes el plan {plan}",
+      signIn: "Inicia sesión para comprar créditos",
+      keys: { navigate: "moverse", select: "elegir", close: "cerrar" },
+    },
     title: "Créditos y planes",
     subtitle:
       "Cada render cuesta créditos. Suscríbete para tener un saldo mensual o compra un pack. Los créditos no caducan.",
@@ -244,6 +277,17 @@ export const messages = defineMessages({
   },
   de: {
     meta: "Credits und Abos",
+    palette: {
+      plans: "Abos",
+      placeholder: "Abos, Pakete und Preise suchen…",
+      empty: "Keine Treffer.",
+      popular: "Beliebt",
+      credits: "Credits",
+      freeNow: "Du nutzt Kostenlos",
+      subNow: "Du nutzt {plan}",
+      signIn: "Melde dich an, um Credits zu kaufen",
+      keys: { navigate: "bewegen", select: "wählen", close: "schließen" },
+    },
     title: "Credits und Abos",
     subtitle:
       "Jedes Rendering kostet Credits. Abonniere ein monatliches Kontingent oder kaufe ein Paket. Credits verfallen nie.",
@@ -324,6 +368,17 @@ export const messages = defineMessages({
   },
   it: {
     meta: "Crediti e piani",
+    palette: {
+      plans: "Piani",
+      placeholder: "Cerca piani, pacchetti e prezzi…",
+      empty: "Nessun risultato.",
+      popular: "Popolare",
+      credits: "crediti",
+      freeNow: "Sei sul piano Gratis",
+      subNow: "Sei sul piano {plan}",
+      signIn: "Accedi per acquistare crediti",
+      keys: { navigate: "muoviti", select: "scegli", close: "chiudi" },
+    },
     title: "Crediti e piani",
     subtitle:
       "Ogni render costa crediti. Abbonati per avere crediti ogni mese, oppure compra un pacchetto. I crediti non scadono mai.",
@@ -404,12 +459,24 @@ export const messages = defineMessages({
   },
   ja: {
     meta: "クレジットとプラン",
+    palette: {
+      plans: "プラン",
+      placeholder: "プラン、パック、料金を検索…",
+      empty: "見つかりません。",
+      popular: "人気",
+      credits: "クレジット",
+      freeNow: "無料プランをご利用中",
+      subNow: "{plan}プランをご利用中",
+      signIn: "ログインしてクレジットを購入",
+      keys: { navigate: "移動", select: "選択", close: "閉じる" },
+    },
     title: "クレジットとプラン",
     subtitle:
       "生成のたびにクレジットを消費します。毎月の付与があるプランに登録するか、パックを購入してください。クレジットに有効期限はありません。",
     balance: "残高",
     success: "お支払いを確認しました。クレジットが残高に追加されました。",
-    unavailable: "現在お支払いをご利用いただけません。後でもう一度お試しください。",
+    unavailable:
+      "現在お支払いをご利用いただけません。後でもう一度お試しください。",
     signIn: "プランの登録やクレジットの購入にはログインしてください。",
     signInLink: "ログイン",
     perMonth: "/ 月",
@@ -431,7 +498,8 @@ export const messages = defineMessages({
     manage: "サブスクリプションを管理",
     renews: "{date} に更新",
     ends: "{date} に終了",
-    pastDue: "前回のお支払いに失敗しました。プランを継続するにはカード情報を更新してください。",
+    pastDue:
+      "前回のお支払いに失敗しました。プランを継続するにはカード情報を更新してください。",
     packs: "クレジットパック",
     packsNote: "1回限りの購入です。パックのクレジットに有効期限はありません。",
     pack: { other: "{n} クレジット" },
@@ -455,7 +523,8 @@ export const messages = defineMessages({
       face_fix: "コマの顔を描き直す",
       restyle: "現在のスタイルでコマを描き直す",
     },
-    refundNote: "生成に失敗した場合やキャンセルした場合は、クレジットが返却されます。",
+    refundNote:
+      "生成に失敗した場合やキャンセルした場合は、クレジットが返却されます。",
     history: "最近のアクティビティ",
     noHistory: "まだありません。",
     kinds: {

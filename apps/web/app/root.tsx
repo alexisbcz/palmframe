@@ -13,6 +13,7 @@ import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 
 import type { Route } from "./+types/root"
 import { DEFAULT_LOCALE, I18nProvider, detectLocale } from "./i18n/core"
+import { BillingPalette } from "./components/billing/billing-palette"
 import { CommandPalette } from "./components/command-palette"
 import { isActive, type PlanId } from "./lib/credits"
 import { payingConnection } from "./lib/openrouter.server"
@@ -92,6 +93,7 @@ export default function App() {
     <>
       <Outlet />
       <CommandPalette />
+      <BillingPalette />
     </>
   )
 }

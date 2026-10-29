@@ -26,6 +26,10 @@ import {
 import { useTheme } from "@workspace/ui/components/theme-provider"
 
 import { useViewer } from "@/components/account/account-menu"
+import {
+  BILLING_SHORTCUT,
+  openBilling,
+} from "@/components/billing/billing-palette"
 import { Flag } from "@/components/flag"
 import { GitHubIcon, REPO } from "@/components/github-button"
 import { messages as toggles } from "@/components/toggles.messages"
@@ -73,8 +77,9 @@ export function CommandPalette() {
       return isLocale(lang) && setLocale(lang)
     }
     switch (k) {
-      case "projects":
       case "pricing":
+        return openBilling()
+      case "projects":
       case "settings":
         return navigate(`/${k}`)
       case "new":
@@ -125,6 +130,7 @@ export function CommandPalette() {
             <CommandItem id="pricing" textValue={t("pricing")}>
               <HugeiconsIcon icon={CreditCardIcon} strokeWidth={2} />
               {t("pricing")}
+              <CommandShortcut>{BILLING_SHORTCUT}</CommandShortcut>
             </CommandItem>
             {viewer && (
               <CommandItem id="settings" textValue={t("settings")}>

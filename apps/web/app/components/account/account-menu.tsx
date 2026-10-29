@@ -33,6 +33,7 @@ import { Flag } from "@/components/flag"
 import { GitHubIcon, REPO } from "@/components/github-button"
 import { messages as toggles } from "@/components/toggles.messages"
 import { LOCALES, LOCALE_NAMES, isLocale, useLocale, useT } from "@/i18n/core"
+import { openBilling } from "@/components/billing/billing-palette"
 import { setCredits, useCredits } from "@/lib/credits-store"
 import type { PlanId } from "@/lib/credits"
 import type { Viewer } from "@/lib/database"
@@ -174,7 +175,7 @@ export function AccountMenu() {
         className="w-80 max-w-[calc(100vw-2rem)] **:data-[slot=dropdown-menu-item]:gap-2.5 **:data-[slot=dropdown-menu-item]:py-2 **:data-[slot=dropdown-menu-sub-trigger]:gap-2.5 **:data-[slot=dropdown-menu-sub-trigger]:py-2 **:[[role=menu]]:flex **:[[role=menu]]:flex-col **:[[role=menu]]:gap-0.5"
         onAction={(key) => {
           if (key === "projects") navigate("/projects")
-          if (key === "billing") navigate("/pricing")
+          if (key === "billing") openBilling()
           if (key === "settings") navigate("/settings")
           if (key === "commands")
             window.dispatchEvent(
