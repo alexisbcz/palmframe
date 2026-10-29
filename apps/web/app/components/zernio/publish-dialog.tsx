@@ -54,8 +54,8 @@ const MAX_CAPTION = 2200
 const MAX_HASHTAGS = 30
 const ZERNIO_APP = "https://zernio.com/dashboard"
 const CAPTION_KEY = "palmframe:caption"
-const SELECTED =
-  "data-selected:bg-primary data-selected:text-primary-foreground data-selected:hover:bg-primary/90"
+// Outline toggles: the chosen option gets the muted fill, not the primary black.
+const SELECTED = "data-selected:bg-muted data-selected:text-foreground"
 
 export function PublishButton({
   editor,
@@ -68,7 +68,7 @@ export function PublishButton({
   const [open, setOpen] = React.useState(false)
   return (
     <>
-      <Button onPress={() => setOpen(true)}>
+      <Button variant="outline" onPress={() => setOpen(true)}>
         <HugeiconsIcon
           icon={InstagramIcon}
           strokeWidth={2}
@@ -103,11 +103,13 @@ function altText(
         ? t("alt.sfx")
         : l.shape === "caption"
           ? t("alt.caption")
-          : l.shape === "thought"
-            ? t("alt.thought")
-            : l.shape === "shout"
-              ? t("alt.shout")
-              : t("alt.speech")
+          : l.shape === "message"
+            ? t("alt.message")
+            : l.shape === "thought"
+              ? t("alt.thought")
+              : l.shape === "shout"
+                ? t("alt.shout")
+                : t("alt.speech")
     return [`${kind}: ${l.text.trim().replace(/\s*\n\s*/g, " ")}`]
   })
   return [
@@ -472,7 +474,7 @@ function PublishDialog({
             <Button variant="outline" isDisabled={busy} onPress={onClose}>
               {t("cancel")}
             </Button>
-            <Button isDisabled={!canSubmit} onPress={submit}>
+            <Button variant="outline" isDisabled={!canSubmit} onPress={submit}>
               {mode === "now"
                 ? t("publishNow")
                 : mode === "schedule"
@@ -728,7 +730,7 @@ function Done({
             />
           </LinkButton>
         )}
-        <Button variant={result.url ? "outline" : "default"} onPress={onClose}>
+        <Button variant="outline" onPress={onClose}>
           {t("close")}
         </Button>
       </DialogFooter>
