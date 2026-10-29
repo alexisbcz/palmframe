@@ -26,7 +26,7 @@ import {
 import { Separator } from "@workspace/ui/components/separator"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
-import { AccountMenu } from "@/components/account/account-menu"
+import { AccountMenu, useViewer } from "@/components/account/account-menu"
 import { CloudBar } from "@/components/account/cloud-bar"
 import { GitHubButton } from "@/components/github-button"
 import { LanguageToggle } from "@/components/language-toggle"
@@ -129,6 +129,7 @@ export function ComicCanvasEditor({
   const t = useT(messages)
   const editor = useComicEditor({ initial: cloud?.project })
   const submit = useSubmit()
+  const viewer = useViewer()
   const generator = useGenerator(editor)
   const [tab, setTab] = React.useState<SidebarTab>("layers")
   const composerRef = React.useRef<ComposerHandle>(null)
@@ -305,9 +306,14 @@ export function ComicCanvasEditor({
           {cloud && <CloudBar editor={editor} cloud={cloud} images={images} />}
         </div>
         <div className="flex items-center gap-2">
-          <GitHubButton />
-          <LanguageToggle />
-          <ModeToggle />
+          {/* Signed in, these live in the account menu. */}
+          {!viewer && (
+            <>
+              <GitHubButton />
+              <LanguageToggle />
+              <ModeToggle />
+            </>
+          )}
           <ExportButton editor={editor} images={images} />
           {zernio && <PublishButton editor={editor} images={images} />}
           <AccountMenu />

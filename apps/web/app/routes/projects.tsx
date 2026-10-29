@@ -42,8 +42,6 @@ import {
   toProject,
 } from "@/components/comic-canvas/model"
 import { STORAGE_KEY } from "@/components/comic-canvas/use-editor"
-import { LanguageToggle } from "@/components/language-toggle"
-import { ModeToggle } from "@/components/mode-toggle"
 import {
   DEFAULT_LOCALE,
   isLocale,
@@ -167,8 +165,6 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
       <header className="flex h-12 items-center justify-between gap-2 border-b px-2.5">
         <Logo />
         <div className="flex items-center gap-2">
-          <LanguageToggle />
-          <ModeToggle />
           <AccountMenu />
         </div>
       </header>

@@ -5,6 +5,7 @@ export const messages = defineMessages({
     language: "Language",
     theme: {
       toggle: "Toggle theme",
+      label: "Theme",
       light: "Light",
       dark: "Dark",
       system: "System",
@@ -15,6 +16,7 @@ export const messages = defineMessages({
     language: "Langue",
     theme: {
       toggle: "Changer de thème",
+      label: "Thème",
       light: "Clair",
       dark: "Sombre",
       system: "Système",
@@ -25,6 +27,7 @@ export const messages = defineMessages({
     language: "Idioma",
     theme: {
       toggle: "Cambiar tema",
+      label: "Tema",
       light: "Claro",
       dark: "Oscuro",
       system: "Sistema",
@@ -35,6 +38,7 @@ export const messages = defineMessages({
     language: "Sprache",
     theme: {
       toggle: "Design wechseln",
+      label: "Design",
       light: "Hell",
       dark: "Dunkel",
       system: "System",
@@ -45,6 +49,7 @@ export const messages = defineMessages({
     language: "Lingua",
     theme: {
       toggle: "Cambia tema",
+      label: "Tema",
       light: "Chiaro",
       dark: "Scuro",
       system: "Sistema",
