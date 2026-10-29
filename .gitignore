@@ -20,3 +20,9 @@ dist
 npm-debug.log*
 pnpm-debug.log*
 .vercel
+.vale/styles/*
+!.vale/styles/Slop/
+!.vale/styles/config/
+
+# Personal comics: openable locally, never committed or deployed
+apps/web/public/comics/private/

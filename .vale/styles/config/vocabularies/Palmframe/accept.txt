@@ -1,0 +1,6 @@
+Palmframe
+Anifusion
+Turborepo
+shadcn
+Bun
+Vercel

@@ -3,6 +3,9 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/geist";
+@import "@fontsource/bangers";
+@import "@fontsource/comic-neue/400.css";
+@import "@fontsource/comic-neue/700.css";
 
 @custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";

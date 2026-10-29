@@ -1,0 +1,32 @@
+extends: existence
+message: "'%s' reads as AI filler. Say the concrete thing."
+level: error
+ignorecase: true
+tokens:
+  - seamless(ly)?
+  - leverag(e|es|ed|ing)
+  - unleash(es|ed|ing)?
+  - unlock(s|ed|ing)?
+  - empower(s|ed|ing)?
+  - elevate(s|d)?
+  - supercharg(e|es|ed|ing)
+  - revolutioni[sz](e|es|ed|ing)
+  - game[- ]chang(er|ing)
+  - cutting[- ]edge
+  - state[- ]of[- ]the[- ]art
+  - next[- ]gen(eration)?
+  - robust
+  - delve(s|d)?
+  - tapestry
+  - harness(es|ed|ing)?
+  - effortless(ly)?
+  - powerful
+  - blazing(ly)?[- ]fast
+  - in today's
+  - whether you're
+  - look no further
+  - comprehensive
+  - streamlin(e|es|ed|ing)
+  - landscape
+  - realm
+  - journey

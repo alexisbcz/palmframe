@@ -1,0 +1,7 @@
+extends: occurrence
+message: "'open-source' appears more than once. Say it once."
+level: warning
+scope: text
+ignorecase: true
+max: 1
+token: open[- ]source

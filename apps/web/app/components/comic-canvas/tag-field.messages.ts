@@ -1,0 +1,86 @@
+import { defineMessages } from "@/i18n/core"
+
+// The tags themselves stay English (Danbooru's and Anima's vocabulary).
+export const messages = defineMessages({
+  en: {
+    placeholder: "Type a Danbooru tag…",
+    addTag: "Add tag",
+    addTagPlaceholder: "Add tag…",
+    remove: "Remove {tag}",
+    category: { general: "Tag", artist: "Artist", meta: "Meta tag" },
+    info: {
+      one: "{category} · {posts} post on Danbooru",
+      other: "{category} · {posts} posts on Danbooru",
+    },
+    unknown: "Not a Danbooru tag: Anima may not know it",
+    loading: "Loading Danbooru tags…",
+    list: "Danbooru tags",
+    keys: "↑↓ pick · ↵ add · start with @ for artists",
+    noMatch: "No Danbooru tag matches. ↵ adds “{tag}” anyway.",
+  },
+  fr: {
+    placeholder: "Tapez un tag Danbooru…",
+    addTag: "Ajouter un tag",
+    addTagPlaceholder: "Ajouter un tag…",
+    remove: "Retirer {tag}",
+    category: { general: "Tag", artist: "Artiste", meta: "Méta-tag" },
+    info: {
+      one: "{category} · {posts} publication sur Danbooru",
+      other: "{category} · {posts} publications sur Danbooru",
+    },
+    unknown: "Pas un tag Danbooru : Anima risque de ne pas le connaître",
+    loading: "Chargement des tags Danbooru…",
+    list: "Tags Danbooru",
+    keys: "↑↓ choisir · ↵ ajouter · @ pour les artistes",
+    noMatch: "Aucun tag Danbooru ne correspond. ↵ ajoute « {tag} » quand même.",
+  },
+  es: {
+    placeholder: "Escribe una etiqueta de Danbooru…",
+    addTag: "Añadir etiqueta",
+    addTagPlaceholder: "Añadir etiqueta…",
+    remove: "Quitar {tag}",
+    category: { general: "Etiqueta", artist: "Artista", meta: "Metaetiqueta" },
+    info: {
+      one: "{category} · {posts} publicación en Danbooru",
+      other: "{category} · {posts} publicaciones en Danbooru",
+    },
+    unknown: "No es una etiqueta de Danbooru: puede que Anima no la conozca",
+    loading: "Cargando etiquetas de Danbooru…",
+    list: "Etiquetas de Danbooru",
+    keys: "↑↓ elegir · ↵ añadir · empieza con @ para artistas",
+    noMatch:
+      "Ninguna etiqueta de Danbooru coincide. ↵ añade «{tag}» igualmente.",
+  },
+  de: {
+    placeholder: "Danbooru-Tag eingeben…",
+    addTag: "Tag hinzufügen",
+    addTagPlaceholder: "Tag hinzufügen…",
+    remove: "{tag} entfernen",
+    category: { general: "Tag", artist: "Künstler", meta: "Meta-Tag" },
+    info: {
+      one: "{category} · {posts} Post auf Danbooru",
+      other: "{category} · {posts} Posts auf Danbooru",
+    },
+    unknown: "Kein Danbooru-Tag: Anima kennt ihn vielleicht nicht",
+    loading: "Danbooru-Tags werden geladen…",
+    list: "Danbooru-Tags",
+    keys: "↑↓ wählen · ↵ hinzufügen · @ für Künstler",
+    noMatch: "Kein Danbooru-Tag passt. ↵ fügt „{tag}“ trotzdem hinzu.",
+  },
+  it: {
+    placeholder: "Scrivi un tag Danbooru…",
+    addTag: "Aggiungi tag",
+    addTagPlaceholder: "Aggiungi tag…",
+    remove: "Rimuovi {tag}",
+    category: { general: "Tag", artist: "Artista", meta: "Meta tag" },
+    info: {
+      one: "{category} · {posts} post su Danbooru",
+      other: "{category} · {posts} post su Danbooru",
+    },
+    unknown: "Non è un tag Danbooru: Anima potrebbe non conoscerlo",
+    loading: "Caricamento dei tag Danbooru…",
+    list: "Tag Danbooru",
+    keys: "↑↓ scegli · ↵ aggiungi · inizia con @ per gli artisti",
+    noMatch: "Nessun tag Danbooru corrisponde. ↵ aggiunge «{tag}» comunque.",
+  },
+})

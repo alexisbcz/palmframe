@@ -4,15 +4,36 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  data,
   isRouteErrorResponse,
+  useRouteLoaderData,
 } from "react-router"
 
+import { ThemeProvider } from "@workspace/ui/components/theme-provider"
+
 import type { Route } from "./+types/root"
+import { DEFAULT_LOCALE, I18nProvider, detectLocale } from "./i18n/core"
+import { getViewer, supabaseEnv } from "./lib/supabase.server"
 import "@workspace/ui/globals.css"
 
+export const links: Route.LinksFunction = () => [
+  { rel: "icon", href: "/icon.svg", type: "image/svg+xml", sizes: "any" },
+]
+
+// The publishable key is meant for browsers; row-level security guards the data.
+export async function loader({ request }: Route.LoaderArgs) {
+  const { viewer, headers } = await getViewer(request)
+  return data(
+    { locale: detectLocale(request), supabase: supabaseEnv(), viewer },
+    { headers }
+  )
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const locale =
+    useRouteLoaderData<typeof loader>("root")?.locale ?? DEFAULT_LOCALE
   return (
-    <html lang="en">
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -20,7 +41,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <I18nProvider initialLocale={locale}>{children}</I18nProvider>
+        </ThemeProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
