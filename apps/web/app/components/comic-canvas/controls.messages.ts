@@ -36,4 +36,11 @@ export const messages = defineMessages({
     hue: "Tonalità",
     eyeDropper: "Preleva un colore dallo schermo",
   },
+  ja: {
+    presets: "コミック用パレット",
+    used: "このカルーセルで使用中",
+    hex: "Hex",
+    hue: "色相",
+    eyeDropper: "画面から色を取得",
+  },
 })

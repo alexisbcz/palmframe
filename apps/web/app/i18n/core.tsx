@@ -3,7 +3,7 @@ import * as React from "react"
 // A small typed i18n: each feature keeps its messages next to its code
 // (`defineMessages`), English is the source of truth, and the type checker
 // refuses a locale that misses or adds a key.
-export const LOCALES = ["en", "fr", "es", "de", "it"] as const
+export const LOCALES = ["en", "fr", "es", "de", "it", "ja"] as const
 export type Locale = (typeof LOCALES)[number]
 export const DEFAULT_LOCALE: Locale = "en"
 export const LOCALE_COOKIE = "palmframe-lang"
@@ -14,6 +14,7 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   es: "Español",
   de: "Deutsch",
   it: "Italiano",
+  ja: "日本語",
 }
 
 // A leaf is a string with optional {placeholders}, or plural forms picked

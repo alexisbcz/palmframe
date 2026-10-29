@@ -156,4 +156,33 @@ export const messages = defineMessages({
     failed: "Esportazione non riuscita: {error}",
     noSlides: "Scegli almeno una slide.",
   },
+  ja: {
+    button: "書き出し",
+    title: "書き出し",
+    scope: { all: "すべてのスライド", current: "このスライド" },
+    format: "形式",
+    formats: {
+      jpeg: { name: "JPEG", hint: "Instagram向け" },
+      png: { name: "PNG", hint: "劣化なし" },
+      pdf: { name: "PDF", hint: "1つの文書" },
+    },
+    size: "サイズ",
+    quality: "画質",
+    slides: "スライド",
+    include: "スライド{n}を含める",
+    fileName: "ファイル名",
+    copy: "スライドをコピー",
+    copied: "コピーしました",
+    exportFiles: {
+      other: "{format}を{count}件書き出し",
+    },
+    exportPdf: {
+      other: "PDFを書き出し（{count}ページ）",
+    },
+    rendering: "レンダリング中 {done}/{total}…",
+    packing: "まとめています…",
+    done: "{file}をダウンロードしました · {size}",
+    failed: "書き出しに失敗しました: {error}",
+    noSlides: "スライドを1枚以上選んでください。",
+  },
 })

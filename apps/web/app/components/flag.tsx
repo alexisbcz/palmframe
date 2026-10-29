@@ -54,6 +54,12 @@ const FLAGS: Record<Locale, React.ReactNode> = {
       <path fill="#CE2B37" d="M30 0h15v30H30z" />
     </>
   ),
+  ja: (
+    <>
+      <path fill="#fff" d="M0 0h45v30H0z" />
+      <circle cx="22.5" cy="15" r="9" fill="#BC002D" />
+    </>
+  ),
 }
 
 export function Flag({

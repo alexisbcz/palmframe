@@ -71,4 +71,18 @@ export const messages = defineMessages({
     addAfter: "Aggiungi una slide dopo questa",
     add: "Slide",
   },
+  ja: {
+    previous: "前のスライド",
+    next: "次のスライド",
+    slides: "スライド",
+    slide: "スライド{n}",
+    actions: "スライド{n}の操作",
+    duplicate: "スライドを複製",
+    moveLeft: "左へ移動",
+    moveRight: "右へ移動",
+    delete: "スライドを削除",
+    limit: "Instagramのスライドは最大{max}枚です",
+    addAfter: "この後にスライドを追加",
+    add: "スライド",
+  },
 })

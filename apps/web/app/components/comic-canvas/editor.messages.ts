@@ -111,4 +111,26 @@ export const messages = defineMessages({
       zoomFit: "Adatta alla finestra",
     },
   },
+  ja: {
+    menu: {
+      open: "メニュー",
+      newCarousel: "新しいカルーセル",
+      openProject: "プロジェクトを開く…",
+      saveProject: "プロジェクトを保存",
+      importImage: "画像を読み込む…",
+      generateAll: "すべてのコマを生成（{count}）",
+    },
+    toolbar: {
+      label: "キャンバスツール",
+      undo: "元に戻す",
+      redo: "やり直す",
+      panel: "コマ",
+      speech: "吹き出し",
+      sfx: "効果音テキスト",
+      image: "画像",
+      zoomIn: "拡大",
+      zoomOut: "縮小",
+      zoomFit: "全体を表示",
+    },
+  },
 })

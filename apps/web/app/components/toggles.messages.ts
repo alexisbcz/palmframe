@@ -56,4 +56,15 @@ export const messages = defineMessages({
     },
     github: "Repository GitHub",
   },
+  ja: {
+    language: "言語",
+    theme: {
+      toggle: "テーマを切り替え",
+      label: "テーマ",
+      light: "ライト",
+      dark: "ダーク",
+      system: "システム",
+    },
+    github: "GitHubリポジトリ",
+  },
 })

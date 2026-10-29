@@ -195,6 +195,43 @@ export const messages = defineMessages({
       staggered: "Sfalsata",
     },
   },
+  ja: {
+    tabs: { layers: "レイヤー", library: "ライブラリ" },
+    empty: {
+      title: "レイヤーがありません",
+      description: "コマ割りを選ぶか、ライブラリタブから要素を追加してください。",
+    },
+    layer: {
+      name: "レイヤー名",
+      lock: "ロック",
+      unlock: "ロック解除",
+      show: "表示",
+      hide: "非表示",
+    },
+    library: {
+      layouts: "コマ割り",
+      elements: "要素",
+      layoutNote: "コマ割りを適用しても、画像は読み順のまま保持されます。",
+    },
+    elements: {
+      panel: "コマ",
+      speech: "セリフ",
+      thought: "思考",
+      shout: "叫び",
+      caption: "ナレーション",
+      message: "メッセージ",
+      sfx: "効果音",
+    },
+    layouts: {
+      splash: "1ページ大ゴマ",
+      "two-tiers": "2段",
+      "three-tiers": "3段",
+      grid: "グリッド",
+      "big-two": "大＋2コマ",
+      "two-wide": "2コマ＋横長",
+      staggered: "互い違い",
+    },
+  },
 })
 
 export type LayoutId = keyof (typeof messages)["en"]["layouts"]

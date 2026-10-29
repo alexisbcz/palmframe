@@ -83,4 +83,19 @@ export const messages = defineMessages({
     keys: "↑↓ scegli · ↵ aggiungi · inizia con @ per gli artisti",
     noMatch: "Nessun tag Danbooru corrisponde. ↵ aggiunge «{tag}» comunque.",
   },
+  ja: {
+    placeholder: "Danbooruタグを入力…",
+    addTag: "タグを追加",
+    addTagPlaceholder: "タグを追加…",
+    remove: "{tag}を削除",
+    category: { general: "タグ", artist: "アーティスト", meta: "メタタグ" },
+    info: {
+      other: "{category} · Danbooruに{posts}件の投稿",
+    },
+    unknown: "Danbooruタグではありません：Animaが認識しない可能性があります",
+    loading: "Danbooruタグを読み込み中…",
+    list: "Danbooruタグ",
+    keys: "↑↓ 選択 · ↵ 追加 · @で始めるとアーティスト",
+    noMatch: "一致するDanbooruタグはありません。↵で「{tag}」をそのまま追加します。",
+  },
 })

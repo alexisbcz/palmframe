@@ -26,4 +26,9 @@ export const messages = defineMessages({
     tailHint: "Trascina per orientare la coda",
     placeholder: { empty: "Trascina qui un’immagine", loading: "Caricamento…" },
   },
+  ja: {
+    generating: "生成中…",
+    tailHint: "ドラッグしてしっぽの向きを調整",
+    placeholder: { empty: "画像をドロップ", loading: "読み込み中…" },
+  },
 })
