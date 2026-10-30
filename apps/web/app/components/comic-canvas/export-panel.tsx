@@ -1,13 +1,11 @@
 import * as React from "react"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   ArrowDown01Icon,
   CheckmarkCircle02Icon,
   Copy01Icon,
   Download01Icon,
-  Image02Icon,
   Jpg01Icon,
-  Layers01Icon,
   Pdf01Icon,
   Png01Icon,
   Tick02Icon,
@@ -53,12 +51,31 @@ const DEFAULTS: Settings = {
 }
 const STORAGE_KEY = "palmframe:export"
 const FORMATS = ["jpeg", "png", "webp", "pdf", "psd"] as const
+// The icon set has no WebP or PSD file, so these redraw the PNG's label.
+const fileIcon = (label: string): IconSvgElement => [
+  Png01Icon[0],
+  [
+    "path",
+    {
+      d: label,
+      stroke: "currentColor",
+      strokeLinecap: "round",
+      strokeLinejoin: "round",
+      strokeWidth: "1.5",
+      key: "1",
+    },
+  ],
+]
 const FORMAT_ICON = {
   jpeg: Jpg01Icon,
   png: Png01Icon,
-  webp: Image02Icon,
+  webp: fileIcon(
+    "M1.75 16L3 22L4.25 18L5.5 22L6.75 16M11 16H8.75V22H11M8.75 19H10.5M13 19V16H14.5C15.3284 16 16 16.6716 16 17.5C16 18.3284 15.3284 19 14.5 19M13 19H14.75C15.5784 19 16.25 19.6716 16.25 20.5C16.25 21.3284 15.5784 22 14.75 22H13V19ZM18.5 22V19M18.5 19V16H20.5C21.3284 16 22 16.6716 22 17.5C22 18.3284 21.3284 19 20.5 19H18.5Z"
+  ),
   pdf: Pdf01Icon,
-  psd: Layers01Icon,
+  psd: fileIcon(
+    "M4 22V19M4 19V16H6C6.82843 16 7.5 16.6716 7.5 17.5C7.5 18.3284 6.82843 19 6 19H4ZM14 17C14 16.4477 13.5523 16 13 16H11C10.4477 16 10 16.4477 10 17V18C10 18.5523 10.4477 19 11 19H13C13.5523 19 14 19.4477 14 20V21C14 21.5523 13.5523 22 13 22H11C10.4477 22 10 21.5523 10 21M16.25 16H17.75C18.8546 16 19.75 16.8954 19.75 18V20C19.75 21.1046 18.8546 22 17.75 22H16.25V16Z"
+  ),
 }
 const MIME = {
   jpeg: "image/jpeg",
@@ -199,7 +216,7 @@ function Segmented<T extends string>({
           data-roving
           onClick={() => onChange(o.id)}
           className={cn(
-            "h-7 flex-1 cursor-pointer rounded-md px-2 text-sm font-medium text-muted-foreground transition outline-none hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+            "h-7 flex-1 cursor-pointer rounded-md px-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition outline-none hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
             value === o.id &&
               "bg-background text-foreground shadow-sm ring-1 ring-foreground/10"
           )}
