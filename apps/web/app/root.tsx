@@ -83,6 +83,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         />
         <Meta />
         <Links />
+        {/* Ahead of <Scripts />, so Lapse patches the clock before route modules load. */}
+        {import.meta.env.DEV && <script type="module" src="/app/lapse.dev.ts" />}
       </head>
       <body>
         <ThemeProvider
