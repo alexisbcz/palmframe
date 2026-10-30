@@ -6,6 +6,7 @@ import {
   redirect,
   useNavigate,
   useNavigation,
+  useRevalidator,
   useSubmit,
 } from "react-router"
 import { cn } from "cn"
@@ -13,6 +14,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Copy01Icon,
   Delete02Icon,
+  LibraryIcon,
   MoreHorizontalIcon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
@@ -41,6 +43,12 @@ import {
   createDefaultProject,
   toProject,
 } from "@/components/comic-canvas/model"
+import {
+  ManageSeries,
+  SeriesPicker,
+  seriesRequest,
+} from "@/components/comic-canvas/series-dialog"
+import { messages as seriesMessages } from "@/components/comic-canvas/series.messages"
 import { STORAGE_KEY } from "@/components/comic-canvas/use-editor"
 import {
   DEFAULT_LOCALE,
@@ -51,6 +59,7 @@ import {
 } from "@/i18n/core"
 import { withStoredImages } from "@/lib/cloud"
 import { COMICS_BUCKET } from "@/lib/database"
+import { listSeries, type SeriesSummary } from "@/lib/series.server"
 import { useSupabase } from "@/lib/supabase.browser"
 import { getViewer } from "@/lib/supabase.server"
 
@@ -81,7 +90,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     .select("id, title, cover, slide_count, updated_at")
     .order("updated_at", { ascending: false })
   if (error) throw data(error.message, { status: 500, headers })
-  return data({ projects }, { headers })
+  return data({ projects, series: await listSeries(supabase) }, { headers })
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -158,7 +167,21 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigation()
   const creating =
     navigation.state !== "idle" && navigation.formData?.get("intent") === "new"
-  const { projects } = loaderData
+  const { projects, series } = loaderData
+  const ts = useT(seriesMessages)
+  const revalidator = useRevalidator()
+  const [naming, setNaming] = React.useState(false)
+  const byId = new Map(projects.map((p) => [p.id, p]))
+  const grouped = new Set(series.flatMap((s) => s.carousels))
+  const loose = projects.filter((p) => !grouped.has(p.id))
+  const card = (p: (typeof projects)[number]) => (
+    <ProjectCard
+      key={p.id}
+      project={p}
+      inSeries={grouped.has(p.id)}
+      onSeries={revalidator.revalidate}
+    />
+  )
 
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
@@ -169,33 +192,50 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h1 className="text-2xl font-semibold">{t("projects.title")}</h1>
-          <Form method="post">
-            <Button
-              type="submit"
-              name="intent"
-              value="new"
-              variant="outline"
-              isDisabled={creating}
-            >
-              {creating ? (
-                <Spinner />
-              ) : (
-                <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-              )}
-              {t("projects.new")}
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" onPress={() => setNaming(true)}>
+              <HugeiconsIcon icon={LibraryIcon} strokeWidth={2} />
+              {ts("newSeries")}
             </Button>
-          </Form>
+            <Form method="post">
+              <Button
+                type="submit"
+                name="intent"
+                value="new"
+                variant="outline"
+                isDisabled={creating}
+              >
+                {creating ? (
+                  <Spinner />
+                ) : (
+                  <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+                )}
+                {t("projects.new")}
+              </Button>
+            </Form>
+          </div>
         </div>
         <ImportLocal />
-        {projects.length ? (
-          <ul className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {projects.map((p) => (
-              <ProjectCard key={p.id} project={p} />
-            ))}
-          </ul>
-        ) : (
+        {series.map((s) => (
+          <SeriesSection
+            key={s.id}
+            series={s}
+            onChanged={revalidator.revalidate}
+          >
+            {s.carousels.flatMap((id) => {
+              const p = byId.get(id)
+              return p ? [card(p)] : []
+            })}
+          </SeriesSection>
+        ))}
+        {loose.length > 0 && series.length > 0 && (
+          <h2 className="font-semibold">{ts("otherCarousels")}</h2>
+        )}
+        {loose.length ? (
+          <ul className={GRID}>{loose.map(card)}</ul>
+        ) : series.length ? null : (
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-16 text-center">
             <p className="font-medium">{t("projects.empty")}</p>
             <p className="max-w-sm text-sm text-muted-foreground">
@@ -204,19 +244,109 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
           </div>
         )}
       </main>
+      {naming && (
+        <SeriesPicker
+          onDone={() => {
+            setNaming(false)
+            void revalidator.revalidate()
+          }}
+          onClose={() => setNaming(false)}
+        />
+      )}
     </div>
+  )
+}
+
+const GRID =
+  "grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+
+// One series' carousels, in order, under its name.
+function SeriesSection({
+  series,
+  onChanged,
+  children,
+}: {
+  series: SeriesSummary
+  onChanged: () => unknown
+  children: React.ReactNode
+}) {
+  const t = useT(seriesMessages)
+  const navigate = useNavigate()
+  const [managing, setManaging] = React.useState(false)
+  const [busy, setBusy] = React.useState(false)
+  const start = async () => {
+    setBusy(true)
+    try {
+      const { id } = await seriesRequest({ intent: "carousel", id: series.id })
+      navigate(`/p/${id}`)
+    } catch {
+      setBusy(false)
+    }
+  }
+  return (
+    <section
+      aria-label={series.title || t("untitled")}
+      className="flex flex-col gap-3"
+    >
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <h2 className="min-w-0 truncate font-semibold">
+          {series.title || t("untitled")}
+        </h2>
+        <span className="text-xs text-muted-foreground tabular-nums">
+          {t("carousels", { count: series.carousels.length })}
+        </span>
+        <div className="ms-auto flex items-center gap-1">
+          <Button variant="ghost" size="sm" onPress={() => setManaging(true)}>
+            {t("manage")}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            isDisabled={busy}
+            onPress={() => void start()}
+          >
+            {busy ? (
+              <Spinner />
+            ) : (
+              <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+            )}
+            {t("newCarousel")}
+          </Button>
+        </div>
+      </div>
+      {series.carousels.length ? (
+        <ul className={GRID}>{children}</ul>
+      ) : (
+        <p className="rounded-xl border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">
+          {t("empty")}
+        </p>
+      )}
+      {managing && (
+        <ManageSeries
+          series={series}
+          onChanged={onChanged}
+          onClose={() => setManaging(false)}
+        />
+      )}
+    </section>
   )
 }
 
 function ProjectCard({
   project,
+  inSeries,
+  onSeries,
 }: {
   project: Route.ComponentProps["loaderData"]["projects"][number]
+  inSeries: boolean
+  onSeries: () => unknown
 }) {
   const t = useT(messages)
   const ago = useRelativeTime()
   const submit = useSubmit()
+  const ts = useT(seriesMessages)
   const [confirming, setConfirming] = React.useState(false)
+  const [picking, setPicking] = React.useState(false)
   const title = project.title || t("sync.untitled")
 
   return (
@@ -268,12 +398,22 @@ function ProjectCard({
                   },
                   { method: "post" }
                 )
+              if (key === "add") setPicking(true)
+              if (key === "leave")
+                void seriesRequest({
+                  intent: "leave",
+                  projectId: project.id,
+                }).then(onSeries)
               if (key === "delete") setConfirming(true)
             }}
           >
             <DropdownMenuItem id="duplicate">
               <HugeiconsIcon icon={Copy01Icon} strokeWidth={2} />
               {t("projects.duplicate")}
+            </DropdownMenuItem>
+            <DropdownMenuItem id={inSeries ? "leave" : "add"}>
+              <HugeiconsIcon icon={LibraryIcon} strokeWidth={2} />
+              {ts(inSeries ? "leave" : "add")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem id="delete" variant="destructive">
@@ -283,6 +423,16 @@ function ProjectCard({
           </DropdownMenu>
         </DropdownMenuTrigger>
       </div>
+      {picking && (
+        <SeriesPicker
+          projectId={project.id}
+          onDone={() => {
+            setPicking(false)
+            void onSeries()
+          }}
+          onClose={() => setPicking(false)}
+        />
+      )}
       <AlertDialog isOpen={confirming} onOpenChange={setConfirming}>
         <AlertDialogHeader>
           <AlertDialogTitle>

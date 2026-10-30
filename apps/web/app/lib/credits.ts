@@ -51,6 +51,7 @@ export const COSTS = {
   story_plan: 2, // the story planner's LLM call, per slide
   translate: 2, // a carousel's lettering, into one language
   panel_check: 2, // a vision model reading one finished panel
+  continuity_check: 2, // an LLM comparing a carousel with its series' facts
 } as const
 
 export type Operation = keyof typeof COSTS

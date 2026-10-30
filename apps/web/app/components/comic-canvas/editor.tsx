@@ -74,6 +74,8 @@ import { RestyleDialog, postprocessMessages } from "./postprocess-tools"
 import { ShareButton } from "./share-dialog"
 import { Sidebar, type SidebarTab } from "./sidebar"
 import { Stage } from "./stage"
+import type { SeriesContext } from "./series"
+import { useSeries } from "./series-dialog"
 import type { CloudProject } from "./use-cloud-sync"
 import { useComicEditor, type ComicEditor } from "./use-editor"
 import { hasPrompt, useGenerator } from "./use-generator"
@@ -184,10 +186,14 @@ export function ComicCanvasEditor({
   cloud,
 }: {
   instagram?: boolean
-  cloud?: CloudProject & { project: ComicProject }
+  cloud?: CloudProject & {
+    project: ComicProject
+    series: SeriesContext | null
+  }
 }) {
   const t = useT(messages)
   const editor = useComicEditor({ initial: cloud?.project })
+  const series = useSeries(cloud?.series ?? null, editor)
   const submit = useSubmit()
   const viewer = useViewer()
   const generator = useGenerator(editor)
@@ -382,9 +388,24 @@ export function ComicCanvasEditor({
               </DropdownMenuItem>
             </DropdownMenu>
           </DropdownMenuTrigger>
-          <StoryButton editor={editor} generator={generator} />
-          <RunButton editor={editor} generator={generator} />
-          {cloud && <CloudBar editor={editor} cloud={cloud} images={images} />}
+          <StoryButton
+            editor={editor}
+            generator={generator}
+            series={series.context}
+          />
+          <RunButton
+            editor={editor}
+            generator={generator}
+            series={series.context}
+          />
+          {cloud && (
+            <CloudBar
+              editor={editor}
+              cloud={cloud}
+              images={images}
+              series={series}
+            />
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Signed in, these live in the account menu. */}

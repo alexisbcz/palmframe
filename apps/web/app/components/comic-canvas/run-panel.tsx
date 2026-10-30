@@ -57,6 +57,7 @@ import {
 } from "./run"
 import { messages } from "./run.messages"
 import { panelCost, requestPlan } from "./story"
+import type { SeriesContext } from "./series"
 import { useStoryInfo } from "./story-panel"
 import type { ComicEditor } from "./use-editor"
 import {
@@ -90,7 +91,11 @@ export interface RunOptions {
 // off the project. A pause only follows a step that did work this time, so it
 // doesn't come back on resuming. The review pause, and approving drafts when no
 // review was asked for, follow OpenManga's production run (lib/production.ts).
-function useRun(editor: ComicEditor, generator: Generator) {
+function useRun(
+  editor: ComicEditor,
+  generator: Generator,
+  series: SeriesContext | null
+) {
   const [state, setState] = React.useState<RunState>({ phase: "idle" })
   const options = React.useRef<RunOptions | null>(null)
   const controller = React.useRef<AbortController | null>(null)
@@ -98,6 +103,8 @@ function useRun(editor: ComicEditor, generator: Generator) {
   const agreed = React.useRef(0)
   const latest = React.useRef(generator)
   latest.current = generator
+  const seriesRef = React.useRef(series)
+  seriesRef.current = series
 
   const drive = React.useCallback(async () => {
     const o = options.current
@@ -145,10 +152,15 @@ function useRun(editor: ComicEditor, generator: Generator) {
         const panels = index < 0 ? [] : unplannedPanels(now, now.pages[index]!)
         if (!panels.length) continue
         afford(COSTS.story_plan)
-        const drafts = await requestPlan(now, index, panels, o.story, signal, {
-          slide: index + 1,
-          slides: now.pages.length,
-        })
+        const drafts = await requestPlan(
+          now,
+          index,
+          panels,
+          o.story,
+          signal,
+          { slide: index + 1, slides: now.pages.length },
+          seriesRef.current
+        )
         editor.commitProject((p) => withPlan(p, id, drafts))
       }
       if (pages.length) {
@@ -276,12 +288,14 @@ type Run = ReturnType<typeof useRun>
 export function RunButton({
   editor,
   generator,
+  series = null,
 }: {
   editor: ComicEditor
   generator: Generator
+  series?: SeriesContext | null
 }) {
   const t = useT(messages)
-  const run = useRun(editor, generator)
+  const run = useRun(editor, generator, series)
   const [open, setOpen] = React.useState(false)
   const { phase } = run.state
   // Whatever it stops on needs the person, even if they closed the dialog.

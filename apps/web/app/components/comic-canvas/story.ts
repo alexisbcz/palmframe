@@ -10,11 +10,13 @@ import {
   type BubbleLayer,
   type BubbleShape,
   type Character,
+  type ComicPage,
   type ComicProject,
   type Layer,
   type PanelLayer,
   type Rect,
 } from "./model"
+import type { SeriesContext } from "./series"
 import { panelRefs } from "./use-generator"
 
 // What the story dialog holds for one panel before it's applied: the shot
@@ -341,7 +343,8 @@ export async function requestPlan(
   panels: PanelLayer[],
   story: string,
   signal: AbortSignal,
-  part?: StoryPart
+  part?: StoryPart,
+  series?: SeriesContext | null
 ) {
   const res = await fetch("/api/story", {
     method: "POST",
@@ -363,6 +366,7 @@ export async function requestPlan(
       rtl: !!project.rtl,
       recap: recapOf(project, pageIndex),
       part,
+      ...(series && { previous: series.previous, facts: series.facts }),
     }),
   })
   const credits = res.headers.get("x-credits")
@@ -382,10 +386,8 @@ export async function requestPlan(
   )
 }
 
-// A few lines on what the slide before showed, so the planner carries on.
-export function recapOf(project: ComicProject, pageIndex: number) {
-  const page = project.pages[pageIndex - 1]
-  if (!page) return ""
+// A slide as text: what its panels show, then its lettering.
+function slideText(project: ComicProject, page: ComicPage) {
   const panels = readingOrder(
     page.layers.filter((l): l is PanelLayer => l.type === "panel"),
     project.rtl
@@ -400,7 +402,26 @@ export function recapOf(project: ComicProject, pageIndex: number) {
       )
       .filter(Boolean),
     ...lettering,
-  ]
-    .join("\n")
-    .slice(0, 1_500)
+  ].join("\n")
 }
+
+// A few lines on what the slide before showed, so the planner carries on.
+export function recapOf(project: ComicProject, pageIndex: number) {
+  const page = project.pages[pageIndex - 1]
+  return page ? slideText(project, page).slice(0, 1_500) : ""
+}
+
+// Every slide with something on it, as text.
+export function carouselText(project: ComicProject) {
+  return project.pages
+    .map((page, i) => {
+      const text = slideText(project, page)
+      return text && `Slide ${i + 1}:\n${text}`
+    })
+    .filter(Boolean)
+    .join("\n\n")
+}
+
+// The recap across carousels: how the one before in the series ended.
+export const seriesRecap = (project: ComicProject) =>
+  carouselText(project).slice(-1_500)
