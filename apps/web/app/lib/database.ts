@@ -22,6 +22,7 @@ export interface Database {
           data?: ComicProject
           cover?: string | null
           revision?: number
+          share_token?: string | null
         }
         Relationships: []
       }
@@ -97,9 +98,7 @@ export interface Database {
         Insert: Omit<OpenRouterConnectionRow, "created_at" | "updated_at"> & {
           updated_at?: string
         }
-        Update: Partial<
-          Omit<OpenRouterConnectionRow, "user_id" | "created_at">
-        >
+        Update: Partial<Omit<OpenRouterConnectionRow, "user_id" | "created_at">>
         Relationships: []
       }
     }
@@ -149,6 +148,8 @@ export type ComicProjectRow = {
   cover: string | null
   revision: number
   slide_count: number
+  // The secret part of the project's reader link; null when it has none.
+  share_token: string | null
   created_at: string
   updated_at: string
 }

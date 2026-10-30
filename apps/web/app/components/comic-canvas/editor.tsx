@@ -67,6 +67,7 @@ import {
 import type { ImageCache } from "./render"
 import { PageStrip } from "./page-strip"
 import { RestyleDialog, postprocessMessages } from "./postprocess-tools"
+import { ShareButton } from "./share-dialog"
 import { Sidebar, type SidebarTab } from "./sidebar"
 import { Stage } from "./stage"
 import type { CloudProject } from "./use-cloud-sync"
@@ -380,6 +381,7 @@ export function ComicCanvasEditor({
               <ModeToggle />
             </div>
           )}
+          {cloud && <ShareButton projectId={cloud.id} />}
           <ExportButton editor={editor} images={images} />
           {instagram && viewer && (
             <PublishButton editor={editor} images={images} />

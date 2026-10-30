@@ -1,3 +1,5 @@
+import type { Locale } from "@/i18n/core"
+
 export type ImageFit = "cover" | "contain" | "fill"
 // `message` is a text read on a phone: a rounded chat bubble in sentence case.
 export type BubbleShape = "speech" | "thought" | "shout" | "caption" | "message"
@@ -101,6 +103,16 @@ export interface PanelVersion {
     | "restyle"
 }
 
+// A bubble's lettering in another language. The artwork and the original
+// text stay as they are; the bubble is refitted when a language is rendered.
+export interface BubbleTranslation {
+  text: string
+  // The original it translates: when `text` moves on, this line is out of date.
+  source: string
+  // Typed by hand, so translating again leaves it alone.
+  edited?: boolean
+}
+
 export interface BubbleLayer extends BaseLayer {
   type: "bubble"
   shape: BubbleShape
@@ -116,6 +128,7 @@ export interface BubbleLayer extends BaseLayer {
   // Tail tip, relative to the bubble centre, in unrotated layer space.
   tailX: number
   tailY: number
+  translations?: Partial<Record<Locale, BubbleTranslation>>
 }
 
 export interface TextLayer extends BaseLayer {

@@ -19,12 +19,13 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { useLocale, useT } from "@/i18n/core"
+import { useLocale, useT, type Locale } from "@/i18n/core"
 
 import { download, pdf, withDpi, zip } from "./actions"
 import { SliderInput } from "./controls"
 import { messages } from "./export.messages"
-import { pageDoc } from "./model"
+import { translatedPage } from "./lettering"
+import { LetteringSection } from "./lettering-section"
 import { renderPsd } from "./psd"
 import { renderToBlob, type ImageCache } from "./render"
 import { roving } from "./roving"
@@ -240,6 +241,8 @@ function ExportPanel({
   const t = useT(messages)
   const { locale } = useLocale()
   const project = editor.projectRef.current
+  // Not remembered: a carousel shouldn't come out in German by surprise.
+  const [language, setLanguage] = React.useState<Locale | null>(null)
   const [settings, setSettings] = React.useState(readSettings)
   const set = (patch: Partial<Settings>) =>
     setSettings((s) => {
@@ -265,7 +268,9 @@ function ExportPanel({
   const pixelWidth = Math.round(project.width * scale)
   const pixelHeight = Math.round(project.height * scale)
   const ext = settings.format === "jpeg" ? "jpg" : settings.format
-  const name = slug(settings.name)
+  const stem = slug(settings.name)
+  // One name per language, so exporting several overwrites nothing.
+  const name = language ? `${stem}-${language}` : stem
   // Several images travel as one .zip; a PDF or a single image downloads as is.
   const outName =
     settings.format === "pdf"
@@ -279,13 +284,8 @@ function ExportPanel({
     const urls: string[] = []
     ;(async () => {
       for (const i of project.pages.keys()) {
-        const blob = await renderToBlob(
-          pageDoc(project, i),
-          images,
-          "image/jpeg",
-          0.12,
-          0.7
-        )
+        const doc = await translatedPage(project, i, language)
+        const blob = await renderToBlob(doc, images, "image/jpeg", 0.12, 0.7)
         if (!live || !blob) return
         urls.push(URL.createObjectURL(blob))
         setThumbs([...urls])
@@ -295,7 +295,7 @@ function ExportPanel({
       live = false
       urls.forEach(URL.revokeObjectURL)
     }
-  }, [project, images])
+  }, [project, images, language])
 
   const formatName = t(`formats.${settings.format}.name`)
   const inches = (px: number) =>
@@ -311,7 +311,7 @@ function ExportPanel({
       const blobs: Blob[] = []
       for (const [n, i] of pages.entries()) {
         setStatus({ step: "rendering", done: n, total: pages.length })
-        const doc = pageDoc(project, i)
+        const doc = await translatedPage(project, i, language)
         let blob =
           format === "psd"
             ? await renderPsd(doc, images, scale, dpi || 72)
@@ -352,12 +352,8 @@ function ExportPanel({
   }
 
   const copy = async () => {
-    const blob = await renderToBlob(
-      pageDoc(project, editor.pageIndex),
-      images,
-      "image/png",
-      scale
-    )
+    const doc = await translatedPage(project, editor.pageIndex, language)
+    const blob = await renderToBlob(doc, images, "image/png", scale)
     if (!blob) return
     await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })])
     setCopied(true)
@@ -404,6 +400,12 @@ function ExportPanel({
           },
           { id: "current", label: t("scope.current") },
         ]}
+      />
+
+      <LetteringSection
+        editor={editor}
+        language={language}
+        onLanguage={setLanguage}
       />
 
       <div className="flex flex-col gap-2">
@@ -567,7 +569,7 @@ function ExportPanel({
             onChange={(e) => set({ name: e.target.value })}
           />
           <span className="pe-2.5 text-muted-foreground">
-            {outName.slice(name.length)}
+            {outName.slice(stem.length)}
           </span>
         </span>
       </label>
