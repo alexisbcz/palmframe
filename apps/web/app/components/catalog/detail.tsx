@@ -22,6 +22,7 @@ import {
 import { cn } from "cn"
 
 import { useViewer } from "@/components/account/account-menu"
+import { ModelLabel } from "@/components/model-label"
 import { useT } from "@/i18n/core"
 import { COSTS } from "@/lib/credits"
 
@@ -248,16 +249,16 @@ export function AssetDetail({
               {asset.model && (
                 <div className="flex justify-between gap-3">
                   <dt>{t("detail.model")}</dt>
-                  <dd className="min-w-0 truncate text-foreground">
-                    {asset.model}
+                  <dd className="flex min-w-0 text-foreground">
+                    <ModelLabel model={asset.model} />
                   </dd>
                 </div>
               )}
               {sheetModel && (
                 <div className="flex justify-between gap-3">
                   <dt>{t("detail.sheetModel")}</dt>
-                  <dd className="min-w-0 truncate text-foreground">
-                    {sheetModel}
+                  <dd className="flex min-w-0 text-foreground">
+                    <ModelLabel model={sheetModel} />
                   </dd>
                 </div>
               )}

@@ -23,6 +23,7 @@ import {
 import { Toggle } from "@workspace/ui/components/toggle"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { ModelLabel } from "@/components/model-label"
 import { useLocale, useT } from "@/i18n/core"
 
 import { TAG_GROUPS, VISUAL_GROUPS, addTag } from "./anima-tags"
@@ -322,8 +323,9 @@ export function DrawnWith({ panel }: { panel: PanelLayer }) {
   const t = useT(messages)
   if (!panel.src || !panel.model) return null
   return (
-    <p className="truncate text-xs text-muted-foreground">
-      {t("drawnWith", { model: panel.model })}
+    <p className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+      <span className="shrink-0">{t("drawnWith")}</span>
+      <ModelLabel model={panel.model} />
     </p>
   )
 }
