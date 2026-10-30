@@ -181,7 +181,7 @@ export function FilterRail({ result }: { result: CatalogResult }) {
                 aria-pressed={on}
                 aria-label={t(`colors.${c.id}`)}
                 title={t(`colors.${c.id}`)}
-                className="flex size-6 cursor-pointer items-center justify-center rounded-full ring-1 ring-foreground/15 transition-transform outline-none hover:scale-110 focus-visible:ring-3 focus-visible:ring-ring/60 motion-reduce:hover:scale-100"
+                className="relative flex size-6 cursor-pointer items-center justify-center rounded-full ring-1 ring-foreground/15 transition-transform outline-none after:absolute after:-inset-1 hover:scale-110 focus-visible:ring-3 focus-visible:ring-ring/60 motion-reduce:hover:scale-100 pointer-fine:after:hidden"
                 style={{ backgroundColor: c.swatch }}
                 onClick={() => set({ color: on ? null : c.id })}
               >

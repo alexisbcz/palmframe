@@ -119,7 +119,7 @@ export function TagField({
               <button
                 type="button"
                 aria-label={t("remove", { tag })}
-                className="inline-flex size-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground outline-none hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+                className="relative inline-flex size-5 cursor-pointer items-center justify-center rounded-sm text-muted-foreground outline-none after:absolute after:-inset-2 hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring pointer-fine:after:hidden"
                 onClick={(e) => {
                   e.stopPropagation()
                   onChange(tags.filter((other) => other !== tag))

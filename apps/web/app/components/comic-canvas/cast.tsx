@@ -161,7 +161,7 @@ export function CastRow({
               <button
                 type="button"
                 aria-label={t("edit", { name: c.name })}
-                className="absolute -end-1 -top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition group-focus-within/cast:opacity-100 group-hover/cast:opacity-100 hover:text-foreground pointer-coarse:opacity-100"
+                className="absolute -end-1 -top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition group-focus-within/cast:opacity-100 group-hover/cast:opacity-100 after:absolute after:-inset-2 hover:text-foreground pointer-coarse:opacity-100 pointer-fine:after:hidden"
                 onClick={() => setEditing(c)}
               >
                 <HugeiconsIcon

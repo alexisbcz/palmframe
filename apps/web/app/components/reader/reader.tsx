@@ -119,7 +119,7 @@ export function Reader({
             const el = e.currentTarget
             setIndex(Math.round(el.scrollLeft / el.clientWidth))
           }}
-          className="flex size-full snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain outline-none [&::-webkit-scrollbar]:hidden"
+          className="flex size-full snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset [&::-webkit-scrollbar]:hidden"
         >
           {project.pages.map((page, i) => (
             <div
@@ -207,7 +207,7 @@ export function ReaderMissing({ missing }: { missing: boolean }) {
   return (
     <main className="flex h-svh flex-col bg-background text-foreground">
       <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-        <h1 className="text-3xl lettering">
+        <h1 className="lettering text-3xl">
           {t(missing ? "missing.title" : "failed.title")}
         </h1>
         <p className="max-w-sm text-sm text-muted-foreground">

@@ -393,7 +393,7 @@ function SetupCard({
           type="button"
           aria-label={deleteLabel}
           onClick={onDelete}
-          className="absolute end-1.5 top-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background/80 text-muted-foreground opacity-0 backdrop-blur transition group-hover/setup:opacity-100 hover:text-destructive focus-visible:opacity-100 pointer-coarse:opacity-100"
+          className="absolute end-1.5 top-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background/80 text-muted-foreground opacity-0 backdrop-blur transition group-hover/setup:opacity-100 after:absolute after:-inset-2 hover:text-destructive focus-visible:opacity-100 pointer-coarse:opacity-100 pointer-fine:after:hidden"
         >
           <HugeiconsIcon
             icon={Delete02Icon}

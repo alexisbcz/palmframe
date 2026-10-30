@@ -151,6 +151,7 @@ export default function Signup() {
                 name="email"
                 type="email"
                 autoComplete="email"
+                spellCheck={false}
                 placeholder={t("fields.emailPlaceholder")}
                 required
               />

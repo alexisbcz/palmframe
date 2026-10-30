@@ -14,6 +14,7 @@ import { ThemeProvider } from "@workspace/ui/components/theme-provider"
 import type { Route } from "./+types/root"
 import { DEFAULT_LOCALE, I18nProvider, detectLocale } from "./i18n/core"
 import { CommandPalette } from "./components/command-palette"
+import { ErrorPage } from "./components/error-page"
 import { SettingsDialog } from "./components/settings/settings-dialog"
 import { isActive, type PlanId } from "./lib/credits"
 import { payingConnection } from "./lib/openrouter.server"
@@ -84,7 +85,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
         {/* Ahead of <Scripts />, so Lapse patches the clock before route modules load. */}
-        {import.meta.env.DEV && <script type="module" src="/app/lapse.dev.ts" />}
+        {import.meta.env.DEV && (
+          <script type="module" src="/app/lapse.dev.ts" />
+        )}
       </head>
       <body>
         <ThemeProvider
@@ -113,30 +116,17 @@ export default function App() {
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!"
-  let details = "An unexpected error occurred."
-  let stack: string | undefined
-
-  if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error"
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message
-    stack = error.stack
-  }
+  const missing = isRouteErrorResponse(error) && error.status === 404
+  const stack =
+    import.meta.env.DEV && error instanceof Error ? error.stack : undefined
 
   return (
-    <main className="container mx-auto p-4 pt-16">
-      <h1>{message}</h1>
-      <p>{details}</p>
+    <ErrorPage kind={missing ? "missing" : "failed"}>
       {stack && (
-        <pre className="w-full overflow-x-auto p-4">
+        <pre className="mt-6 w-full max-w-3xl overflow-x-auto rounded-lg bg-muted p-4 text-start text-xs">
           <code>{stack}</code>
         </pre>
       )}
-    </main>
+    </ErrorPage>
   )
 }
