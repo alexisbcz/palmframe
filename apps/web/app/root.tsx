@@ -15,6 +15,7 @@ import type { Route } from "./+types/root"
 import { DEFAULT_LOCALE, I18nProvider, detectLocale } from "./i18n/core"
 import { CommandPalette } from "./components/command-palette"
 import { ErrorPage } from "./components/error-page"
+import { NavigationProgress } from "./components/navigation-progress"
 import { SettingsDialog } from "./components/settings/settings-dialog"
 import { isActive, type PlanId } from "./lib/credits"
 import { payingConnection } from "./lib/openrouter.server"
@@ -108,6 +109,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <>
+      <NavigationProgress />
       <Outlet />
       <CommandPalette />
       <SettingsDialog />
