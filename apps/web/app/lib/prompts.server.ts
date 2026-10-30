@@ -25,7 +25,7 @@ const VOCABULARY = TAG_GROUPS.filter((g) => g.id !== "count")
 
 export const STORY_PLANNER: PromptTemplate<StoryRequest> = {
   name: "story-planner",
-  version: 1,
+  version: 2,
   render(r) {
     const ids = r.panels.map((p) => p.id)
     return `You are a manga and comic storyboard artist planning one page of an Instagram comic.
@@ -34,7 +34,7 @@ The page already has ${ids.length} panel frame${ids.length > 1 ? "s" : ""}. Writ
 ${r.panels.map((p, i) => `${i + 1}. panel_id "${p.id}", ${shape(p)} (${Math.round(p.width)}x${Math.round(p.height)})`).join("\n")}
 
 If the story is written as "Panel 1: …" beats, follow them one beat per frame. Otherwise split the story into ${ids.length} beats that read well in this order: establish, build, pay off. Use wide frames for establishing shots and tall frames for full-body or vertical action.
-
+${r.part ? `\nThis page is slide ${r.part.slide} of ${r.part.slides}. The story runs across all ${r.part.slides} slides: plan only the stretch that belongs on this slide, so the slides read in order and the ending lands on the last one. If the story is written as "Slide 1: …" beats, follow the beat for this slide. A short story is stretched over the slides, not told again on each.\n` : ""}
 Cast (use these exact names in "characters" and as speakers; match names case-insensitively in the story, never invent cast members):
 ${r.cast.length ? r.cast.map((c) => `- ${c.name} (${c.kind})${c.tags.length ? `: ${c.tags.join(", ")}` : ""}`).join("\n") : "- none: characters stay unnamed, describe them in the prompt"}
 

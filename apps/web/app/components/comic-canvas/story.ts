@@ -1,5 +1,6 @@
 import { COSTS } from "@/lib/credits"
-import type { DialogueKind, PlannedPanel } from "@/routes/api.story"
+import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
+import type { DialogueKind, PlannedPanel, StoryPart } from "@/routes/api.story"
 
 import { normalizeTag } from "./anima-tags"
 import { pageFaces } from "./check"
@@ -149,7 +150,7 @@ export function draftOf(panel: PanelLayer): PanelDraft {
     tags: panel.tags ?? [],
     prompt: panel.prompt ?? "",
     cast: panel.cast ?? [],
-    lines: "",
+    lines: panel.script ?? "",
   }
 }
 
@@ -330,6 +331,55 @@ export function renderCost(
   project: Pick<ComicProject, "cast" | "world">
 ) {
   return panels.reduce((sum, p) => sum + panelCost(p, project), 0)
+}
+
+// One slide's shots and lettering from the planner, by panel. `panels` are the
+// frames to plan, in reading order; `part` places the slide in a longer story.
+export async function requestPlan(
+  project: ComicProject,
+  pageIndex: number,
+  panels: PanelLayer[],
+  story: string,
+  signal: AbortSignal,
+  part?: StoryPart
+) {
+  const res = await fetch("/api/story", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    signal,
+    body: JSON.stringify({
+      story,
+      panels: panels.map((p) => ({
+        id: p.id,
+        width: p.width,
+        height: p.height,
+      })),
+      cast: (project.cast ?? []).map((c) => ({
+        name: c.name,
+        kind: c.kind,
+        tags: c.tags,
+      })),
+      style: project.look?.style ?? "graphic",
+      rtl: !!project.rtl,
+      recap: recapOf(project, pageIndex),
+      part,
+    }),
+  })
+  const credits = res.headers.get("x-credits")
+  if (credits !== null) setCredits(Number(credits))
+  const json = await res.json().catch(() => null)
+  if (!res.ok)
+    throw new Error(
+      json?.code === INSUFFICIENT_CREDITS
+        ? INSUFFICIENT_CREDITS
+        : (json?.error ?? `HTTP ${res.status}`)
+    )
+  return Object.fromEntries(
+    (json.panels as PlannedPanel[]).map((p) => [
+      p.panel_id,
+      draftFromPlan(p, project.cast, json.prompt),
+    ])
+  )
 }
 
 // A few lines on what the slide before showed, so the planner carries on.

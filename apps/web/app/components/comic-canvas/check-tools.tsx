@@ -86,6 +86,9 @@ async function panelImage(src: string) {
   }
 }
 
+export const checkError = (panelId: string) => state.errors[panelId]
+export const cancelCheck = (panelId: string) => state.jobs[panelId]?.abort()
+
 export async function runCheck(editor: ComicEditor, panelId: string) {
   if (state.jobs[panelId]) return false
   const panel = editor.findLayer(panelId)?.layer
@@ -369,8 +372,7 @@ export function SlideCheckBadge({
 export type CheckScope = { page: number | null }
 
 // Panels with art and no verdict yet, in reading order, slide by slide.
-function uncheckedPanels(editor: ComicEditor, page: number | null) {
-  const project = editor.projectRef.current
+export function uncheckedPanels(project: ComicProject, page: number | null) {
   const pages =
     page === null ? project.pages : project.pages.slice(page, page + 1)
   return pages.flatMap((p) =>
@@ -406,7 +408,8 @@ export function CheckDialog({
   const running = !!progress?.running
   // Frozen for the run: finished panels drop out of the list as it goes.
   const [run, setRun] = React.useState<string[] | null>(null)
-  const ids = run ?? uncheckedPanels(editor, wide ? null : page)
+  const ids =
+    run ?? uncheckedPanels(editor.projectRef.current, wide ? null : page)
   const cost = openrouter ? 0 : ids.length * COSTS.panel_check
   const short = balance !== null && balance < cost
   const flagged = (run ?? []).reduce((sum, id) => {
