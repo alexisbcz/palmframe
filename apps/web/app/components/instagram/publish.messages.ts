@@ -32,7 +32,6 @@ export const messages = defineMessages({
     captionPlaceholder: "Write a caption… #comics #webcomic",
     fold: "The first 125 characters show before “more”.",
     hashtags: { one: "{count} hashtag", other: "{count} hashtags" },
-    tooManyHashtags: "Instagram allows 30 hashtags at most.",
     storiesNoCaption: "Stories don't show a caption.",
     when: "When",
     now: "Now",
@@ -53,10 +52,29 @@ export const messages = defineMessages({
       "Read aloud by screen readers. Pre-filled from the lettering on each slide.",
     slideN: "Slide {n}",
     slides: { one: "{count} slide", other: "{count} slides" },
-    tooManySlides:
-      "Instagram carousels take up to 10 slides. Remove {extra} or post them as Stories.",
-    tallFormat:
-      "Feed posts are cropped to 4:5. Post this 9:16 format as Stories instead.",
+    issue: {
+      slides:
+        "{value} slides; Instagram carousels take up to {limit}. Remove {extra} or post them as Stories.",
+      aspect:
+        "Slides are {size} ({ratio}:1); feed posts take 4:5 (0.80:1) to 1.91:1. Post this format as Stories instead.",
+      storyAspect:
+        "Slides are {size} ({ratio}:1); Stories fill the screen at 9:16 (0.56:1), so this format shows with blank space.",
+      size: "Slide {n} is {value}; Instagram takes images up to {limit}.",
+      caption:
+        "The caption is {value} characters; Instagram takes up to {limit}.",
+      hashtags: "{value} hashtags; Instagram takes up to {limit}.",
+      suggestedHashtags:
+        "{value} hashtags; Instagram now asks for at most {limit} per post.",
+      mentions: "{value} @ mentions; Instagram takes up to {limit}.",
+    },
+    check: {
+      slides: "{value} of {limit} slides",
+      aspect: "{size} fits 4:5 to 1.91:1",
+      size: "Largest slide {value} of {limit}",
+      caption: "{value} of {limit} characters",
+      hashtags: "{value} of {limit} hashtags",
+      mentions: "{value} of {limit} mentions",
+    },
     publishNow: "Publish now",
     scheduleSubmit: "Schedule post",
     cancel: "Cancel",
@@ -110,7 +128,6 @@ export const messages = defineMessages({
     captionPlaceholder: "Écrivez une légende… #bd #webcomic",
     fold: "Les 125 premiers caractères s'affichent avant « plus ».",
     hashtags: { one: "{count} hashtag", other: "{count} hashtags" },
-    tooManyHashtags: "Instagram autorise 30 hashtags au maximum.",
     storiesNoCaption: "Les stories n'affichent pas de légende.",
     when: "Quand",
     now: "Maintenant",
@@ -131,10 +148,29 @@ export const messages = defineMessages({
       "Lu à voix haute par les lecteurs d'écran. Prérempli avec le lettrage de chaque diapo.",
     slideN: "Diapo {n}",
     slides: { one: "{count} diapo", other: "{count} diapos" },
-    tooManySlides:
-      "Un carrousel Instagram compte 10 diapos au maximum. Retirez-en {extra} ou publiez-les en stories.",
-    tallFormat:
-      "Le fil recadre les publications en 4:5. Publiez plutôt ce format 9:16 en stories.",
+    issue: {
+      slides:
+        "{value} diapos ; un carrousel Instagram en compte {limit} au maximum. Retirez-en {extra} ou publiez-les en stories.",
+      aspect:
+        "Les diapos font {size} ({ratio}:1) ; le fil accepte de 4:5 (0,80:1) à 1,91:1. Publiez plutôt ce format en stories.",
+      storyAspect:
+        "Les diapos font {size} ({ratio}:1) ; les stories remplissent l'écran en 9:16 (0,56:1), ce format s'affichera donc avec des bandes vides.",
+      size: "La diapo {n} pèse {value} ; Instagram accepte les images jusqu'à {limit}.",
+      caption:
+        "La légende compte {value} caractères ; Instagram en accepte {limit} au maximum.",
+      hashtags: "{value} hashtags ; Instagram en accepte {limit} au maximum.",
+      suggestedHashtags:
+        "{value} hashtags ; Instagram en demande désormais {limit} au maximum par publication.",
+      mentions: "{value} mentions @ ; Instagram en accepte {limit} au maximum.",
+    },
+    check: {
+      slides: "{value} diapos sur {limit}",
+      aspect: "{size} entre 4:5 et 1,91:1",
+      size: "Diapo la plus lourde : {value} sur {limit}",
+      caption: "{value} caractères sur {limit}",
+      hashtags: "{value} hashtags sur {limit}",
+      mentions: "{value} mentions sur {limit}",
+    },
     publishNow: "Publier maintenant",
     scheduleSubmit: "Programmer",
     cancel: "Annuler",
@@ -188,7 +224,6 @@ export const messages = defineMessages({
     captionPlaceholder: "Escribe un texto… #cómic #webcomic",
     fold: "Los primeros 125 caracteres se ven antes de «más».",
     hashtags: { one: "{count} hashtag", other: "{count} hashtags" },
-    tooManyHashtags: "Instagram permite 30 hashtags como máximo.",
     storiesNoCaption: "Las historias no muestran el texto.",
     when: "Cuándo",
     now: "Ahora",
@@ -209,10 +244,29 @@ export const messages = defineMessages({
       "Lo leen en voz alta los lectores de pantalla. Se rellena con el rotulado de cada diapositiva.",
     slideN: "Diapositiva {n}",
     slides: { one: "{count} diapositiva", other: "{count} diapositivas" },
-    tooManySlides:
-      "Un carrusel de Instagram admite hasta 10 diapositivas. Quita {extra} o publícalas como historias.",
-    tallFormat:
-      "El feed recorta las publicaciones a 4:5. Publica este formato 9:16 como historias.",
+    issue: {
+      slides:
+        "{value} diapositivas; un carrusel de Instagram admite hasta {limit}. Quita {extra} o publícalas como historias.",
+      aspect:
+        "Las diapositivas miden {size} ({ratio}:1); el feed admite de 4:5 (0,80:1) a 1,91:1. Publica este formato como historias.",
+      storyAspect:
+        "Las diapositivas miden {size} ({ratio}:1); las historias llenan la pantalla en 9:16 (0,56:1), así que este formato se verá con espacio vacío.",
+      size: "La diapositiva {n} pesa {value}; Instagram admite imágenes de hasta {limit}.",
+      caption:
+        "El texto tiene {value} caracteres; Instagram admite hasta {limit}.",
+      hashtags: "{value} hashtags; Instagram admite hasta {limit}.",
+      suggestedHashtags:
+        "{value} hashtags; Instagram ahora pide {limit} como máximo por publicación.",
+      mentions: "{value} menciones @; Instagram admite hasta {limit}.",
+    },
+    check: {
+      slides: "{value} de {limit} diapositivas",
+      aspect: "{size} dentro de 4:5 a 1,91:1",
+      size: "Diapositiva más pesada: {value} de {limit}",
+      caption: "{value} de {limit} caracteres",
+      hashtags: "{value} de {limit} hashtags",
+      mentions: "{value} de {limit} menciones",
+    },
     publishNow: "Publicar ahora",
     scheduleSubmit: "Programar",
     cancel: "Cancelar",
@@ -266,7 +320,6 @@ export const messages = defineMessages({
     captionPlaceholder: "Bildunterschrift schreiben… #comic #webcomic",
     fold: "Die ersten 125 Zeichen erscheinen vor „mehr“.",
     hashtags: { one: "{count} Hashtag", other: "{count} Hashtags" },
-    tooManyHashtags: "Instagram erlaubt höchstens 30 Hashtags.",
     storiesNoCaption: "Storys zeigen keine Bildunterschrift.",
     when: "Wann",
     now: "Jetzt",
@@ -287,10 +340,29 @@ export const messages = defineMessages({
       "Wird von Screenreadern vorgelesen. Vorausgefüllt mit dem Lettering jeder Slide.",
     slideN: "Slide {n}",
     slides: { one: "{count} Slide", other: "{count} Slides" },
-    tooManySlides:
-      "Ein Instagram-Karussell hat höchstens 10 Slides. Entferne {extra} oder poste sie als Storys.",
-    tallFormat:
-      "Feed-Beiträge werden auf 4:5 zugeschnitten. Poste dieses 9:16-Format lieber als Storys.",
+    issue: {
+      slides:
+        "{value} Slides; ein Instagram-Karussell hat höchstens {limit}. Entferne {extra} oder poste sie als Storys.",
+      aspect:
+        "Die Slides sind {size} ({ratio}:1); Feed-Beiträge dürfen 4:5 (0,80:1) bis 1,91:1 sein. Poste dieses Format lieber als Storys.",
+      storyAspect:
+        "Die Slides sind {size} ({ratio}:1); Storys füllen den Bildschirm bei 9:16 (0,56:1), dieses Format erscheint also mit Leerflächen.",
+      size: "Slide {n} hat {value}; Instagram nimmt Bilder bis {limit}.",
+      caption:
+        "Die Bildunterschrift hat {value} Zeichen; Instagram nimmt bis zu {limit}.",
+      hashtags: "{value} Hashtags; Instagram nimmt bis zu {limit}.",
+      suggestedHashtags:
+        "{value} Hashtags; Instagram verlangt jetzt höchstens {limit} pro Beitrag.",
+      mentions: "{value} @-Erwähnungen; Instagram nimmt bis zu {limit}.",
+    },
+    check: {
+      slides: "{value} von {limit} Slides",
+      aspect: "{size} passt in 4:5 bis 1,91:1",
+      size: "Größte Slide {value} von {limit}",
+      caption: "{value} von {limit} Zeichen",
+      hashtags: "{value} von {limit} Hashtags",
+      mentions: "{value} von {limit} Erwähnungen",
+    },
     publishNow: "Jetzt veröffentlichen",
     scheduleSubmit: "Beitrag planen",
     cancel: "Abbrechen",
@@ -344,7 +416,6 @@ export const messages = defineMessages({
     captionPlaceholder: "Scrivi una didascalia… #fumetti #webcomic",
     fold: "I primi 125 caratteri appaiono prima di «altro».",
     hashtags: { one: "{count} hashtag", other: "{count} hashtag" },
-    tooManyHashtags: "Instagram consente al massimo 30 hashtag.",
     storiesNoCaption: "Le storie non mostrano la didascalia.",
     when: "Quando",
     now: "Ora",
@@ -365,10 +436,29 @@ export const messages = defineMessages({
       "Letto ad alta voce dagli screen reader. Precompilato con il lettering di ogni slide.",
     slideN: "Slide {n}",
     slides: { one: "{count} slide", other: "{count} slide" },
-    tooManySlides:
-      "Un carosello Instagram ha al massimo 10 slide. Rimuovine {extra} o pubblicale come storie.",
-    tallFormat:
-      "Il feed ritaglia i post in 4:5. Pubblica questo formato 9:16 come storie.",
+    issue: {
+      slides:
+        "{value} slide; un carosello Instagram ne ha al massimo {limit}. Rimuovine {extra} o pubblicale come storie.",
+      aspect:
+        "Le slide sono {size} ({ratio}:1); il feed accetta da 4:5 (0,80:1) a 1,91:1. Pubblica questo formato come storie.",
+      storyAspect:
+        "Le slide sono {size} ({ratio}:1); le storie riempiono lo schermo in 9:16 (0,56:1), quindi questo formato appare con spazi vuoti.",
+      size: "La slide {n} pesa {value}; Instagram accetta immagini fino a {limit}.",
+      caption:
+        "La didascalia ha {value} caratteri; Instagram ne accetta al massimo {limit}.",
+      hashtags: "{value} hashtag; Instagram ne accetta al massimo {limit}.",
+      suggestedHashtags:
+        "{value} hashtag; ora Instagram ne chiede al massimo {limit} per post.",
+      mentions: "{value} menzioni @; Instagram ne accetta al massimo {limit}.",
+    },
+    check: {
+      slides: "{value} slide su {limit}",
+      aspect: "{size} entro 4:5 e 1,91:1",
+      size: "Slide più pesante: {value} su {limit}",
+      caption: "{value} caratteri su {limit}",
+      hashtags: "{value} hashtag su {limit}",
+      mentions: "{value} menzioni su {limit}",
+    },
     publishNow: "Pubblica ora",
     scheduleSubmit: "Programma post",
     cancel: "Annulla",
@@ -422,7 +512,6 @@ export const messages = defineMessages({
     captionPlaceholder: "キャプションを入力… #マンガ #webcomic",
     fold: "最初の125文字が「続きを読む」の前に表示されます。",
     hashtags: { other: "ハッシュタグ {count} 件" },
-    tooManyHashtags: "Instagramのハッシュタグは30個までです。",
     storiesNoCaption: "ストーリーズにはキャプションが表示されません。",
     when: "タイミング",
     now: "今すぐ",
@@ -443,10 +532,31 @@ export const messages = defineMessages({
       "スクリーンリーダーで読み上げられます。各スライドの文字から自動入力されます。",
     slideN: "スライド {n}",
     slides: { other: "{count} 枚のスライド" },
-    tooManySlides:
-      "Instagramのカルーセルは最大10枚です。{extra} 枚を削除するか、ストーリーズとして投稿してください。",
-    tallFormat:
-      "フィード投稿は4:5にトリミングされます。この9:16の形式はストーリーズとして投稿してください。",
+    issue: {
+      slides:
+        "スライドが{value}枚あります。Instagramのカルーセルは最大{limit}枚です。{extra}枚を削除するか、ストーリーズとして投稿してください。",
+      aspect:
+        "スライドは{size}（{ratio}:1）です。フィード投稿は4:5（0.80:1）から1.91:1までです。この形式はストーリーズとして投稿してください。",
+      storyAspect:
+        "スライドは{size}（{ratio}:1）です。ストーリーズは9:16（0.56:1）で全画面になるため、この形式では余白が出ます。",
+      size: "スライド{n}は{value}です。Instagramの画像は{limit}までです。",
+      caption:
+        "キャプションは{value}文字です。Instagramの上限は{limit}文字です。",
+      hashtags:
+        "ハッシュタグが{value}個あります。Instagramの上限は{limit}個です。",
+      suggestedHashtags:
+        "ハッシュタグが{value}個あります。Instagramは現在、1投稿あたり{limit}個までを求めています。",
+      mentions:
+        "@メンションが{value}件あります。Instagramの上限は{limit}件です。",
+    },
+    check: {
+      slides: "スライド {value}／{limit}枚",
+      aspect: "{size}は4:5〜1.91:1の範囲内",
+      size: "最大のスライド {value}／{limit}",
+      caption: "{value}／{limit}文字",
+      hashtags: "ハッシュタグ {value}／{limit}個",
+      mentions: "メンション {value}／{limit}件",
+    },
     publishNow: "今すぐ公開",
     scheduleSubmit: "投稿を予約",
     cancel: "キャンセル",

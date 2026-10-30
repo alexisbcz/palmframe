@@ -56,6 +56,7 @@ export const messages = defineMessages({
       remove_bg: "No background",
       face_fix: "Faces",
       restyle: "Restyled",
+      engine: "Other engine",
     },
     errors: {
       mask: "Paint a mask over the panel first.",
@@ -118,6 +119,7 @@ export const messages = defineMessages({
       remove_bg: "Détourée",
       face_fix: "Visages",
       restyle: "Restylisée",
+      engine: "Autre moteur",
     },
     errors: {
       mask: "Peignez d’abord un masque sur la case.",
@@ -180,6 +182,7 @@ export const messages = defineMessages({
       remove_bg: "Sin fondo",
       face_fix: "Caras",
       restyle: "Restilizada",
+      engine: "Otro motor",
     },
     errors: {
       mask: "Primero pinta una máscara sobre la viñeta.",
@@ -242,6 +245,7 @@ export const messages = defineMessages({
       remove_bg: "Freigestellt",
       face_fix: "Gesichter",
       restyle: "Neuer Look",
+      engine: "Andere Engine",
     },
     errors: {
       mask: "Male zuerst eine Maske auf das Panel.",
@@ -304,6 +308,7 @@ export const messages = defineMessages({
       remove_bg: "Scontornata",
       face_fix: "Volti",
       restyle: "Nuovo stile",
+      engine: "Altro motore",
     },
     errors: {
       mask: "Prima dipingi una maschera sulla vignetta.",
@@ -365,6 +370,7 @@ export const messages = defineMessages({
       remove_bg: "切り抜き",
       face_fix: "顔補正",
       restyle: "スタイル変更",
+      engine: "別のエンジン",
     },
     errors: {
       mask: "先にコマの上にマスクを塗ってください。",

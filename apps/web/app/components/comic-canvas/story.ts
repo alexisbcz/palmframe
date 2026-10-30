@@ -20,6 +20,8 @@ export interface PanelDraft {
   prompt: string
   cast: string[]
   lines: string
+  // The prompt template that planned it, kept on the panel once applied.
+  planner?: string
 }
 
 export interface Line {
@@ -150,7 +152,8 @@ export function draftOf(panel: PanelLayer): PanelDraft {
 
 export function draftFromPlan(
   plan: PlannedPanel,
-  cast: Character[] = []
+  cast: Character[] = [],
+  planner?: string
 ): PanelDraft {
   const ids = new Map(cast.map((c) => [c.name.trim().toLowerCase(), c.id]))
   return {
@@ -160,6 +163,7 @@ export function draftFromPlan(
       .map((n) => ids.get(n.toLowerCase()))
       .filter((id): id is string => !!id),
     lines: formatLines(plan.dialogue),
+    planner,
   }
 }
 
@@ -170,6 +174,7 @@ export function panelPatch(draft: PanelDraft, cast: Character[] = []) {
     tags: draft.tags,
     prompt: draft.prompt.trim(),
     cast: [...new Set([...draft.cast, ...named])],
+    ...(draft.planner && { planner: draft.planner }),
   }
 }
 

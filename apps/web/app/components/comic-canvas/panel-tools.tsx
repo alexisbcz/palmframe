@@ -356,7 +356,11 @@ export function TakesGrid({
                 )}
                 style={{ aspectRatio: `${panel.width} / ${panel.height}` }}
                 onClick={() =>
-                  editor.update(panel.id, { src: take.src, seed: take.seed })
+                  editor.update(panel.id, {
+                    src: take.src,
+                    seed: take.seed,
+                    engine: take.engine,
+                  })
                 }
               >
                 <img
