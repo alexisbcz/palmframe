@@ -6,6 +6,18 @@ Live at [www.palmframe.com](https://www.palmframe.com).
 
 ![The Palmframe editor: a five-slide Instagram carousel, with the selected panel's prompt and AI edit tools](docs/editor.png)
 
+## Example
+
+*Lost Property*, a six-slide carousel about a station's lost-and-found clerk and
+the red umbrella she never threw away. Its characters are drawn from model
+sheets, so they stay the same from panel to panel. You can open it in the editor
+at `/?project=/comics/lost-property.json`.
+
+| | | |
+| --- | --- | --- |
+| ![Slide 1: Mara behind the lost-and-found counter, with the title Lost Property](docs/lost-property/slide-1.png) | ![Slide 2: the thirty-day rule, and a red umbrella left on a platform twelve years ago](docs/lost-property/slide-2.png) | ![Slide 3: Mara stands the umbrella by the window, and an old man arrives at the door](docs/lost-property/slide-3.png) |
+| ![Slide 4: the old man says his wife lost a red umbrella, and Mara lays it on the counter](docs/lost-property/slide-4.png) | ![Slide 5: he hugs the umbrella and asks her to lend it to the next person the rain catches](docs/lost-property/slide-5.png) | ![Slide 6: Mara lends the umbrella to a soaked stranger, and it disappears into the crowd](docs/lost-property/slide-6.png) |
+
 ## Stack
 
 - [React Router](https://reactrouter.com) app in `apps/web`
