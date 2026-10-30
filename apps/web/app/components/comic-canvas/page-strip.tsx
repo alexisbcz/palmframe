@@ -63,15 +63,17 @@ export function PageStrip({
   editor,
   images,
   generating,
+  thumbHeight = THUMB_HEIGHT,
 }: {
   editor: ComicEditor
   images: ImageCache
   generating: Record<string, unknown>
+  thumbHeight?: number
 }) {
   const t = useT(messages)
   const { project, pageIndex } = editor
   const count = project.pages.length
-  const width = Math.round((THUMB_HEIGHT * project.width) / project.height)
+  const width = Math.round((thumbHeight * project.width) / project.height)
   const [dragFrom, setDragFrom] = React.useState<number | null>(null)
   const [dropAt, setDropAt] = React.useState<number | null>(null)
   const activeRef = React.useRef<HTMLLIElement>(null)
@@ -169,7 +171,7 @@ export function PageStrip({
                   "relative block cursor-pointer overflow-hidden rounded-sm ring-1 ring-foreground/15 transition-shadow outline-none hover:ring-foreground/40 focus-visible:ring-2 focus-visible:ring-ring",
                   active && "ring-2 ring-amber-500 hover:ring-amber-500"
                 )}
-                style={{ width, height: THUMB_HEIGHT }}
+                style={{ width, height: thumbHeight }}
                 data-roving
                 onClick={() => editor.goToPage(i)}
                 // Option+arrows move the slide itself.
@@ -262,7 +264,7 @@ export function PageStrip({
                 : t("addAfter")
             }
             className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed text-xs text-muted-foreground transition-colors outline-none hover:border-foreground/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ width, height: THUMB_HEIGHT }}
+            style={{ width, height: thumbHeight }}
             onClick={editor.addPage}
           >
             <HugeiconsIcon

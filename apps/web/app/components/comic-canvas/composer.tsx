@@ -126,10 +126,12 @@ export function Composer({
   ref,
   editor,
   generator,
+  height,
 }: {
   ref?: React.Ref<ComposerHandle>
   editor: ComicEditor
   generator: Generator
+  height?: number
 }) {
   const t = useT(messages)
   const ta = useT(accountMessages)
@@ -185,7 +187,8 @@ export function Composer({
     <div
       ref={rootRef}
       data-slot="comic-composer"
-      className="relative shrink-0 border-t bg-background px-3 py-2.5"
+      style={{ minHeight: height }}
+      className="relative flex shrink-0 flex-col border-t bg-background px-3 py-2.5"
     >
       {open === "setup" && (
         <div className="absolute inset-x-3 bottom-full z-30 mx-auto mb-2 max-w-3xl">
@@ -235,7 +238,7 @@ export function Composer({
       <div
         data-roving-group
         onKeyDown={roving()}
-        className="mx-auto flex max-w-5xl gap-2 rounded-2xl bg-muted/60 p-2 ring-1 ring-foreground/10 transition-shadow has-[textarea:focus]:ring-3 has-[textarea:focus]:ring-ring/50"
+        className="mx-auto flex w-full max-w-5xl flex-1 gap-2 rounded-2xl bg-muted/60 p-2 ring-1 ring-foreground/10 transition-shadow has-[textarea:focus]:ring-3 has-[textarea:focus]:ring-ring/50"
       >
         <div className="flex min-w-0 flex-1 flex-col gap-2">
           <textarea
@@ -254,7 +257,7 @@ export function Composer({
                 run()
               }
             }}
-            className="min-h-12 w-full resize-none bg-transparent px-2 py-1 text-[15px] outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+            className="min-h-12 w-full flex-1 resize-none bg-transparent px-2 py-1 text-[15px] outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
           />
           <div className="-m-1 flex min-w-0 [scrollbar-width:none] items-center gap-1.5 overflow-x-auto p-1">
             <div className="relative">

@@ -21,6 +21,11 @@ import {
 
 import { Button } from "@workspace/ui/components/button"
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible"
+import {
   DropdownMenu,
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -71,6 +76,44 @@ import { useT } from "@/i18n/core"
 import { messages } from "./editor.messages"
 
 const ZOOM_STEPS = [0.1, 0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.5, 2, 3, 4]
+
+const DOCKS_KEY = "palmframe:docks"
+const ALL_DOCKS = {
+  left: true,
+  right: true,
+  top: true,
+  bottom: true,
+  sizes: {} as Partial<Record<Side, number>>,
+}
+type Side = "left" | "right" | "top" | "bottom"
+type Docks = typeof ALL_DOCKS
+
+// In pixels. The share caps what one panel may take from a small window.
+const DOCK_SIZES: Record<
+  Side,
+  { min: number; max: number; share: number; initial: number }
+> = {
+  left: { min: 200, max: 480, share: 0.35, initial: 288 },
+  right: { min: 240, max: 480, share: 0.35, initial: 288 },
+  top: { min: 90, max: 250, share: 0.3, initial: 117 },
+  bottom: { min: 130, max: 420, share: 0.4, initial: 130 },
+}
+// How far past its minimum a panel is dragged before it collapses instead.
+const COLLAPSE_PAST = 48
+// The strip's padding and border around a thumbnail.
+const STRIP_CHROME = 33
+
+// Each rail lies just outside its panel, against the border, so it never
+// covers the panel's own controls. `after` is the line, `before` the grip that
+// marks a closed panel.
+const RAIL: Record<Side, string> = {
+  left: "inset-y-0 start-full w-3 after:inset-y-0 after:start-0 after:w-0.5 before:start-0.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2",
+  right:
+    "inset-y-0 end-full w-3 after:inset-y-0 after:end-0 after:w-0.5 before:end-0.5 before:top-1/2 before:h-8 before:w-1 before:-translate-y-1/2",
+  top: "inset-x-0 top-full h-3 after:inset-x-0 after:top-0 after:h-0.5 before:top-0.5 before:left-1/2 before:h-1 before:w-8 before:-translate-x-1/2",
+  bottom:
+    "inset-x-0 bottom-full h-3 after:inset-x-0 after:bottom-0 after:h-0.5 before:bottom-0.5 before:left-1/2 before:h-1 before:w-8 before:-translate-x-1/2",
+}
 
 // Focus on the page itself or the stage, not on some control.
 function onCanvas(target: EventTarget | null) {
@@ -145,12 +188,14 @@ export function ComicCanvasEditor({
   const [sheet, setSheet] = React.useState<"layers" | "inspect" | null>(null)
   // Tablets get the properties as a side sheet, phones from the bottom.
   const wide = useMedia("(min-width: 768px)")
+  const [docks, setDocks, setDockSize] = useDocks()
+  const dockSize = (side: Side) => docks.sizes[side] ?? DOCK_SIZES[side].initial
   const composerRef = React.useRef<ComposerHandle>(null)
   // The composer mounts with the selection, so wait a frame before focusing.
-  const focusComposer = React.useCallback(
-    () => requestAnimationFrame(() => composerRef.current?.focus()),
-    []
-  )
+  const focusComposer = React.useCallback(() => {
+    setDocks({ bottom: true })
+    requestAnimationFrame(() => composerRef.current?.focus())
+  }, [setDocks])
   const images = React.useMemo<ImageCache>(() => new Map(), [])
   const [view, setView] = React.useState({ zoom: 0.5, fit: true })
   const onZoom = React.useCallback(
@@ -344,20 +389,41 @@ export function ComicCanvasEditor({
       </header>
 
       <div className="flex min-h-0">
-        <aside className="hidden w-72 shrink-0 border-e bg-background md:block">
-          <Sidebar
-            editor={editor}
-            tab={tab}
-            onTabChange={setTab}
-            onContextMenu={openMenu}
-          />
-        </aside>
+        <Dock
+          side="left"
+          label={t("toolbar.layers")}
+          isExpanded={docks.left}
+          onExpandedChange={(left) => setDocks({ left })}
+          onResize={(size) => setDockSize("left", size)}
+          className="max-md:hidden"
+        >
+          <aside
+            className="h-full border-e bg-background"
+            style={{ width: dockSize("left") }}
+          >
+            <Sidebar
+              editor={editor}
+              tab={tab}
+              onTabChange={setTab}
+              onContextMenu={openMenu}
+            />
+          </aside>
+        </Dock>
         <main className="flex min-w-0 flex-1 flex-col">
-          <PageStrip
-            editor={editor}
-            images={images}
-            generating={generator.jobs}
-          />
+          <Dock
+            side="top"
+            label={t("toolbar.slides")}
+            isExpanded={docks.top || !wide}
+            onExpandedChange={(top) => setDocks({ top })}
+            onResize={(size) => setDockSize("top", size)}
+          >
+            <PageStrip
+              editor={editor}
+              images={images}
+              generating={generator.jobs}
+              thumbHeight={wide ? dockSize("top") - STRIP_CHROME : undefined}
+            />
+          </Dock>
           <div className="relative flex min-h-0 flex-1">
             <Stage
               editor={editor}
@@ -380,11 +446,36 @@ export function ComicCanvasEditor({
               }}
             />
           </div>
-          <Composer ref={composerRef} editor={editor} generator={generator} />
+          <Dock
+            side="bottom"
+            label={t("toolbar.prompt")}
+            isExpanded={docks.bottom || !wide}
+            onExpandedChange={(bottom) => setDocks({ bottom })}
+            onResize={(size) => setDockSize("bottom", size)}
+          >
+            <Composer
+              ref={composerRef}
+              editor={editor}
+              generator={generator}
+              height={wide ? docks.sizes.bottom : undefined}
+            />
+          </Dock>
         </main>
-        <aside className="hidden w-72 shrink-0 border-s bg-background lg:block">
-          <Inspector editor={editor} onGenerate={focusComposer} />
-        </aside>
+        <Dock
+          side="right"
+          label={t("toolbar.inspect")}
+          isExpanded={docks.right}
+          onExpandedChange={(right) => setDocks({ right })}
+          onResize={(size) => setDockSize("right", size)}
+          className="max-lg:hidden"
+        >
+          <aside
+            className="h-full border-s bg-background"
+            style={{ width: dockSize("right") }}
+          >
+            <Inspector editor={editor} onGenerate={focusComposer} />
+          </aside>
+        </Dock>
       </div>
       <CanvasMenu
         request={menu}
@@ -437,6 +528,117 @@ export function ComicCanvasEditor({
   )
 }
 
+// A panel at the edge of the workspace. Its rail collapses it on a click, giving
+// its room to the stage, and resizes it on a drag or with the arrow keys.
+function Dock({
+  side,
+  label,
+  isExpanded,
+  onExpandedChange,
+  onResize,
+  className,
+  children,
+}: {
+  side: Side
+  label: string
+  isExpanded: boolean
+  onExpandedChange: (expanded: boolean) => void
+  onResize: (size: number) => void
+  className?: string
+  children: React.ReactNode
+}) {
+  const horizontal = side === "left" || side === "right"
+  const dragged = React.useRef(false)
+
+  const measure = (rail: Element) => {
+    const rect = rail.previousElementSibling!.getBoundingClientRect()
+    return horizontal ? rect.width : rect.height
+  }
+  const clamp = (size: number) => {
+    const { min, max, share } = DOCK_SIZES[side]
+    const room = horizontal ? window.innerWidth : window.innerHeight
+    return Math.round(Math.max(min, Math.min(size, max, room * share)))
+  }
+
+  const startDrag = (e: React.PointerEvent) => {
+    dragged.current = false
+    if (!isExpanded || e.button !== 0) return
+    const start = horizontal ? e.clientX : e.clientY
+    const from = measure(e.currentTarget)
+    const sign = side === "left" || side === "top" ? 1 : -1
+    let size = from
+    const onMove = (move: PointerEvent) => {
+      const delta = (horizontal ? move.clientX : move.clientY) - start
+      if (Math.abs(delta) < 3 && !dragged.current) return
+      dragged.current = true
+      size = from + delta * sign
+      onResize(clamp(size))
+    }
+    const onUp = () => {
+      window.removeEventListener("pointermove", onMove)
+      window.removeEventListener("pointerup", onUp)
+      document.body.style.userSelect = ""
+      // Reopening brings back the size it had before the drag.
+      if (size < DOCK_SIZES[side].min - COLLAPSE_PAST) {
+        onResize(clamp(from))
+        onExpandedChange(false)
+      }
+    }
+    document.body.style.userSelect = "none"
+    window.addEventListener("pointermove", onMove)
+    window.addEventListener("pointerup", onUp)
+  }
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const keys = horizontal
+      ? { ArrowLeft: -1, ArrowRight: 1 }
+      : { ArrowUp: -1, ArrowDown: 1 }
+    const dir = keys[e.key as keyof typeof keys]
+    if (!dir || !isExpanded) return
+    e.preventDefault()
+    const sign = side === "left" || side === "top" ? 1 : -1
+    const size = measure(e.currentTarget)
+    if (dir * sign < 0 && size <= DOCK_SIZES[side].min) onExpandedChange(false)
+    else onResize(clamp(size + dir * sign * 16))
+  }
+
+  return (
+    <Collapsible
+      isExpanded={isExpanded}
+      // The press that ends a drag isn't a click.
+      onExpandedChange={(expanded) =>
+        dragged.current ? (dragged.current = false) : onExpandedChange(expanded)
+      }
+      className={cn("relative min-w-0 shrink-0", className)}
+    >
+      <CollapsibleContent
+        className={cn(
+          "overflow-clip duration-200 ease-out motion-reduce:transition-none",
+          side === "left" || side === "right"
+            ? "h-full w-(--disclosure-panel-width) transition-[width]"
+            : "h-(--disclosure-panel-height) transition-[height]",
+          // The composer's popovers rise out of it.
+          side === "bottom" && "aria-[hidden=false]:overflow-visible"
+        )}
+      >
+        {children}
+      </CollapsibleContent>
+      <CollapsibleTrigger
+        aria-label={label}
+        onPointerDown={startDrag}
+        onKeyDown={onKeyDown}
+        className={cn(
+          "absolute z-20 cursor-pointer touch-none outline-none before:absolute before:rounded-full before:bg-foreground/25 before:transition-colors after:absolute after:transition-colors hover:before:bg-ring hover:after:bg-ring focus-visible:before:bg-ring focus-visible:after:bg-ring aria-expanded:before:opacity-0 max-md:hidden",
+          horizontal
+            ? "aria-expanded:cursor-col-resize"
+            : "aria-expanded:cursor-row-resize",
+          RAIL[side]
+        )}
+      />
+    </Collapsible>
+  )
+}
+
 function ToolButton({
   label,
   shortcut,
@@ -484,6 +686,38 @@ function useMedia(query: string) {
     () => window.matchMedia(query).matches,
     () => false
   )
+}
+
+function useDocks() {
+  const [docks, setDocks] = React.useState(ALL_DOCKS)
+
+  React.useEffect(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(DOCKS_KEY) ?? "null")
+      if (saved) setDocks({ ...ALL_DOCKS, ...saved })
+    } catch {}
+  }, [])
+
+  const store = React.useCallback((change: (docks: Docks) => Docks) => {
+    setDocks((current) => {
+      const next = change(current)
+      try {
+        localStorage.setItem(DOCKS_KEY, JSON.stringify(next))
+      } catch {}
+      return next
+    })
+  }, [])
+  const update = React.useCallback(
+    (patch: Partial<Docks>) => store((d) => ({ ...d, ...patch })),
+    [store]
+  )
+  const resize = React.useCallback(
+    (side: Side, size: number) =>
+      store((d) => ({ ...d, sizes: { ...d.sizes, [side]: size } })),
+    [store]
+  )
+
+  return [docks, update, resize] as const
 }
 
 function Toolbar({

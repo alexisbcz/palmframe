@@ -23,6 +23,8 @@ export const messages = defineMessages({
       zoomIn: "Zoom in",
       zoomOut: "Zoom out",
       zoomFit: "Zoom to fit",
+      slides: "Slides",
+      prompt: "Prompt",
     },
   },
   fr: {
@@ -47,6 +49,8 @@ export const messages = defineMessages({
       zoomIn: "Zoom avant",
       zoomOut: "Zoom arrière",
       zoomFit: "Ajuster à l’écran",
+      slides: "Diapos",
+      prompt: "Prompt",
     },
   },
   es: {
@@ -71,6 +75,8 @@ export const messages = defineMessages({
       zoomIn: "Acercar",
       zoomOut: "Alejar",
       zoomFit: "Ajustar a la pantalla",
+      slides: "Diapositivas",
+      prompt: "Prompt",
     },
   },
   de: {
@@ -95,6 +101,8 @@ export const messages = defineMessages({
       zoomIn: "Vergrößern",
       zoomOut: "Verkleinern",
       zoomFit: "An Fenster anpassen",
+      slides: "Folien",
+      prompt: "Prompt",
     },
   },
   it: {
@@ -119,6 +127,8 @@ export const messages = defineMessages({
       zoomIn: "Ingrandisci",
       zoomOut: "Riduci",
       zoomFit: "Adatta alla finestra",
+      slides: "Slide",
+      prompt: "Prompt",
     },
   },
   ja: {
@@ -143,6 +153,8 @@ export const messages = defineMessages({
       zoomIn: "拡大",
       zoomOut: "縮小",
       zoomFit: "全体を表示",
+      slides: "スライド",
+      prompt: "プロンプト",
     },
   },
 })
