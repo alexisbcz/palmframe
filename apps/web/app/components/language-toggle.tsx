@@ -6,10 +6,8 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 
 import { LOCALES, LOCALE_NAMES, isLocale, useLocale, useT } from "@/i18n/core"
-import { Flag } from "./flag"
+import { FLAG_CLASS, Flag } from "./flag"
 import { messages } from "./toggles.messages"
-
-const FLAG = "h-3 w-[1.125rem] rounded-[2px] ring-1 ring-foreground/15"
 
 export function LanguageToggle() {
   const { locale, setLocale } = useLocale()
@@ -22,7 +20,7 @@ export function LanguageToggle() {
         size="icon"
         aria-label={`${t("language")}: ${LOCALE_NAMES[locale]}`}
       >
-        <Flag locale={locale} className={FLAG} />
+        <Flag locale={locale} className={FLAG_CLASS} />
       </Button>
       <DropdownMenu
         placement="bottom end"
@@ -33,7 +31,7 @@ export function LanguageToggle() {
       >
         {LOCALES.map((l) => (
           <DropdownMenuItem key={l} id={l} textValue={LOCALE_NAMES[l]}>
-            <Flag locale={l} className={FLAG} />
+            <Flag locale={l} className={FLAG_CLASS} />
             <span lang={l}>{LOCALE_NAMES[l]}</span>
           </DropdownMenuItem>
         ))}

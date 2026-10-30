@@ -148,7 +148,10 @@ export function ExportButton({
       }
     }
     const onDown = (e: PointerEvent) => {
-      if (open && !rootRef.current?.contains(e.target as Node)) setOpen(false)
+      // The lettering language's menu renders outside the panel.
+      const target = e.target as Element
+      if (target.closest?.('[role="menu"]')) return
+      if (open && !rootRef.current?.contains(target)) setOpen(false)
     }
     window.addEventListener("keydown", onKey)
     document.addEventListener("pointerdown", onDown, true)

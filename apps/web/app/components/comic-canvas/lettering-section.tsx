@@ -1,5 +1,7 @@
 import * as React from "react"
 import { Link } from "react-router"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
@@ -9,14 +11,16 @@ import {
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible"
 import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@workspace/ui/components/native-select"
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Textarea } from "@workspace/ui/components/textarea"
 
+import { FLAG_CLASS, Flag } from "@/components/flag"
 import { openSettings } from "@/components/settings/settings-dialog"
-import { LOCALES, LOCALE_NAMES, useT, type Locale } from "@/i18n/core"
+import { LOCALES, LOCALE_NAMES, isLocale, useT, type Locale } from "@/i18n/core"
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
 
 import { messages } from "./lettering.messages"
@@ -97,25 +101,47 @@ export function LetteringSection({
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2">
         <span className="text-sm text-muted-foreground">{t("language")}</span>
-        <NativeSelect
-          className="w-full"
-          value={language ?? ""}
-          disabled={busy}
-          onChange={(e) => {
-            setError(null)
-            onLanguage((e.target.value || null) as Locale | null)
-          }}
-        >
-          <NativeSelectOption value="">{t("original")}</NativeSelectOption>
-          {LOCALES.map((l) => (
-            <NativeSelectOption key={l} value={l}>
-              {LOCALE_NAMES[l]}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
-      </label>
+        <DropdownMenuTrigger>
+          <Button
+            variant="outline"
+            className="w-full justify-start"
+            aria-label={`${t("language")}: ${language ? LOCALE_NAMES[language] : t("original")}`}
+            isDisabled={busy}
+          >
+            {language && <Flag locale={language} className={FLAG_CLASS} />}
+            <span lang={language ?? undefined}>
+              {language ? LOCALE_NAMES[language] : t("original")}
+            </span>
+            <HugeiconsIcon
+              icon={ArrowDown01Icon}
+              strokeWidth={2}
+              data-icon="inline-end"
+              className="ms-auto"
+            />
+          </Button>
+          <DropdownMenu
+            className="w-(--trigger-width)"
+            selectionMode="single"
+            selectedKeys={[language ?? "original"]}
+            onAction={(key) => {
+              setError(null)
+              onLanguage(isLocale(key) ? key : null)
+            }}
+          >
+            <DropdownMenuItem id="original" textValue={t("original")}>
+              {t("original")}
+            </DropdownMenuItem>
+            {LOCALES.map((l) => (
+              <DropdownMenuItem key={l} id={l} textValue={LOCALE_NAMES[l]}>
+                <Flag locale={l} className={FLAG_CLASS} />
+                <span lang={l}>{LOCALE_NAMES[l]}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenu>
+        </DropdownMenuTrigger>
+      </div>
 
       {language && !lines.length && (
         <p className="text-xs text-muted-foreground">{t("nothing")}</p>

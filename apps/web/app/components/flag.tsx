@@ -2,6 +2,9 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import type { Locale } from "@/i18n/core"
 
+export const FLAG_CLASS =
+  "h-3 w-[1.125rem] rounded-[2px] ring-1 ring-foreground/15"
+
 // Inline SVG flags: emoji flags don't render on Windows. English uses the
 // UK flag, matching the British spelling of the copy ("colour").
 const FLAGS: Record<Locale, React.ReactNode> = {
