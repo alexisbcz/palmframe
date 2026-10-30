@@ -22,6 +22,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { pageDoc, type ComicDoc } from "./model"
 import { drawDoc, loadImages, type ImageCache } from "./render"
 import { roving } from "./roving"
+import { projectShots, repeatedShots } from "./shot-variety"
 import type { ComicEditor } from "./use-editor"
 import { useT } from "@/i18n/core"
 import { messages } from "./page-strip.messages"
@@ -77,6 +78,11 @@ export function PageStrip({
   const [dragFrom, setDragFrom] = React.useState<number | null>(null)
   const [dropAt, setDropAt] = React.useState<number | null>(null)
   const activeRef = React.useRef<HTMLLIElement>(null)
+  const runs = React.useMemo(
+    () => repeatedShots(projectShots(project)),
+    [project]
+  )
+  const run = runs[0]
 
   React.useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" })
@@ -90,7 +96,7 @@ export function PageStrip({
   return (
     <div
       data-slot="comic-pages"
-      className="flex shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5"
+      className="flex shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5 max-md:flex-wrap"
     >
       <div className="flex shrink-0 flex-col items-center gap-1">
         <span className="text-xs font-medium tabular-nums">
@@ -276,6 +282,26 @@ export function PageStrip({
           </button>
         </li>
       </ol>
+      {run && (
+        <button
+          type="button"
+          title={t("variety.hint")}
+          className="shrink-0 cursor-pointer rounded-sm text-start text-[11px] leading-4 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring max-md:w-full md:max-w-56"
+          onClick={() => editor.goToPage(run.firstPage)}
+        >
+          {t(run.angle === null ? "variety.size" : "variety.sizeAndAngle", {
+            count: run.count,
+            shot: run.framing,
+            angle: run.angle || t("variety.eyeLevel"),
+            slides:
+              run.firstPage === run.lastPage
+                ? run.firstPage + 1
+                : `${run.firstPage + 1}–${run.lastPage + 1}`,
+          })}
+          {runs.length > 1 &&
+            ` · ${t("variety.more", { count: runs.length - 1 })}`}
+        </button>
+      )}
     </div>
   )
 }

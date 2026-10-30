@@ -5,11 +5,14 @@ import {
   DEFAULT_LOOK,
   createPanel,
   type Character,
+  type Engine,
   type Look,
   type PaletteId,
   type PanelLayer,
+  type PanelVersion,
   type StyleId,
 } from "./model"
+import { COSTS } from "@/lib/credits"
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
 
 import { readImageFile } from "./render"
@@ -307,7 +310,7 @@ async function render(
     height: number
     seed: number
     steps: number
-    engine?: "anima" | "klein"
+    engine?: Engine
     refs?: string[]
   },
   signal?: AbortSignal
@@ -330,7 +333,15 @@ async function render(
   const img = await readImageFile(
     new File([blob], "panel.png", { type: blob.type })
   )
-  return { src: img.src, ms: Number(res.headers.get("x-render-ms")) || 0 }
+  return {
+    src: img.src,
+    ms: Number(res.headers.get("x-render-ms")) || 0,
+    // A connected OpenRouter account draws with its own model.
+    engine:
+      res.headers.get("x-billed") === "openrouter"
+        ? undefined
+        : (body.engine ?? "anima"),
+  }
 }
 
 // A head-and-shoulders reference of a character, used as their avatar and
@@ -400,10 +411,53 @@ export function kleinSize(width: number, height: number) {
   return { width: snap(w), height: snap(KLEIN_AREA / w) }
 }
 
+// Characters with a model sheet are drawn from it, with Klein.
+export const engineOf = (panel: PanelLayer, cast?: Character[]): Engine =>
+  sheetCast(panel, cast).length ? "klein" : "anima"
+
+export const otherEngine = (engine: Engine): Engine =>
+  engine === "klein" ? "anima" : "klein"
+
+// As the server charges it: Klein with nothing to draw from is priced as a
+// sheet, not as a reference panel.
+export function engineCost(
+  panel: PanelLayer,
+  engine: Engine,
+  cast?: Character[]
+) {
+  if (engine === "anima") return COSTS.panel
+  return sheetCast(panel, cast).length ? COSTS.panel_ref : COSTS.sheet
+}
+
+function renderBody(
+  panel: PanelLayer,
+  project: ComicEditor["project"],
+  engine: Engine,
+  seed: number
+) {
+  if (engine === "anima")
+    return {
+      ...buildPrompt(panel, project),
+      ...renderSize(panel.width, panel.height),
+      seed,
+      steps: panel.steps ?? DEFAULT_STEPS,
+    }
+  return {
+    prompt: buildKleinPrompt(panel, project),
+    negative: "",
+    ...kleinSize(panel.width, panel.height),
+    seed,
+    steps: 4,
+    engine,
+    refs: sheetCast(panel, project.cast).map((c) => c.sheet!),
+  }
+}
+
 export interface Take {
   src: string
   seed: number
   ms: number
+  engine?: Engine
 }
 
 export interface Job {
@@ -411,6 +465,9 @@ export interface Job {
   take: number
   of: number
 }
+
+// Versions kept on a panel, as in edit-tools.
+const MAX_VERSIONS = 8
 
 const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
 
@@ -439,25 +496,8 @@ export function useGenerator(editor: ComicEditor) {
               : randomSeed()
           setJobs((j) => ({ ...j, [panelId]: { startedAt, take, of: count } }))
           const project = editor.projectRef.current
-          // Characters with a model sheet are drawn from it, with Klein.
-          const sheets = sheetCast(panel, project.cast)
           const result = await render(
-            sheets.length
-              ? {
-                  prompt: buildKleinPrompt(panel, project),
-                  negative: "",
-                  ...kleinSize(panel.width, panel.height),
-                  seed,
-                  steps: 4,
-                  engine: "klein",
-                  refs: sheets.map((c) => c.sheet!),
-                }
-              : {
-                  ...buildPrompt(panel, project),
-                  ...renderSize(panel.width, panel.height),
-                  seed,
-                  steps: panel.steps ?? DEFAULT_STEPS,
-                },
+            renderBody(panel, project, engineOf(panel, project.cast), seed),
             controller.signal
           )
           setTakes((t) => ({
@@ -470,6 +510,7 @@ export function useGenerator(editor: ComicEditor) {
           editor.update(panelId, {
             src: result.src,
             seed,
+            engine: result.engine,
             fit: "cover",
             imageZoom: 100,
             panX: 0,
@@ -483,6 +524,72 @@ export function useGenerator(editor: ComicEditor) {
             [panelId]: e instanceof Error ? e.message : String(e),
           }))
         }
+      } finally {
+        controllers.current.delete(panelId)
+        setJobs(({ [panelId]: _, ...rest }) => rest)
+      }
+    },
+    [editor]
+  )
+
+  // The same shot and seed through the given engine. The result joins the
+  // panel's versions and leaves its image alone until it wins the compare.
+  const tryEngine = React.useCallback(
+    async (panelId: string, engine: Engine) => {
+      if (controllers.current.has(panelId)) return null
+      const panel = editor.findLayer(panelId)?.layer
+      if (panel?.type !== "panel" || !hasPrompt(panel)) return null
+      const controller = new AbortController()
+      controllers.current.set(panelId, controller)
+      setErrors(({ [panelId]: _, ...rest }) => rest)
+      const seed = panel.seed ?? randomSeed()
+      setJobs((j) => ({
+        ...j,
+        [panelId]: { startedAt: Date.now(), take: 1, of: 1 },
+      }))
+      try {
+        const result = await render(
+          renderBody(panel, editor.projectRef.current, engine, seed),
+          controller.signal
+        )
+        setTakes((t) => ({
+          ...t,
+          [panelId]: [{ ...result, seed }, ...(t[panelId] ?? [])].slice(0, 24),
+        }))
+        const now = editor.findLayer(panelId)?.layer
+        if (now?.type === "panel") {
+          let versions: PanelVersion[] = now.versions ?? []
+          if (now.src && !versions.some((v) => v.src === now.src))
+            versions = [
+              {
+                src: now.src,
+                kind: "original",
+                engine: now.engine,
+                seed: now.seed,
+              },
+              ...versions,
+            ]
+          editor.update(panelId, {
+            versions: [
+              {
+                src: result.src,
+                kind: "engine" as const,
+                engine: result.engine,
+                seed,
+              },
+              ...versions,
+            ].slice(0, MAX_VERSIONS),
+          })
+        }
+        return result.src
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          setErrors((err) => ({
+            ...err,
+            [panelId]: e instanceof Error ? e.message : String(e),
+          }))
+        }
+        return null
       } finally {
         controllers.current.delete(panelId)
         setJobs(({ [panelId]: _, ...rest }) => rest)
@@ -507,7 +614,7 @@ export function useGenerator(editor: ComicEditor) {
     controllers.current.get(panelId)?.abort()
   }, [])
 
-  return { jobs, takes, errors, generate, generateAll, cancel }
+  return { jobs, takes, errors, generate, tryEngine, generateAll, cancel }
 }
 
 export type Generator = ReturnType<typeof useGenerator>

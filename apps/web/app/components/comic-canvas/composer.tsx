@@ -4,6 +4,7 @@ import {
   ArrowRight01Icon,
   AtIcon,
   CropIcon,
+  GitCompareIcon,
   DashboardSpeed02Icon,
   MinusSignIcon,
   PlusSignIcon,
@@ -27,6 +28,7 @@ import { useT } from "@/i18n/core"
 import { INSUFFICIENT_CREDITS } from "@/lib/credits-store"
 
 import { Avatar, CastRow } from "./cast"
+import { CompareDialog } from "./compare-dialog"
 import { messages } from "./composer.messages"
 import { LookControls } from "./look"
 import { messages as lookMessages } from "./look.messages"
@@ -139,6 +141,7 @@ export function Composer({
   const panel = editor.selected?.type === "panel" ? editor.selected : null
   const look = editor.project.look ?? DEFAULT_LOOK
   const [takes, setTakes] = React.useState(1)
+  const [comparing, setComparing] = React.useState(false)
   const [open, setOpen] = React.useState<
     "setup" | "cast" | "tags" | "advanced" | "takes" | null
   >(null)
@@ -357,6 +360,12 @@ export function Composer({
                 })}
               </Chip>
             )}
+            {panel?.src && (
+              <Chip onClick={() => setComparing(true)}>
+                <HugeiconsIcon icon={GitCompareIcon} strokeWidth={2} />
+                {t("compare")}
+              </Chip>
+            )}
             <div className="flex h-8 shrink-0 items-center rounded-lg border border-foreground/10 bg-background/70 dark:bg-foreground/5">
               <button
                 type="button"
@@ -502,6 +511,15 @@ export function Composer({
         <div className="absolute start-3 bottom-full z-30 mb-2 max-h-[70vh] w-[26rem] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
           <TakesGrid panel={panel} editor={editor} generator={generator} />
         </div>
+      )}
+
+      {comparing && panel && (
+        <CompareDialog
+          panel={panel}
+          editor={editor}
+          generator={generator}
+          onClose={() => setComparing(false)}
+        />
       )}
     </div>
   )

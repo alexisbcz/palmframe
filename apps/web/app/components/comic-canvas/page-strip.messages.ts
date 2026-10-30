@@ -14,6 +14,14 @@ export const messages = defineMessages({
     limit: "Instagram allows {max} slides",
     addAfter: "Add a slide after this one",
     add: "Slide",
+    variety: {
+      size: "{count} “{shot}” panels in a row, slide {slides}",
+      sizeAndAngle:
+        "{count} “{shot}” panels in a row, all {angle}, slide {slides}",
+      eyeLevel: "eye level",
+      more: "+{count} more",
+      hint: "Try a different shot size to vary the rhythm.",
+    },
   },
   fr: {
     previous: "Diapo précédente",
@@ -28,6 +36,14 @@ export const messages = defineMessages({
     limit: "Instagram autorise {max} diapos maximum",
     addAfter: "Ajouter une diapo après celle-ci",
     add: "Diapo",
+    variety: {
+      size: "{count} cases « {shot} » d'affilée, diapo {slides}",
+      sizeAndAngle:
+        "{count} cases « {shot} » d'affilée, toutes {angle}, diapo {slides}",
+      eyeLevel: "à hauteur des yeux",
+      more: "+{count} autres",
+      hint: "Changez de valeur de plan pour varier le rythme.",
+    },
   },
   es: {
     previous: "Diapositiva anterior",
@@ -42,6 +58,14 @@ export const messages = defineMessages({
     limit: "Instagram admite un máximo de {max} diapositivas",
     addAfter: "Añadir una diapositiva después de esta",
     add: "Diapositiva",
+    variety: {
+      size: "{count} viñetas «{shot}» seguidas, diapositiva {slides}",
+      sizeAndAngle:
+        "{count} viñetas «{shot}» seguidas, todas {angle}, diapositiva {slides}",
+      eyeLevel: "a la altura de los ojos",
+      more: "+{count} más",
+      hint: "Prueba otro tamaño de plano para variar el ritmo.",
+    },
   },
   de: {
     previous: "Vorherige Slide",
@@ -56,6 +80,14 @@ export const messages = defineMessages({
     limit: "Instagram erlaubt maximal {max} Slides",
     addAfter: "Slide danach einfügen",
     add: "Slide",
+    variety: {
+      size: "{count} Panels „{shot}“ hintereinander, Slide {slides}",
+      sizeAndAngle:
+        "{count} Panels „{shot}“ hintereinander, alle {angle}, Slide {slides}",
+      eyeLevel: "auf Augenhöhe",
+      more: "+{count} weitere",
+      hint: "Probiere eine andere Einstellungsgröße für mehr Rhythmus.",
+    },
   },
   it: {
     previous: "Slide precedente",
@@ -70,6 +102,14 @@ export const messages = defineMessages({
     limit: "Instagram consente al massimo {max} slide",
     addAfter: "Aggiungi una slide dopo questa",
     add: "Slide",
+    variety: {
+      size: "{count} vignette «{shot}» di fila, slide {slides}",
+      sizeAndAngle:
+        "{count} vignette «{shot}» di fila, tutte {angle}, slide {slides}",
+      eyeLevel: "ad altezza occhi",
+      more: "+{count} altre",
+      hint: "Prova un'altra inquadratura per variare il ritmo.",
+    },
   },
   ja: {
     previous: "前のスライド",
@@ -84,5 +124,13 @@ export const messages = defineMessages({
     limit: "Instagramのスライドは最大{max}枚です",
     addAfter: "この後にスライドを追加",
     add: "スライド",
+    variety: {
+      size: "「{shot}」のコマが{count}個連続しています（スライド{slides}）",
+      sizeAndAngle:
+        "「{shot}」で{angle}のコマが{count}個連続しています（スライド{slides}）",
+      eyeLevel: "目線の高さ",
+      more: "ほか{count}件",
+      hint: "ショットサイズを変えるとリズムが生まれます。",
+    },
   },
 })

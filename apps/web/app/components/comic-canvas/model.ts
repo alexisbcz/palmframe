@@ -18,6 +18,8 @@ export type PaletteId =
   | "brown"
   | "sepia"
 export type Saturation = "vivid" | "balanced" | "muted"
+// What draws a panel: Anima from tags, or FLUX.2 Klein from sentences.
+export type Engine = "anima" | "klein"
 
 // The carousel's look. Every panel draws in it unless it overrides it, so
 // the slides read as one comic.
@@ -79,6 +81,10 @@ export interface PanelLayer extends BaseLayer {
   seed?: number
   lockSeed?: boolean
   steps?: number
+  // What drew the current image, when known.
+  engine?: Engine
+  // The prompt template and version that planned the shot ("story-planner@1").
+  planner?: string
   // Images the panel had before and after AI edits, newest first, so an
   // edit can be compared and reverted.
   versions?: PanelVersion[]
@@ -99,6 +105,10 @@ export interface PanelVersion {
     | "remove_bg"
     | "face_fix"
     | "restyle"
+    // A take from the other engine, waiting to be compared (compare-dialog.tsx).
+    | "engine"
+  engine?: Engine
+  seed?: number
 }
 
 export interface BubbleLayer extends BaseLayer {

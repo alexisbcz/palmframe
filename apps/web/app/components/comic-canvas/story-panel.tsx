@@ -181,7 +181,7 @@ function useStory(editor: ComicEditor, generator: Generator) {
         const drafts = Object.fromEntries(
           (json.panels as PlannedPanel[]).map((p) => [
             p.panel_id,
-            draftFromPlan(p, cast),
+            draftFromPlan(p, cast, json.prompt),
           ])
         )
         patch(pageId, (s) => ({
