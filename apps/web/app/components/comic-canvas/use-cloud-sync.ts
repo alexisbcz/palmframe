@@ -38,7 +38,9 @@ const sameCover = (a: unknown[], b: unknown[]) => a.every((v, i) => v === b[i])
 export function useCloudSync(
   editor: ComicEditor,
   cloud: CloudProject,
-  images: ImageCache
+  images: ImageCache,
+  // Told about each save, with its images in the bucket.
+  onSaved?: (project: ComicProject) => void
 ) {
   const supabase = useSupabase()
   const [status, setStatus] = React.useState<SyncStatus>("saved")
@@ -51,6 +53,8 @@ export function useCloudSync(
   const timer = React.useRef<ReturnType<typeof setTimeout>>(undefined)
   // Empty, so the first save of a session refreshes the cover.
   const cover = React.useRef<{ key: unknown[]; at: number }>({ key: [], at: 0 })
+  const notify = React.useRef(onSaved)
+  notify.current = onSaved
 
   const save = React.useCallback(async (): Promise<void> => {
     clearTimeout(timer.current)
@@ -75,6 +79,7 @@ export function useCloudSync(
       revision.current = rows[0]!.revision
       saved.current = project
       void refreshCover(data)
+      notify.current?.(data)
     } catch {
       setStatus(navigator.onLine ? "error" : "offline")
       timer.current = setTimeout(save, RETRY_DELAY)

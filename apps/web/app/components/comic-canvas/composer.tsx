@@ -4,6 +4,7 @@ import {
   ArrowRight01Icon,
   AtIcon,
   CropIcon,
+  GitCompareIcon,
   DashboardSpeed02Icon,
   MinusSignIcon,
   PlusSignIcon,
@@ -13,6 +14,7 @@ import {
   SparklesIcon,
   StopIcon,
   Tick02Icon,
+  Location01Icon,
 } from "@hugeicons/core-free-icons"
 
 import { Spinner } from "@workspace/ui/components/spinner"
@@ -27,6 +29,8 @@ import { useT } from "@/i18n/core"
 import { INSUFFICIENT_CREDITS } from "@/lib/credits-store"
 
 import { Avatar, CastRow } from "./cast"
+import { WorldRow } from "./world"
+import { CompareDialog } from "./compare-dialog"
 import { messages } from "./composer.messages"
 import { LookControls } from "./look"
 import { messages as lookMessages } from "./look.messages"
@@ -139,8 +143,9 @@ export function Composer({
   const panel = editor.selected?.type === "panel" ? editor.selected : null
   const look = editor.project.look ?? DEFAULT_LOOK
   const [takes, setTakes] = React.useState(1)
+  const [comparing, setComparing] = React.useState(false)
   const [open, setOpen] = React.useState<
-    "setup" | "cast" | "tags" | "advanced" | "takes" | null
+    "setup" | "cast" | "world" | "tags" | "advanced" | "takes" | null
   >(null)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   React.useImperativeHandle(ref, () => ({
@@ -167,6 +172,9 @@ export function Composer({
     QUALITY.find((q) => q.steps === (panel?.steps ?? 8)) ?? QUALITY[1]
   const cast = editor.project.cast ?? []
   const inShot = panel?.cast ?? []
+  const attached = (editor.project.world ?? []).filter((w) =>
+    panel?.world?.includes(w.id)
+  )
   const tags = panel?.tags ?? []
 
   const update = (patch: Partial<PanelLayer>, key?: string) =>
@@ -294,6 +302,17 @@ export function Composer({
               </Chip>
             </div>
             <Chip
+              pressed={open === "world"}
+              disabled={!panel}
+              aria-label={t("world")}
+              onClick={() => setOpen(open === "world" ? null : "world")}
+            >
+              <HugeiconsIcon icon={Location01Icon} strokeWidth={2} />
+              <span className="max-w-28 truncate">
+                {attached.map((w) => w.name).join(", ") || t("world")}
+              </span>
+            </Chip>
+            <Chip
               pressed={open === "tags"}
               disabled={!panel}
               onClick={() => setOpen(open === "tags" ? null : "tags")}
@@ -355,6 +374,12 @@ export function Composer({
                 {t("takesCount", {
                   count: generator.takes[panel.id]!.length,
                 })}
+              </Chip>
+            )}
+            {panel?.src && (
+              <Chip onClick={() => setComparing(true)}>
+                <HugeiconsIcon icon={GitCompareIcon} strokeWidth={2} />
+                {t("compare")}
               </Chip>
             )}
             <div className="flex h-8 shrink-0 items-center rounded-lg border border-foreground/10 bg-background/70 dark:bg-foreground/5">
@@ -473,6 +498,12 @@ export function Composer({
         </div>
       )}
 
+      {open === "world" && panel && (
+        <div className="absolute start-3 bottom-full z-30 mb-2 w-80 max-w-[calc(100%-1.5rem)] rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
+          <WorldRow panel={panel} editor={editor} />
+        </div>
+      )}
+
       {open === "tags" && panel && (
         <div className="absolute start-3 bottom-full z-30 mb-2 w-[26rem] max-w-[calc(100%-1.5rem)] rounded-xl bg-popover p-2.5 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
           <p className="pb-2 text-xs font-medium text-muted-foreground">
@@ -502,6 +533,15 @@ export function Composer({
         <div className="absolute start-3 bottom-full z-30 mb-2 max-h-[70vh] w-[26rem] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
           <TakesGrid panel={panel} editor={editor} generator={generator} />
         </div>
+      )}
+
+      {comparing && panel && (
+        <CompareDialog
+          panel={panel}
+          editor={editor}
+          generator={generator}
+          onClose={() => setComparing(false)}
+        />
       )}
     </div>
   )

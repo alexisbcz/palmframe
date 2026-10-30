@@ -12,7 +12,9 @@ import {
   toProject,
   uid,
   type Character,
+  type WorldItem,
   type ComicDoc,
+  type ComicPage,
   type ComicProject,
   type Layer,
   type Look,
@@ -74,6 +76,16 @@ function reducer(state: History, action: Action): History {
     case "load":
       return { project: action.project, past: [], future: [], lastKey: null }
   }
+}
+
+// A panel check describes one image, so a new image drops it.
+function patched(layer: Layer, patch: Partial<Layer>) {
+  const next = { ...layer, ...patch } as Layer
+  return next.type === "panel" &&
+    layer.type === "panel" &&
+    next.src !== layer.src
+    ? { ...next, check: undefined }
+    : next
 }
 
 // With `initial`, the project comes from the database and saves there
@@ -209,7 +221,7 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
               ? {
                   ...page,
                   layers: page.layers.map((l) =>
-                    l.id === id ? ({ ...l, ...patch } as Layer) : l
+                    l.id === id ? patched(l, patch) : l
                   ),
                 }
               : page
@@ -327,6 +339,20 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     goToPage(i + 1)
   }, [commitProject, goToPage])
 
+  // Puts ready-made slides after the current one and goes to the first.
+  const insertPages = React.useCallback(
+    (pages: ComicPage[]) => {
+      const i = indexRef.current
+      commitProject((p) => {
+        const next = [...p.pages]
+        next.splice(i + 1, 0, ...pages)
+        return { ...p, pages: next }
+      })
+      goToPage(i + 1)
+    },
+    [commitProject, goToPage]
+  )
+
   const duplicatePage = React.useCallback(
     (i: number) => {
       commitProject((p) => {
@@ -425,6 +451,38 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     [commitProject]
   )
 
+  const saveWorldItem = React.useCallback(
+    (item: WorldItem) =>
+      commitProject((p) => {
+        const world = p.world ?? []
+        return {
+          ...p,
+          world: world.some((w) => w.id === item.id)
+            ? world.map((w) => (w.id === item.id ? item : w))
+            : [...world, item],
+        }
+      }),
+    [commitProject]
+  )
+
+  // Also detaches the item from every panel it was on.
+  const removeWorldItem = React.useCallback(
+    (id: string) =>
+      commitProject((p) => ({
+        ...p,
+        world: (p.world ?? []).filter((w) => w.id !== id),
+        pages: p.pages.map((page) => ({
+          ...page,
+          layers: page.layers.map((l) =>
+            l.type === "panel" && l.world?.includes(id)
+              ? { ...l, world: l.world.filter((w) => w !== id) }
+              : l
+          ),
+        })),
+      })),
+    [commitProject]
+  )
+
   // `key` lets a run of changes to one control collapse into one undo step.
   const setLook = React.useCallback(
     (patch: Partial<Look>, key?: string) =>
@@ -469,6 +527,7 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     applyLayout,
     goToPage,
     addPage,
+    insertPages,
     duplicatePage,
     removePage,
     movePage,
@@ -476,6 +535,8 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     replaceProject,
     saveCharacter,
     removeCharacter,
+    saveWorldItem,
+    removeWorldItem,
     setLook,
     undo: React.useCallback(() => dispatch({ type: "undo" }), []),
     redo: React.useCallback(() => dispatch({ type: "redo" }), []),

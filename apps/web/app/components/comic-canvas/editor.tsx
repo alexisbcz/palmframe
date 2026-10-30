@@ -12,6 +12,7 @@ import {
   Layers01Icon,
   PaintBoardIcon,
   Redo02Icon,
+  ScanEyeIcon,
   SparklesIcon,
   SlidersHorizontalIcon,
   SquareIcon,
@@ -45,6 +46,7 @@ import { PublishButton } from "@/components/instagram/publish-dialog"
 
 import { Composer, type ComposerHandle } from "./composer"
 import { ExportButton } from "./export-panel"
+import { RunButton } from "./run-panel"
 import { StoryButton } from "./story-panel"
 import { roving } from "./roving"
 import { download, insertImageFile, pickFile } from "./actions"
@@ -66,9 +68,14 @@ import {
 } from "./model"
 import type { ImageCache } from "./render"
 import { PageStrip } from "./page-strip"
+import { CheckDialog, type CheckScope } from "./check-tools"
+import { messages as checkMessages } from "./check.messages"
 import { RestyleDialog, postprocessMessages } from "./postprocess-tools"
+import { ShareButton } from "./share-dialog"
 import { Sidebar, type SidebarTab } from "./sidebar"
 import { Stage } from "./stage"
+import type { SeriesContext } from "./series"
+import { useSeries } from "./series-dialog"
 import type { CloudProject } from "./use-cloud-sync"
 import { useComicEditor, type ComicEditor } from "./use-editor"
 import { hasPrompt, useGenerator } from "./use-generator"
@@ -167,6 +174,10 @@ function isTyping(target: EventTarget | null) {
   )
 }
 
+// A dialog's keys are its own: the guide drawer has an undo of its own.
+const inDialog = (target: EventTarget | null) =>
+  !!(target as HTMLElement | null)?.closest?.("[data-slot=dialog-content]")
+
 // `instagram` is on when the server can post: signed-in users then connect
 // their own accounts from the Post dialog.
 // With `cloud`, the carousel is a project of the signed-in account and saves there.
@@ -175,16 +186,22 @@ export function ComicCanvasEditor({
   cloud,
 }: {
   instagram?: boolean
-  cloud?: CloudProject & { project: ComicProject }
+  cloud?: CloudProject & {
+    project: ComicProject
+    series: SeriesContext | null
+  }
 }) {
   const t = useT(messages)
   const editor = useComicEditor({ initial: cloud?.project })
+  const series = useSeries(cloud?.series ?? null, editor)
   const submit = useSubmit()
   const viewer = useViewer()
   const generator = useGenerator(editor)
   const [tab, setTab] = React.useState<SidebarTab>("layers")
   const tp = useT(postprocessMessages)
   const [restyling, setRestyling] = React.useState(false)
+  const tc = useT(checkMessages)
+  const [checking, setChecking] = React.useState<CheckScope | null>(null)
   const [sheet, setSheet] = React.useState<"layers" | "inspect" | null>(null)
   // Tablets get the properties as a side sheet, phones from the bottom.
   const wide = useMedia("(min-width: 768px)")
@@ -327,6 +344,7 @@ export function ComicCanvasEditor({
                 if (key === "open") openProject()
                 if (key === "generate-all") generator.generateAll()
                 if (key === "restyle-all") setRestyling(true)
+                if (key === "check-all") setChecking({ page: null })
                 if (key === "save") saveProject()
                 if (key === "image")
                   pickFile("image/*").then(
@@ -358,6 +376,10 @@ export function ComicCanvasEditor({
                 <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
                 {tp("restyle.menu")}
               </DropdownMenuItem>
+              <DropdownMenuItem id="check-all">
+                <HugeiconsIcon icon={ScanEyeIcon} strokeWidth={2} />
+                {tc("menu")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem id="image">
                 <HugeiconsIcon icon={ImageAdd01Icon} strokeWidth={2} />
@@ -366,8 +388,24 @@ export function ComicCanvasEditor({
               </DropdownMenuItem>
             </DropdownMenu>
           </DropdownMenuTrigger>
-          <StoryButton editor={editor} generator={generator} />
-          {cloud && <CloudBar editor={editor} cloud={cloud} images={images} />}
+          <StoryButton
+            editor={editor}
+            generator={generator}
+            series={series.context}
+          />
+          <RunButton
+            editor={editor}
+            generator={generator}
+            series={series.context}
+          />
+          {cloud && (
+            <CloudBar
+              editor={editor}
+              cloud={cloud}
+              images={images}
+              series={series}
+            />
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           {/* Signed in, these live in the account menu. */}
@@ -380,6 +418,7 @@ export function ComicCanvasEditor({
               <ModeToggle />
             </div>
           )}
+          {cloud && <ShareButton projectId={cloud.id} />}
           <ExportButton editor={editor} images={images} />
           {instagram && viewer && (
             <PublishButton editor={editor} images={images} />
@@ -421,6 +460,7 @@ export function ComicCanvasEditor({
               editor={editor}
               images={images}
               generating={generator.jobs}
+              onCheck={(page) => setChecking({ page })}
               thumbHeight={wide ? dockSize("top") - STRIP_CHROME : undefined}
             />
           </Dock>
@@ -473,7 +513,11 @@ export function ComicCanvasEditor({
             className="h-full border-s bg-background"
             style={{ width: dockSize("right") }}
           >
-            <Inspector editor={editor} onGenerate={focusComposer} />
+            <Inspector
+              editor={editor}
+              generator={generator}
+              onGenerate={focusComposer}
+            />
           </aside>
         </Dock>
       </div>
@@ -515,12 +559,20 @@ export function ComicCanvasEditor({
       >
         <Inspector
           editor={editor}
+          generator={generator}
           onGenerate={() => {
             setSheet(null)
             focusComposer()
           }}
         />
       </Sheet>
+      {checking && (
+        <CheckDialog
+          editor={editor}
+          initial={checking}
+          onClose={() => setChecking(null)}
+        />
+      )}
       {restyling && (
         <RestyleDialog editor={editor} onClose={() => setRestyling(false)} />
       )}
@@ -861,7 +913,7 @@ function useShortcuts(
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // A focused list, menu or slider already used the key.
-      if (e.defaultPrevented || isTyping(e.target)) return
+      if (e.defaultPrevented || isTyping(e.target) || inDialog(e.target)) return
       const { editor, zoomBy, fit, clipboard, compose } = ref.current
       const mod = e.metaKey || e.ctrlKey
       const sel = editor.selected

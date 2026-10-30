@@ -283,6 +283,21 @@ function fontString(font: keyof typeof FONTS, size: number) {
   return `${f.weight} ${size}px ${f.family}, sans-serif`
 }
 
+const CJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/
+
+// Japanese has no spaces to break on: split by word, with punctuation staying
+// on the word before it, so a line never starts with "。".
+function breakable(word: string) {
+  if (!CJK.test(word)) return [word]
+  const parts: string[] = []
+  const words = new Intl.Segmenter("ja", { granularity: "word" })
+  for (const { segment, isWordLike } of words.segment(word)) {
+    if (isWordLike || !parts.length) parts.push(segment)
+    else parts[parts.length - 1] += segment
+  }
+  return parts
+}
+
 function wrap(ctx: Ctx, text: string, maxWidth: number) {
   const lines: string[] = []
   for (const paragraph of text.split("\n")) {
@@ -291,13 +306,15 @@ function wrap(ctx: Ctx, text: string, maxWidth: number) {
       lines.push("")
       continue
     }
-    let line = words[0]!
-    for (const word of words.slice(1)) {
-      const next = `${line} ${word}`
-      if (ctx.measureText(next).width <= maxWidth) line = next
-      else {
-        lines.push(line)
-        line = word
+    let line = ""
+    for (const word of words) {
+      for (const [i, part] of breakable(word).entries()) {
+        const next = line && !i ? `${line} ${part}` : line + part
+        if (!line || ctx.measureText(next).width <= maxWidth) line = next
+        else {
+          lines.push(line)
+          line = part
+        }
       }
     }
     lines.push(line)
@@ -306,7 +323,7 @@ function wrap(ctx: Ctx, text: string, maxWidth: number) {
 }
 
 // Shrinks the font until the text fits the box, like a letterer would.
-function fitText(
+export function fitText(
   ctx: Ctx,
   text: string,
   font: keyof typeof FONTS,
@@ -346,6 +363,20 @@ function drawLines(
   }
 }
 
+export const BUBBLE_LINE_HEIGHT = 1.12
+
+// Where lettering may go inside a balloon of this size.
+export function bubbleTextBox(
+  l: Pick<BubbleLayer, "shape" | "width" | "height">
+) {
+  const boxed = l.shape === "caption" || l.shape === "message"
+  const inset = boxed ? 0.86 : l.shape === "shout" ? 0.56 : 0.7
+  return {
+    width: l.width * inset - (boxed ? 24 : 0),
+    height: l.height * inset - (boxed ? 16 : 0),
+  }
+}
+
 function drawBubble(ctx: Ctx, l: BubbleLayer, part?: LayerPart) {
   const body = bubbleBody(l)
   const tail = l.tail && l.shape !== "caption" ? bubbleTail(l) : null
@@ -366,24 +397,23 @@ function drawBubble(ctx: Ctx, l: BubbleLayer, part?: LayerPart) {
   }
   if (part === "balloon") return
 
-  const boxed = l.shape === "caption" || l.shape === "message"
-  const inset = boxed ? 0.86 : l.shape === "shout" ? 0.56 : 0.7
-  const boxW = l.width * inset - (boxed ? 24 : 0)
-  const boxH = l.height * inset - (boxed ? 16 : 0)
+  const box = bubbleTextBox(l)
   const text = l.uppercase ? l.text.toUpperCase() : l.text
   const { lines, size } = fitText(
     ctx,
     text,
     l.font,
     l.fontSize,
-    boxW,
-    boxH,
-    1.12
+    box.width,
+    box.height,
+    BUBBLE_LINE_HEIGHT
   )
   ctx.fillStyle = l.textColor
   ctx.textAlign = "center"
   ctx.textBaseline = "middle"
-  drawLines(ctx, lines, size, 1.12, 0, (line, x, y) => ctx.fillText(line, x, y))
+  drawLines(ctx, lines, size, BUBBLE_LINE_HEIGHT, 0, (line, x, y) =>
+    ctx.fillText(line, x, y)
+  )
 }
 
 function drawText(ctx: Ctx, l: TextLayer) {

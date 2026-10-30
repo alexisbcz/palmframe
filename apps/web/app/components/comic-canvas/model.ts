@@ -1,3 +1,5 @@
+import type { Locale } from "@/i18n/core"
+
 export type ImageFit = "cover" | "contain" | "fill"
 // `message` is a text read on a phone: a rounded chat bubble in sentence case.
 export type BubbleShape = "speech" | "thought" | "shout" | "caption" | "message"
@@ -18,6 +20,8 @@ export type PaletteId =
   | "brown"
   | "sepia"
 export type Saturation = "vivid" | "balanced" | "muted"
+// What draws a panel: Anima from tags, or FLUX.2 Klein from sentences.
+export type Engine = "anima" | "klein"
 
 // The carousel's look. Every panel draws in it unless it overrides it, so
 // the slides read as one comic.
@@ -69,6 +73,10 @@ export interface PanelLayer extends BaseLayer {
   tags?: string[]
   // Ids of the characters in the shot.
   cast?: string[]
+  // What a cast member wears here, by character id. Unset: their own clothes.
+  outfits?: Record<string, string>
+  // Ids of the location and props in the shot.
+  world?: string[]
   prompt?: string
   negative?: string
   // Overrides of the carousel look; unset means "same as the carousel".
@@ -79,9 +87,63 @@ export interface PanelLayer extends BaseLayer {
   seed?: number
   lockSeed?: boolean
   steps?: number
+  // What drew the current image, when known.
+  engine?: Engine
+  // The prompt template and version that planned the shot ("story-planner@1").
+  planner?: string
   // Images the panel had before and after AI edits, newest first, so an
   // edit can be compared and reverted.
   versions?: PanelVersion[]
+  // What a vision model read in the current image; goes when the image does.
+  check?: PanelCheck
+  // A rough sketch directing pose and framing. Only Klein can read one, so
+  // a panel with a guide always draws with Klein.
+  guide?: LayoutGuide
+  // The last coverage sheet: this moment from nine cameras, to pick from.
+  coverage?: CoverageSheet
+  // Lettering a carousel run planned and hasn't placed yet, as script lines.
+  script?: string
+  // Set once a run has drawn the panel: how many times it has been re-rolled.
+  rerolls?: number
+}
+
+export interface FaceBox {
+  // Fractions of the image, from its top left.
+  x: number
+  y: number
+  width: number
+  height: number
+  // The character's id, when the model could tell who it is.
+  who: string | null
+}
+
+export interface PanelCheck {
+  // The image's size when read, to place the faces however it's framed.
+  imageWidth: number
+  imageHeight: number
+  // Ids of the characters seen.
+  cast: string[]
+  headcount: number
+  // People neither in the cast nor called for by the scene.
+  unexpected: number
+  // Letters or words drawn into the art itself.
+  lettering: boolean
+  faces: FaceBox[]
+}
+
+// `strict` beats the written description on pose and framing, never on
+// identity or style. `loose` is a starting point the description may adjust.
+export type GuideStrength = "loose" | "strict"
+
+export interface LayoutGuide {
+  // A lossless PNG fitting 1024 px: a pose lives in thin strokes.
+  src: string
+  strength: GuideStrength
+}
+
+export interface CoverageSheet {
+  src: string
+  seed: number
 }
 
 export interface PanelVersion {
@@ -99,6 +161,20 @@ export interface PanelVersion {
     | "remove_bg"
     | "face_fix"
     | "restyle"
+    // A take from the other engine, waiting to be compared (compare-dialog.tsx).
+    | "engine"
+  engine?: Engine
+  seed?: number
+}
+
+// A bubble's lettering in another language. The artwork and the original
+// text stay as they are; the bubble is refitted when a language is rendered.
+export interface BubbleTranslation {
+  text: string
+  // The original it translates: when `text` moves on, this line is out of date.
+  source: string
+  // Typed by hand, so translating again leaves it alone.
+  edited?: boolean
 }
 
 export interface BubbleLayer extends BaseLayer {
@@ -116,6 +192,7 @@ export interface BubbleLayer extends BaseLayer {
   // Tail tip, relative to the bubble centre, in unrotated layer space.
   tailX: number
   tailY: number
+  translations?: Partial<Record<Locale, BubbleTranslation>>
 }
 
 export interface TextLayer extends BaseLayer {
@@ -372,6 +449,22 @@ export interface ComicPage {
   layers: Layer[]
 }
 
+// Reference images a panel can attach: what Klein takes in one render.
+export const MAX_REFS = 4
+
+// A sheet is only drawn from once approved. Locked also stops redraws.
+export type SheetStatus = "draft" | "approved" | "locked"
+
+// A change of clothes. `sheet` is the character's approved sheet redrawn in
+// them, so the face and build can't drift from outfit to outfit.
+export interface Outfit {
+  id: string
+  name: string
+  tags: string[]
+  sheet?: string
+  seed?: number
+}
+
 // A carousel: every slide shares one format, as Instagram requires.
 // A recurring character. Their look tags go into every panel they're cast
 // in, so they draw the same from panel to panel.
@@ -384,6 +477,21 @@ export interface Character {
   // A model sheet (front, three-quarter, close-up). Panels they're cast in
   // are drawn from it, so face and outfit hold from panel to panel.
   sheet?: string
+  status?: SheetStatus
+  outfits?: Outfit[]
+  seed?: number
+}
+
+// Saved projects predate `status`: their sheets were already in use.
+export const sheetReady = (c: Character) => !!c.sheet && c.status !== "draft"
+
+// A recurring place or object, with its own reference image.
+export interface WorldItem {
+  id: string
+  name: string
+  kind: "location" | "prop"
+  tags: string[]
+  image?: string
   seed?: number
 }
 
@@ -394,9 +502,12 @@ export interface ComicProject {
   background: string
   pages: ComicPage[]
   cast?: Character[]
+  world?: WorldItem[]
   look?: Look
   // Pages read right to left, manga style: layouts mirror, panels number from the right.
   rtl?: boolean
+  // What the last carousel run was told, so a rerun can plan what's left.
+  story?: string
 }
 
 // The single-slide view the renderer and the editor panels work on.
@@ -462,6 +573,25 @@ export function createDefaultProject(): ComicProject {
   }
 }
 
+// A guide or sheet a hand-edited file broke is dropped, not sent to a render.
+function cleanPanel(layer: Layer): Layer {
+  if (layer?.type !== "panel") return layer
+  const { guide, coverage, ...rest } = layer
+  if (!guide && !coverage) return layer
+  return {
+    ...rest,
+    ...(typeof guide?.src === "string" && {
+      guide: {
+        src: guide.src,
+        strength: guide.strength === "strict" ? "strict" : "loose",
+      },
+    }),
+    ...(typeof coverage?.src === "string" && {
+      coverage: { src: coverage.src, seed: Number(coverage.seed) || 0 },
+    }),
+  }
+}
+
 // Accepts current projects and single-page files saved before carousels.
 export function toProject(value: unknown): ComicProject | null {
   const v = value as {
@@ -472,16 +602,25 @@ export function toProject(value: unknown): ComicProject | null {
     pages?: ComicPage[]
     layers?: Layer[]
     cast?: Character[]
+    world?: WorldItem[]
     look?: Look
     rtl?: boolean
+    story?: string
   } | null
   if (!v || typeof v.width !== "number" || typeof v.height !== "number")
     return null
   const background = typeof v.background === "string" ? v.background : "#ffffff"
   if (v.version === 2 && Array.isArray(v.pages) && v.pages.length) {
-    const pages = v.pages.filter((p) => p && Array.isArray(p.layers))
+    const pages = v.pages
+      .filter((p) => p && Array.isArray(p.layers))
+      .map((p) => ({ ...p, layers: p.layers.map(cleanPanel) }))
     if (!pages.length) return null
-    const cast = Array.isArray(v.cast) ? v.cast : undefined
+    const cast = Array.isArray(v.cast)
+      ? v.cast.map((c) =>
+          c?.sheet && !c.status ? { ...c, status: "approved" as const } : c
+        )
+      : undefined
+    const world = Array.isArray(v.world) ? v.world : undefined
     return {
       version: 2,
       width: v.width,
@@ -489,8 +628,10 @@ export function toProject(value: unknown): ComicProject | null {
       background,
       pages,
       ...(cast && { cast }),
+      ...(world && { world }),
       ...(v.look && typeof v.look === "object" && { look: v.look }),
       ...(v.rtl === true && { rtl: true }),
+      ...(typeof v.story === "string" && { story: v.story }),
     }
   }
   if (v.version === 1 && Array.isArray(v.layers)) {

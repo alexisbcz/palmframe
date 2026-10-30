@@ -15,6 +15,12 @@ export const messages = defineMessages({
       placeholder:
         "Aki misses the last train and runs after it in the rain.\nAki says: Wait for me!\n\nOr beats: Panel 1: …  Panel 2: …",
       hint: "Name cast members as they are in the cast. “Aki says: …” and “Aki thinks: …” become bubbles, never drawn into the art.",
+      series: {
+        zero: "Planned with what came before in {title}.",
+        one: "Planned with what came before in {title} and {count} fact.",
+        other: "Planned with what came before in {title} and {count} facts.",
+      },
+      seriesUntitled: "this series",
       plan: { one: "Plan {count} panel", other: "Plan {count} panels" },
       planning: "Planning…",
       cost: {
@@ -85,6 +91,12 @@ export const messages = defineMessages({
       placeholder:
         "Aki rate le dernier train et lui court après sous la pluie.\nAki dit : Attendez-moi !\n\nOu par cases : Case 1 : …  Case 2 : …",
       hint: "Nommez les personnages comme dans le casting. « Aki dit : … » et « Aki pense : … » deviennent des bulles, jamais dessinées dans l’image.",
+      series: {
+        zero: "Planifié avec ce qui précède dans {title}.",
+        one: "Planifié avec ce qui précède dans {title} et {count} fait.",
+        other: "Planifié avec ce qui précède dans {title} et {count} faits.",
+      },
+      seriesUntitled: "cette série",
       plan: { one: "Planifier {count} case", other: "Planifier {count} cases" },
       planning: "Planification…",
       cost: {
@@ -129,7 +141,8 @@ export const messages = defineMessages({
       one: "{count} case à rendre · facturée sur votre compte OpenRouter",
       other: "{count} cases à rendre · facturées sur votre compte OpenRouter",
     },
-    openrouterPlan: "La planification est facturée sur votre compte OpenRouter.",
+    openrouterPlan:
+      "La planification est facturée sur votre compte OpenRouter.",
     apply: "Appliquer à la slide",
     applyRender: "Appliquer et rendre",
     rendering: "Rendu {done} sur {total}…",
@@ -158,6 +171,12 @@ export const messages = defineMessages({
       placeholder:
         "Aki pierde el último tren y corre tras él bajo la lluvia.\nAki dice: ¡Espérame!\n\nO por viñetas: Viñeta 1: …  Viñeta 2: …",
       hint: "Nombra a los personajes como en el reparto. «Aki dice: …» y «Aki piensa: …» se convierten en bocadillos, nunca se dibujan en la imagen.",
+      series: {
+        zero: "Planificado con lo anterior de {title}.",
+        one: "Planificado con lo anterior de {title} y {count} hecho.",
+        other: "Planificado con lo anterior de {title} y {count} hechos.",
+      },
+      seriesUntitled: "esta serie",
       plan: {
         one: "Planificar {count} viñeta",
         other: "Planificar {count} viñetas",
@@ -204,7 +223,8 @@ export const messages = defineMessages({
     getMore: "Conseguir créditos",
     openrouter: {
       one: "{count} viñeta por generar · se cobra en tu cuenta de OpenRouter",
-      other: "{count} viñetas por generar · se cobran en tu cuenta de OpenRouter",
+      other:
+        "{count} viñetas por generar · se cobran en tu cuenta de OpenRouter",
     },
     openrouterPlan: "La planificación se cobra en tu cuenta de OpenRouter.",
     apply: "Aplicar a la diapositiva",
@@ -235,6 +255,12 @@ export const messages = defineMessages({
       placeholder:
         "Aki verpasst den letzten Zug und rennt ihm im Regen hinterher.\nAki sagt: Wartet auf mich!\n\nOder in Beats: Panel 1: …  Panel 2: …",
       hint: "Nenne Figuren so wie in der Besetzung. „Aki sagt: …“ und „Aki denkt: …“ werden zu Sprechblasen, nie ins Bild gezeichnet.",
+      series: {
+        zero: "Geplant mit dem Bisherigen aus {title}.",
+        one: "Geplant mit dem Bisherigen aus {title} und {count} Fakt.",
+        other: "Geplant mit dem Bisherigen aus {title} und {count} Fakten.",
+      },
+      seriesUntitled: "dieser Serie",
       plan: { one: "{count} Panel planen", other: "{count} Panels planen" },
       planning: "Plane…",
       cost: {
@@ -278,7 +304,8 @@ export const messages = defineMessages({
     getMore: "Credits holen",
     openrouter: {
       one: "{count} Panel zu rendern · wird über dein OpenRouter-Konto abgerechnet",
-      other: "{count} Panels zu rendern · werden über dein OpenRouter-Konto abgerechnet",
+      other:
+        "{count} Panels zu rendern · werden über dein OpenRouter-Konto abgerechnet",
     },
     openrouterPlan: "Die Planung wird über dein OpenRouter-Konto abgerechnet.",
     apply: "Auf Slide anwenden",
@@ -309,6 +336,12 @@ export const messages = defineMessages({
       placeholder:
         "Aki perde l’ultimo treno e gli corre dietro sotto la pioggia.\nAki dice: Aspettatemi!\n\nOppure per vignette: Vignetta 1: …  Vignetta 2: …",
       hint: "Chiama i personaggi come nel cast. «Aki dice: …» e «Aki pensa: …» diventano nuvolette, mai disegnate nell’immagine.",
+      series: {
+        zero: "Pianificato con quanto precede in {title}.",
+        one: "Pianificato con quanto precede in {title} e {count} fatto.",
+        other: "Pianificato con quanto precede in {title} e {count} fatti.",
+      },
+      seriesUntitled: "questa serie",
       plan: {
         one: "Pianifica {count} vignetta",
         other: "Pianifica {count} vignette",
@@ -355,9 +388,11 @@ export const messages = defineMessages({
     getMore: "Ottieni crediti",
     openrouter: {
       one: "{count} vignetta da generare · addebitata sul tuo account OpenRouter",
-      other: "{count} vignette da generare · addebitate sul tuo account OpenRouter",
+      other:
+        "{count} vignette da generare · addebitate sul tuo account OpenRouter",
     },
-    openrouterPlan: "La pianificazione è addebitata sul tuo account OpenRouter.",
+    openrouterPlan:
+      "La pianificazione è addebitata sul tuo account OpenRouter.",
     apply: "Applica alla slide",
     applyRender: "Applica e genera",
     rendering: "Generazione {done} di {total}…",
@@ -386,6 +421,11 @@ export const messages = defineMessages({
       placeholder:
         "アキは終電に乗り遅れ、雨の中を追いかける。\nアキ「待って！」\n\nコマごとでも：コマ1：…  コマ2：…",
       hint: "キャラクター名はキャストと同じ名前で書いてください。「アキ「…」」や「アキ（…）」はフキダシになり、絵には描かれません。",
+      series: {
+        zero: "{title}のこれまでの内容を踏まえて計画します。",
+        other: "{title}のこれまでの内容と{count}件の設定を踏まえて計画します。",
+      },
+      seriesUntitled: "このシリーズ",
       plan: { one: "{count}コマを構成", other: "{count}コマを構成" },
       planning: "構成中…",
       cost: {

@@ -11,6 +11,10 @@ export const messages = defineMessages({
       body: "Create a key in Settings and send it as a Bearer token. A key is shown once; revoke it there if it leaks.",
       settings: "Open Settings",
     },
+    access: {
+      title: "Key access",
+      body: "A key can be limited in Settings; a new key has full access unless you narrow it. Scopes: read (projects, pages, balance) and generate (estimate, start, cancel). Any key can read prices and poll operations. A call outside its scopes gets 403 insufficient_scope, and over MCP the tools a key can't use aren't listed. A key limited to some projects sees no others: they answer 404. A key's credit limit is checked when a render starts, so concurrent calls can't pass it: over the limit, start gets 403 key_credit_limit. Refunded renders don't count. GET /api/v1/credits shows the key's limit and spending.",
+    },
     flow: {
       title: "Render a panel",
       body: "Paid work takes four steps: estimate (free, valid 10 minutes), start with the price you accept and an Idempotency-Key, then poll. If the project changed since the estimate, start is refused: estimate again. A failed or cancelled render is refunded.",
@@ -34,6 +38,10 @@ export const messages = defineMessages({
       title: "Authentification",
       body: "Créez une clé dans les Paramètres et envoyez-la en jeton Bearer. Elle n’est affichée qu’une fois ; révoquez-la au même endroit si elle fuite.",
       settings: "Ouvrir les Paramètres",
+    },
+    access: {
+      title: "Accès d’une clé",
+      body: "Une clé peut être restreinte dans les Paramètres ; une nouvelle clé a un accès complet tant que vous ne le réduisez pas. Portées : read (projets, pages, solde) et generate (estimer, lancer, annuler). Toute clé peut lire les prix et suivre les opérations. Un appel hors de ses portées reçoit 403 insufficient_scope, et en MCP les outils inaccessibles ne sont pas listés. Une clé limitée à certains projets ne voit pas les autres : ils répondent 404. La limite de crédits d’une clé est vérifiée au lancement d’un rendu, donc des appels simultanés ne peuvent pas la dépasser : au-delà, le lancement reçoit 403 key_credit_limit. Les rendus remboursés ne comptent pas. GET /api/v1/credits indique la limite et les dépenses de la clé.",
     },
     flow: {
       title: "Générer une case",
@@ -59,6 +67,10 @@ export const messages = defineMessages({
       body: "Crea una clave en Ajustes y envíala como token Bearer. Solo se muestra una vez; revócala allí si se filtra.",
       settings: "Abrir Ajustes",
     },
+    access: {
+      title: "Acceso de una clave",
+      body: "Una clave se puede restringir en Ajustes; una clave nueva tiene acceso completo salvo que lo reduzcas. Ámbitos: read (proyectos, páginas, saldo) y generate (estimar, iniciar, cancelar). Cualquier clave puede leer los precios y consultar operaciones. Una llamada fuera de sus ámbitos recibe 403 insufficient_scope, y en MCP no se listan las herramientas que la clave no puede usar. Una clave limitada a algunos proyectos no ve los demás: responden 404. El límite de créditos de una clave se comprueba al iniciar un render, así que las llamadas simultáneas no pueden superarlo: por encima, el inicio recibe 403 key_credit_limit. Los renders reembolsados no cuentan. GET /api/v1/credits muestra el límite y el gasto de la clave.",
+    },
     flow: {
       title: "Generar una viñeta",
       body: "El trabajo de pago tiene cuatro pasos: estimar (gratis, válido 10 minutos), iniciar con el precio que aceptas y un Idempotency-Key, y consultar. Si el proyecto cambió desde la estimación, el inicio se rechaza: vuelve a estimar. Un render fallido o cancelado se reembolsa.",
@@ -82,6 +94,10 @@ export const messages = defineMessages({
       title: "Authentifizierung",
       body: "Erstelle einen Schlüssel in den Einstellungen und sende ihn als Bearer-Token. Er wird nur einmal angezeigt; widerrufe ihn dort, falls er bekannt wird.",
       settings: "Einstellungen öffnen",
+    },
+    access: {
+      title: "Schlüsselzugriff",
+      body: "Ein Schlüssel lässt sich in den Einstellungen einschränken; ein neuer Schlüssel hat vollen Zugriff, bis du ihn begrenzt. Scopes: read (Projekte, Seiten, Guthaben) und generate (schätzen, starten, abbrechen). Jeder Schlüssel kann Preise lesen und Operationen abfragen. Ein Aufruf außerhalb der Scopes erhält 403 insufficient_scope, und über MCP werden Tools, die der Schlüssel nicht nutzen darf, nicht aufgeführt. Ein auf bestimmte Projekte begrenzter Schlüssel sieht keine anderen: Sie antworten mit 404. Das Credit-Limit wird beim Start eines Renders geprüft, sodass gleichzeitige Aufrufe es nicht überschreiten können: Darüber erhält der Start 403 key_credit_limit. Erstattete Renders zählen nicht. GET /api/v1/credits zeigt Limit und Ausgaben des Schlüssels.",
     },
     flow: {
       title: "Ein Panel rendern",
@@ -107,6 +123,10 @@ export const messages = defineMessages({
       body: "Crea una chiave nelle Impostazioni e inviala come token Bearer. Viene mostrata una sola volta; revocala lì se trapela.",
       settings: "Apri le Impostazioni",
     },
+    access: {
+      title: "Accesso di una chiave",
+      body: "Una chiave si può limitare nelle Impostazioni; una nuova chiave ha accesso completo finché non lo restringi. Ambiti: read (progetti, pagine, saldo) e generate (stimare, avviare, annullare). Ogni chiave può leggere i prezzi e controllare le operazioni. Una chiamata fuori dai suoi ambiti riceve 403 insufficient_scope, e via MCP gli strumenti che la chiave non può usare non vengono elencati. Una chiave limitata ad alcuni progetti non vede gli altri: rispondono 404. Il limite di crediti di una chiave è verificato all’avvio di un render, quindi chiamate simultanee non possono superarlo: oltre il limite, l’avvio riceve 403 key_credit_limit. I render rimborsati non contano. GET /api/v1/credits mostra il limite e la spesa della chiave.",
+    },
     flow: {
       title: "Generare una vignetta",
       body: "Il lavoro a pagamento ha quattro passi: stima (gratuita, valida 10 minuti), avvio con il prezzo accettato e un Idempotency-Key, poi controllo. Se il progetto è cambiato dopo la stima, l’avvio viene rifiutato: stima di nuovo. Un render fallito o annullato viene rimborsato.",
@@ -130,6 +150,10 @@ export const messages = defineMessages({
       title: "認証",
       body: "設定でキーを作成し、Bearer トークンとして送ります。キーは一度だけ表示されます。漏れた場合は設定で無効にしてください。",
       settings: "設定を開く",
+    },
+    access: {
+      title: "キーのアクセス権",
+      body: "キーは設定で制限できます。新しいキーは、絞り込まない限りフルアクセスです。スコープは read(プロジェクト、ページ、残高)と generate(見積もり、開始、キャンセル)です。どのキーでも価格の確認とオペレーションの照会ができます。スコープ外の呼び出しには 403 insufficient_scope が返り、MCP では使えないツールは一覧に表示されません。一部のプロジェクトに限定されたキーからは他のプロジェクトは見えず、404 が返ります。キーのクレジット上限はレンダー開始時に確認されるため、同時に呼び出しても超えられません。超える場合、開始には 403 key_credit_limit が返ります。返金されたレンダーは含まれません。GET /api/v1/credits でキーの上限と使用量を確認できます。",
     },
     flow: {
       title: "コマを生成する",

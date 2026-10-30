@@ -2,6 +2,8 @@ import { data, redirect } from "react-router"
 
 import { ComicCanvasEditor } from "@/components/comic-canvas/editor"
 import { toProject } from "@/components/comic-canvas/model"
+import { withShared } from "@/components/comic-canvas/series"
+import { seriesOf } from "@/lib/series.server"
 import { getViewer } from "@/lib/supabase.server"
 import { instagramEnabled } from "@/lib/instagram.server"
 
@@ -28,6 +30,7 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     .maybeSingle()
   const project = row && toProject(row.data)
   if (!row || !project) throw data("Not found", { status: 404, headers })
+  const series = await seriesOf(supabase, row.id)
   return data(
     {
       id: row.id,
@@ -35,7 +38,8 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       title: row.title,
       revision: row.revision,
       hasCover: !!row.cover,
-      project,
+      project: series ? withShared(project, series) : project,
+      series: series?.context ?? null,
       instagram: instagramEnabled(),
     },
     { headers }

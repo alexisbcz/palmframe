@@ -4,5 +4,5 @@ import type { Route } from "./+types/api.v1"
 
 // GET /api/v1: prices and limits.
 export function loader({ request }: Route.LoaderArgs) {
-  return respond(request, "read", async () => capabilities())
+  return respond(request, "any", async () => capabilities())
 }

@@ -368,10 +368,11 @@ export async function generateImage(
   }
 }
 
-// One chat call whose reply must match `schema`.
+// One chat call whose reply must match `schema`. `image`, a data URL, goes
+// along with the user text; the connected text model has to read images.
 export async function completeJson(
   c: OpenRouterConnection,
-  r: { system: string; user: string; schema: object },
+  r: { system: string; user: string; schema: object; image?: string },
   signal?: AbortSignal
 ) {
   const res = await fetch(`${API}/chat/completions`, {
@@ -382,7 +383,15 @@ export async function completeJson(
       model: c.textModel,
       messages: [
         { role: "system", content: r.system },
-        { role: "user", content: r.user },
+        {
+          role: "user",
+          content: r.image
+            ? [
+                { type: "image_url", image_url: { url: r.image } },
+                { type: "text", text: r.user },
+              ]
+            : r.user,
+        },
       ],
       response_format: {
         type: "json_schema",

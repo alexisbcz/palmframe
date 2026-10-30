@@ -6,6 +6,7 @@ import {
   Copy01Icon,
   Delete02Icon,
   MoreHorizontalIcon,
+  ScanEyeIcon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
 
@@ -19,9 +20,12 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { SlideCheckBadge } from "./check-tools"
+import { messages as checkMessages } from "./check.messages"
 import { pageDoc, type ComicDoc } from "./model"
 import { drawDoc, loadImages, type ImageCache } from "./render"
 import { roving } from "./roving"
+import { projectShots, repeatedShots } from "./shot-variety"
 import type { ComicEditor } from "./use-editor"
 import { useT } from "@/i18n/core"
 import { messages } from "./page-strip.messages"
@@ -63,20 +67,28 @@ export function PageStrip({
   editor,
   images,
   generating,
+  onCheck,
   thumbHeight = THUMB_HEIGHT,
 }: {
   editor: ComicEditor
   images: ImageCache
   generating: Record<string, unknown>
+  onCheck: (pageIndex: number) => void
   thumbHeight?: number
 }) {
   const t = useT(messages)
+  const tc = useT(checkMessages)
   const { project, pageIndex } = editor
   const count = project.pages.length
   const width = Math.round((thumbHeight * project.width) / project.height)
   const [dragFrom, setDragFrom] = React.useState<number | null>(null)
   const [dropAt, setDropAt] = React.useState<number | null>(null)
   const activeRef = React.useRef<HTMLLIElement>(null)
+  const runs = React.useMemo(
+    () => repeatedShots(projectShots(project)),
+    [project]
+  )
+  const run = runs[0]
 
   React.useEffect(() => {
     activeRef.current?.scrollIntoView({ block: "nearest", inline: "nearest" })
@@ -90,7 +102,7 @@ export function PageStrip({
   return (
     <div
       data-slot="comic-pages"
-      className="flex shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5"
+      className="flex shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5 max-md:flex-wrap"
     >
       <div className="flex shrink-0 flex-col items-center gap-1">
         <span className="text-xs font-medium tabular-nums">
@@ -127,6 +139,7 @@ export function PageStrip({
         {project.pages.map((page, i) => {
           const active = i === pageIndex
           const busy = page.layers.some((l) => l.id in generating)
+          const art = page.layers.some((l) => l.type === "panel" && !!l.src)
           return (
             <li
               key={page.id}
@@ -202,6 +215,7 @@ export function PageStrip({
                   </span>
                 )}
               </button>
+              <SlideCheckBadge page={page} cast={project.cast} />
               <span className="pointer-events-none absolute start-1.5 bottom-1.5 rounded-sm bg-foreground/80 px-1 text-[10px] leading-4 font-medium text-background tabular-nums">
                 {i + 1}
               </span>
@@ -223,9 +237,11 @@ export function PageStrip({
                       ...(i === count - 1 ? ["right"] : []),
                       ...(count === 1 ? ["delete"] : []),
                       ...(count >= MAX_SLIDES ? ["duplicate"] : []),
+                      ...(art ? [] : ["check"]),
                     ]}
                     onAction={(key) => {
                       if (key === "duplicate") editor.duplicatePage(i)
+                      if (key === "check") onCheck(i)
                       if (key === "left") editor.movePage(i, i - 1)
                       if (key === "right") editor.movePage(i, i + 1)
                       if (key === "delete") editor.removePage(i)
@@ -242,6 +258,10 @@ export function PageStrip({
                     <DropdownMenuItem id="right">
                       <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
                       {t("moveRight")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem id="check">
+                      <HugeiconsIcon icon={ScanEyeIcon} strokeWidth={2} />
+                      {tc("slideMenu")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem id="delete" variant="destructive">
@@ -276,6 +296,26 @@ export function PageStrip({
           </button>
         </li>
       </ol>
+      {run && (
+        <button
+          type="button"
+          title={t("variety.hint")}
+          className="shrink-0 cursor-pointer rounded-sm text-start text-[11px] leading-4 text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring max-md:w-full md:max-w-56"
+          onClick={() => editor.goToPage(run.firstPage)}
+        >
+          {t(run.angle === null ? "variety.size" : "variety.sizeAndAngle", {
+            count: run.count,
+            shot: run.framing,
+            angle: run.angle || t("variety.eyeLevel"),
+            slides:
+              run.firstPage === run.lastPage
+                ? run.firstPage + 1
+                : `${run.firstPage + 1}–${run.lastPage + 1}`,
+          })}
+          {runs.length > 1 &&
+            ` · ${t("variety.more", { count: runs.length - 1 })}`}
+        </button>
+      )}
     </div>
   )
 }

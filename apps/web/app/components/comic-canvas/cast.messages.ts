@@ -9,6 +9,8 @@ export const messages = defineMessages({
     edit: "Edit {name}",
     new: "New",
     addCharacter: "Add character",
+    outfitOf: "Outfit of {name}",
+    ownClothes: "Own clothes",
     dialog: {
       newTitle: "New character",
       editTitle: "Edit {name}",
@@ -43,6 +45,33 @@ export const messages = defineMessages({
       cancel: "Cancel",
       addToCast: "Add to cast",
       save: "Save",
+      status: {
+        draft: "Draft",
+        approved: "Approved",
+        locked: "Locked",
+      },
+      approve: "Approve",
+      lock: "Lock",
+      unlock: "Unlock",
+      backToDraft: "Back to draft",
+      draftHelp:
+        "Panels ignore a draft sheet: they describe this character in words until you approve it.",
+      lockedHelp: "Locked: unlock it to redraw.",
+      redrawClears:
+        "Redrawing the sheet clears the outfit images, since they were drawn from it.",
+      outfits: "Outfits",
+      addOutfit: "Add outfit",
+      outfitName: "Outfit name",
+      outfitsHelp:
+        "Each outfit redraws the approved sheet and changes only the clothes.",
+      outfitsNeedApproval:
+        "Approve the model sheet first: each outfit is redrawn from it, so the face stays the same.",
+      drawOutfit: "Draw · {credits} credits",
+      redrawOutfit: "Redraw · {credits} credits",
+      outfitOf: "{name} in {outfit}",
+      noOutfitImage: "No image",
+      deleteOutfit: "Delete {outfit}",
+      outfitFailed: "Outfit failed: {error}",
     },
   },
   fr: {
@@ -52,6 +81,8 @@ export const messages = defineMessages({
     edit: "Modifier {name}",
     new: "Nouveau",
     addCharacter: "Ajouter",
+    outfitOf: "Tenue de {name}",
+    ownClothes: "Ses vêtements",
     dialog: {
       newTitle: "Nouveau personnage",
       editTitle: "Modifier {name}",
@@ -86,6 +117,33 @@ export const messages = defineMessages({
       cancel: "Annuler",
       addToCast: "Ajouter aux personnages",
       save: "Enregistrer",
+      status: {
+        draft: "Brouillon",
+        approved: "Approuvé",
+        locked: "Verrouillé",
+      },
+      approve: "Approuver",
+      lock: "Verrouiller",
+      unlock: "Déverrouiller",
+      backToDraft: "Repasser en brouillon",
+      draftHelp:
+        "Les cases ignorent un model sheet en brouillon : elles décrivent ce personnage avec des mots jusqu’à son approbation.",
+      lockedHelp: "Verrouillé : déverrouillez-le pour le redessiner.",
+      redrawClears:
+        "Redessiner le model sheet efface les images des tenues, car elles en sont tirées.",
+      outfits: "Tenues",
+      addOutfit: "Ajouter une tenue",
+      outfitName: "Nom de la tenue",
+      outfitsHelp:
+        "Chaque tenue redessine le model sheet approuvé et ne change que les vêtements.",
+      outfitsNeedApproval:
+        "Approuvez d’abord le model sheet : chaque tenue en est redessinée, pour garder le même visage.",
+      drawOutfit: "Dessiner · {credits} crédits",
+      redrawOutfit: "Redessiner · {credits} crédits",
+      outfitOf: "{name} en {outfit}",
+      noOutfitImage: "Pas d’image",
+      deleteOutfit: "Supprimer {outfit}",
+      outfitFailed: "Échec de la tenue : {error}",
     },
   },
   es: {
@@ -95,6 +153,8 @@ export const messages = defineMessages({
     edit: "Editar a {name}",
     new: "Nuevo",
     addCharacter: "Añadir",
+    outfitOf: "Atuendo de {name}",
+    ownClothes: "Su ropa",
     dialog: {
       newTitle: "Nuevo personaje",
       editTitle: "Editar a {name}",
@@ -129,6 +189,33 @@ export const messages = defineMessages({
       cancel: "Cancelar",
       addToCast: "Añadir al reparto",
       save: "Guardar",
+      status: {
+        draft: "Borrador",
+        approved: "Aprobada",
+        locked: "Bloqueada",
+      },
+      approve: "Aprobar",
+      lock: "Bloquear",
+      unlock: "Desbloquear",
+      backToDraft: "Volver a borrador",
+      draftHelp:
+        "Las viñetas ignoran una hoja en borrador: describen a este personaje con palabras hasta que la apruebes.",
+      lockedHelp: "Bloqueada: desbloquéala para redibujarla.",
+      redrawClears:
+        "Redibujar la hoja borra las imágenes de los atuendos, porque salen de ella.",
+      outfits: "Atuendos",
+      addOutfit: "Añadir atuendo",
+      outfitName: "Nombre del atuendo",
+      outfitsHelp:
+        "Cada atuendo redibuja la hoja aprobada y solo cambia la ropa.",
+      outfitsNeedApproval:
+        "Aprueba primero la hoja de modelo: cada atuendo se redibuja a partir de ella para mantener la misma cara.",
+      drawOutfit: "Dibujar · {credits} créditos",
+      redrawOutfit: "Redibujar · {credits} créditos",
+      outfitOf: "{name} con {outfit}",
+      noOutfitImage: "Sin imagen",
+      deleteOutfit: "Eliminar {outfit}",
+      outfitFailed: "Falló el atuendo: {error}",
     },
   },
   de: {
@@ -138,6 +225,8 @@ export const messages = defineMessages({
     edit: "{name} bearbeiten",
     new: "Neu",
     addCharacter: "Neue Figur",
+    outfitOf: "Outfit von {name}",
+    ownClothes: "Eigene Kleidung",
     dialog: {
       newTitle: "Neue Figur",
       editTitle: "{name} bearbeiten",
@@ -172,6 +261,33 @@ export const messages = defineMessages({
       cancel: "Abbrechen",
       addToCast: "Zur Besetzung hinzufügen",
       save: "Speichern",
+      status: {
+        draft: "Entwurf",
+        approved: "Freigegeben",
+        locked: "Gesperrt",
+      },
+      approve: "Freigeben",
+      lock: "Sperren",
+      unlock: "Entsperren",
+      backToDraft: "Zurück zum Entwurf",
+      draftHelp:
+        "Panels ignorieren ein Sheet im Entwurf: Sie beschreiben diese Figur in Worten, bis du es freigibst.",
+      lockedHelp: "Gesperrt: Entsperre es, um es neu zu zeichnen.",
+      redrawClears:
+        "Ein neu gezeichnetes Sheet löscht die Outfit-Bilder, da sie daraus entstanden sind.",
+      outfits: "Outfits",
+      addOutfit: "Outfit hinzufügen",
+      outfitName: "Name des Outfits",
+      outfitsHelp:
+        "Jedes Outfit zeichnet das freigegebene Sheet neu und ändert nur die Kleidung.",
+      outfitsNeedApproval:
+        "Gib zuerst das Model Sheet frei: Jedes Outfit wird daraus neu gezeichnet, damit das Gesicht gleich bleibt.",
+      drawOutfit: "Zeichnen · {credits} Credits",
+      redrawOutfit: "Neu zeichnen · {credits} Credits",
+      outfitOf: "{name} in {outfit}",
+      noOutfitImage: "Kein Bild",
+      deleteOutfit: "{outfit} löschen",
+      outfitFailed: "Outfit fehlgeschlagen: {error}",
     },
   },
   it: {
@@ -181,6 +297,8 @@ export const messages = defineMessages({
     edit: "Modifica {name}",
     new: "Nuovo",
     addCharacter: "Aggiungi",
+    outfitOf: "Abito di {name}",
+    ownClothes: "I suoi vestiti",
     dialog: {
       newTitle: "Nuovo personaggio",
       editTitle: "Modifica {name}",
@@ -215,6 +333,33 @@ export const messages = defineMessages({
       cancel: "Annulla",
       addToCast: "Aggiungi ai personaggi",
       save: "Salva",
+      status: {
+        draft: "Bozza",
+        approved: "Approvata",
+        locked: "Bloccata",
+      },
+      approve: "Approva",
+      lock: "Blocca",
+      unlock: "Sblocca",
+      backToDraft: "Torna a bozza",
+      draftHelp:
+        "Le vignette ignorano una scheda in bozza: descrivono questo personaggio a parole finché non la approvi.",
+      lockedHelp: "Bloccata: sbloccala per ridisegnarla.",
+      redrawClears:
+        "Ridisegnare la scheda cancella le immagini degli abiti, perché derivano da essa.",
+      outfits: "Abiti",
+      addOutfit: "Aggiungi abito",
+      outfitName: "Nome dell’abito",
+      outfitsHelp:
+        "Ogni abito ridisegna la scheda approvata e cambia solo i vestiti.",
+      outfitsNeedApproval:
+        "Approva prima la scheda del modello: ogni abito viene ridisegnato da essa, così il viso resta lo stesso.",
+      drawOutfit: "Disegna · {credits} crediti",
+      redrawOutfit: "Ridisegna · {credits} crediti",
+      outfitOf: "{name} con {outfit}",
+      noOutfitImage: "Nessuna immagine",
+      deleteOutfit: "Elimina {outfit}",
+      outfitFailed: "Abito non riuscito: {error}",
     },
   },
   ja: {
@@ -224,6 +369,8 @@ export const messages = defineMessages({
     edit: "{name}を編集",
     new: "新規",
     addCharacter: "キャラクターを追加",
+    outfitOf: "{name} の衣装",
+    ownClothes: "いつもの服",
     dialog: {
       newTitle: "新しいキャラクター",
       editTitle: "{name}を編集",
@@ -258,6 +405,32 @@ export const messages = defineMessages({
       cancel: "キャンセル",
       addToCast: "キャストに追加",
       save: "保存",
+      status: {
+        draft: "下書き",
+        approved: "承認済み",
+        locked: "ロック中",
+      },
+      approve: "承認",
+      lock: "ロック",
+      unlock: "ロック解除",
+      backToDraft: "下書きに戻す",
+      draftHelp:
+        "下書きのシートはコマで使われません。承認するまで、このキャラクターは言葉で描写されます。",
+      lockedHelp: "ロック中です。描き直すにはロックを解除してください。",
+      redrawClears:
+        "シートを描き直すと、そこから描いた衣装の画像は消去されます。",
+      outfits: "衣装",
+      addOutfit: "衣装を追加",
+      outfitName: "衣装の名前",
+      outfitsHelp: "衣装は承認済みのシートを描き直し、服だけを変えます。",
+      outfitsNeedApproval:
+        "先にモデルシートを承認してください。顔を保つため、衣装はシートから描き直されます。",
+      drawOutfit: "描く · {credits} クレジット",
+      redrawOutfit: "描き直す · {credits} クレジット",
+      outfitOf: "{outfit} の {name}",
+      noOutfitImage: "画像なし",
+      deleteOutfit: "{outfit} を削除",
+      outfitFailed: "衣装の生成に失敗しました：{error}",
     },
   },
 })

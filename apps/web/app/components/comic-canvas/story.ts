@@ -1,17 +1,23 @@
 import { COSTS } from "@/lib/credits"
-import type { DialogueKind, PlannedPanel } from "@/routes/api.story"
+import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
+import type { DialogueKind, PlannedPanel, StoryPart } from "@/routes/api.story"
 
 import { normalizeTag } from "./anima-tags"
+import { pageFaces } from "./check"
 import { readingOrder } from "./layouts"
 import {
   createBubble,
   type BubbleLayer,
   type BubbleShape,
   type Character,
+  type ComicPage,
   type ComicProject,
+  type Layer,
   type PanelLayer,
+  type Rect,
 } from "./model"
-import { sheetCast } from "./use-generator"
+import type { SeriesContext } from "./series"
+import { panelRefs } from "./use-generator"
 
 // What the story dialog holds for one panel before it's applied: the shot
 // (tags, prose, cast) and its lettering as script lines ("Aki says: …").
@@ -20,6 +26,8 @@ export interface PanelDraft {
   prompt: string
   cast: string[]
   lines: string
+  // The prompt template that planned it, kept on the panel once applied.
+  planner?: string
 }
 
 export interface Line {
@@ -144,13 +152,14 @@ export function draftOf(panel: PanelLayer): PanelDraft {
     tags: panel.tags ?? [],
     prompt: panel.prompt ?? "",
     cast: panel.cast ?? [],
-    lines: "",
+    lines: panel.script ?? "",
   }
 }
 
 export function draftFromPlan(
   plan: PlannedPanel,
-  cast: Character[] = []
+  cast: Character[] = [],
+  planner?: string
 ): PanelDraft {
   const ids = new Map(cast.map((c) => [c.name.trim().toLowerCase(), c.id]))
   return {
@@ -160,6 +169,7 @@ export function draftFromPlan(
       .map((n) => ids.get(n.toLowerCase()))
       .filter((id): id is string => !!id),
     lines: formatLines(plan.dialogue),
+    planner,
   }
 }
 
@@ -170,6 +180,7 @@ export function panelPatch(draft: PanelDraft, cast: Character[] = []) {
     tags: draft.tags,
     prompt: draft.prompt.trim(),
     cast: [...new Set([...draft.cast, ...named])],
+    ...(draft.planner && { planner: draft.planner }),
   }
 }
 
@@ -180,12 +191,77 @@ const SHAPE: Record<DialogueKind, BubbleShape> = {
   caption: "caption",
 }
 
+// A face on the page, with the name of whoever it belongs to.
+export type SpeakerFace = Rect & { name: string | null }
+
+export function speakerFaces(panel: PanelLayer, cast: Character[] = []) {
+  return pageFaces(panel).map(({ who, ...box }): SpeakerFace => ({
+    ...box,
+    name: cast.find((c) => c.id === who)?.name.trim() || null,
+  }))
+}
+
+// The speaker's face; the only face in the shot needs no name.
+function faceOf(faces: SpeakerFace[], speaker: string) {
+  const name = speaker.trim().toLowerCase()
+  return (
+    faces.find((f) => name && f.name?.toLowerCase() === name) ??
+    (faces.length === 1 ? faces[0] : undefined)
+  )
+}
+
+// How far a tail reaches past the balloon before it stops short of the face.
+const TAIL_REACH = 200
+
+// A tail tip towards the face's edge nearest the balloon, relative to the
+// balloon's centre, or null when the balloon already sits on the face.
+export function tailTowardFace(bubble: Rect, face: Rect) {
+  const cx = bubble.x + bubble.width / 2
+  const cy = bubble.y + bubble.height / 2
+  const x = Math.min(face.x + face.width, Math.max(face.x, cx)) - cx
+  const y = Math.min(face.y + face.height, Math.max(face.y, cy)) - cy
+  const rx = bubble.width / 2
+  const ry = bubble.height / 2
+  if ((x / rx) ** 2 + (y / ry) ** 2 < 1) return null
+  const length = Math.hypot(x, y)
+  const s = Math.min(1, (Math.max(rx, ry) + TAIL_REACH) / length)
+  return { tailX: Math.round(x * s), tailY: Math.round(y * s) }
+}
+
+// New tails for the bubbles already over a panel, for lettering placed
+// before the art was checked. Bubbles keep their names from the script.
+export function aimedTails(
+  panel: PanelLayer,
+  layers: Layer[],
+  cast: Character[] = []
+) {
+  const faces = speakerFaces(panel, cast)
+  if (!faces.length) return []
+  return layers.flatMap((l) => {
+    if (l.type !== "bubble" || l.hidden || l.locked || !l.tail) return []
+    if (l.shape === "message") return []
+    const cx = l.x + l.width / 2
+    const cy = l.y + l.height / 2
+    const inside =
+      cx >= panel.x &&
+      cx <= panel.x + panel.width &&
+      cy >= panel.y &&
+      cy <= panel.y + panel.height
+    const face = inside ? faceOf(faces, l.name) : undefined
+    const tail = face && tailTowardFace(l, face)
+    if (!tail || (tail.tailX === l.tailX && tail.tailY === l.tailY)) return []
+    return [{ id: l.id, ...tail }]
+  })
+}
+
 // Bubbles for a panel's lines: captions in the top corner where reading
-// starts, speech below them alternating sides, tails pointing into the shot.
+// starts, speech below them alternating sides, tails pointing into the shot,
+// or at the speaker when the panel's faces are known.
 export function bubblesFor(
   panel: PanelLayer,
   lines: Line[],
-  rtl = false
+  rtl = false,
+  faces: SpeakerFace[] = []
 ): BubbleLayer[] {
   const pad = Math.max(16, Math.round(panel.width * 0.04))
   const fontSize = Math.round(Math.min(40, Math.max(24, panel.width / 20)))
@@ -227,6 +303,8 @@ export function bubblesFor(
     top += height + Math.round(pad * 0.6)
     const bubble = createBubble(shape, { x: x + width / 2, y: y + height / 2 })
     const towardsCentre = panel.x + panel.width / 2 - (x + width / 2)
+    const face = boxed ? undefined : faceOf(faces, line.speaker)
+    const aimed = face && tailTowardFace({ x, y, width, height }, face)
     return {
       ...bubble,
       name: line.speaker.trim() || bubble.name,
@@ -236,25 +314,80 @@ export function bubblesFor(
       height,
       x: Math.round(x),
       y: Math.round(y),
-      tailX: Math.round(towardsCentre * 0.25),
-      tailY: Math.round(height / 2 + Math.min(90, panel.height * 0.12)),
+      tailX: aimed?.tailX ?? Math.round(towardsCentre * 0.25),
+      tailY:
+        aimed?.tailY ??
+        Math.round(height / 2 + Math.min(90, panel.height * 0.12)),
     }
   })
 }
 
 // The credits a render of these panels costs, as the server will charge it.
-export function renderCost(panels: PanelLayer[], cast: Character[] = []) {
-  return panels.reduce(
-    (sum, p) =>
-      sum + (sheetCast(p, cast).length ? COSTS.panel_ref : COSTS.panel),
-    0
+export const panelCost = (
+  panel: PanelLayer,
+  project: Pick<ComicProject, "cast" | "world">
+) => (panelRefs(panel, project).refs.length ? COSTS.panel_ref : COSTS.panel)
+
+export function renderCost(
+  panels: PanelLayer[],
+  project: Pick<ComicProject, "cast" | "world">
+) {
+  return panels.reduce((sum, p) => sum + panelCost(p, project), 0)
+}
+
+// One slide's shots and lettering from the planner, by panel. `panels` are the
+// frames to plan, in reading order; `part` places the slide in a longer story.
+export async function requestPlan(
+  project: ComicProject,
+  pageIndex: number,
+  panels: PanelLayer[],
+  story: string,
+  signal: AbortSignal,
+  part?: StoryPart,
+  series?: SeriesContext | null
+) {
+  const res = await fetch("/api/story", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    signal,
+    body: JSON.stringify({
+      story,
+      panels: panels.map((p) => ({
+        id: p.id,
+        width: p.width,
+        height: p.height,
+      })),
+      cast: (project.cast ?? []).map((c) => ({
+        name: c.name,
+        kind: c.kind,
+        tags: c.tags,
+      })),
+      style: project.look?.style ?? "graphic",
+      rtl: !!project.rtl,
+      recap: recapOf(project, pageIndex),
+      part,
+      ...(series && { previous: series.previous, facts: series.facts }),
+    }),
+  })
+  const credits = res.headers.get("x-credits")
+  if (credits !== null) setCredits(Number(credits))
+  const json = await res.json().catch(() => null)
+  if (!res.ok)
+    throw new Error(
+      json?.code === INSUFFICIENT_CREDITS
+        ? INSUFFICIENT_CREDITS
+        : (json?.error ?? `HTTP ${res.status}`)
+    )
+  return Object.fromEntries(
+    (json.panels as PlannedPanel[]).map((p) => [
+      p.panel_id,
+      draftFromPlan(p, project.cast, json.prompt),
+    ])
   )
 }
 
-// A few lines on what the slide before showed, so the planner carries on.
-export function recapOf(project: ComicProject, pageIndex: number) {
-  const page = project.pages[pageIndex - 1]
-  if (!page) return ""
+// A slide as text: what its panels show, then its lettering.
+function slideText(project: ComicProject, page: ComicPage) {
   const panels = readingOrder(
     page.layers.filter((l): l is PanelLayer => l.type === "panel"),
     project.rtl
@@ -269,7 +402,26 @@ export function recapOf(project: ComicProject, pageIndex: number) {
       )
       .filter(Boolean),
     ...lettering,
-  ]
-    .join("\n")
-    .slice(0, 1_500)
+  ].join("\n")
 }
+
+// A few lines on what the slide before showed, so the planner carries on.
+export function recapOf(project: ComicProject, pageIndex: number) {
+  const page = project.pages[pageIndex - 1]
+  return page ? slideText(project, page).slice(0, 1_500) : ""
+}
+
+// Every slide with something on it, as text.
+export function carouselText(project: ComicProject) {
+  return project.pages
+    .map((page, i) => {
+      const text = slideText(project, page)
+      return text && `Slide ${i + 1}:\n${text}`
+    })
+    .filter(Boolean)
+    .join("\n\n")
+}
+
+// The recap across carousels: how the one before in the series ended.
+export const seriesRecap = (project: ComicProject) =>
+  carouselText(project).slice(-1_500)

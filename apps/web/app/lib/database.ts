@@ -1,4 +1,8 @@
-import type { ComicProject } from "@/components/comic-canvas/model"
+import type {
+  Character,
+  ComicProject,
+  WorldItem,
+} from "@/components/comic-canvas/model"
 
 import type { SubscriptionCache } from "./credits"
 
@@ -16,11 +20,33 @@ export interface Database {
           data: ComicProject
           cover?: string | null
           revision?: number
+          series_id?: string | null
+          series_position?: number | null
         }
         Update: {
           title?: string
           data?: ComicProject
           cover?: string | null
+          revision?: number
+          share_token?: string | null
+          series_id?: string | null
+          series_position?: number | null
+        }
+        Relationships: []
+      }
+      comic_series: {
+        Row: ComicSeriesRow
+        Insert: {
+          title?: string
+          characters?: Character[]
+          world?: WorldItem[]
+          facts?: string[]
+        }
+        Update: {
+          title?: string
+          characters?: Character[]
+          world?: WorldItem[]
+          facts?: string[]
           revision?: number
         }
         Relationships: []
@@ -53,6 +79,7 @@ export interface Database {
           kind: string
           ref: string | null
           idem_key: string
+          key_id: string | null
           created_at: string
         }
         Insert: never
@@ -61,8 +88,21 @@ export interface Database {
       }
       api_keys: {
         Row: ApiKeyRow
-        Insert: { name?: string; prefix: string; hash: string }
-        Update: { revoked_at?: string | null; last_used_at?: string | null }
+        Insert: {
+          name?: string
+          prefix: string
+          hash: string
+          scopes?: string[]
+          credit_limit?: number | null
+          project_ids?: string[] | null
+        }
+        Update: {
+          revoked_at?: string | null
+          last_used_at?: string | null
+          scopes?: string[]
+          credit_limit?: number | null
+          project_ids?: string[] | null
+        }
         Relationships: []
       }
       api_jobs: {
@@ -97,9 +137,7 @@ export interface Database {
         Insert: Omit<OpenRouterConnectionRow, "created_at" | "updated_at"> & {
           updated_at?: string
         }
-        Update: Partial<
-          Omit<OpenRouterConnectionRow, "user_id" | "created_at">
-        >
+        Update: Partial<Omit<OpenRouterConnectionRow, "user_id" | "created_at">>
         Relationships: []
       }
     }
@@ -131,6 +169,16 @@ export interface Database {
         }
         Returns: number
       }
+      spend_credits_for_key: {
+        Args: {
+          p_user: string
+          p_key: string
+          p_cost: number
+          p_kind: string
+          p_job: string
+        }
+        Returns: number
+      }
       refund_credits_for: {
         Args: { p_user: string; p_job: string }
         Returns: number
@@ -149,6 +197,24 @@ export type ComicProjectRow = {
   cover: string | null
   revision: number
   slide_count: number
+  // The secret part of the project's reader link; null when it has none.
+  share_token: string | null
+  // The series it belongs to and its place there; null outside a series.
+  series_id: string | null
+  series_position: number | null
+  created_at: string
+  updated_at: string
+}
+
+// Carousels of one account sharing a cast, a world and a list of facts.
+export type ComicSeriesRow = {
+  id: string
+  user_id: string
+  title: string
+  characters: Character[]
+  world: WorldItem[]
+  facts: string[]
+  revision: number
   created_at: string
   updated_at: string
 }
@@ -160,6 +226,10 @@ export type ApiKeyRow = {
   name: string
   prefix: string
   hash: string
+  scopes: string[]
+  credit_limit: number | null
+  credits_spent: number
+  project_ids: string[] | null
   last_used_at: string | null
   revoked_at: string | null
   created_at: string

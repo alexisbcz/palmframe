@@ -1,18 +1,28 @@
 import * as React from "react"
 
 import { TAG_GROUPS, sortTags } from "./anima-tags"
+import { COVERAGE_CELLS } from "./coverage"
 import {
   DEFAULT_LOOK,
+  MAX_REFS,
   createPanel,
+  sheetReady,
   type Character,
+  type ComicProject,
+  type Engine,
   type Look,
+  type Outfit,
   type PaletteId,
   type PanelLayer,
+  type PanelVersion,
   type StyleId,
+  type WorldItem,
 } from "./model"
+import { COSTS } from "@/lib/credits"
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
 
 import { readImageFile } from "./render"
+import { setDimension } from "./setups"
 import type { ComicEditor } from "./use-editor"
 
 // Tags checked against Danbooru: "western comics (style)", not "western
@@ -176,48 +186,168 @@ const KIND: Record<Character["kind"], string> = {
 const KLEIN_NO_TEXT =
   "No text, no letters, no speech bubbles, no panel borders, a single image."
 
-// The cast members of a panel who have a model sheet, in reference order.
-export function sheetCast(panel: PanelLayer, cast: Character[] = []) {
+export const wornOutfit = (panel: PanelLayer, c: Character) =>
+  c.outfits?.find((o) => o.id === panel.outfits?.[c.id])
+
+const words = (o: Pick<Outfit | WorldItem, "name" | "tags">) =>
+  [o.name.trim(), ...o.tags].filter(Boolean).join(", ")
+
+export function panelMembers(panel: PanelLayer, cast: Character[] = []) {
   return (panel.cast ?? [])
     .map((id) => cast.find((c) => c.id === id))
-    .filter((c): c is Character => !!c?.sheet)
+    .filter((c): c is Character => !!c)
 }
 
-// For Klein: the shot in sentences, each sheet-backed character pointed at
-// their reference image, and the look spelled out.
-export function buildKleinPrompt(
+type RefSources = Pick<ComicProject, "cast" | "world">
+
+// The panel's location first, then its props, whatever order they were added.
+function panelWorld(panel: PanelLayer, world: WorldItem[] = []) {
+  const items = (panel.world ?? [])
+    .map((id) => world.find((w) => w.id === id))
+    .filter((w): w is WorldItem => !!w)
+  return [
+    ...items.filter((w) => w.kind === "location"),
+    ...items.filter((w) => w.kind !== "location"),
+  ]
+}
+
+type NamedRef =
+  | { src: string; character: Character; outfit?: Outfit; item?: undefined }
+  | { src: string; item: WorldItem; character?: undefined; outfit?: undefined }
+
+export type PanelRef =
+  | NamedRef
+  | { src: string; item?: undefined; character?: undefined; outfit?: undefined }
+
+// What a panel attaches, in the fixed order the prompt counts them: characters,
+// location, props, then the layout guide. An outfit's image is a redraw of the
+// whole sheet, so it takes the sheet's place, keeping one slot per character.
+// Whatever doesn't fit is dropped here, never by the server, so the prompt's
+// numbers stay right and the left-out are described in words instead. The
+// guide always keeps a slot: the last reference gives way, never the guide.
+export function panelRefs(
   panel: PanelLayer,
-  { cast = [], look }: { cast?: Character[]; look?: Look } = {}
+  { cast, world }: Pick<ComicProject, "cast" | "world">
+) {
+  const wanted: NamedRef[] = [
+    ...panelMembers(panel, cast)
+      .filter(sheetReady)
+      .map((character) => {
+        const outfit = wornOutfit(panel, character)
+        return outfit?.sheet
+          ? { src: outfit.sheet, character, outfit }
+          : { src: character.sheet!, character }
+      }),
+    ...panelWorld(panel, world)
+      .filter((item) => item.image)
+      .map((item) => ({ src: item.image!, item })),
+  ]
+  const room = MAX_REFS - (panel.guide ? 1 : 0)
+  const refs: PanelRef[] = wanted.slice(0, room)
+  if (panel.guide) refs.push({ src: panel.guide.src })
+  return { refs, dropped: wanted.slice(room) }
+}
+
+export const usesKlein = (panel: PanelLayer, project: RefSources) =>
+  panelRefs(panel, project).refs.length > 0
+
+// Up front, because the written description otherwise out-votes a sketch
+// the model only skims. The wording follows OpenManga's POSE / LAYOUT section.
+function guideProse(panel: PanelLayer, image: string) {
+  if (!panel.guide) return ""
+  const rule =
+    panel.guide.strength === "strict"
+      ? "Copy the pose of every figure, where each figure stands in the frame, and the framing from the sketch. Where the description disagrees with the sketch on pose, figure placement or framing, the sketch wins. Identity, outfits and the art style still come from the character references and the description, never from the sketch."
+      : "Start from the sketch for the poses, where the figures stand and the framing; the description may adjust it."
+  return `${image} is a rough layout sketch. ${rule} Ignore its drawing style, line quality and any text in it.`
+}
+
+// For Klein: the shot in sentences, each reference image named for what it
+// holds, and the look spelled out.
+function kleinPrompt(
+  panel: PanelLayer,
+  {
+    cast = [],
+    world = [],
+    look,
+  }: Pick<ComicProject, "cast" | "world" | "look">,
+  lead: string,
+  close: string
 ) {
   const effective = lookOf(panel, look)
-  const drawn = sheetCast(panel, cast)
-  const others = (panel.cast ?? [])
-    .map((id) => cast.find((c) => c.id === id))
-    .filter((c): c is Character => !!c && !c.sheet)
+  const { refs } = panelRefs(panel, { cast, world })
   const tags = (panel.tags ?? []).filter((t) => !COUNT_TAGS.has(t))
-  const many = drawn.length > 1
-  const characters = [
-    ...drawn.map(
-      (c, i) =>
-        `${c.name.trim() || KIND[c.kind]} is the person in ${many ? `reference image ${i + 1}` : "the reference image"}: keep the same face, hair, skin and outfit${c.tags.length ? ` (${c.tags.join(", ")})` : ""}.`
-    ),
-    ...others.map(
-      (c) =>
-        `${c.name.trim() || KIND[c.kind]}: ${KIND[c.kind]}, ${c.tags.join(", ")}.`
-    ),
-  ]
+  const image = (i: number) =>
+    refs.length > 1 ? `reference image ${i + 1}` : "the reference image"
+  const name = (c: Character) => c.name.trim() || KIND[c.kind]
+  const drawn = refs.map((r, i) => {
+    if (r.item) {
+      const what = r.item.name.trim() || "This"
+      return r.item.kind === "location"
+        ? `${what} is the place in ${image(i)}: keep its layout and landmarks, redrawn in this panel's art style.`
+        : `${what} is the object in ${image(i)}: keep its shape and details, redrawn in this panel's art style.`
+    }
+    const c = r.character
+    if (!c) return ""
+    const worn = wornOutfit(panel, c)
+    if (worn && !r.outfit)
+      return `${name(c)} is the person in ${image(i)}: keep the same face, hair and skin, but dress them in ${words(worn)} instead of the clothes in that image.`
+    const clothes = r.outfit ? words(r.outfit) : c.tags.join(", ")
+    return `${name(c)} is the person in ${image(i)}: keep the same face, hair, skin and outfit${clothes ? ` (${clothes})` : ""}.`
+  })
+  const others = panelMembers(panel, cast)
+    .filter((c) => !refs.some((r) => r.character?.id === c.id))
+    .map((c) => {
+      const worn = wornOutfit(panel, c)
+      return `${name(c)}: ${[KIND[c.kind], ...c.tags, ...(worn ? [words(worn)] : [])].join(", ")}.`
+    })
+  const guide =
+    refs.length > 1 ? `Reference image ${refs.length}` : "The reference image"
+  const unseen = panelWorld(panel, world)
+    .filter((w) => !refs.some((r) => r.item?.id === w.id))
+    .map((w) => `Also in the shot: ${words(w)}.`)
   return [
-    "Comic book panel.",
+    lead,
+    guideProse(panel, guide),
     panel.prompt?.trim(),
     tags.length ? `Details: ${tags.join(", ")}.` : "",
-    ...characters,
-    drawn.length ? "Keep the art style of the reference images." : "",
+    ...drawn,
+    ...others,
+    ...unseen,
+    refs.some((r) => r.character)
+      ? "Keep the art style of the character reference images."
+      : "",
     lookProse(panel, effective),
     panel.negative?.trim() ? `Avoid: ${panel.negative.trim()}.` : "",
-    KLEIN_NO_TEXT,
+    close,
   ]
     .filter(Boolean)
     .join(" ")
+}
+
+export const buildKleinPrompt = (
+  panel: PanelLayer,
+  options: Pick<ComicProject, "cast" | "world" | "look"> = {}
+) => kleinPrompt(panel, options, "Comic book panel.", KLEIN_NO_TEXT)
+
+// One image of the panel's moment from nine cameras. The panel's own guide
+// and camera tags stay out: they would pin every cell to one shot. The
+// wording follows OpenManga's coverage sheet template.
+export function buildCoveragePrompt(
+  panel: PanelLayer,
+  options: Pick<ComicProject, "cast" | "world" | "look"> = {}
+) {
+  const tags = setDimension(
+    setDimension(panel.tags ?? [], "framing", null),
+    "angle",
+    null
+  )
+  return kleinPrompt(
+    { ...panel, tags, guide: undefined },
+    options,
+    `Comic coverage sheet: one image divided into a 3x3 grid of nine equal cells with thin clean white gutters, each cell the same shape as the whole image. Every cell shows the same moment, with the same people, clothes, place, light and action, from a different camera setup. Left to right, top to bottom: ${COVERAGE_CELLS.map((c, i) => `${i + 1}. ${c.prose}`).join("; ")}.`,
+    "Identity, outfits, the place and the lighting are identical in all nine cells; only the camera changes. No numbers, captions, labels or text of any kind."
+  )
 }
 
 const QUALITY = "masterpiece, best quality, score_7, safe"
@@ -239,7 +369,10 @@ export function renderSize(width: number, height: number) {
 }
 
 export const hasPrompt = (panel: PanelLayer) =>
-  !!panel.tags?.length || !!panel.prompt?.trim() || !!panel.cast?.length
+  !!panel.tags?.length ||
+  !!panel.prompt?.trim() ||
+  !!panel.cast?.length ||
+  !!panel.world?.length
 
 const COUNT_TAGS = new Set(
   TAG_GROUPS.find((g) => g.id === "count")!.tags.filter((t) => t !== "solo")
@@ -257,14 +390,16 @@ function countTag(n: number, noun: string) {
 // sentences freely, and the sentences read best at the end.
 export function buildPrompt(
   panel: PanelLayer,
-  { cast = [], look }: { cast?: Character[]; look?: Look } = {}
+  {
+    cast = [],
+    world = [],
+    look,
+  }: Pick<ComicProject, "cast" | "world" | "look"> = {}
 ) {
   const effective = lookOf(panel, look)
   const raw = effective.style === "raw"
   const styled = lookTags(panel, effective)
-  const members = (panel.cast ?? [])
-    .map((id) => cast.find((c) => c.id === id))
-    .filter((c): c is Character => !!c)
+  const members = panelMembers(panel, cast)
   const kinds = (k: Character["kind"]) =>
     members.filter((m) => m.kind === k).length
   const counts = members.length
@@ -278,14 +413,18 @@ export function buildPrompt(
   const tags = sortTags(
     (panel.tags ?? []).filter((t) => !members.length || !COUNT_TAGS.has(t))
   )
-  const people = members.map((m) =>
-    [m.name.trim(), ...m.tags].filter(Boolean).join(", ")
-  )
+  const people = members.map((m) => {
+    const worn = wornOutfit(panel, m)
+    return [m.name.trim(), ...m.tags, ...(worn ? [words(worn)] : [])]
+      .filter(Boolean)
+      .join(", ")
+  })
   return {
     prompt: [
       raw ? "" : QUALITY,
       ...counts,
       ...people,
+      ...panelWorld(panel, world).map(words),
       styled.spot,
       tags.join(", "),
       ...styled.tags,
@@ -307,8 +446,9 @@ async function render(
     height: number
     seed: number
     steps: number
-    engine?: "anima" | "klein"
+    engine?: Engine
     refs?: string[]
+    coverage?: boolean
   },
   signal?: AbortSignal
 ) {
@@ -330,7 +470,15 @@ async function render(
   const img = await readImageFile(
     new File([blob], "panel.png", { type: blob.type })
   )
-  return { src: img.src, ms: Number(res.headers.get("x-render-ms")) || 0 }
+  return {
+    src: img.src,
+    ms: Number(res.headers.get("x-render-ms")) || 0,
+    // A connected OpenRouter account draws with its own model.
+    engine:
+      res.headers.get("x-billed") === "openrouter"
+        ? undefined
+        : (body.engine ?? "anima"),
+  }
 }
 
 // A head-and-shoulders reference of a character, used as their avatar and
@@ -365,13 +513,47 @@ export async function renderPortrait(
 export async function renderSheet(
   character: Character,
   seed: number,
-  look: Look = DEFAULT_LOOK
+  look: Look = DEFAULT_LOOK,
+  signal?: AbortSignal
 ) {
   const panel = createPanel({ x: 0, y: 0, width: 3, height: 2 })
   const prompt = [
     `Character model sheet of ${character.name.trim() || "a character"}, ${KIND[character.kind]}, on a plain off-white background:`,
     "full body front view, full body three-quarter view, and a large head-and-shoulders close-up. Same person in every view.",
     character.tags.length ? `Look: ${character.tags.join(", ")}.` : "",
+    lookProse(panel, lookOf(panel, look)),
+    "No text, no labels.",
+  ]
+    .filter(Boolean)
+    .join(" ")
+  const { src } = await render(
+    {
+      prompt,
+      negative: "",
+      width: 1536,
+      height: 1024,
+      seed,
+      steps: 4,
+      engine: "klein",
+    },
+    signal
+  )
+  return src
+}
+
+// The character's sheet again, in other clothes. Generating one needs an
+// approved sheet: without that baseline, every outfit is a new face.
+export async function renderOutfit(
+  character: Character,
+  outfit: Outfit,
+  seed: number,
+  look: Look = DEFAULT_LOOK
+) {
+  if (!sheetReady(character)) throw new Error("Approve the model sheet first.")
+  const panel = createPanel({ x: 0, y: 0, width: 3, height: 2 })
+  const prompt = [
+    "Reproduce the character model sheet in the reference image exactly: the same person, face, hair, skin, body and proportions, in the same poses, views and layout, on the same plain background.",
+    `Change only the clothes. Dress them in: ${words(outfit)}.`,
     lookProse(panel, lookOf(panel, look)),
     "No text, no labels.",
   ]
@@ -385,6 +567,36 @@ export async function renderSheet(
     seed,
     steps: 4,
     engine: "klein",
+    refs: [character.sheet!],
+  })
+  return src
+}
+
+// A reference of a recurring place or object, drawn with Klein like a sheet.
+export async function renderWorldItem(
+  item: WorldItem,
+  seed: number,
+  look: Look = DEFAULT_LOOK
+) {
+  const location = item.kind === "location"
+  const panel = createPanel({ x: 0, y: 0, width: 3, height: 2 })
+  const prompt = [
+    location
+      ? `Wide eye-level establishing view of ${words(item)}, with nobody in it.`
+      : `One object, ${words(item)}, in three-quarter view on a plain off-white background, with nobody in the image.`,
+    lookProse(panel, lookOf(panel, look)),
+    "No text, no labels.",
+  ]
+    .filter(Boolean)
+    .join(" ")
+  const { src } = await render({
+    prompt,
+    negative: "",
+    width: location ? 1536 : 1024,
+    height: 1024,
+    seed,
+    steps: 4,
+    engine: "klein",
   })
   return src
 }
@@ -392,18 +604,64 @@ export async function renderSheet(
 // Klein is slower per pixel; ~0.9 MP keeps a panel near a minute.
 const KLEIN_AREA = 1024 * 896
 
-export function kleinSize(width: number, height: number) {
+// A coverage sheet holds nine cells, so it gets a model sheet's area.
+const COVERAGE_AREA = 1536 * 1024
+
+export function kleinSize(width: number, height: number, area = KLEIN_AREA) {
   const ratio = Math.min(2.5, Math.max(0.4, width / height))
   const snap = (n: number) =>
     Math.min(1536, Math.max(256, Math.round(n / 64) * 64))
-  const w = Math.sqrt(KLEIN_AREA * ratio)
-  return { width: snap(w), height: snap(KLEIN_AREA / w) }
+  const w = Math.sqrt(area * ratio)
+  return { width: snap(w), height: snap(area / w) }
+}
+
+// Panels with reference images are drawn from them, with Klein.
+export const engineOf = (panel: PanelLayer, project: RefSources): Engine =>
+  panelRefs(panel, project).refs.length ? "klein" : "anima"
+
+export const otherEngine = (engine: Engine): Engine =>
+  engine === "klein" ? "anima" : "klein"
+
+// As the server charges it: Klein with nothing to draw from is priced as a
+// sheet, not as a reference panel.
+export function engineCost(
+  panel: PanelLayer,
+  engine: Engine,
+  project: RefSources
+) {
+  if (engine === "anima") return COSTS.panel
+  return panelRefs(panel, project).refs.length ? COSTS.panel_ref : COSTS.sheet
+}
+
+function renderBody(
+  panel: PanelLayer,
+  project: ComicEditor["project"],
+  engine: Engine,
+  seed: number
+) {
+  if (engine === "anima")
+    return {
+      ...buildPrompt(panel, project),
+      ...renderSize(panel.width, panel.height),
+      seed,
+      steps: panel.steps ?? DEFAULT_STEPS,
+    }
+  return {
+    prompt: buildKleinPrompt(panel, project),
+    negative: "",
+    ...kleinSize(panel.width, panel.height),
+    seed,
+    steps: 4,
+    engine,
+    refs: panelRefs(panel, project).refs.map((r) => r.src),
+  }
 }
 
 export interface Take {
   src: string
   seed: number
   ms: number
+  engine?: Engine
 }
 
 export interface Job {
@@ -412,7 +670,30 @@ export interface Job {
   of: number
 }
 
-const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
+// Versions kept on a panel, as in edit-tools.
+const MAX_VERSIONS = 8
+
+export const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
+
+// The panel's versions with its current image among them, before it's replaced.
+export function withCurrentImage(panel: PanelLayer) {
+  const versions = panel.versions ?? []
+  if (!panel.src || versions.some((v) => v.src === panel.src)) return versions
+  const { src, engine, seed } = panel
+  const current: PanelVersion = { src, kind: "original", engine, seed }
+  return [current, ...versions].slice(0, MAX_VERSIONS)
+}
+
+// Every panel with something to draw, slide by slide, in the order they draw.
+export const promptedPanels = (project: ComicProject) =>
+  project.pages.flatMap((page) =>
+    page.layers
+      .filter((l): l is PanelLayer => l.type === "panel" && hasPrompt(l))
+      .sort((a, b) => a.y - b.y || a.x - b.x)
+  )
+
+// A coverage sheet is a job of its own: the panel can render meanwhile.
+export const coverageJob = (panelId: string) => `coverage:${panelId}`
 
 export function useGenerator(editor: ComicEditor) {
   const [jobs, setJobs] = React.useState<Record<string, Job>>({})
@@ -422,9 +703,14 @@ export function useGenerator(editor: ComicEditor) {
 
   // `count` takes in a row, each on a new seed unless the seed is locked.
   // Every take lands in the panel as it finishes; pick another from Takes.
+  // `patch` lands with the image. Resolves to what went wrong, if anything did.
   const generate = React.useCallback(
-    async (panelId: string, count = 1) => {
-      if (controllers.current.has(panelId)) return
+    async (
+      panelId: string,
+      count = 1,
+      patch?: Partial<PanelLayer>
+    ): Promise<string | null> => {
+      if (controllers.current.has(panelId)) return null
       const controller = new AbortController()
       controllers.current.set(panelId, controller)
       setErrors(({ [panelId]: _, ...rest }) => rest)
@@ -432,32 +718,15 @@ export function useGenerator(editor: ComicEditor) {
       try {
         for (let take = 1; take <= count; take++) {
           const panel = editor.findLayer(panelId)?.layer
-          if (panel?.type !== "panel" || !hasPrompt(panel)) return
+          if (panel?.type !== "panel" || !hasPrompt(panel)) return null
           const seed =
             panel.lockSeed && panel.seed !== undefined
               ? panel.seed + take - 1
               : randomSeed()
           setJobs((j) => ({ ...j, [panelId]: { startedAt, take, of: count } }))
           const project = editor.projectRef.current
-          // Characters with a model sheet are drawn from it, with Klein.
-          const sheets = sheetCast(panel, project.cast)
           const result = await render(
-            sheets.length
-              ? {
-                  prompt: buildKleinPrompt(panel, project),
-                  negative: "",
-                  ...kleinSize(panel.width, panel.height),
-                  seed,
-                  steps: 4,
-                  engine: "klein",
-                  refs: sheets.map((c) => c.sheet!),
-                }
-              : {
-                  ...buildPrompt(panel, project),
-                  ...renderSize(panel.width, panel.height),
-                  seed,
-                  steps: panel.steps ?? DEFAULT_STEPS,
-                },
+            renderBody(panel, project, engineOf(panel, project), seed),
             controller.signal
           )
           setTakes((t) => ({
@@ -470,12 +739,68 @@ export function useGenerator(editor: ComicEditor) {
           editor.update(panelId, {
             src: result.src,
             seed,
+            engine: result.engine,
             fit: "cover",
             imageZoom: 100,
             panX: 0,
             panY: 0,
+            ...patch,
           })
         }
+        return null
+      } catch (e) {
+        if (controller.signal.aborted) return null
+        const message = e instanceof Error ? e.message : String(e)
+        setErrors((err) => ({ ...err, [panelId]: message }))
+        return message
+      } finally {
+        controllers.current.delete(panelId)
+        setJobs(({ [panelId]: _, ...rest }) => rest)
+      }
+    },
+    [editor]
+  )
+
+  // The same shot and seed through the given engine. The result joins the
+  // panel's versions and leaves its image alone until it wins the compare.
+  const tryEngine = React.useCallback(
+    async (panelId: string, engine: Engine) => {
+      if (controllers.current.has(panelId)) return null
+      const panel = editor.findLayer(panelId)?.layer
+      if (panel?.type !== "panel" || !hasPrompt(panel)) return null
+      const controller = new AbortController()
+      controllers.current.set(panelId, controller)
+      setErrors(({ [panelId]: _, ...rest }) => rest)
+      const seed = panel.seed ?? randomSeed()
+      setJobs((j) => ({
+        ...j,
+        [panelId]: { startedAt: Date.now(), take: 1, of: 1 },
+      }))
+      try {
+        const result = await render(
+          renderBody(panel, editor.projectRef.current, engine, seed),
+          controller.signal
+        )
+        setTakes((t) => ({
+          ...t,
+          [panelId]: [{ ...result, seed }, ...(t[panelId] ?? [])].slice(0, 24),
+        }))
+        const now = editor.findLayer(panelId)?.layer
+        if (now?.type === "panel") {
+          const versions = withCurrentImage(now)
+          editor.update(panelId, {
+            versions: [
+              {
+                src: result.src,
+                kind: "engine" as const,
+                engine: result.engine,
+                seed,
+              },
+              ...versions,
+            ].slice(0, MAX_VERSIONS),
+          })
+        }
+        return result.src
       } catch (e) {
         if (!controller.signal.aborted) {
           setErrors((err) => ({
@@ -483,6 +808,7 @@ export function useGenerator(editor: ComicEditor) {
             [panelId]: e instanceof Error ? e.message : String(e),
           }))
         }
+        return null
       } finally {
         controllers.current.delete(panelId)
         setJobs(({ [panelId]: _, ...rest }) => rest)
@@ -494,20 +820,73 @@ export function useGenerator(editor: ComicEditor) {
   // One at a time, slide by slide: ComfyUI renders serially anyway,
   // and this fills the carousel in reading order.
   const generateAll = React.useCallback(async () => {
-    const ids = editor.projectRef.current.pages.flatMap((page) =>
-      page.layers
-        .filter((l): l is PanelLayer => l.type === "panel" && hasPrompt(l))
-        .sort((a, b) => a.y - b.y || a.x - b.x)
-        .map((l) => l.id)
-    )
-    for (const id of ids) await generate(id)
+    const panels = promptedPanels(editor.projectRef.current)
+    for (const { id } of panels) await generate(id)
   }, [editor, generate])
 
   const cancel = React.useCallback((panelId: string) => {
     controllers.current.get(panelId)?.abort()
   }, [])
 
-  return { jobs, takes, errors, generate, generateAll, cancel }
+  // Draws the panel's coverage sheet. Nothing on the panel changes but the
+  // sheet: picked cells become guides later, in the picker.
+  const drawCoverage = React.useCallback(
+    async (panelId: string) => {
+      const key = coverageJob(panelId)
+      if (controllers.current.has(key)) return
+      const panel = editor.findLayer(panelId)?.layer
+      if (panel?.type !== "panel" || !hasPrompt(panel)) return
+      const controller = new AbortController()
+      controllers.current.set(key, controller)
+      setErrors(({ [key]: _, ...rest }) => rest)
+      setJobs((j) => ({
+        ...j,
+        [key]: { startedAt: Date.now(), take: 1, of: 1 },
+      }))
+      const project = editor.projectRef.current
+      const seed = randomSeed()
+      try {
+        const { src } = await render(
+          {
+            prompt: buildCoveragePrompt(panel, project),
+            negative: "",
+            ...kleinSize(panel.width, panel.height, COVERAGE_AREA),
+            seed,
+            steps: 4,
+            engine: "klein",
+            refs: panelRefs({ ...panel, guide: undefined }, project).refs.map(
+              (r) => r.src
+            ),
+            coverage: true,
+          },
+          controller.signal
+        )
+        editor.update(panelId, { coverage: { src, seed } })
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          setErrors((err) => ({
+            ...err,
+            [key]: e instanceof Error ? e.message : String(e),
+          }))
+        }
+      } finally {
+        controllers.current.delete(key)
+        setJobs(({ [key]: _, ...rest }) => rest)
+      }
+    },
+    [editor]
+  )
+
+  return {
+    jobs,
+    takes,
+    errors,
+    generate,
+    tryEngine,
+    generateAll,
+    cancel,
+    drawCoverage,
+  }
 }
 
 export type Generator = ReturnType<typeof useGenerator>

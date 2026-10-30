@@ -37,6 +37,13 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import { useLocale, useT, type Translate } from "@/i18n/core"
+import {
+  INSTAGRAM_LIMITS,
+  aspectFits,
+  checkPublish,
+  countHashtags,
+  type PublishCheck,
+} from "@/lib/instagram-limits"
 import type {
   InstagramAccount,
   PublishAs,
@@ -51,9 +58,6 @@ import { roving } from "../comic-canvas/roving"
 import { messages } from "./publish.messages"
 import { SchedulePicker } from "./schedule-picker"
 
-const MAX_CAROUSEL = 10
-const MAX_CAPTION = 2200
-const MAX_HASHTAGS = 30
 const CAPTION_KEY = "palmframe:caption"
 // Outline toggles: the chosen option gets the muted fill, not the primary black.
 const SELECTED = "data-selected:bg-muted data-selected:text-foreground"
@@ -260,9 +264,9 @@ function PublishDialog({
     if (added) setAccountId(added.id)
   })
   const count = project.pages.length
-  const tall = project.height / project.width > 1.25 + 0.01
+  const tall = !aspectFits(project.width, project.height)
   const [as, setAs] = React.useState<PublishAs>(
-    tall || count > MAX_CAROUSEL ? "story" : "feed"
+    tall || count > INSTAGRAM_LIMITS.slides ? "story" : "feed"
   )
   const [mode, setMode] = React.useState<PublishMode>("now")
   const [when, setWhen] = React.useState(defaultSchedule)
@@ -277,6 +281,8 @@ function PublishDialog({
     project.pages.map((_, i) => altText(project, i, t))
   )
   const [previews, setPreviews] = React.useState<string[]>([])
+  // Each slide's weight as a posted JPEG.
+  const [bytes, setBytes] = React.useState<number[]>([])
   const [phase, setPhase] = React.useState<Phase>({ step: "form" })
   const [error, setError] = React.useState<string | null>(null)
   const idempotencyKey = React.useRef(crypto.randomUUID())
@@ -296,10 +302,12 @@ function PublishDialog({
     } catch {}
   }, [caption])
 
-  // Small previews of every slide, from the same renderer as the export.
+  // Small previews of every slide, from the same renderer as the export,
+  // and the size of the file each will post as.
   React.useEffect(() => {
     let live = true
     const urls: string[] = []
+    const sizes: number[] = []
     ;(async () => {
       for (const i of project.pages.keys()) {
         const blob = await renderToBlob(
@@ -311,6 +319,14 @@ function PublishDialog({
         if (!live || !blob) return
         urls.push(URL.createObjectURL(blob))
         setPreviews([...urls])
+        const full = await renderToBlob(
+          pageDoc(project, i),
+          images,
+          "image/jpeg"
+        )
+        if (!live || !full) return
+        sizes.push(full.size)
+        setBytes([...sizes])
       }
     })()
     return () => {
@@ -319,19 +335,20 @@ function PublishDialog({
     }
   }, [project, images])
 
-  const hashtags = caption.match(/#[\p{L}\p{N}_]+/gu)?.length ?? 0
+  const hashtags = countHashtags(caption)
   const scheduleTime = Date.parse(when)
-  const problems = [
-    as === "feed" && count > MAX_CAROUSEL
-      ? t("tooManySlides", { extra: count - MAX_CAROUSEL })
-      : null,
-    hashtags > MAX_HASHTAGS ? t("tooManyHashtags") : null,
-    mode === "schedule" && !(scheduleTime > Date.now())
-      ? t("scheduleInPast")
-      : null,
-  ].filter((p): p is string => !!p)
+  const checks = checkPublish({
+    as,
+    slides: count,
+    width: project.width,
+    height: project.height,
+    bytes,
+    caption,
+  })
+  const pastSchedule = mode === "schedule" && !(scheduleTime > Date.now())
+  const canPost = !checks.some((c) => c.level === "block") && !pastSchedule
   const busy = phase.step === "rendering" || phase.step === "uploading"
-  const canSubmit = !!accountId && !problems.length && !busy
+  const canSubmit = !!accountId && canPost && !busy
 
   const submit = async () => {
     if (!accountId) return
@@ -453,21 +470,15 @@ function PublishDialog({
                     {t("stories")}
                   </ToggleGroupItem>
                 </ToggleGroup>
-                {as === "feed" && tall && (
-                  <p className="text-xs text-amber-700 dark:text-amber-400">
-                    {t("tallFormat")}
-                  </p>
-                )}
               </Field>
 
               <Field
                 label={t("caption")}
-                hint={`${caption.length.toLocaleString(locale)} / ${MAX_CAPTION.toLocaleString(locale)}`}
+                hint={`${caption.length.toLocaleString(locale)} / ${INSTAGRAM_LIMITS.caption.toLocaleString(locale)}`}
               >
                 <Textarea
                   aria-label={t("caption")}
                   className="min-h-24 resize-none"
-                  maxLength={MAX_CAPTION}
                   placeholder={t("captionPlaceholder")}
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
@@ -538,11 +549,18 @@ function PublishDialog({
                 </CollapsibleContent>
               </Collapsible>
 
-              {problems.map((p) => (
-                <p key={p} className="text-xs text-destructive">
-                  {p}
+              <Checks
+                checks={checks}
+                width={project.width}
+                height={project.height}
+                locale={locale}
+                t={t}
+              />
+              {pastSchedule && (
+                <p className="text-xs text-destructive">
+                  {t("scheduleInPast")}
                 </p>
-              ))}
+              )}
               {error && (
                 <Alert variant="destructive">
                   <AlertTitle>{t("errorTitle")}</AlertTitle>
@@ -571,6 +589,63 @@ function PublishDialog({
         </>
       )}
     </Dialog>
+  )
+}
+
+// What was checked before posting, every line with the number it checked:
+// problems in full, the rest as one quiet line.
+function Checks({
+  checks,
+  width,
+  height,
+  locale,
+  t,
+}: {
+  checks: PublishCheck[]
+  width: number
+  height: number
+  locale: string
+  t: Translate<(typeof messages)["en"]>
+}) {
+  const number = (n: number) => n.toLocaleString(locale)
+  const megabytes = (n: number) =>
+    `${(n / (1024 * 1024)).toLocaleString(locale, {
+      maximumFractionDigits: 2,
+    })} MB`
+  const values = (c: PublishCheck) => ({
+    value: c.id === "size" ? megabytes(c.value) : number(c.value),
+    limit: c.id === "size" ? megabytes(c.limit) : number(c.limit),
+    extra: number(c.value - c.limit),
+    n: c.slide ?? 0,
+    size: `${width} × ${height}`,
+    ratio: (width / height).toLocaleString(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }),
+  })
+  const passed = checks.filter((c) => c.level === "ok" && c.value > 0)
+  return (
+    <div className="flex flex-col gap-1 text-xs">
+      {checks
+        .filter((c) => c.level !== "ok")
+        .map((c) => (
+          <p
+            key={c.id}
+            className={
+              c.level === "block"
+                ? "text-destructive"
+                : "text-amber-700 dark:text-amber-400"
+            }
+          >
+            {t(`issue.${c.message}`, values(c))}
+          </p>
+        ))}
+      {passed.length > 0 && (
+        <p className="text-[11px] text-muted-foreground">
+          {passed.map((c) => t(`check.${c.id}`, values(c))).join(" · ")}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -627,7 +702,7 @@ function SlidePreview({
             className={cn(
               // Drawn inside the tile: an outer ring is clipped by the scrolling column.
               "relative overflow-hidden rounded-md bg-muted after:pointer-events-none after:absolute after:inset-0 after:rounded-md after:ring-1 after:ring-foreground/10 after:ring-inset",
-              as === "feed" && i >= MAX_CAROUSEL && "opacity-40"
+              as === "feed" && i >= INSTAGRAM_LIMITS.slides && "opacity-40"
             )}
             style={{ aspectRatio: ratio }}
           >

@@ -4,6 +4,7 @@ import { z } from "zod"
 
 import {
   ApiError,
+  allowed,
   apiError,
   authenticate,
   balance,
@@ -15,6 +16,7 @@ import {
   limit,
   listProjects,
   startJob,
+  type Access,
   type Caller,
 } from "@/lib/api.server"
 
@@ -23,7 +25,7 @@ import type { Route } from "./+types/mcp"
 // The developer API as MCP tools, over Streamable HTTP. Stateless: each
 // request builds its own server for the key's owner, and answers in JSON.
 // Paid tools come in pairs, estimate then start, so an agent shows the
-// cost before it spends.
+// cost before it spends. A key only gets the tools its scopes open.
 
 function server(caller: Caller) {
   const mcp = new McpServer({ name: "palmframe", version: "1.0.0" })
@@ -32,9 +34,11 @@ function server(caller: Caller) {
     name: string,
     description: string,
     inputSchema: Shape,
-    write: boolean,
+    access: Access,
     work: (args: z.infer<z.ZodObject<Shape>>) => Promise<unknown>
-  ) =>
+  ) => {
+    if (!allowed(caller, access)) return
+    const write = access === "write"
     mcp.registerTool(
       name,
       {
@@ -61,33 +65,34 @@ function server(caller: Caller) {
         }
       }) as never
     )
+  }
 
   tool(
     "get_capabilities",
     "Credit prices of each operation, and the rate and concurrency limits.",
     {},
-    false,
+    "any",
     async () => capabilities()
   )
   tool(
     "get_credit_balance",
-    "The account's credit balance, shared with the Palmframe app.",
+    "The account's credit balance, shared with the Palmframe app, and this key's credit limit and spending.",
     {},
-    false,
+    "read",
     () => balance(caller)
   )
   tool(
     "list_projects",
     "The account's comic projects, most recently edited first.",
     {},
-    false,
+    "read",
     () => listProjects(caller)
   )
   tool(
     "get_project",
     "A project's pages, panels (prompt, tags, cast, image) and cast. page_version is the revision estimates are bound to.",
     { project_id: z.string().describe("Project ID from list_projects.") },
-    false,
+    "read",
     ({ project_id }) => getProject(caller, project_id)
   )
   tool(
@@ -103,7 +108,7 @@ function server(caller: Caller) {
         .describe("Replaces the panel's prompt text for this render."),
       seed: z.number().int().min(0).optional(),
     },
-    true,
+    "write",
     (args) => estimatePanel(caller, args)
   )
   tool(
@@ -122,21 +127,21 @@ function server(caller: Caller) {
         .max(255)
         .describe("Unique per intended render; retries reuse it."),
     },
-    true,
+    "write",
     (args) => startJob(caller, args)
   )
   tool(
     "get_operation",
     "Status of a started generation: queued, running, succeeded (with image_url), failed or cancelled (refunded).",
     { operation_id: z.string() },
-    false,
+    "any",
     ({ operation_id }) => getJob(caller, operation_id)
   )
   tool(
     "cancel_operation",
     "Cancels a queued or running generation and refunds its credits.",
     { operation_id: z.string() },
-    true,
+    "write",
     ({ operation_id }) => cancelJob(caller, operation_id)
   )
   return mcp
@@ -145,7 +150,7 @@ function server(caller: Caller) {
 async function handle(request: Request) {
   let caller: Caller
   try {
-    caller = await authenticate(request, "read")
+    caller = await authenticate(request, "any")
   } catch (e) {
     const res = apiError(e)
     if (res.status === 401)

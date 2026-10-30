@@ -1,3 +1,4 @@
+import { INSTAGRAM_LIMITS } from "@/lib/instagram-limits"
 import {
   errorResponse,
   publish,
@@ -7,8 +8,8 @@ import {
 
 import type { Route } from "./+types/api.instagram.publish"
 
-const MAX_FEED_SLIDES = 10
-const MAX_IMAGE_BYTES = 8 * 1024 * 1024
+const { slides: MAX_FEED_SLIDES, imageBytes: MAX_IMAGE_BYTES } =
+  INSTAGRAM_LIMITS
 const error = (message: string, status: number, code?: string) =>
   Response.json({ error: message, code }, { status })
 
@@ -21,7 +22,10 @@ function parse(raw: unknown): PublishRequest | null {
     return null
   return {
     accountId: r.accountId,
-    caption: typeof r.caption === "string" ? r.caption.slice(0, 2200) : "",
+    caption:
+      typeof r.caption === "string"
+        ? r.caption.slice(0, INSTAGRAM_LIMITS.caption)
+        : "",
     as: r.as,
     mode: r.mode,
     scheduledFor: r.scheduledFor,

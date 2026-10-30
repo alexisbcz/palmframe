@@ -35,9 +35,10 @@ export function planOf(lookupKey: string | null | undefined): PlanId | null {
 // Charged before a render starts, refunded if it fails.
 export const COSTS = {
   panel: 8, // Anima Turbo, text only
-  panel_ref: 20, // FLUX.2 Klein, drawn from model sheets
+  panel_ref: 20, // FLUX.2 Klein, drawn from reference images
   portrait: 8,
   sheet: 40,
+  coverage: 40, // FLUX.2 Klein, one image of nine camera setups
   edit: 20, // FLUX.2 Klein instruction edit of a panel
   vary: 8, // Anima Turbo img2img
   inpaint: 8, // Anima Turbo on a masked crop
@@ -48,6 +49,9 @@ export const COSTS = {
   face_fix: 6, // up to four faces redrawn with Anima Turbo
   restyle: 8, // Anima Turbo img2img of a whole panel
   story_plan: 2, // the story planner's LLM call, per slide
+  translate: 2, // a carousel's lettering, into one language
+  panel_check: 2, // a vision model reading one finished panel
+  continuity_check: 2, // an LLM comparing a carousel with its series' facts
 } as const
 
 export type Operation = keyof typeof COSTS

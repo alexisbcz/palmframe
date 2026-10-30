@@ -1,10 +1,5 @@
 import { COSTS } from "@/lib/credits"
-import {
-  error,
-  operation,
-  parse,
-  render,
-} from "@/lib/generate.server"
+import { error, operation, parse, render } from "@/lib/generate.server"
 import { imageResponse, payingConnection } from "@/lib/openrouter.server"
 import { getViewer } from "@/lib/supabase.server"
 
@@ -35,7 +30,10 @@ export async function action({ request }: Route.ActionArgs) {
     return imageResponse(
       openrouter,
       {
-        prompt: `${r.prompt}\n\nNo text, no letters, no speech bubbles, no captions, no panel borders.`,
+        // A coverage sheet's prompt already says what it may and may not show.
+        prompt: r.coverage
+          ? r.prompt
+          : `${r.prompt}\n\nNo text, no letters, no speech bubbles, no captions, no panel borders.`,
         width: r.width,
         height: r.height,
         refs: r.refs,

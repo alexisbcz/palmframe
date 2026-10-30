@@ -312,7 +312,11 @@ export function EditSection({
                 )}
                 style={{ aspectRatio: `${panel.width} / ${panel.height}` }}
                 onClick={() =>
-                  editor.update(panel.id, { src: v.src }, `${panel.id}-version`)
+                  editor.update(
+                    panel.id,
+                    { src: v.src, engine: v.engine },
+                    `${panel.id}-version`
+                  )
                 }
               >
                 <img src={v.src} alt="" className="size-full object-cover" />
