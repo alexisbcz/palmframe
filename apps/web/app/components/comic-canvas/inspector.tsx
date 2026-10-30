@@ -44,6 +44,7 @@ import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { useT } from "@/i18n/core"
 
 import { insertImageFile, pickFile } from "./actions"
+import { CheckSection } from "./check-tools"
 import {
   ColorInput,
   NumberInput,
@@ -476,6 +477,7 @@ function PanelSections({
 
       {layer.src && <EditSection panel={layer} editor={editor} />}
       {layer.src && <PostprocessSection panel={layer} editor={editor} />}
+      {layer.src && <CheckSection panel={layer} editor={editor} />}
 
       {layer.src && (
         <Section title={t("sections.filters")}>

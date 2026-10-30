@@ -58,6 +58,7 @@ import {
   parseLines,
   recapOf,
   renderCost,
+  speakerFaces,
   type PanelDraft,
 } from "./story"
 import { messages } from "./story.messages"
@@ -221,7 +222,8 @@ function useStory(editor: ComicEditor, generator: Generator) {
         const bubbles = bubblesFor(
           next,
           parseLines(draft.lines, cast),
-          !!project.rtl
+          !!project.rtl,
+          speakerFaces(next, cast)
         )
         placed[panel.id] = bubbles.map((b) => b.id)
         added.push(...bubbles)

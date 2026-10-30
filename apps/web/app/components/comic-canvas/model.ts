@@ -82,6 +82,32 @@ export interface PanelLayer extends BaseLayer {
   // Images the panel had before and after AI edits, newest first, so an
   // edit can be compared and reverted.
   versions?: PanelVersion[]
+  // What a vision model read in the current image; goes when the image does.
+  check?: PanelCheck
+}
+
+export interface FaceBox {
+  // Fractions of the image, from its top left.
+  x: number
+  y: number
+  width: number
+  height: number
+  // The character's id, when the model could tell who it is.
+  who: string | null
+}
+
+export interface PanelCheck {
+  // The image's size when read, to place the faces however it's framed.
+  imageWidth: number
+  imageHeight: number
+  // Ids of the characters seen.
+  cast: string[]
+  headcount: number
+  // People neither in the cast nor called for by the scene.
+  unexpected: number
+  // Letters or words drawn into the art itself.
+  lettering: boolean
+  faces: FaceBox[]
 }
 
 export interface PanelVersion {

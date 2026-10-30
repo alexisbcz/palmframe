@@ -6,6 +6,7 @@ import {
   Copy01Icon,
   Delete02Icon,
   MoreHorizontalIcon,
+  ScanEyeIcon,
   PlusSignIcon,
 } from "@hugeicons/core-free-icons"
 
@@ -19,6 +20,8 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { SlideCheckBadge } from "./check-tools"
+import { messages as checkMessages } from "./check.messages"
 import { pageDoc, type ComicDoc } from "./model"
 import { drawDoc, loadImages, type ImageCache } from "./render"
 import { roving } from "./roving"
@@ -63,14 +66,17 @@ export function PageStrip({
   editor,
   images,
   generating,
+  onCheck,
   thumbHeight = THUMB_HEIGHT,
 }: {
   editor: ComicEditor
   images: ImageCache
   generating: Record<string, unknown>
+  onCheck: (pageIndex: number) => void
   thumbHeight?: number
 }) {
   const t = useT(messages)
+  const tc = useT(checkMessages)
   const { project, pageIndex } = editor
   const count = project.pages.length
   const width = Math.round((thumbHeight * project.width) / project.height)
@@ -127,6 +133,7 @@ export function PageStrip({
         {project.pages.map((page, i) => {
           const active = i === pageIndex
           const busy = page.layers.some((l) => l.id in generating)
+          const art = page.layers.some((l) => l.type === "panel" && !!l.src)
           return (
             <li
               key={page.id}
@@ -202,6 +209,7 @@ export function PageStrip({
                   </span>
                 )}
               </button>
+              <SlideCheckBadge page={page} cast={project.cast} />
               <span className="pointer-events-none absolute start-1.5 bottom-1.5 rounded-sm bg-foreground/80 px-1 text-[10px] leading-4 font-medium text-background tabular-nums">
                 {i + 1}
               </span>
@@ -223,9 +231,11 @@ export function PageStrip({
                       ...(i === count - 1 ? ["right"] : []),
                       ...(count === 1 ? ["delete"] : []),
                       ...(count >= MAX_SLIDES ? ["duplicate"] : []),
+                      ...(art ? [] : ["check"]),
                     ]}
                     onAction={(key) => {
                       if (key === "duplicate") editor.duplicatePage(i)
+                      if (key === "check") onCheck(i)
                       if (key === "left") editor.movePage(i, i - 1)
                       if (key === "right") editor.movePage(i, i + 1)
                       if (key === "delete") editor.removePage(i)
@@ -242,6 +252,10 @@ export function PageStrip({
                     <DropdownMenuItem id="right">
                       <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
                       {t("moveRight")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem id="check">
+                      <HugeiconsIcon icon={ScanEyeIcon} strokeWidth={2} />
+                      {tc("slideMenu")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem id="delete" variant="destructive">

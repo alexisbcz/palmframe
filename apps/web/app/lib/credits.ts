@@ -48,6 +48,7 @@ export const COSTS = {
   face_fix: 6, // up to four faces redrawn with Anima Turbo
   restyle: 8, // Anima Turbo img2img of a whole panel
   story_plan: 2, // the story planner's LLM call, per slide
+  panel_check: 2, // a vision model reading one finished panel
 } as const
 
 export type Operation = keyof typeof COSTS

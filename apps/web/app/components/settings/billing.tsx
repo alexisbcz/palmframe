@@ -488,6 +488,7 @@ const KINDS = [
   "portrait",
   "sheet",
   "story_plan",
+  "panel_check",
   "edit",
   "vary",
   "inpaint",
