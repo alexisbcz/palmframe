@@ -11,7 +11,7 @@ import {
   type ComicProject,
   type PanelLayer,
 } from "./model"
-import { sheetCast } from "./use-generator"
+import { usesKlein } from "./use-generator"
 
 // What the story dialog holds for one panel before it's applied: the shot
 // (tags, prose, cast) and its lettering as script lines ("Aki says: …").
@@ -245,8 +245,7 @@ export function bubblesFor(
 // The credits a render of these panels costs, as the server will charge it.
 export function renderCost(panels: PanelLayer[], cast: Character[] = []) {
   return panels.reduce(
-    (sum, p) =>
-      sum + (sheetCast(p, cast).length ? COSTS.panel_ref : COSTS.panel),
+    (sum, p) => sum + (usesKlein(p, cast) ? COSTS.panel_ref : COSTS.panel),
     0
   )
 }

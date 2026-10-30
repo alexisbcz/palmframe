@@ -40,8 +40,10 @@ import {
   DEFAULT_STEPS,
   PALETTES,
   STYLES,
+  buildKleinPrompt,
   buildPrompt,
   lookOf,
+  usesKlein,
   type Generator,
 } from "./use-generator"
 import { roving } from "./roving"
@@ -118,7 +120,7 @@ export function PromptPreview({
         <span className="text-muted-foreground">+ </span>
         {prompt}
       </p>
-      <p className="text-muted-foreground">− {negative}</p>
+      {negative && <p className="text-muted-foreground">− {negative}</p>}
       <Button
         variant="ghost"
         size="xs"
@@ -160,7 +162,10 @@ export function AdvancedFields({
     )
   const look = lookOf(panel, editor.project.look)
   const carousel = editor.project.look ?? DEFAULT_LOOK
-  const built = buildPrompt(panel, editor.project)
+  const klein = usesKlein(panel, editor.project.cast)
+  const built = klein
+    ? { prompt: buildKleinPrompt(panel, editor.project), negative: "" }
+    : buildPrompt(panel, editor.project)
 
   return (
     <div className="flex flex-col gap-3">
@@ -304,7 +309,7 @@ export function AdvancedFields({
       </div>
       <div className="flex flex-col gap-1.5 pt-1">
         <span className="text-xs font-medium text-muted-foreground">
-          {t("promptSent")}
+          {klein ? t("promptSentKlein") : t("promptSent")}
         </span>
         <PromptPreview {...built} />
       </div>

@@ -1,8 +1,10 @@
 import * as React from "react"
 
 import { TAG_GROUPS, sortTags } from "./anima-tags"
+import { COVERAGE_CELLS } from "./coverage"
 import {
   DEFAULT_LOOK,
+  MAX_KLEIN_REFS,
   createPanel,
   type Character,
   type Look,
@@ -13,6 +15,7 @@ import {
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
 
 import { readImageFile } from "./render"
+import { setDimension } from "./setups"
 import type { ComicEditor } from "./use-editor"
 
 // Tags checked against Danbooru: "western comics (style)", not "western
@@ -183,19 +186,48 @@ export function sheetCast(panel: PanelLayer, cast: Character[] = []) {
     .filter((c): c is Character => !!c?.sheet)
 }
 
+// The guide always keeps a slot: the last sheet gives way, never the guide.
+const drawnCast = (panel: PanelLayer, cast: Character[] = []) =>
+  sheetCast(panel, cast).slice(0, MAX_KLEIN_REFS - (panel.guide ? 1 : 0))
+
+// What Klein draws from, in the order the prompt numbers them: character
+// references first, the layout guide after them.
+export function kleinRefs(panel: PanelLayer, cast: Character[] = []) {
+  return [
+    ...drawnCast(panel, cast).map((c) => c.sheet!),
+    ...(panel.guide ? [panel.guide.src] : []),
+  ]
+}
+
+export const usesKlein = (panel: PanelLayer, cast: Character[] = []) =>
+  kleinRefs(panel, cast).length > 0
+
+// Up front, because the written description otherwise out-votes a sketch
+// the model only skims. The wording follows OpenManga's POSE / LAYOUT section.
+function guideProse(panel: PanelLayer, image: string) {
+  if (!panel.guide) return ""
+  const rule =
+    panel.guide.strength === "strict"
+      ? "Copy the pose of every figure, where each figure stands in the frame, and the framing from the sketch. Where the description disagrees with the sketch on pose, figure placement or framing, the sketch wins. Identity, outfits and the art style still come from the character references and the description, never from the sketch."
+      : "Start from the sketch for the poses, where the figures stand and the framing; the description may adjust it."
+  return `${image} is a rough layout sketch. ${rule} Ignore its drawing style, line quality and any text in it.`
+}
+
 // For Klein: the shot in sentences, each sheet-backed character pointed at
 // their reference image, and the look spelled out.
-export function buildKleinPrompt(
+function kleinPrompt(
   panel: PanelLayer,
-  { cast = [], look }: { cast?: Character[]; look?: Look } = {}
+  { cast = [], look }: { cast?: Character[]; look?: Look },
+  lead: string,
+  close: string
 ) {
   const effective = lookOf(panel, look)
-  const drawn = sheetCast(panel, cast)
+  const drawn = drawnCast(panel, cast)
   const others = (panel.cast ?? [])
     .map((id) => cast.find((c) => c.id === id))
-    .filter((c): c is Character => !!c && !c.sheet)
+    .filter((c): c is Character => !!c && !drawn.includes(c))
   const tags = (panel.tags ?? []).filter((t) => !COUNT_TAGS.has(t))
-  const many = drawn.length > 1
+  const many = drawn.length + (panel.guide ? 1 : 0) > 1
   const characters = [
     ...drawn.map(
       (c, i) =>
@@ -207,17 +239,48 @@ export function buildKleinPrompt(
     ),
   ]
   return [
-    "Comic book panel.",
+    lead,
+    guideProse(
+      panel,
+      many ? `Reference image ${drawn.length + 1}` : "The reference image"
+    ),
     panel.prompt?.trim(),
     tags.length ? `Details: ${tags.join(", ")}.` : "",
     ...characters,
-    drawn.length ? "Keep the art style of the reference images." : "",
+    drawn.length
+      ? `Keep the art style of the ${panel.guide ? "character " : ""}reference images.`
+      : "",
     lookProse(panel, effective),
     panel.negative?.trim() ? `Avoid: ${panel.negative.trim()}.` : "",
-    KLEIN_NO_TEXT,
+    close,
   ]
     .filter(Boolean)
     .join(" ")
+}
+
+export const buildKleinPrompt = (
+  panel: PanelLayer,
+  options: { cast?: Character[]; look?: Look } = {}
+) => kleinPrompt(panel, options, "Comic book panel.", KLEIN_NO_TEXT)
+
+// One image of the panel's moment from nine cameras. The panel's own guide
+// and camera tags stay out: they would pin every cell to one shot. The
+// wording follows OpenManga's coverage sheet template.
+export function buildCoveragePrompt(
+  panel: PanelLayer,
+  options: { cast?: Character[]; look?: Look } = {}
+) {
+  const tags = setDimension(
+    setDimension(panel.tags ?? [], "framing", null),
+    "angle",
+    null
+  )
+  return kleinPrompt(
+    { ...panel, tags, guide: undefined },
+    options,
+    `Comic coverage sheet: one image divided into a 3x3 grid of nine equal cells with thin clean white gutters, each cell the same shape as the whole image. Every cell shows the same moment, with the same people, clothes, place, light and action, from a different camera setup. Left to right, top to bottom: ${COVERAGE_CELLS.map((c, i) => `${i + 1}. ${c.prose}`).join("; ")}.`,
+    "Identity, outfits, the place and the lighting are identical in all nine cells; only the camera changes. No numbers, captions, labels or text of any kind."
+  )
 }
 
 const QUALITY = "masterpiece, best quality, score_7, safe"
@@ -309,6 +372,7 @@ async function render(
     steps: number
     engine?: "anima" | "klein"
     refs?: string[]
+    coverage?: boolean
   },
   signal?: AbortSignal
 ) {
@@ -392,12 +456,15 @@ export async function renderSheet(
 // Klein is slower per pixel; ~0.9 MP keeps a panel near a minute.
 const KLEIN_AREA = 1024 * 896
 
-export function kleinSize(width: number, height: number) {
+// A coverage sheet holds nine cells, so it gets a model sheet's area.
+const COVERAGE_AREA = 1536 * 1024
+
+export function kleinSize(width: number, height: number, area = KLEIN_AREA) {
   const ratio = Math.min(2.5, Math.max(0.4, width / height))
   const snap = (n: number) =>
     Math.min(1536, Math.max(256, Math.round(n / 64) * 64))
-  const w = Math.sqrt(KLEIN_AREA * ratio)
-  return { width: snap(w), height: snap(KLEIN_AREA / w) }
+  const w = Math.sqrt(area * ratio)
+  return { width: snap(w), height: snap(area / w) }
 }
 
 export interface Take {
@@ -413,6 +480,9 @@ export interface Job {
 }
 
 const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
+
+// A coverage sheet is a job of its own: the panel can render meanwhile.
+export const coverageJob = (panelId: string) => `coverage:${panelId}`
 
 export function useGenerator(editor: ComicEditor) {
   const [jobs, setJobs] = React.useState<Record<string, Job>>({})
@@ -439,10 +509,10 @@ export function useGenerator(editor: ComicEditor) {
               : randomSeed()
           setJobs((j) => ({ ...j, [panelId]: { startedAt, take, of: count } }))
           const project = editor.projectRef.current
-          // Characters with a model sheet are drawn from it, with Klein.
-          const sheets = sheetCast(panel, project.cast)
+          // Model sheets and layout guides need Klein: Anima only reads words.
+          const refs = kleinRefs(panel, project.cast)
           const result = await render(
-            sheets.length
+            refs.length
               ? {
                   prompt: buildKleinPrompt(panel, project),
                   negative: "",
@@ -450,7 +520,7 @@ export function useGenerator(editor: ComicEditor) {
                   seed,
                   steps: 4,
                   engine: "klein",
-                  refs: sheets.map((c) => c.sheet!),
+                  refs,
                 }
               : {
                   ...buildPrompt(panel, project),
@@ -507,7 +577,54 @@ export function useGenerator(editor: ComicEditor) {
     controllers.current.get(panelId)?.abort()
   }, [])
 
-  return { jobs, takes, errors, generate, generateAll, cancel }
+  // Draws the panel's coverage sheet. Nothing on the panel changes but the
+  // sheet: picked cells become guides later, in the picker.
+  const drawCoverage = React.useCallback(
+    async (panelId: string) => {
+      const key = coverageJob(panelId)
+      if (controllers.current.has(key)) return
+      const panel = editor.findLayer(panelId)?.layer
+      if (panel?.type !== "panel" || !hasPrompt(panel)) return
+      const controller = new AbortController()
+      controllers.current.set(key, controller)
+      setErrors(({ [key]: _, ...rest }) => rest)
+      setJobs((j) => ({
+        ...j,
+        [key]: { startedAt: Date.now(), take: 1, of: 1 },
+      }))
+      const project = editor.projectRef.current
+      const seed = randomSeed()
+      try {
+        const { src } = await render(
+          {
+            prompt: buildCoveragePrompt(panel, project),
+            negative: "",
+            ...kleinSize(panel.width, panel.height, COVERAGE_AREA),
+            seed,
+            steps: 4,
+            engine: "klein",
+            refs: kleinRefs({ ...panel, guide: undefined }, project.cast),
+            coverage: true,
+          },
+          controller.signal
+        )
+        editor.update(panelId, { coverage: { src, seed } })
+      } catch (e) {
+        if (!controller.signal.aborted) {
+          setErrors((err) => ({
+            ...err,
+            [key]: e instanceof Error ? e.message : String(e),
+          }))
+        }
+      } finally {
+        controllers.current.delete(key)
+        setJobs(({ [key]: _, ...rest }) => rest)
+      }
+    },
+    [editor]
+  )
+
+  return { jobs, takes, errors, generate, generateAll, cancel, drawCoverage }
 }
 
 export type Generator = ReturnType<typeof useGenerator>

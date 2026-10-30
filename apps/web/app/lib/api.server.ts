@@ -10,9 +10,9 @@ import {
   buildKleinPrompt,
   buildPrompt,
   hasPrompt,
+  kleinRefs,
   kleinSize,
   renderSize,
-  sheetCast,
 } from "@/components/comic-canvas/use-generator"
 import { operation, render, type GenerateRequest } from "./generate.server"
 
@@ -260,14 +260,14 @@ export async function getProject(caller: Caller, id: string) {
 }
 
 // What the editor would send to /api/generate for this panel: Klein from
-// model sheets when the cast has them, Anima Turbo otherwise.
+// model sheets and a layout guide when it has them, Anima Turbo otherwise.
 function renderRequest(
   project: ComicProject,
   panel: PanelLayer,
   seed: number
 ): GenerateRequest {
-  const sheets = sheetCast(panel, project.cast)
-  if (sheets.length)
+  const refs = kleinRefs(panel, project.cast)
+  if (refs.length)
     return {
       prompt: buildKleinPrompt(panel, project),
       negative: "",
@@ -275,7 +275,7 @@ function renderRequest(
       seed,
       steps: 4,
       engine: "klein",
-      refs: sheets.map((c) => c.sheet!),
+      refs,
     }
   return {
     ...buildPrompt(panel, project),
@@ -691,7 +691,7 @@ export const capabilities = () => ({
     panel_ref: {
       credits: COSTS.panel_ref,
       engine: "klein",
-      note: "FLUX.2 Klein, when the panel's cast has model sheets.",
+      note: "FLUX.2 Klein, when the panel's cast has model sheets or the panel has a layout guide.",
     },
   },
   limits: {

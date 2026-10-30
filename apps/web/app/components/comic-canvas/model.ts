@@ -82,6 +82,26 @@ export interface PanelLayer extends BaseLayer {
   // Images the panel had before and after AI edits, newest first, so an
   // edit can be compared and reverted.
   versions?: PanelVersion[]
+  // A rough sketch directing pose and framing. Only Klein can read one, so
+  // a panel with a guide always draws with Klein.
+  guide?: LayoutGuide
+  // The last coverage sheet: this moment from nine cameras, to pick from.
+  coverage?: CoverageSheet
+}
+
+// `strict` beats the written description on pose and framing, never on
+// identity or style. `loose` is a starting point the description may adjust.
+export type GuideStrength = "loose" | "strict"
+
+export interface LayoutGuide {
+  // A lossless PNG fitting 1024 px: a pose lives in thin strokes.
+  src: string
+  strength: GuideStrength
+}
+
+export interface CoverageSheet {
+  src: string
+  seed: number
 }
 
 export interface PanelVersion {
@@ -372,6 +392,9 @@ export interface ComicPage {
   layers: Layer[]
 }
 
+// The reference images one Klein render takes.
+export const MAX_KLEIN_REFS = 4
+
 // A carousel: every slide shares one format, as Instagram requires.
 // A recurring character. Their look tags go into every panel they're cast
 // in, so they draw the same from panel to panel.
@@ -462,6 +485,25 @@ export function createDefaultProject(): ComicProject {
   }
 }
 
+// A guide or sheet a hand-edited file broke is dropped, not sent to a render.
+function cleanPanel(layer: Layer): Layer {
+  if (layer?.type !== "panel") return layer
+  const { guide, coverage, ...rest } = layer
+  if (!guide && !coverage) return layer
+  return {
+    ...rest,
+    ...(typeof guide?.src === "string" && {
+      guide: {
+        src: guide.src,
+        strength: guide.strength === "strict" ? "strict" : "loose",
+      },
+    }),
+    ...(typeof coverage?.src === "string" && {
+      coverage: { src: coverage.src, seed: Number(coverage.seed) || 0 },
+    }),
+  }
+}
+
 // Accepts current projects and single-page files saved before carousels.
 export function toProject(value: unknown): ComicProject | null {
   const v = value as {
@@ -479,7 +521,9 @@ export function toProject(value: unknown): ComicProject | null {
     return null
   const background = typeof v.background === "string" ? v.background : "#ffffff"
   if (v.version === 2 && Array.isArray(v.pages) && v.pages.length) {
-    const pages = v.pages.filter((p) => p && Array.isArray(p.layers))
+    const pages = v.pages
+      .filter((p) => p && Array.isArray(p.layers))
+      .map((p) => ({ ...p, layers: p.layers.map(cleanPanel) }))
     if (!pages.length) return null
     const cast = Array.isArray(v.cast) ? v.cast : undefined
     return {
