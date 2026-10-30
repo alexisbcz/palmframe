@@ -22,6 +22,7 @@ export interface Database {
           data?: ComicProject
           cover?: string | null
           revision?: number
+          share_token?: string | null
         }
         Relationships: []
       }
@@ -171,6 +172,8 @@ export type ComicProjectRow = {
   cover: string | null
   revision: number
   slide_count: number
+  // The secret part of the project's reader link; null when it has none.
+  share_token: string | null
   created_at: string
   updated_at: string
 }
