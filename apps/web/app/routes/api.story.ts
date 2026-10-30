@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk"
 
+import { cleanFacts } from "@/components/comic-canvas/series"
 import { COSTS } from "@/lib/credits"
 import {
   OpenRouterError,
@@ -28,6 +29,9 @@ export interface StoryRequest {
   rtl: boolean
   // What the slide before this one showed, so the story carries on.
   recap: string
+  // In a series: how the carousel before ended, and the facts to respect.
+  previous: string
+  facts: string[]
 }
 
 export interface PlannedPanel {
@@ -85,6 +89,8 @@ function parse(body: unknown): StoryRequest | null {
     style: typeof b.style === "string" ? b.style.slice(0, 40) : "graphic",
     rtl: b.rtl === true,
     recap: typeof b.recap === "string" ? b.recap.slice(0, 2_000) : "",
+    previous: typeof b.previous === "string" ? b.previous.slice(0, 2_000) : "",
+    facts: cleanFacts(b.facts),
   }
 }
 

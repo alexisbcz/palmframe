@@ -491,6 +491,7 @@ const KINDS = [
   "story_plan",
   "translate",
   "panel_check",
+  "continuity_check",
   "edit",
   "vary",
   "inpaint",

@@ -1,4 +1,8 @@
-import type { ComicProject } from "@/components/comic-canvas/model"
+import type {
+  Character,
+  ComicProject,
+  WorldItem,
+} from "@/components/comic-canvas/model"
 
 import type { SubscriptionCache } from "./credits"
 
@@ -16,6 +20,8 @@ export interface Database {
           data: ComicProject
           cover?: string | null
           revision?: number
+          series_id?: string | null
+          series_position?: number | null
         }
         Update: {
           title?: string
@@ -23,6 +29,25 @@ export interface Database {
           cover?: string | null
           revision?: number
           share_token?: string | null
+          series_id?: string | null
+          series_position?: number | null
+        }
+        Relationships: []
+      }
+      comic_series: {
+        Row: ComicSeriesRow
+        Insert: {
+          title?: string
+          characters?: Character[]
+          world?: WorldItem[]
+          facts?: string[]
+        }
+        Update: {
+          title?: string
+          characters?: Character[]
+          world?: WorldItem[]
+          facts?: string[]
+          revision?: number
         }
         Relationships: []
       }
@@ -174,6 +199,22 @@ export type ComicProjectRow = {
   slide_count: number
   // The secret part of the project's reader link; null when it has none.
   share_token: string | null
+  // The series it belongs to and its place there; null outside a series.
+  series_id: string | null
+  series_position: number | null
+  created_at: string
+  updated_at: string
+}
+
+// Carousels of one account sharing a cast, a world and a list of facts.
+export type ComicSeriesRow = {
+  id: string
+  user_id: string
+  title: string
+  characters: Character[]
+  world: WorldItem[]
+  facts: string[]
+  revision: number
   created_at: string
   updated_at: string
 }

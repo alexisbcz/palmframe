@@ -61,6 +61,7 @@ import {
   speakerFaces,
   type PanelDraft,
 } from "./story"
+import type { SeriesContext } from "./series"
 import { messages } from "./story.messages"
 import { TagField } from "./tag-field"
 import type { ComicEditor } from "./use-editor"
@@ -101,7 +102,11 @@ function panelsOf(project: ComicProject, pageId: string) {
   )
 }
 
-function useStory(editor: ComicEditor, generator: Generator) {
+function useStory(
+  editor: ComicEditor,
+  generator: Generator,
+  series: SeriesContext | null
+) {
   const [pages, setPages] = React.useState<Record<string, PageStory>>({})
   const [info, setInfo] = React.useState<{
     available: boolean
@@ -164,6 +169,10 @@ function useStory(editor: ComicEditor, generator: Generator) {
             style: project.look?.style ?? "graphic",
             rtl: !!project.rtl,
             recap: recapOf(project, pageIndex),
+            ...(series && {
+              previous: series.previous,
+              facts: series.facts,
+            }),
           }),
         })
         const credits = res.headers.get("x-credits")
@@ -199,7 +208,7 @@ function useStory(editor: ComicEditor, generator: Generator) {
         patch(pageId, () => ({ planning: false }))
       }
     },
-    [editor, patch]
+    [editor, patch, series]
   )
 
   // Writes the drafts into their own slide, as one undo step: shots into the
@@ -284,12 +293,14 @@ type Story = ReturnType<typeof useStory>
 export function StoryButton({
   editor,
   generator,
+  series = null,
 }: {
   editor: ComicEditor
   generator: Generator
+  series?: SeriesContext | null
 }) {
   const t = useT(messages)
-  const story = useStory(editor, generator)
+  const story = useStory(editor, generator, series)
   const [open, setOpen] = React.useState(false)
   const busy =
     !!story.rendering || Object.values(story.pages).some((p) => p.planning)
@@ -316,6 +327,7 @@ export function StoryButton({
           editor={editor}
           generator={generator}
           story={story}
+          series={series}
           onClose={() => setOpen(false)}
         />
       )}
@@ -327,11 +339,13 @@ function StoryDialog({
   editor,
   generator,
   story,
+  series,
   onClose,
 }: {
   editor: ComicEditor
   generator: Generator
   story: Story
+  series: SeriesContext | null
   onClose: () => void
 }) {
   const t = useT(messages)
@@ -433,6 +447,14 @@ function StoryDialog({
                   {cast.length > 0 &&
                     ` (${cast.map((c) => c.name).join(", ")})`}
                 </p>
+                {series && (series.facts.length > 0 || series.previous) && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("story.series", {
+                      title: series.title || t("story.seriesUntitled"),
+                      count: series.facts.length,
+                    })}
+                  </p>
+                )}
                 <div className="flex flex-wrap items-center justify-end gap-3">
                   {story.info && available && (
                     <span className="text-xs text-muted-foreground">

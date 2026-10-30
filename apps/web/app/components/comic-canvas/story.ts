@@ -9,6 +9,7 @@ import {
   type BubbleLayer,
   type BubbleShape,
   type Character,
+  type ComicPage,
   type ComicProject,
   type Layer,
   type PanelLayer,
@@ -332,10 +333,8 @@ export function renderCost(
   return panels.reduce((sum, p) => sum + panelCost(p, project), 0)
 }
 
-// A few lines on what the slide before showed, so the planner carries on.
-export function recapOf(project: ComicProject, pageIndex: number) {
-  const page = project.pages[pageIndex - 1]
-  if (!page) return ""
+// A slide as text: what its panels show, then its lettering.
+function slideText(project: ComicProject, page: ComicPage) {
   const panels = readingOrder(
     page.layers.filter((l): l is PanelLayer => l.type === "panel"),
     project.rtl
@@ -350,7 +349,26 @@ export function recapOf(project: ComicProject, pageIndex: number) {
       )
       .filter(Boolean),
     ...lettering,
-  ]
-    .join("\n")
-    .slice(0, 1_500)
+  ].join("\n")
 }
+
+// A few lines on what the slide before showed, so the planner carries on.
+export function recapOf(project: ComicProject, pageIndex: number) {
+  const page = project.pages[pageIndex - 1]
+  return page ? slideText(project, page).slice(0, 1_500) : ""
+}
+
+// Every slide with something on it, as text.
+export function carouselText(project: ComicProject) {
+  return project.pages
+    .map((page, i) => {
+      const text = slideText(project, page)
+      return text && `Slide ${i + 1}:\n${text}`
+    })
+    .filter(Boolean)
+    .join("\n\n")
+}
+
+// The recap across carousels: how the one before in the series ended.
+export const seriesRecap = (project: ComicProject) =>
+  carouselText(project).slice(-1_500)
