@@ -489,6 +489,7 @@ const KINDS = [
   "sheet",
   "story_plan",
   "translate",
+  "panel_check",
   "edit",
   "vary",
   "inpaint",

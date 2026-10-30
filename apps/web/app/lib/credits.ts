@@ -49,6 +49,7 @@ export const COSTS = {
   restyle: 8, // Anima Turbo img2img of a whole panel
   story_plan: 2, // the story planner's LLM call, per slide
   translate: 2, // a carousel's lettering, into one language
+  panel_check: 2, // a vision model reading one finished panel
 } as const
 
 export type Operation = keyof typeof COSTS

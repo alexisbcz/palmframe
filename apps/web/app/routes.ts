@@ -25,6 +25,7 @@ export default [
   route("api/story", "routes/api.story.ts"),
   route("api/translate", "routes/api.translate.ts"),
   route("api/share/:id", "routes/api.share.$id.ts"),
+  route("api/check", "routes/api.check.ts"),
   route("api/instagram/accounts", "routes/api.instagram.accounts.ts"),
   route("api/instagram/connect", "routes/api.instagram.connect.ts"),
   route("api/instagram/callback", "routes/api.instagram.callback.ts"),

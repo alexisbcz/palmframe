@@ -2,6 +2,7 @@ import { COSTS } from "@/lib/credits"
 import type { DialogueKind, PlannedPanel } from "@/routes/api.story"
 
 import { normalizeTag } from "./anima-tags"
+import { pageFaces } from "./check"
 import { readingOrder } from "./layouts"
 import {
   createBubble,
@@ -9,7 +10,9 @@ import {
   type BubbleShape,
   type Character,
   type ComicProject,
+  type Layer,
   type PanelLayer,
+  type Rect,
 } from "./model"
 import { panelRefs } from "./use-generator"
 
@@ -185,12 +188,77 @@ const SHAPE: Record<DialogueKind, BubbleShape> = {
   caption: "caption",
 }
 
+// A face on the page, with the name of whoever it belongs to.
+export type SpeakerFace = Rect & { name: string | null }
+
+export function speakerFaces(panel: PanelLayer, cast: Character[] = []) {
+  return pageFaces(panel).map(({ who, ...box }): SpeakerFace => ({
+    ...box,
+    name: cast.find((c) => c.id === who)?.name.trim() || null,
+  }))
+}
+
+// The speaker's face; the only face in the shot needs no name.
+function faceOf(faces: SpeakerFace[], speaker: string) {
+  const name = speaker.trim().toLowerCase()
+  return (
+    faces.find((f) => name && f.name?.toLowerCase() === name) ??
+    (faces.length === 1 ? faces[0] : undefined)
+  )
+}
+
+// How far a tail reaches past the balloon before it stops short of the face.
+const TAIL_REACH = 200
+
+// A tail tip towards the face's edge nearest the balloon, relative to the
+// balloon's centre, or null when the balloon already sits on the face.
+export function tailTowardFace(bubble: Rect, face: Rect) {
+  const cx = bubble.x + bubble.width / 2
+  const cy = bubble.y + bubble.height / 2
+  const x = Math.min(face.x + face.width, Math.max(face.x, cx)) - cx
+  const y = Math.min(face.y + face.height, Math.max(face.y, cy)) - cy
+  const rx = bubble.width / 2
+  const ry = bubble.height / 2
+  if ((x / rx) ** 2 + (y / ry) ** 2 < 1) return null
+  const length = Math.hypot(x, y)
+  const s = Math.min(1, (Math.max(rx, ry) + TAIL_REACH) / length)
+  return { tailX: Math.round(x * s), tailY: Math.round(y * s) }
+}
+
+// New tails for the bubbles already over a panel, for lettering placed
+// before the art was checked. Bubbles keep their names from the script.
+export function aimedTails(
+  panel: PanelLayer,
+  layers: Layer[],
+  cast: Character[] = []
+) {
+  const faces = speakerFaces(panel, cast)
+  if (!faces.length) return []
+  return layers.flatMap((l) => {
+    if (l.type !== "bubble" || l.hidden || l.locked || !l.tail) return []
+    if (l.shape === "message") return []
+    const cx = l.x + l.width / 2
+    const cy = l.y + l.height / 2
+    const inside =
+      cx >= panel.x &&
+      cx <= panel.x + panel.width &&
+      cy >= panel.y &&
+      cy <= panel.y + panel.height
+    const face = inside ? faceOf(faces, l.name) : undefined
+    const tail = face && tailTowardFace(l, face)
+    if (!tail || (tail.tailX === l.tailX && tail.tailY === l.tailY)) return []
+    return [{ id: l.id, ...tail }]
+  })
+}
+
 // Bubbles for a panel's lines: captions in the top corner where reading
-// starts, speech below them alternating sides, tails pointing into the shot.
+// starts, speech below them alternating sides, tails pointing into the shot,
+// or at the speaker when the panel's faces are known.
 export function bubblesFor(
   panel: PanelLayer,
   lines: Line[],
-  rtl = false
+  rtl = false,
+  faces: SpeakerFace[] = []
 ): BubbleLayer[] {
   const pad = Math.max(16, Math.round(panel.width * 0.04))
   const fontSize = Math.round(Math.min(40, Math.max(24, panel.width / 20)))
@@ -232,6 +300,8 @@ export function bubblesFor(
     top += height + Math.round(pad * 0.6)
     const bubble = createBubble(shape, { x: x + width / 2, y: y + height / 2 })
     const towardsCentre = panel.x + panel.width / 2 - (x + width / 2)
+    const face = boxed ? undefined : faceOf(faces, line.speaker)
+    const aimed = face && tailTowardFace({ x, y, width, height }, face)
     return {
       ...bubble,
       name: line.speaker.trim() || bubble.name,
@@ -241,8 +311,10 @@ export function bubblesFor(
       height,
       x: Math.round(x),
       y: Math.round(y),
-      tailX: Math.round(towardsCentre * 0.25),
-      tailY: Math.round(height / 2 + Math.min(90, panel.height * 0.12)),
+      tailX: aimed?.tailX ?? Math.round(towardsCentre * 0.25),
+      tailY:
+        aimed?.tailY ??
+        Math.round(height / 2 + Math.min(90, panel.height * 0.12)),
     }
   })
 }

@@ -77,6 +77,16 @@ function reducer(state: History, action: Action): History {
   }
 }
 
+// A panel check describes one image, so a new image drops it.
+function patched(layer: Layer, patch: Partial<Layer>) {
+  const next = { ...layer, ...patch } as Layer
+  return next.type === "panel" &&
+    layer.type === "panel" &&
+    next.src !== layer.src
+    ? { ...next, check: undefined }
+    : next
+}
+
 // With `initial`, the project comes from the database and saves there
 // (useCloudSync); without it, it lives in this browser's localStorage.
 export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
@@ -210,7 +220,7 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
               ? {
                   ...page,
                   layers: page.layers.map((l) =>
-                    l.id === id ? ({ ...l, ...patch } as Layer) : l
+                    l.id === id ? patched(l, patch) : l
                   ),
                 }
               : page

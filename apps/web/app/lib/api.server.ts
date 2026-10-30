@@ -696,6 +696,7 @@ async function placeImage(job: ApiJobRow, src: string, seed: number) {
                 ...l,
                 src,
                 seed,
+                check: undefined,
                 fit: "cover",
                 imageZoom: 100,
                 panX: 0,

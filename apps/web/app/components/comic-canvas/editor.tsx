@@ -12,6 +12,7 @@ import {
   Layers01Icon,
   PaintBoardIcon,
   Redo02Icon,
+  ScanEyeIcon,
   SparklesIcon,
   SlidersHorizontalIcon,
   SquareIcon,
@@ -66,6 +67,8 @@ import {
 } from "./model"
 import type { ImageCache } from "./render"
 import { PageStrip } from "./page-strip"
+import { CheckDialog, type CheckScope } from "./check-tools"
+import { messages as checkMessages } from "./check.messages"
 import { RestyleDialog, postprocessMessages } from "./postprocess-tools"
 import { ShareButton } from "./share-dialog"
 import { Sidebar, type SidebarTab } from "./sidebar"
@@ -186,6 +189,8 @@ export function ComicCanvasEditor({
   const [tab, setTab] = React.useState<SidebarTab>("layers")
   const tp = useT(postprocessMessages)
   const [restyling, setRestyling] = React.useState(false)
+  const tc = useT(checkMessages)
+  const [checking, setChecking] = React.useState<CheckScope | null>(null)
   const [sheet, setSheet] = React.useState<"layers" | "inspect" | null>(null)
   // Tablets get the properties as a side sheet, phones from the bottom.
   const wide = useMedia("(min-width: 768px)")
@@ -328,6 +333,7 @@ export function ComicCanvasEditor({
                 if (key === "open") openProject()
                 if (key === "generate-all") generator.generateAll()
                 if (key === "restyle-all") setRestyling(true)
+                if (key === "check-all") setChecking({ page: null })
                 if (key === "save") saveProject()
                 if (key === "image")
                   pickFile("image/*").then(
@@ -358,6 +364,10 @@ export function ComicCanvasEditor({
               <DropdownMenuItem id="restyle-all" isDisabled={busy}>
                 <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
                 {tp("restyle.menu")}
+              </DropdownMenuItem>
+              <DropdownMenuItem id="check-all">
+                <HugeiconsIcon icon={ScanEyeIcon} strokeWidth={2} />
+                {tc("menu")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem id="image">
@@ -423,6 +433,7 @@ export function ComicCanvasEditor({
               editor={editor}
               images={images}
               generating={generator.jobs}
+              onCheck={(page) => setChecking({ page })}
               thumbHeight={wide ? dockSize("top") - STRIP_CHROME : undefined}
             />
           </Dock>
@@ -523,6 +534,13 @@ export function ComicCanvasEditor({
           }}
         />
       </Sheet>
+      {checking && (
+        <CheckDialog
+          editor={editor}
+          initial={checking}
+          onClose={() => setChecking(null)}
+        />
+      )}
       {restyling && (
         <RestyleDialog editor={editor} onClose={() => setRestyling(false)} />
       )}
