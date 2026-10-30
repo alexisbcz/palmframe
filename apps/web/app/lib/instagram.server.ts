@@ -254,6 +254,10 @@ async function assertOwned(profileId: string, accountId: string) {
     throw new InstagramError("That Instagram account isn't connected.", 404)
 }
 
+// Everything posted from here is AI-drawn, so every post carries Instagram's
+// AI info label. It can only be set at publish time.
+const AI_LABEL = { isAiGenerated: true }
+
 // A carousel is one feed post (up to 10 slides). Stories are one per slide,
 // so each slide becomes its own Instagram entry with its own media.
 export async function publish(
@@ -285,9 +289,15 @@ export async function publish(
           platform: "instagram",
           accountId: r.accountId,
           customMedia: [m],
-          platformSpecificData: { contentType: "story" },
+          platformSpecificData: { contentType: "story", ...AI_LABEL },
         }))
-      : [{ platform: "instagram", accountId: r.accountId }]
+      : [
+          {
+            platform: "instagram",
+            accountId: r.accountId,
+            platformSpecificData: AI_LABEL,
+          },
+        ]
 
   const { body } = await call<{
     post: ZernioPost
