@@ -1,6 +1,7 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  Delete02Icon,
   DiceIcon,
   PencilEdit02Icon,
   PlusSignIcon,
@@ -9,6 +10,7 @@ import {
   UserIcon,
 } from "@hugeicons/core-free-icons"
 
+import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -25,14 +27,23 @@ import {
 } from "@workspace/ui/components/toggle-group"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { COSTS } from "@/lib/credits"
 import { useT } from "@/i18n/core"
 
 import { messages } from "./cast.messages"
-import { uid, type Character, type Look, type PanelLayer } from "./model"
+import {
+  sheetReady,
+  uid,
+  type Character,
+  type Look,
+  type Outfit,
+  type PanelLayer,
+} from "./model"
 import { roving } from "./roving"
 import { TagField } from "./tag-field"
 import type { ComicEditor } from "./use-editor"
-import { renderPortrait, renderSheet } from "./use-generator"
+import { renderOutfit, renderPortrait, renderSheet } from "./use-generator"
+import { RefSummary } from "./world"
 
 export function Avatar({
   character,
@@ -76,11 +87,17 @@ export function CastRow({
   const inShot = panel.cast ?? []
   const t = useT(messages)
 
+  const wear = (id: string, outfit?: string) => {
+    const { [id]: _, ...rest } = panel.outfits ?? {}
+    return outfit ? { ...rest, [id]: outfit } : rest
+  }
+
   const toggle = (id: string) =>
     editor.update(panel.id, {
       cast: inShot.includes(id)
         ? inShot.filter((c) => c !== id)
         : [...inShot, id],
+      outfits: wear(id),
     })
 
   return (
@@ -172,6 +189,19 @@ export function CastRow({
           </span>
         </button>
       </div>
+      {cast
+        .filter((c) => inShot.includes(c.id) && c.outfits?.length)
+        .map((c) => (
+          <OutfitPick
+            key={c.id}
+            character={c}
+            worn={panel.outfits?.[c.id]}
+            onPick={(id) =>
+              editor.update(panel.id, { outfits: wear(c.id, id) })
+            }
+          />
+        ))}
+      <RefSummary panel={panel} project={editor.project} />
       {editing && (
         <CharacterDialog
           character={editing}
@@ -192,6 +222,55 @@ export function CastRow({
         />
       )}
     </section>
+  )
+}
+
+// What one cast member wears on this panel.
+function OutfitPick({
+  character,
+  worn,
+  onPick,
+}: {
+  character: Character
+  worn?: string
+  onPick: (outfit?: string) => void
+}) {
+  const t = useT(messages)
+  const current = character.outfits?.some((o) => o.id === worn) ? worn : null
+  const chip = (id: string | null, label: string, image?: string) => (
+    <button
+      key={id ?? "own"}
+      type="button"
+      data-roving
+      aria-pressed={current === id}
+      onClick={() => onPick(id ?? undefined)}
+      className={cn(
+        "flex h-7 max-w-full cursor-pointer items-center gap-1 rounded-md px-1.5 text-[11px] ring-1 ring-foreground/10 transition outline-none hover:ring-foreground/40 focus-visible:ring-3 focus-visible:ring-ring/50",
+        current === id && "font-medium ring-2 ring-amber-500"
+      )}
+    >
+      {image && (
+        <img src={image} alt="" className="size-5 rounded object-cover" />
+      )}
+      <span className="truncate">{label}</span>
+    </button>
+  )
+  return (
+    <div
+      role="group"
+      aria-label={t("outfitOf", { name: character.name })}
+      data-roving-group
+      onKeyDown={roving({ axis: "x" })}
+      className="flex flex-col gap-1"
+    >
+      <span className="truncate text-[11px] text-muted-foreground">
+        {t("outfitOf", { name: character.name })}
+      </span>
+      <div className="flex flex-wrap gap-1">
+        {chip(null, t("ownClothes"))}
+        {character.outfits?.map((o) => chip(o.id, o.name, o.sheet))}
+      </div>
+    </div>
   )
 }
 
@@ -223,6 +302,11 @@ function CharacterDialog({
   const [sheetError, setSheetError] = React.useState<string | null>(null)
   const valid = !!draft.name.trim()
   const t = useT(messages)
+  const locked = draft.status === "locked"
+  const setStatus = (status: Character["status"]) =>
+    setDraft((d) => ({ ...d, status }))
+  const setOutfits = (fn: (outfits: Outfit[]) => Outfit[]) =>
+    setDraft((d) => ({ ...d, outfits: fn(d.outfits ?? []) }))
 
   const portrait = async (newSeed: boolean) => {
     const seed =
@@ -251,7 +335,15 @@ function CharacterDialog({
     setSheetError(null)
     try {
       const src = await renderSheet(draft, seed, look)
-      setDraft((d) => ({ ...d, sheet: src, seed }))
+      // A new sheet starts over: it needs approving, and outfits drawn from
+      // the old one would bring the old face back.
+      setDraft((d) => ({
+        ...d,
+        sheet: src,
+        seed,
+        status: "draft",
+        outfits: d.outfits?.map(({ sheet: _, ...o }) => o),
+      }))
     } catch (e) {
       setSheetError(e instanceof Error ? e.message : String(e))
     } finally {
@@ -394,7 +486,7 @@ function CharacterDialog({
             <Button
               size="sm"
               variant="outline"
-              isDisabled={sheeting || !draft.tags.length}
+              isDisabled={sheeting || locked || !draft.tags.length}
               onPress={() => sheet(false)}
             >
               <HugeiconsIcon
@@ -409,7 +501,7 @@ function CharacterDialog({
                 size="icon-sm"
                 variant="outline"
                 aria-label={t("dialog.sheetNewSeed")}
-                isDisabled={sheeting}
+                isDisabled={sheeting || locked}
                 onPress={() => sheet(true)}
               >
                 <HugeiconsIcon icon={DiceIcon} strokeWidth={2} />
@@ -437,14 +529,108 @@ function CharacterDialog({
             </span>
           )}
         </div>
+        {draft.status && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <Badge variant={draft.status === "draft" ? "outline" : "secondary"}>
+              {t(`dialog.status.${draft.status}`)}
+            </Badge>
+            <span className="me-auto" />
+            {draft.status === "draft" && (
+              <Button size="sm" onPress={() => setStatus("approved")}>
+                {t("dialog.approve")}
+              </Button>
+            )}
+            {draft.status === "approved" && (
+              <>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => setStatus("draft")}
+                >
+                  {t("dialog.backToDraft")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onPress={() => setStatus("locked")}
+                >
+                  {t("dialog.lock")}
+                </Button>
+              </>
+            )}
+            {locked && (
+              <Button
+                size="sm"
+                variant="outline"
+                onPress={() => setStatus("approved")}
+              >
+                {t("dialog.unlock")}
+              </Button>
+            )}
+          </div>
+        )}
         <p className="text-[11px] text-muted-foreground">
-          {t("dialog.sheetHelp")}
+          {t(
+            draft.status === "draft"
+              ? "dialog.draftHelp"
+              : locked
+                ? "dialog.lockedHelp"
+                : "dialog.sheetHelp"
+          )}
+          {!locked &&
+            draft.outfits?.some((o) => o.sheet) &&
+            ` ${t("dialog.redrawClears")}`}
         </p>
         {sheetError && (
           <p className="text-xs text-destructive">
             {t("dialog.sheetFailed", { error: sheetError })}
           </p>
         )}
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            {t("dialog.outfits")}
+          </span>
+          <Button
+            size="sm"
+            variant="outline"
+            onPress={() =>
+              setOutfits((o) => [...o, { id: uid(), name: "", tags: [] }])
+            }
+          >
+            <HugeiconsIcon
+              icon={PlusSignIcon}
+              strokeWidth={2}
+              data-icon="inline-start"
+            />
+            {t("dialog.addOutfit")}
+          </Button>
+        </div>
+        {draft.outfits?.map((o) => (
+          <OutfitEditor
+            key={o.id}
+            outfit={o}
+            character={draft}
+            look={look}
+            onChange={(patch) =>
+              setOutfits((all) =>
+                all.map((x) => (x.id === o.id ? { ...x, ...patch } : x))
+              )
+            }
+            onDelete={() =>
+              setOutfits((all) => all.filter((x) => x.id !== o.id))
+            }
+          />
+        ))}
+        <p className="text-[11px] text-muted-foreground">
+          {t(
+            sheetReady(draft)
+              ? "dialog.outfitsHelp"
+              : "dialog.outfitsNeedApproval"
+          )}
+        </p>
       </div>
 
       <DialogFooter>
@@ -465,5 +651,112 @@ function CharacterDialog({
         </Button>
       </DialogFooter>
     </Dialog>
+  )
+}
+
+// One change of clothes. Drawing it needs an approved sheet to draw from.
+function OutfitEditor({
+  outfit,
+  character,
+  look,
+  onChange,
+  onDelete,
+}: {
+  outfit: Outfit
+  character: Character
+  look?: Look
+  onChange: (patch: Partial<Outfit>) => void
+  onDelete: () => void
+}) {
+  const [drawing, setDrawing] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const t = useT(messages)
+
+  const draw = async () => {
+    const seed = Math.floor(Math.random() * 2 ** 32)
+    setDrawing(true)
+    setError(null)
+    try {
+      const sheet = await renderOutfit(character, outfit, seed, look)
+      onChange({ sheet, seed })
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e))
+    } finally {
+      setDrawing(false)
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-[6rem_minmax(0,1fr)] gap-2 rounded-lg p-2 ring-1 ring-foreground/10">
+      <div className="relative aspect-[3/2] overflow-hidden rounded bg-muted">
+        {outfit.sheet ? (
+          <img
+            src={outfit.sheet}
+            alt={t("dialog.outfitOf", {
+              name: character.name.trim() || t("dialog.portraitUnnamed"),
+              outfit: outfit.name,
+            })}
+            className="size-full object-contain"
+          />
+        ) : (
+          <span className="flex size-full items-center justify-center p-1 text-center text-[10px] text-muted-foreground">
+            {t("dialog.noOutfitImage")}
+          </span>
+        )}
+        {drawing && (
+          <span className="absolute inset-0 flex items-center justify-center bg-background/60">
+            <Spinner />
+          </span>
+        )}
+      </div>
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <div className="flex gap-1">
+          <Input
+            aria-label={t("dialog.outfitName")}
+            placeholder={t("dialog.outfitName")}
+            value={outfit.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+          />
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            aria-label={t("dialog.deleteOutfit", { outfit: outfit.name })}
+            onPress={onDelete}
+          >
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+          </Button>
+        </div>
+        <TagField
+          tags={outfit.tags}
+          onChange={(tags) => onChange({ tags })}
+          placeholder="raincoat, yellow coat, rubber boots…"
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          className="self-start"
+          isDisabled={
+            drawing ||
+            !sheetReady(character) ||
+            (!outfit.name.trim() && !outfit.tags.length)
+          }
+          onPress={draw}
+        >
+          <HugeiconsIcon
+            icon={SparklesIcon}
+            strokeWidth={2}
+            data-icon="inline-start"
+          />
+          {t(outfit.sheet ? "dialog.redrawOutfit" : "dialog.drawOutfit", {
+            credits: COSTS.panel_ref,
+          })}
+        </Button>
+        {error && (
+          <p className="text-xs text-destructive">
+            {t("dialog.outfitFailed", { error })}
+          </p>
+        )}
+      </div>
+    </div>
   )
 }

@@ -443,6 +443,7 @@ function promptFor(
         ...panel,
         tags: ["no humans", "scenery"],
         cast: [],
+        world: [],
         prompt: "empty background",
       },
       project
@@ -454,7 +455,7 @@ function promptFor(
   }
   const built = text.trim()
     ? buildPrompt(
-        { ...panel, tags: [], cast: [], prompt: text.trim() },
+        { ...panel, tags: [], cast: [], world: [], prompt: text.trim() },
         project
       )
     : buildPrompt(panel, project)

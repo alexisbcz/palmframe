@@ -1,0 +1,261 @@
+import { defineMessages } from "@/i18n/core"
+
+// Description placeholders are Danbooru tags and stay English.
+export const messages = defineMessages({
+  en: {
+    title: "World",
+    location: "Location",
+    props: "Props",
+    newLocation: "New",
+    newProp: "New",
+    attach: "Attach {name}: {credits} credits per take",
+    detach: "Detach {name}: {credits} credits per take",
+    edit: "Edit {name}",
+    effect: "{credits} credits",
+    full: "This panel already uses all {max} references.",
+    wordsOnly: "Words only",
+    summary: {
+      none: "No references: {credits} credits per take.",
+      refs: "{used} of {max} references: {credits} credits per take, not {plain}.",
+      dropped:
+        "No room for {names}: a panel takes {max} references, so they're described in words.",
+      drafts: "{names}: draft sheet, described in words until you approve it.",
+    },
+    dialog: {
+      newLocation: "New location",
+      newProp: "New prop",
+      locationHelp:
+        "A recurring place. Panels it's attached to are drawn from its image, so it looks the same on every slide.",
+      propHelp:
+        "A recurring object. Panels it's attached to are drawn from its image, so it looks the same on every slide.",
+      name: "Name",
+      description: "Description",
+      image: "Reference image",
+      upload: "Upload",
+      draw: "Draw · {credits} credits",
+      redraw: "Redraw · {credits} credits",
+      imageOf: "Reference image of {name}",
+      noImage:
+        "No image yet: panels only describe it in words. With an image, a panel costs {credits} credits instead of {plain}.",
+      failed: "Drawing failed: {error}",
+      delete: "Delete",
+      cancel: "Cancel",
+      add: "Add to world",
+      save: "Save",
+    },
+  },
+  fr: {
+    title: "Univers",
+    location: "Lieu",
+    props: "Accessoires",
+    newLocation: "Nouveau",
+    newProp: "Nouveau",
+    attach: "Joindre {name} : {credits} crédits par prise",
+    detach: "Retirer {name} : {credits} crédits par prise",
+    edit: "Modifier {name}",
+    effect: "{credits} crédits",
+    full: "Cette case utilise déjà les {max} références.",
+    wordsOnly: "Texte seul",
+    summary: {
+      none: "Aucune référence : {credits} crédits par prise.",
+      refs: "{used} références sur {max} : {credits} crédits par prise, au lieu de {plain}.",
+      dropped:
+        "Pas de place pour {names} : une case accepte {max} références, le reste est décrit avec des mots.",
+      drafts:
+        "{names} : model sheet en brouillon, décrit avec des mots jusqu’à son approbation.",
+    },
+    dialog: {
+      newLocation: "Nouveau lieu",
+      newProp: "Nouvel accessoire",
+      locationHelp:
+        "Un lieu récurrent. Les cases auxquelles il est joint sont dessinées d’après son image : il reste le même sur chaque slide.",
+      propHelp:
+        "Un objet récurrent. Les cases auxquelles il est joint sont dessinées d’après son image : il reste le même sur chaque slide.",
+      name: "Nom",
+      description: "Description",
+      image: "Image de référence",
+      upload: "Importer",
+      draw: "Dessiner · {credits} crédits",
+      redraw: "Redessiner · {credits} crédits",
+      imageOf: "Image de référence de {name}",
+      noImage:
+        "Pas encore d’image : les cases le décrivent seulement avec des mots. Avec une image, une case coûte {credits} crédits au lieu de {plain}.",
+      failed: "Échec du dessin : {error}",
+      delete: "Supprimer",
+      cancel: "Annuler",
+      add: "Ajouter à l’univers",
+      save: "Enregistrer",
+    },
+  },
+  es: {
+    title: "Mundo",
+    location: "Lugar",
+    props: "Objetos",
+    newLocation: "Nuevo",
+    newProp: "Nuevo",
+    attach: "Adjuntar {name}: {credits} créditos por toma",
+    detach: "Quitar {name}: {credits} créditos por toma",
+    edit: "Editar {name}",
+    effect: "{credits} créditos",
+    full: "Esta viñeta ya usa las {max} referencias.",
+    wordsOnly: "Solo texto",
+    summary: {
+      none: "Sin referencias: {credits} créditos por toma.",
+      refs: "{used} de {max} referencias: {credits} créditos por toma, no {plain}.",
+      dropped:
+        "No caben {names}: una viñeta admite {max} referencias, así que se describen con palabras.",
+      drafts:
+        "{names}: hoja en borrador, se describe con palabras hasta que la apruebes.",
+    },
+    dialog: {
+      newLocation: "Nuevo lugar",
+      newProp: "Nuevo objeto",
+      locationHelp:
+        "Un lugar recurrente. Las viñetas que lo adjuntan se dibujan a partir de su imagen, así que se ve igual en cada slide.",
+      propHelp:
+        "Un objeto recurrente. Las viñetas que lo adjuntan se dibujan a partir de su imagen, así que se ve igual en cada slide.",
+      name: "Nombre",
+      description: "Descripción",
+      image: "Imagen de referencia",
+      upload: "Subir",
+      draw: "Dibujar · {credits} créditos",
+      redraw: "Redibujar · {credits} créditos",
+      imageOf: "Imagen de referencia de {name}",
+      noImage:
+        "Aún no hay imagen: las viñetas solo lo describen con palabras. Con una imagen, una viñeta cuesta {credits} créditos en lugar de {plain}.",
+      failed: "Error al dibujar: {error}",
+      delete: "Eliminar",
+      cancel: "Cancelar",
+      add: "Añadir al mundo",
+      save: "Guardar",
+    },
+  },
+  de: {
+    title: "Welt",
+    location: "Ort",
+    props: "Requisiten",
+    newLocation: "Neu",
+    newProp: "Neu",
+    attach: "{name} anhängen: {credits} Credits pro Take",
+    detach: "{name} entfernen: {credits} Credits pro Take",
+    edit: "{name} bearbeiten",
+    effect: "{credits} Credits",
+    full: "Dieses Panel nutzt bereits alle {max} Referenzen.",
+    wordsOnly: "Nur Text",
+    summary: {
+      none: "Keine Referenzen: {credits} Credits pro Take.",
+      refs: "{used} von {max} Referenzen: {credits} Credits pro Take statt {plain}.",
+      dropped:
+        "Kein Platz für {names}: Ein Panel nimmt {max} Referenzen, der Rest wird in Worten beschrieben.",
+      drafts:
+        "{names}: Sheet im Entwurf, wird in Worten beschrieben, bis du es freigibst.",
+    },
+    dialog: {
+      newLocation: "Neuer Ort",
+      newProp: "Neue Requisite",
+      locationHelp:
+        "Ein wiederkehrender Ort. Panels mit diesem Ort werden nach seinem Bild gezeichnet, damit er auf jeder Slide gleich aussieht.",
+      propHelp:
+        "Ein wiederkehrendes Objekt. Panels mit diesem Objekt werden nach seinem Bild gezeichnet, damit es auf jeder Slide gleich aussieht.",
+      name: "Name",
+      description: "Beschreibung",
+      image: "Referenzbild",
+      upload: "Hochladen",
+      draw: "Zeichnen · {credits} Credits",
+      redraw: "Neu zeichnen · {credits} Credits",
+      imageOf: "Referenzbild von {name}",
+      noImage:
+        "Noch kein Bild: Panels beschreiben es nur in Worten. Mit Bild kostet ein Panel {credits} statt {plain} Credits.",
+      failed: "Zeichnen fehlgeschlagen: {error}",
+      delete: "Löschen",
+      cancel: "Abbrechen",
+      add: "Zur Welt hinzufügen",
+      save: "Speichern",
+    },
+  },
+  it: {
+    title: "Mondo",
+    location: "Luogo",
+    props: "Oggetti",
+    newLocation: "Nuovo",
+    newProp: "Nuovo",
+    attach: "Allega {name}: {credits} crediti per ripresa",
+    detach: "Togli {name}: {credits} crediti per ripresa",
+    edit: "Modifica {name}",
+    effect: "{credits} crediti",
+    full: "Questa vignetta usa già tutte le {max} referenze.",
+    wordsOnly: "Solo testo",
+    summary: {
+      none: "Nessuna referenza: {credits} crediti per ripresa.",
+      refs: "{used} referenze su {max}: {credits} crediti per ripresa, non {plain}.",
+      dropped:
+        "Non c’è posto per {names}: una vignetta accetta {max} referenze, quindi vengono descritti a parole.",
+      drafts:
+        "{names}: scheda in bozza, descritto a parole finché non la approvi.",
+    },
+    dialog: {
+      newLocation: "Nuovo luogo",
+      newProp: "Nuovo oggetto",
+      locationHelp:
+        "Un luogo ricorrente. Le vignette a cui è allegato sono disegnate dalla sua immagine, così resta uguale in ogni slide.",
+      propHelp:
+        "Un oggetto ricorrente. Le vignette a cui è allegato sono disegnate dalla sua immagine, così resta uguale in ogni slide.",
+      name: "Nome",
+      description: "Descrizione",
+      image: "Immagine di riferimento",
+      upload: "Carica",
+      draw: "Disegna · {credits} crediti",
+      redraw: "Ridisegna · {credits} crediti",
+      imageOf: "Immagine di riferimento di {name}",
+      noImage:
+        "Ancora nessuna immagine: le vignette lo descrivono solo a parole. Con un’immagine, una vignetta costa {credits} crediti invece di {plain}.",
+      failed: "Disegno non riuscito: {error}",
+      delete: "Elimina",
+      cancel: "Annulla",
+      add: "Aggiungi al mondo",
+      save: "Salva",
+    },
+  },
+  ja: {
+    title: "ワールド",
+    location: "場所",
+    props: "小道具",
+    newLocation: "新規",
+    newProp: "新規",
+    attach: "{name} を添付：1テイクあたり {credits} クレジット",
+    detach: "{name} を外す：1テイクあたり {credits} クレジット",
+    edit: "{name} を編集",
+    effect: "{credits} クレジット",
+    full: "このコマは参照画像 {max} 枚をすべて使っています。",
+    wordsOnly: "テキストのみ",
+    summary: {
+      none: "参照画像なし：1テイク {credits} クレジット。",
+      refs: "参照画像 {used}/{max} 枚：1テイク {credits} クレジット（通常 {plain}）。",
+      dropped:
+        "{names} は入りません：1コマの参照画像は {max} 枚までのため、言葉で描写します。",
+      drafts: "{names}：シートは下書きのため、承認するまで言葉で描写します。",
+    },
+    dialog: {
+      newLocation: "新しい場所",
+      newProp: "新しい小道具",
+      locationHelp:
+        "繰り返し登場する場所です。添付したコマはこの画像をもとに描かれ、どのスライドでも同じ見た目になります。",
+      propHelp:
+        "繰り返し登場する物です。添付したコマはこの画像をもとに描かれ、どのスライドでも同じ見た目になります。",
+      name: "名前",
+      description: "説明",
+      image: "参照画像",
+      upload: "アップロード",
+      draw: "描く · {credits} クレジット",
+      redraw: "描き直す · {credits} クレジット",
+      imageOf: "{name} の参照画像",
+      noImage:
+        "画像はまだありません。コマでは言葉でのみ描写されます。画像があると、1コマ {plain} ではなく {credits} クレジットになります。",
+      failed: "描画に失敗しました：{error}",
+      delete: "削除",
+      cancel: "キャンセル",
+      add: "ワールドに追加",
+      save: "保存",
+    },
+  },
+})

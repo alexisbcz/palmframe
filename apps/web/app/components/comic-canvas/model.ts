@@ -69,6 +69,10 @@ export interface PanelLayer extends BaseLayer {
   tags?: string[]
   // Ids of the characters in the shot.
   cast?: string[]
+  // What a cast member wears here, by character id. Unset: their own clothes.
+  outfits?: Record<string, string>
+  // Ids of the location and props in the shot.
+  world?: string[]
   prompt?: string
   negative?: string
   // Overrides of the carousel look; unset means "same as the carousel".
@@ -372,6 +376,22 @@ export interface ComicPage {
   layers: Layer[]
 }
 
+// Reference images a panel can attach: what Klein takes in one render.
+export const MAX_REFS = 4
+
+// A sheet is only drawn from once approved. Locked also stops redraws.
+export type SheetStatus = "draft" | "approved" | "locked"
+
+// A change of clothes. `sheet` is the character's approved sheet redrawn in
+// them, so the face and build can't drift from outfit to outfit.
+export interface Outfit {
+  id: string
+  name: string
+  tags: string[]
+  sheet?: string
+  seed?: number
+}
+
 // A carousel: every slide shares one format, as Instagram requires.
 // A recurring character. Their look tags go into every panel they're cast
 // in, so they draw the same from panel to panel.
@@ -384,6 +404,21 @@ export interface Character {
   // A model sheet (front, three-quarter, close-up). Panels they're cast in
   // are drawn from it, so face and outfit hold from panel to panel.
   sheet?: string
+  status?: SheetStatus
+  outfits?: Outfit[]
+  seed?: number
+}
+
+// Saved projects predate `status`: their sheets were already in use.
+export const sheetReady = (c: Character) => !!c.sheet && c.status !== "draft"
+
+// A recurring place or object, with its own reference image.
+export interface WorldItem {
+  id: string
+  name: string
+  kind: "location" | "prop"
+  tags: string[]
+  image?: string
   seed?: number
 }
 
@@ -394,6 +429,7 @@ export interface ComicProject {
   background: string
   pages: ComicPage[]
   cast?: Character[]
+  world?: WorldItem[]
   look?: Look
   // Pages read right to left, manga style: layouts mirror, panels number from the right.
   rtl?: boolean
@@ -472,6 +508,7 @@ export function toProject(value: unknown): ComicProject | null {
     pages?: ComicPage[]
     layers?: Layer[]
     cast?: Character[]
+    world?: WorldItem[]
     look?: Look
     rtl?: boolean
   } | null
@@ -481,7 +518,12 @@ export function toProject(value: unknown): ComicProject | null {
   if (v.version === 2 && Array.isArray(v.pages) && v.pages.length) {
     const pages = v.pages.filter((p) => p && Array.isArray(p.layers))
     if (!pages.length) return null
-    const cast = Array.isArray(v.cast) ? v.cast : undefined
+    const cast = Array.isArray(v.cast)
+      ? v.cast.map((c) =>
+          c?.sheet && !c.status ? { ...c, status: "approved" as const } : c
+        )
+      : undefined
+    const world = Array.isArray(v.world) ? v.world : undefined
     return {
       version: 2,
       width: v.width,
@@ -489,6 +531,7 @@ export function toProject(value: unknown): ComicProject | null {
       background,
       pages,
       ...(cast && { cast }),
+      ...(world && { world }),
       ...(v.look && typeof v.look === "object" && { look: v.look }),
       ...(v.rtl === true && { rtl: true }),
     }

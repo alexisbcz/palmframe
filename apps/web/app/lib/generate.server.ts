@@ -1,3 +1,5 @@
+import { MAX_REFS } from "@/components/comic-canvas/model"
+
 import { type Operation } from "./credits"
 import { kleinAvailable, renderKlein } from "./klein.server"
 
@@ -13,8 +15,8 @@ export interface GenerateRequest {
   height: number
   seed: number
   steps: number
-  // "klein" draws with FLUX.2 Klein from `refs` (character model sheets),
-  // for faces and outfits that hold from panel to panel.
+  // "klein" draws with FLUX.2 Klein from `refs` (model sheets, outfits,
+  // locations, props), for what must hold from panel to panel.
   engine: "anima" | "klein"
   refs: string[]
 }
@@ -106,7 +108,9 @@ export function parse(body: unknown): GenerateRequest | null {
     steps,
     engine: b.engine === "klein" ? "klein" : "anima",
     refs: Array.isArray(b.refs)
-      ? b.refs.filter((x): x is string => typeof x === "string").slice(0, 4)
+      ? b.refs
+          .filter((x): x is string => typeof x === "string")
+          .slice(0, MAX_REFS)
       : [],
   }
 }
@@ -120,7 +124,6 @@ export function operation(r: GenerateRequest): Operation {
   if (r.engine === "klein") return r.refs.length ? "panel_ref" : "sheet"
   return "panel"
 }
-
 
 export async function render(
   r: GenerateRequest,

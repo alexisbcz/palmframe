@@ -35,7 +35,7 @@ export function planOf(lookupKey: string | null | undefined): PlanId | null {
 // Charged before a render starts, refunded if it fails.
 export const COSTS = {
   panel: 8, // Anima Turbo, text only
-  panel_ref: 20, // FLUX.2 Klein, drawn from model sheets
+  panel_ref: 20, // FLUX.2 Klein, drawn from reference images
   portrait: 8,
   sheet: 40,
   edit: 20, // FLUX.2 Klein instruction edit of a panel

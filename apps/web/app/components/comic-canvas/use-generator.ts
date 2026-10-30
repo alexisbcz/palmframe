@@ -3,12 +3,17 @@ import * as React from "react"
 import { TAG_GROUPS, sortTags } from "./anima-tags"
 import {
   DEFAULT_LOOK,
+  MAX_REFS,
   createPanel,
+  sheetReady,
   type Character,
+  type ComicProject,
   type Look,
+  type Outfit,
   type PaletteId,
   type PanelLayer,
   type StyleId,
+  type WorldItem,
 } from "./model"
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
 
@@ -176,42 +181,107 @@ const KIND: Record<Character["kind"], string> = {
 const KLEIN_NO_TEXT =
   "No text, no letters, no speech bubbles, no panel borders, a single image."
 
-// The cast members of a panel who have a model sheet, in reference order.
-export function sheetCast(panel: PanelLayer, cast: Character[] = []) {
+export const wornOutfit = (panel: PanelLayer, c: Character) =>
+  c.outfits?.find((o) => o.id === panel.outfits?.[c.id])
+
+const words = (o: Pick<Outfit | WorldItem, "name" | "tags">) =>
+  [o.name.trim(), ...o.tags].filter(Boolean).join(", ")
+
+export function panelMembers(panel: PanelLayer, cast: Character[] = []) {
   return (panel.cast ?? [])
     .map((id) => cast.find((c) => c.id === id))
-    .filter((c): c is Character => !!c?.sheet)
+    .filter((c): c is Character => !!c)
 }
 
-// For Klein: the shot in sentences, each sheet-backed character pointed at
-// their reference image, and the look spelled out.
+// The panel's location first, then its props, whatever order they were added.
+function panelWorld(panel: PanelLayer, world: WorldItem[] = []) {
+  const items = (panel.world ?? [])
+    .map((id) => world.find((w) => w.id === id))
+    .filter((w): w is WorldItem => !!w)
+  return [
+    ...items.filter((w) => w.kind === "location"),
+    ...items.filter((w) => w.kind !== "location"),
+  ]
+}
+
+export type PanelRef =
+  | { src: string; character: Character; outfit?: Outfit; item?: undefined }
+  | { src: string; item: WorldItem; character?: undefined; outfit?: undefined }
+
+// What a panel attaches, in the fixed order the prompt counts them: characters,
+// location, props, then anything else. An outfit's image is a redraw of the
+// whole sheet, so it takes the sheet's place, keeping one slot per character.
+// Whatever doesn't fit is dropped here, never by the server, so the prompt's
+// numbers stay right and the left-out are described in words instead.
+export function panelRefs(
+  panel: PanelLayer,
+  { cast, world }: Pick<ComicProject, "cast" | "world">
+) {
+  const wanted: PanelRef[] = [
+    ...panelMembers(panel, cast)
+      .filter(sheetReady)
+      .map((character) => {
+        const outfit = wornOutfit(panel, character)
+        return outfit?.sheet
+          ? { src: outfit.sheet, character, outfit }
+          : { src: character.sheet!, character }
+      }),
+    ...panelWorld(panel, world)
+      .filter((item) => item.image)
+      .map((item) => ({ src: item.image!, item })),
+  ]
+  return { refs: wanted.slice(0, MAX_REFS), dropped: wanted.slice(MAX_REFS) }
+}
+
+// For Klein: the shot in sentences, each reference image named for what it
+// holds, and the look spelled out.
 export function buildKleinPrompt(
   panel: PanelLayer,
-  { cast = [], look }: { cast?: Character[]; look?: Look } = {}
+  {
+    cast = [],
+    world = [],
+    look,
+  }: Pick<ComicProject, "cast" | "world" | "look"> = {}
 ) {
   const effective = lookOf(panel, look)
-  const drawn = sheetCast(panel, cast)
-  const others = (panel.cast ?? [])
-    .map((id) => cast.find((c) => c.id === id))
-    .filter((c): c is Character => !!c && !c.sheet)
+  const { refs } = panelRefs(panel, { cast, world })
   const tags = (panel.tags ?? []).filter((t) => !COUNT_TAGS.has(t))
-  const many = drawn.length > 1
-  const characters = [
-    ...drawn.map(
-      (c, i) =>
-        `${c.name.trim() || KIND[c.kind]} is the person in ${many ? `reference image ${i + 1}` : "the reference image"}: keep the same face, hair, skin and outfit${c.tags.length ? ` (${c.tags.join(", ")})` : ""}.`
-    ),
-    ...others.map(
-      (c) =>
-        `${c.name.trim() || KIND[c.kind]}: ${KIND[c.kind]}, ${c.tags.join(", ")}.`
-    ),
-  ]
+  const image = (i: number) =>
+    refs.length > 1 ? `reference image ${i + 1}` : "the reference image"
+  const name = (c: Character) => c.name.trim() || KIND[c.kind]
+  const drawn = refs.map((r, i) => {
+    if (r.item) {
+      const what = r.item.name.trim() || "This"
+      return r.item.kind === "location"
+        ? `${what} is the place in ${image(i)}: keep its layout and landmarks, redrawn in this panel's art style.`
+        : `${what} is the object in ${image(i)}: keep its shape and details, redrawn in this panel's art style.`
+    }
+    const c = r.character
+    const worn = wornOutfit(panel, c)
+    if (worn && !r.outfit)
+      return `${name(c)} is the person in ${image(i)}: keep the same face, hair and skin, but dress them in ${words(worn)} instead of the clothes in that image.`
+    const clothes = r.outfit ? words(r.outfit) : c.tags.join(", ")
+    return `${name(c)} is the person in ${image(i)}: keep the same face, hair, skin and outfit${clothes ? ` (${clothes})` : ""}.`
+  })
+  const others = panelMembers(panel, cast)
+    .filter((c) => !refs.some((r) => r.character?.id === c.id))
+    .map((c) => {
+      const worn = wornOutfit(panel, c)
+      return `${name(c)}: ${[KIND[c.kind], ...c.tags, ...(worn ? [words(worn)] : [])].join(", ")}.`
+    })
+  const unseen = panelWorld(panel, world)
+    .filter((w) => !refs.some((r) => r.item?.id === w.id))
+    .map((w) => `Also in the shot: ${words(w)}.`)
   return [
     "Comic book panel.",
     panel.prompt?.trim(),
     tags.length ? `Details: ${tags.join(", ")}.` : "",
-    ...characters,
-    drawn.length ? "Keep the art style of the reference images." : "",
+    ...drawn,
+    ...others,
+    ...unseen,
+    refs.some((r) => r.character)
+      ? "Keep the art style of the character reference images."
+      : "",
     lookProse(panel, effective),
     panel.negative?.trim() ? `Avoid: ${panel.negative.trim()}.` : "",
     KLEIN_NO_TEXT,
@@ -239,7 +309,10 @@ export function renderSize(width: number, height: number) {
 }
 
 export const hasPrompt = (panel: PanelLayer) =>
-  !!panel.tags?.length || !!panel.prompt?.trim() || !!panel.cast?.length
+  !!panel.tags?.length ||
+  !!panel.prompt?.trim() ||
+  !!panel.cast?.length ||
+  !!panel.world?.length
 
 const COUNT_TAGS = new Set(
   TAG_GROUPS.find((g) => g.id === "count")!.tags.filter((t) => t !== "solo")
@@ -257,14 +330,16 @@ function countTag(n: number, noun: string) {
 // sentences freely, and the sentences read best at the end.
 export function buildPrompt(
   panel: PanelLayer,
-  { cast = [], look }: { cast?: Character[]; look?: Look } = {}
+  {
+    cast = [],
+    world = [],
+    look,
+  }: Pick<ComicProject, "cast" | "world" | "look"> = {}
 ) {
   const effective = lookOf(panel, look)
   const raw = effective.style === "raw"
   const styled = lookTags(panel, effective)
-  const members = (panel.cast ?? [])
-    .map((id) => cast.find((c) => c.id === id))
-    .filter((c): c is Character => !!c)
+  const members = panelMembers(panel, cast)
   const kinds = (k: Character["kind"]) =>
     members.filter((m) => m.kind === k).length
   const counts = members.length
@@ -278,14 +353,18 @@ export function buildPrompt(
   const tags = sortTags(
     (panel.tags ?? []).filter((t) => !members.length || !COUNT_TAGS.has(t))
   )
-  const people = members.map((m) =>
-    [m.name.trim(), ...m.tags].filter(Boolean).join(", ")
-  )
+  const people = members.map((m) => {
+    const worn = wornOutfit(panel, m)
+    return [m.name.trim(), ...m.tags, ...(worn ? [words(worn)] : [])]
+      .filter(Boolean)
+      .join(", ")
+  })
   return {
     prompt: [
       raw ? "" : QUALITY,
       ...counts,
       ...people,
+      ...panelWorld(panel, world).map(words),
       styled.spot,
       tags.join(", "),
       ...styled.tags,
@@ -389,6 +468,66 @@ export async function renderSheet(
   return src
 }
 
+// The character's sheet again, in other clothes. Generating one needs an
+// approved sheet: without that baseline, every outfit is a new face.
+export async function renderOutfit(
+  character: Character,
+  outfit: Outfit,
+  seed: number,
+  look: Look = DEFAULT_LOOK
+) {
+  if (!sheetReady(character)) throw new Error("Approve the model sheet first.")
+  const panel = createPanel({ x: 0, y: 0, width: 3, height: 2 })
+  const prompt = [
+    "Reproduce the character model sheet in the reference image exactly: the same person, face, hair, skin, body and proportions, in the same poses, views and layout, on the same plain background.",
+    `Change only the clothes. Dress them in: ${words(outfit)}.`,
+    lookProse(panel, lookOf(panel, look)),
+    "No text, no labels.",
+  ]
+    .filter(Boolean)
+    .join(" ")
+  const { src } = await render({
+    prompt,
+    negative: "",
+    width: 1536,
+    height: 1024,
+    seed,
+    steps: 4,
+    engine: "klein",
+    refs: [character.sheet!],
+  })
+  return src
+}
+
+// A reference of a recurring place or object, drawn with Klein like a sheet.
+export async function renderWorldItem(
+  item: WorldItem,
+  seed: number,
+  look: Look = DEFAULT_LOOK
+) {
+  const location = item.kind === "location"
+  const panel = createPanel({ x: 0, y: 0, width: 3, height: 2 })
+  const prompt = [
+    location
+      ? `Wide eye-level establishing view of ${words(item)}, with nobody in it.`
+      : `One object, ${words(item)}, in three-quarter view on a plain off-white background, with nobody in the image.`,
+    lookProse(panel, lookOf(panel, look)),
+    "No text, no labels.",
+  ]
+    .filter(Boolean)
+    .join(" ")
+  const { src } = await render({
+    prompt,
+    negative: "",
+    width: location ? 1536 : 1024,
+    height: 1024,
+    seed,
+    steps: 4,
+    engine: "klein",
+  })
+  return src
+}
+
 // Klein is slower per pixel; ~0.9 MP keeps a panel near a minute.
 const KLEIN_AREA = 1024 * 896
 
@@ -439,10 +578,10 @@ export function useGenerator(editor: ComicEditor) {
               : randomSeed()
           setJobs((j) => ({ ...j, [panelId]: { startedAt, take, of: count } }))
           const project = editor.projectRef.current
-          // Characters with a model sheet are drawn from it, with Klein.
-          const sheets = sheetCast(panel, project.cast)
+          // Panels with reference images are drawn from them, with Klein.
+          const { refs } = panelRefs(panel, project)
           const result = await render(
-            sheets.length
+            refs.length
               ? {
                   prompt: buildKleinPrompt(panel, project),
                   negative: "",
@@ -450,7 +589,7 @@ export function useGenerator(editor: ComicEditor) {
                   seed,
                   steps: 4,
                   engine: "klein",
-                  refs: sheets.map((c) => c.sheet!),
+                  refs: refs.map((r) => r.src),
                 }
               : {
                   ...buildPrompt(panel, project),
