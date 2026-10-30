@@ -16,9 +16,12 @@ export interface GenerateRequest {
   seed: number
   steps: number
   // "klein" draws with FLUX.2 Klein from `refs` (model sheets, outfits,
-  // locations, props), for what must hold from panel to panel.
+  // locations, props, then any layout guide), for what must hold from panel
+  // to panel.
   engine: "anima" | "klein"
   refs: string[]
+  // A Klein render of a coverage sheet, which has its own price.
+  coverage?: boolean
 }
 
 function workflow(r: GenerateRequest) {
@@ -112,6 +115,7 @@ export function parse(body: unknown): GenerateRequest | null {
           .filter((x): x is string => typeof x === "string")
           .slice(0, MAX_REFS)
       : [],
+    coverage: b.engine === "klein" && b.coverage === true,
   }
 }
 
@@ -121,6 +125,7 @@ export const error = (message: string, status: number) =>
 // What a request costs, from what it asks for: sheets are Klein without
 // references, reference panels are Klein with them.
 export function operation(r: GenerateRequest): Operation {
+  if (r.coverage) return "coverage"
   if (r.engine === "klein") return r.refs.length ? "panel_ref" : "sheet"
   return "panel"
 }

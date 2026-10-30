@@ -96,6 +96,11 @@ export interface PanelLayer extends BaseLayer {
   versions?: PanelVersion[]
   // What a vision model read in the current image; goes when the image does.
   check?: PanelCheck
+  // A rough sketch directing pose and framing. Only Klein can read one, so
+  // a panel with a guide always draws with Klein.
+  guide?: LayoutGuide
+  // The last coverage sheet: this moment from nine cameras, to pick from.
+  coverage?: CoverageSheet
 }
 
 export interface FaceBox {
@@ -120,6 +125,21 @@ export interface PanelCheck {
   // Letters or words drawn into the art itself.
   lettering: boolean
   faces: FaceBox[]
+}
+
+// `strict` beats the written description on pose and framing, never on
+// identity or style. `loose` is a starting point the description may adjust.
+export type GuideStrength = "loose" | "strict"
+
+export interface LayoutGuide {
+  // A lossless PNG fitting 1024 px: a pose lives in thin strokes.
+  src: string
+  strength: GuideStrength
+}
+
+export interface CoverageSheet {
+  src: string
+  seed: number
 }
 
 export interface PanelVersion {
@@ -547,6 +567,25 @@ export function createDefaultProject(): ComicProject {
   }
 }
 
+// A guide or sheet a hand-edited file broke is dropped, not sent to a render.
+function cleanPanel(layer: Layer): Layer {
+  if (layer?.type !== "panel") return layer
+  const { guide, coverage, ...rest } = layer
+  if (!guide && !coverage) return layer
+  return {
+    ...rest,
+    ...(typeof guide?.src === "string" && {
+      guide: {
+        src: guide.src,
+        strength: guide.strength === "strict" ? "strict" : "loose",
+      },
+    }),
+    ...(typeof coverage?.src === "string" && {
+      coverage: { src: coverage.src, seed: Number(coverage.seed) || 0 },
+    }),
+  }
+}
+
 // Accepts current projects and single-page files saved before carousels.
 export function toProject(value: unknown): ComicProject | null {
   const v = value as {
@@ -565,7 +604,9 @@ export function toProject(value: unknown): ComicProject | null {
     return null
   const background = typeof v.background === "string" ? v.background : "#ffffff"
   if (v.version === 2 && Array.isArray(v.pages) && v.pages.length) {
-    const pages = v.pages.filter((p) => p && Array.isArray(p.layers))
+    const pages = v.pages
+      .filter((p) => p && Array.isArray(p.layers))
+      .map((p) => ({ ...p, layers: p.layers.map(cleanPanel) }))
     if (!pages.length) return null
     const cast = Array.isArray(v.cast)
       ? v.cast.map((c) =>

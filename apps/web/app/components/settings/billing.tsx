@@ -487,6 +487,7 @@ const KINDS = [
   "panel_ref",
   "portrait",
   "sheet",
+  "coverage",
   "story_plan",
   "translate",
   "panel_check",

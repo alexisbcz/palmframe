@@ -38,6 +38,7 @@ export const COSTS = {
   panel_ref: 20, // FLUX.2 Klein, drawn from reference images
   portrait: 8,
   sheet: 40,
+  coverage: 40, // FLUX.2 Klein, one image of nine camera setups
   edit: 20, // FLUX.2 Klein instruction edit of a panel
   vary: 8, // Anima Turbo img2img
   inpaint: 8, // Anima Turbo on a masked crop

@@ -320,7 +320,7 @@ export async function getProject(caller: Caller, id: string) {
 }
 
 // What the editor would send to /api/generate for this panel: Klein when it
-// has reference images, Anima Turbo otherwise.
+// has reference images or a layout guide, Anima Turbo otherwise.
 function renderRequest(
   project: ComicProject,
   panel: PanelLayer,
@@ -760,7 +760,7 @@ export const capabilities = () => ({
     panel_ref: {
       credits: COSTS.panel_ref,
       engine: "klein",
-      note: "FLUX.2 Klein, when the panel has reference images: approved model sheets, locations or props.",
+      note: "FLUX.2 Klein, when the panel has reference images (approved model sheets, locations or props) or a layout guide.",
     },
   },
   limits: {

@@ -67,9 +67,10 @@ import {
   type TextLayer,
 } from "./model"
 import type { ComicEditor } from "./use-editor"
-import { hasPrompt } from "./use-generator"
+import { hasPrompt, usesKlein, type Generator } from "./use-generator"
 import { messages } from "./inspector.messages"
 import { EditSection } from "./edit-section"
+import { GuideSection } from "./guide-section"
 import { PostprocessSection } from "./postprocess-tools"
 
 type Setter<L extends Layer> = <K extends keyof L>(key: K, value: L[K]) => void
@@ -108,9 +109,11 @@ function IconButton({
 
 export function Inspector({
   editor,
+  generator,
   onGenerate,
 }: {
   editor: ComicEditor
+  generator: Generator
   onGenerate: () => void
 }) {
   const layer = editor.selected
@@ -142,6 +145,7 @@ export function Inspector({
             key={layer.id}
             editor={editor}
             layer={layer}
+            generator={generator}
             onGenerate={onGenerate}
           />
         ) : (
@@ -155,10 +159,12 @@ export function Inspector({
 function LayerInspector({
   editor,
   layer,
+  generator,
   onGenerate,
 }: {
   editor: ComicEditor
   layer: Layer
+  generator: Generator
   onGenerate: () => void
 }) {
   const t = useT(messages)
@@ -244,6 +250,7 @@ function LayerInspector({
           layer={layer}
           set={set as Setter<PanelLayer>}
           editor={editor}
+          generator={generator}
           onGenerate={onGenerate}
         />
       )}
@@ -311,11 +318,13 @@ function PanelSections({
   layer,
   set,
   editor,
+  generator,
   onGenerate,
 }: {
   layer: PanelLayer
   set: Setter<PanelLayer>
   editor: ComicEditor
+  generator: Generator
   onGenerate: () => void
 }) {
   const t = useT(messages)
@@ -405,7 +414,11 @@ function PanelSections({
             <span className="truncate">
               {hasPrompt(layer)
                 ? t("image.editPrompt")
-                : t("image.withModel", { model: "Anima Turbo" })}
+                : t("image.withModel", {
+                    model: usesKlein(layer, editor.project)
+                      ? "FLUX.2 Klein"
+                      : "Anima Turbo",
+                  })}
             </span>
           </Button>
         </Row>
@@ -474,6 +487,8 @@ function PanelSections({
           </>
         )}
       </Section>
+
+      <GuideSection panel={layer} editor={editor} generator={generator} />
 
       {layer.src && <EditSection panel={layer} editor={editor} />}
       {layer.src && <PostprocessSection panel={layer} editor={editor} />}

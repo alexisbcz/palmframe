@@ -14,6 +14,7 @@ import {
   type Character,
   type WorldItem,
   type ComicDoc,
+  type ComicPage,
   type ComicProject,
   type Layer,
   type Look,
@@ -338,6 +339,20 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     goToPage(i + 1)
   }, [commitProject, goToPage])
 
+  // Puts ready-made slides after the current one and goes to the first.
+  const insertPages = React.useCallback(
+    (pages: ComicPage[]) => {
+      const i = indexRef.current
+      commitProject((p) => {
+        const next = [...p.pages]
+        next.splice(i + 1, 0, ...pages)
+        return { ...p, pages: next }
+      })
+      goToPage(i + 1)
+    },
+    [commitProject, goToPage]
+  )
+
   const duplicatePage = React.useCallback(
     (i: number) => {
       commitProject((p) => {
@@ -512,6 +527,7 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     applyLayout,
     goToPage,
     addPage,
+    insertPages,
     duplicatePage,
     removePage,
     movePage,

@@ -171,6 +171,10 @@ function isTyping(target: EventTarget | null) {
   )
 }
 
+// A dialog's keys are its own: the guide drawer has an undo of its own.
+const inDialog = (target: EventTarget | null) =>
+  !!(target as HTMLElement | null)?.closest?.("[data-slot=dialog-content]")
+
 // `instagram` is on when the server can post: signed-in users then connect
 // their own accounts from the Post dialog.
 // With `cloud`, the carousel is a project of the signed-in account and saves there.
@@ -486,7 +490,11 @@ export function ComicCanvasEditor({
             className="h-full border-s bg-background"
             style={{ width: dockSize("right") }}
           >
-            <Inspector editor={editor} onGenerate={focusComposer} />
+            <Inspector
+              editor={editor}
+              generator={generator}
+              onGenerate={focusComposer}
+            />
           </aside>
         </Dock>
       </div>
@@ -528,6 +536,7 @@ export function ComicCanvasEditor({
       >
         <Inspector
           editor={editor}
+          generator={generator}
           onGenerate={() => {
             setSheet(null)
             focusComposer()
@@ -881,7 +890,7 @@ function useShortcuts(
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       // A focused list, menu or slider already used the key.
-      if (e.defaultPrevented || isTyping(e.target)) return
+      if (e.defaultPrevented || isTyping(e.target) || inDialog(e.target)) return
       const { editor, zoomBy, fit, clipboard, compose } = ref.current
       const mod = e.metaKey || e.ctrlKey
       const sel = editor.selected
