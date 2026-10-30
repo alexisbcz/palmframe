@@ -790,6 +790,56 @@ export const SEED: SeedAsset[] = [
       ],
     },
   },
+  {
+    id: "bg-tone-fade",
+    kind: "background",
+    name: "Screentone Fade",
+    description:
+      "A dotted fade from black to white, for mood behind a close-up.",
+    genres: ["drama", "romance"],
+    art: "noir",
+    payload: {
+      type: "backdrop",
+      tags: [
+        "smooth vertical fade from black to white made of fine halftone dots",
+        "abstract screentone texture",
+        "nothing else",
+      ],
+    },
+  },
+  {
+    id: "bg-bokeh",
+    kind: "background",
+    name: "Soft Bokeh Tone",
+    description:
+      "Blurred light circles on grey, the classic feelings background.",
+    genres: ["romance", "slice"],
+    art: "noir",
+    payload: {
+      type: "backdrop",
+      tags: [
+        "soft white blurred bokeh circles on a grey gradient",
+        "abstract manga tone",
+        "nothing else",
+      ],
+    },
+  },
+  {
+    id: "bg-pastel-flat",
+    kind: "background",
+    name: "Pastel Wash",
+    description: "One calm colour, so the punchline has the slide to itself.",
+    genres: ["comedy", "slice"],
+    art: "color",
+    payload: {
+      type: "backdrop",
+      tags: [
+        "plain flat pastel mint background",
+        "very subtle paper grain",
+        "nothing else",
+      ],
+    },
+  },
 
   // Props
   world(
@@ -996,6 +1046,66 @@ export const SEED: SeedAsset[] = [
     "(realistic proportions:1.3), hyperdetailed face, fine pen linework, dense screentones, gekiga, sharp suit, intense stare, sweat",
     "1980s Japanese adult manga: near-photorealistic faces and anatomy rendered in very fine pen lines, dense layered screentones for skin and suits, strong jaws, intense stares, beads of sweat, cinematic composition, severe high-contrast mood.",
     "chibi, big eyes, cute, simple shading"
+  ),
+  style(
+    "style-deadpan",
+    "Deadpan Doodle",
+    ["comedy", "slice"],
+    "Plain round-headed figures, thick marker and almost no background. The joke does the work.",
+    "color",
+    null,
+    "muted",
+    "minimalist doodle, simple round head, dot eyes, thick marker outline, white background, webcomic",
+    "A very simple hand-drawn webcomic doodle: figures with plain round white heads, dot eyes and thin limbs, drawn in one thick wobbly black marker line, on an empty white background with no shading and no detail.",
+    "detailed, realistic, shading, gradient, complex background"
+  ),
+  style(
+    "style-pastel-strip",
+    "Pastel Strip",
+    ["comedy", "slice", "romance"],
+    "Rounded characters on flat candy colours. Friendly, shareable, made for a phone.",
+    "color",
+    "pink",
+    "muted",
+    "cute simple webcomic, flat pastel color, rounded shapes, thin outline, plain color background",
+    "A cute modern webcomic: rounded simple characters with small features, thin soft outlines, flat pastel colours and one plain coloured background.",
+    "realistic, heavy shadows, detailed background"
+  ),
+  style(
+    "style-neon-flats",
+    "Neon Flats",
+    ["scifi", "action"],
+    "Hot pink, cyan and acid yellow on solid black. No soft shading anywhere.",
+    "color",
+    "pink",
+    "vivid",
+    "flat color, solid black shadows, hot pink, cyan, acid yellow, limited palette, neon city",
+    "Modern indie sci-fi comic art: solid black shadows with hard flat shapes of hot pink, electric cyan and acid yellow, thin confident linework and no soft shading.",
+    "gradient, soft shading, muted color"
+  ),
+  style(
+    "style-hard-black",
+    "Hard Black",
+    ["crime", "horror"],
+    "Only black and white, no greys. The drawing is mostly shadow.",
+    "noir",
+    null,
+    "balanced",
+    "(pure black and white:1.4), no grey, extreme contrast, huge solid black shapes, long cast shadows, silhouette",
+    "Pure black and white with no greys at all: huge solid black shapes, figures half lost in shadow, long hard cast shadows, light cut out as white shapes.",
+    "grey, screentone, hatching, soft shading"
+  ),
+  style(
+    "style-empty-space",
+    "Empty Space",
+    ["drama", "horror"],
+    "A tiny figure and a lot of nothing. For the quiet slide before the blow lands.",
+    "noir",
+    null,
+    "balanced",
+    "tiny figure, vast negative space, minimalist composition, grainy ink texture, loneliness",
+    "Quiet adult manga: one tiny distant figure in a vast empty space, grainy ink and speckled texture, enormous negative space, stark and lonely composition.",
+    "crowded, busy, large figure"
   ),
 
   // Shots
@@ -1595,6 +1705,16 @@ export const SEED: SeedAsset[] = [
 
 // What some pictures show, where the tags alone draw the wrong thing.
 const SCENES: Record<string, string> = {
+  "style-deadpan":
+    "one simple adult doodle figure standing alone at a bus stop on a white page",
+  "style-pastel-strip":
+    "one rounded adult character alone holding an umbrella on a plain pastel background",
+  "style-neon-flats":
+    "an adult woman in a long coat in a neon city street at night, seen from the side, silent",
+  "style-empty-space":
+    "one extremely tiny distant adult figure, smaller than a fingertip, alone at the bottom of an enormous empty pale grey expanse",
+  "bg-bokeh":
+    "soft white blurred bokeh circles of different sizes floating on a smooth grey gradient, abstract, nothing else",
   "pose-awkward-wave":
     "a tall grown man in his thirties in a business shirt, realistic adult proportions, giving a small awkward wave with a frozen embarrassed smile in an office corridor",
   "pose-doomscroll":
