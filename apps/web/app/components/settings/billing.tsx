@@ -68,7 +68,7 @@ function Tile({ icon, glow }: { icon: typeof SparklesIcon; glow?: boolean }) {
       className={cn(
         "flex size-9 shrink-0 items-center justify-center rounded-lg ring-1 [&_svg]:size-4",
         glow
-          ? "bg-linear-to-br from-amber-400 via-orange-500 to-pink-500 text-white ring-white/20"
+          ? "bg-brand text-brand-foreground ring-transparent"
           : "bg-muted text-foreground ring-foreground/15"
       )}
     >
@@ -148,18 +148,14 @@ export function BillingPanel({
 
   return (
     <Command className="rounded-none! bg-transparent p-0">
-      <div className="relative overflow-hidden border-b px-4 pt-4 pb-3">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-28 left-1/2 h-48 w-[40rem] -translate-x-1/2 rounded-full bg-linear-to-r from-amber-400/25 via-orange-500/20 to-pink-500/25 blur-3xl"
-        />
-        <div className="relative flex flex-wrap items-end justify-between gap-3">
+      <div className="border-b px-4 pt-4 pb-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="flex flex-col gap-0.5">
             <span className="text-xs text-muted-foreground">
               {t("balance")}
             </span>
             <span className="flex items-baseline gap-1.5">
-              <span className="bg-linear-to-r from-amber-500 via-orange-500 to-pink-500 bg-clip-text text-4xl font-semibold tracking-tight text-transparent tabular-nums dark:from-amber-300 dark:via-orange-400 dark:to-pink-400">
+              <span className="text-4xl font-semibold tracking-tight text-foreground tabular-nums">
                 {balance === null ? "–" : n(balance)}
               </span>
               <span className="text-sm text-muted-foreground">
@@ -168,11 +164,11 @@ export function BillingPanel({
             </span>
           </div>
           {signedIn && (
-            <span className="flex items-center gap-1.5 rounded-full bg-background/60 px-2.5 py-1 text-xs ring-1 ring-foreground/15 backdrop-blur">
+            <span className="flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ring-1 ring-foreground/15">
               <HugeiconsIcon
                 icon={currentPlan ? Crown02Icon : SparklesIcon}
                 strokeWidth={2}
-                className="size-3.5 text-orange-500"
+                className="size-3.5 text-brand-ink"
               />
               {currentPlan
                 ? t("palette.subNow", { plan: t(`${currentPlan}.name`) })
@@ -294,7 +290,7 @@ export function BillingPanel({
                 className={cn(
                   item,
                   popular &&
-                    "bg-linear-to-r from-amber-400/10 via-orange-500/10 to-pink-500/10 ring-1 ring-orange-400/30 data-focused:from-amber-400/20 data-focused:via-orange-500/15 data-focused:to-pink-500/20",
+                    "bg-brand/10 ring-1 ring-brand/40 data-focused:bg-brand/20",
                   current && "ring-1 ring-foreground/20"
                 )}
               >
@@ -306,7 +302,7 @@ export function BillingPanel({
                   <span className="flex items-center gap-1.5 font-medium">
                     {t(`${plan.id}.name`)}
                     {popular && (
-                      <span className="rounded-full bg-linear-to-r from-amber-400 via-orange-500 to-pink-500 px-1.5 py-px text-[10px] font-semibold text-white">
+                      <span className="rounded-full bg-brand px-1.5 py-px text-[10px] font-semibold text-brand-foreground">
                         {t("palette.popular")}
                       </span>
                     )}

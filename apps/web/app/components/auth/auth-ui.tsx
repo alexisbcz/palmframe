@@ -24,9 +24,9 @@ import {
 } from "@/i18n/core"
 import { messages } from "./auth.messages"
 
-// Inline links on the auth and legal pages are blue so they read as links.
+// Inline links on the auth and legal pages are always underlined, in ink.
 export const linkClass =
-  "text-blue-600 underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none dark:text-blue-400"
+  "rounded-xs text-foreground underline decoration-foreground/35 underline-offset-4 transition-[text-decoration-color] duration-150 ease-out outline-none hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
 
 export function TextLink({
   className,
@@ -65,9 +65,9 @@ export function Logo() {
   return (
     <Link
       to="/"
-      className="flex items-center gap-2.5 self-center font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="flex items-center gap-2 self-center rounded-sm text-xl outline-none lettering focus-visible:ring-3 focus-visible:ring-ring/50"
     >
-      <img src="/icon.svg" alt="" className="size-7" />
+      <img src="/icon.svg" alt="" width={28} height={28} className="size-7" />
       Palmframe
     </Link>
   )
@@ -75,7 +75,7 @@ export function Logo() {
 
 export function AuthShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-muted p-6 md:p-10 dark:bg-background">
       <div className="flex w-full max-w-sm flex-col gap-6">
         <Logo />
         {children}
@@ -104,7 +104,7 @@ export function AuthCard({
             <HugeiconsIcon icon={icon} strokeWidth={2} className="size-5" />
           </span>
         )}
-        <CardTitle className="text-xl">{title}</CardTitle>
+        <CardTitle className="text-3xl lettering">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>{children}</CardContent>
@@ -145,7 +145,6 @@ export function SubmitButton({
   return (
     <Button
       type="submit"
-      variant="outline"
       className="w-full"
       isDisabled={pending}
     >

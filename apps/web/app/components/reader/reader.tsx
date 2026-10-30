@@ -183,11 +183,17 @@ function Footer({ report }: { report?: string }) {
   const t = useT(messages)
   return (
     <footer className="flex h-11 shrink-0 items-center justify-between gap-3 px-4 text-xs text-muted-foreground">
-      <Link to="/" className="hover:text-foreground">
+      <Link
+        to="/"
+        className="rounded-xs py-3 transition-colors hover:text-foreground"
+      >
         {t("madeWith")}
       </Link>
       {report && (
-        <a href={report} className="hover:text-foreground">
+        <a
+          href={report}
+          className="rounded-xs py-3 transition-colors hover:text-foreground"
+        >
           {t("report")}
         </a>
       )}
@@ -201,7 +207,7 @@ export function ReaderMissing({ missing }: { missing: boolean }) {
   return (
     <main className="flex h-svh flex-col bg-background text-foreground">
       <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-        <h1 className="text-lg font-semibold">
+        <h1 className="text-3xl lettering">
           {t(missing ? "missing.title" : "failed.title")}
         </h1>
         <p className="max-w-sm text-sm text-muted-foreground">

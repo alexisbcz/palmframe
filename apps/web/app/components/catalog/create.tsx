@@ -372,7 +372,7 @@ export function CreateAsset({
       <main className="mx-auto grid w-full max-w-7xl flex-1 gap-6 p-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)] lg:gap-8 lg:p-6">
         <section className="flex flex-col gap-5 lg:sticky lg:top-6 lg:self-start">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <h1 className="text-4xl lettering">
               {t("create.title")}
             </h1>
             <p className="text-sm text-muted-foreground">

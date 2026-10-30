@@ -155,7 +155,7 @@ function Kits({
   return (
     <section aria-labelledby="kits" className="flex flex-col gap-3">
       <div>
-        <h2 id="kits" className="font-semibold">
+        <h2 id="kits" className="text-2xl lettering">
           {t("kits.title")}
         </h2>
         <p className="text-sm text-muted-foreground">{t("kits.subtitle")}</p>
@@ -292,7 +292,7 @@ export default function Catalog({ loaderData }: Route.ComponentProps) {
         <main className="flex min-w-0 flex-1 flex-col gap-6 px-4 py-5 sm:px-6">
           {browsing && (
             <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-3xl">
+              <h1 className="text-3xl lettering sm:text-4xl">
                 {t("hero.title")}
               </h1>
               <p className="max-w-2xl text-sm text-pretty text-muted-foreground sm:text-base">

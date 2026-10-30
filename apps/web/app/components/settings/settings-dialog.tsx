@@ -317,7 +317,7 @@ export function SettingsDialog() {
                         className={cn(
                           "flex size-6 shrink-0 items-center justify-center rounded-md ring-1 [&_svg]:size-3.5",
                           s === "billing"
-                            ? "bg-linear-to-br from-amber-400 via-orange-500 to-pink-500 text-white ring-white/20"
+                            ? "bg-brand text-brand-foreground ring-transparent"
                             : "bg-muted text-foreground ring-foreground/15 dark:ring-foreground/20"
                         )}
                       >

@@ -26,12 +26,12 @@ export function ModeToggle() {
         <HugeiconsIcon
           icon={Sun03Icon}
           strokeWidth={2}
-          className="scale-100 rotate-0 transition-all dark:scale-0 dark:-rotate-90"
+          className="scale-100 rotate-0 transition-[scale,rotate] duration-150 ease-out dark:scale-0 dark:-rotate-90"
         />
         <HugeiconsIcon
           icon={Moon02Icon}
           strokeWidth={2}
-          className="absolute scale-0 rotate-90 transition-all dark:scale-100 dark:rotate-0"
+          className="absolute scale-0 rotate-90 transition-[scale,rotate] duration-150 ease-out dark:scale-100 dark:rotate-0"
         />
       </Button>
       <DropdownMenu
