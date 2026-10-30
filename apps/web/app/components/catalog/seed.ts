@@ -181,6 +181,13 @@ const comic = (
 
 export const SEED: SeedAsset[] = [
   comic(
+    "the-alibi",
+    "the-alibi",
+    "The Alibi",
+    ["crime", "drama"],
+    "A private eye is paid to watch a man who says he's being followed. Then his partner is shot, and her photos are his perfect alibi."
+  ),
+  comic(
     "lost-property",
     "lost-property",
     "Lost Property",
