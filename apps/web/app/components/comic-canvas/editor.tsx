@@ -79,6 +79,7 @@ import { useSeries } from "./series-dialog"
 import type { CloudProject } from "./use-cloud-sync"
 import { useComicEditor, type ComicEditor } from "./use-editor"
 import { hasPrompt, useGenerator } from "./use-generator"
+import { useAssetsFromUrl } from "@/components/catalog/editor-tab"
 import { useT } from "@/i18n/core"
 import { messages } from "./editor.messages"
 
@@ -198,6 +199,8 @@ export function ComicCanvasEditor({
   const viewer = useViewer()
   const generator = useGenerator(editor)
   const [tab, setTab] = React.useState<SidebarTab>("layers")
+  const showCatalog = React.useCallback(() => setTab("catalog"), [])
+  useAssetsFromUrl(editor, showCatalog)
   const tp = useT(postprocessMessages)
   const [restyling, setRestyling] = React.useState(false)
   const tc = useT(checkMessages)

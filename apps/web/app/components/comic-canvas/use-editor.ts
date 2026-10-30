@@ -486,10 +486,12 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
   // `key` lets a run of changes to one control collapse into one undo step.
   const setLook = React.useCallback(
     (patch: Partial<Look>, key?: string) =>
-      commitProject(
-        (p) => ({ ...p, look: { ...(p.look ?? DEFAULT_LOOK), ...patch } }),
-        key
-      ),
+      commitProject((p) => {
+        const { recipe, ...look } = { ...(p.look ?? DEFAULT_LOOK), ...patch }
+        const kept =
+          !patch.style || patch.style === p.look?.style || patch.recipe
+        return { ...p, look: kept && recipe ? { ...look, recipe } : look }
+      }, key),
     [commitProject]
   )
 

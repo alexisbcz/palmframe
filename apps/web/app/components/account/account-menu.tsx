@@ -6,6 +6,7 @@ import {
   ComputerIcon,
   CreditCardIcon,
   FolderLibraryIcon,
+  GridViewIcon,
   LanguageSkillIcon,
   Logout01Icon,
   CommandIcon,
@@ -178,6 +179,7 @@ export function AccountMenu() {
         className="w-80 max-w-[calc(100vw-2rem)] **:data-[slot=dropdown-menu-item]:gap-2.5 **:data-[slot=dropdown-menu-item]:py-2 **:data-[slot=dropdown-menu-sub-trigger]:gap-2.5 **:data-[slot=dropdown-menu-sub-trigger]:py-2 **:[[role=menu]]:flex **:[[role=menu]]:flex-col **:[[role=menu]]:gap-0.5"
         onAction={(key) => {
           if (key === "projects") navigate("/projects")
+          if (key === "catalog") navigate("/catalog")
           if (key === "billing") openSettings("billing")
           if (key === "settings") openSettings()
           if (key === "commands")
@@ -218,6 +220,10 @@ export function AccountMenu() {
               <HugeiconsIcon icon={FolderLibraryIcon} strokeWidth={2} />
             </Tile>
             {t("account.projects")}
+          </DropdownMenuItem>
+          <DropdownMenuItem id="catalog" textValue={t("account.catalog")}>
+            <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+            {t("account.catalog")}
           </DropdownMenuItem>
           <DropdownMenuItem id="settings" textValue={t("account.settings")}>
             <Tile>

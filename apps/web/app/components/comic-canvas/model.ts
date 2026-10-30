@@ -29,6 +29,9 @@ export interface Look {
   style: StyleId
   palette: PaletteId | null
   saturation: Saturation
+  // A catalog style's direction on top of `style`: Anima reads `tags`, Klein
+  // reads `prose`. Choosing another style clears it.
+  recipe?: { name: string; tags: string; prose: string; negative: string }
 }
 
 export const DEFAULT_LOOK: Look = {
@@ -480,6 +483,8 @@ export interface Character {
   status?: SheetStatus
   outfits?: Outfit[]
   seed?: number
+  // The catalog asset this was copied from.
+  source?: string
 }
 
 // Saved projects predate `status`: their sheets were already in use.
@@ -493,6 +498,8 @@ export interface WorldItem {
   tags: string[]
   image?: string
   seed?: number
+  // The catalog asset this was copied from.
+  source?: string
 }
 
 export interface ComicProject {

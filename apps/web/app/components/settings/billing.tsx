@@ -492,6 +492,7 @@ const KINDS = [
   "translate",
   "panel_check",
   "continuity_check",
+  "asset_idea",
   "edit",
   "vary",
   "inpaint",

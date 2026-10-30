@@ -5,6 +5,13 @@ export default [
   route("projects", "routes/projects.tsx"),
   route("p/:id", "routes/project.tsx"),
   route("read/:token", "routes/read.tsx"),
+  route("catalog", "routes/catalog.tsx", [
+    route("kits/:id", "routes/catalog.kit.tsx"),
+    route(":id", "routes/catalog.asset.tsx"),
+  ]),
+  route("catalog/create", "routes/catalog.create.tsx"),
+  route("api/catalog", "routes/api.catalog.ts"),
+  route("api/catalog/idea", "routes/api.catalog.idea.ts"),
   route("login", "routes/login.tsx"),
   route("signup", "routes/signup.tsx"),
   route("reset-password", "routes/reset-password.tsx"),

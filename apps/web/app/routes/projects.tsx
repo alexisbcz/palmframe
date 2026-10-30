@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -188,6 +188,12 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
       <header className="flex h-12 items-center justify-between gap-2 border-b px-2.5">
         <Logo />
         <div className="flex items-center gap-2">
+          <Link
+            to="/catalog"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            {t("account.catalog")}
+          </Link>
           <AccountMenu />
         </div>
       </header>

@@ -354,6 +354,8 @@ function RunDialog({
   const locked = running || paused
 
   const [story, setStory] = React.useState(project.story ?? "")
+  // A story template from the catalog lands while this is open.
+  React.useEffect(() => setStory(project.story ?? ""), [project.story])
   const [slides, setSlides] = React.useState(project.pages.length)
   const [rerolls, setRerolls] = React.useState(0)
   const [autoApprove, setAutoApprove] = React.useState(false)

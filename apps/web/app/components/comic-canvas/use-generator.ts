@@ -122,13 +122,15 @@ export function lookOf(panel: PanelLayer, look: Look = DEFAULT_LOOK): Look {
     // Spot colour needs a colour; red is the genre's default.
     palette: style === "spot" ? (palette ?? "red") : palette,
     saturation: look.saturation,
+    // A panel on its own style has left the carousel's recipe behind.
+    ...(look.recipe && style === look.style && { recipe: look.recipe }),
   }
 }
 
-function lookTags(panel: PanelLayer, look: Look) {
+export function lookTags(panel: PanelLayer, look: Look) {
   const style = STYLES[look.style]
-  const tags: string[] = [style.tags]
-  const negative: string[] = [style.negative]
+  const tags: string[] = [style.tags, look.recipe?.tags ?? ""]
+  const negative: string[] = [style.negative, look.recipe?.negative ?? ""]
   const named = look.style === "spot" && !!panel.spotOn?.trim()
   // A theme tag tints the whole panel; with a named object, spot colour
   // only needs the object's colour.
@@ -156,9 +158,9 @@ function lookTags(panel: PanelLayer, look: Look) {
 }
 
 // Klein's version of the look: style, palette and saturation in words.
-function lookProse(panel: PanelLayer, look: Look) {
+export function lookProse(panel: PanelLayer, look: Look) {
   const style = STYLES[look.style]
-  const parts = [style.prose]
+  const parts = [style.prose, look.recipe?.prose]
   if (look.style === "spot" && look.palette)
     parts.push(
       `The spot color is ${look.palette === "sepia" ? "brown" : look.palette}${panel.spotOn?.trim() ? `, only on the ${panel.spotOn.trim()}` : ""}.`
@@ -352,7 +354,7 @@ export function buildCoveragePrompt(
 
 const QUALITY = "masterpiece, best quality, score_7, safe"
 // Lettering is done in the canvas, never generated.
-const BASE_NEGATIVE =
+export const BASE_NEGATIVE =
   "worst quality, low quality, score_1, score_2, score_3, artist name, blurry, jpeg artifacts, chromatic aberration, extra limbs, bad hands, text, watermark, signature, speech bubble, letters, logo"
 
 // The model card recommends 8-12 steps for Turbo.
@@ -438,7 +440,7 @@ export function buildPrompt(
   }
 }
 
-async function render(
+export async function render(
   body: {
     prompt: string
     negative: string

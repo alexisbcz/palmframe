@@ -30,6 +30,7 @@ import {
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
 
+import { CatalogTab } from "@/components/catalog/editor-tab"
 import { useT } from "@/i18n/core"
 
 import {
@@ -57,7 +58,7 @@ function layerIcon(layer: Layer) {
   }[layer.shape]
 }
 
-export type SidebarTab = "layers" | "library"
+export type SidebarTab = "layers" | "library" | "catalog"
 
 export function Sidebar({
   editor,
@@ -81,6 +82,7 @@ export function Sidebar({
         <TabsList className="w-full">
           <TabsTrigger id="layers">{t("tabs.layers")}</TabsTrigger>
           <TabsTrigger id="library">{t("tabs.library")}</TabsTrigger>
+          <TabsTrigger id="catalog">{t("tabs.catalog")}</TabsTrigger>
         </TabsList>
       </div>
       <TabsContent id="layers" className="min-h-0">
@@ -91,6 +93,11 @@ export function Sidebar({
       <TabsContent id="library" className="min-h-0">
         <ScrollArea className="h-full px-3 pb-3">
           <Library editor={editor} />
+        </ScrollArea>
+      </TabsContent>
+      <TabsContent id="catalog" className="min-h-0">
+        <ScrollArea className="h-full px-3 pb-3">
+          <CatalogTab editor={editor} />
         </ScrollArea>
       </TabsContent>
     </Tabs>

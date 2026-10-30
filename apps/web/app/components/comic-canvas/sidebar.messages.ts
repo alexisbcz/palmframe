@@ -4,7 +4,7 @@ import { defineMessages } from "@/i18n/core"
 // English labels there stay the data, these are what the sidebar shows.
 export const messages = defineMessages({
   en: {
-    tabs: { layers: "Layers", library: "Library" },
+    tabs: { layers: "Layers", library: "Library", catalog: "Catalog" },
     empty: {
       title: "No layers",
       description: "Pick a layout or add elements from the Library tab.",
@@ -41,7 +41,7 @@ export const messages = defineMessages({
     },
   },
   fr: {
-    tabs: { layers: "Calques", library: "Bibliothèque" },
+    tabs: { layers: "Calques", library: "Bibliothèque", catalog: "Catalogue" },
     empty: {
       title: "Aucun calque",
       description:
@@ -80,7 +80,7 @@ export const messages = defineMessages({
     },
   },
   es: {
-    tabs: { layers: "Capas", library: "Biblioteca" },
+    tabs: { layers: "Capas", library: "Biblioteca", catalog: "Catálogo" },
     empty: {
       title: "Sin capas",
       description:
@@ -119,7 +119,7 @@ export const messages = defineMessages({
     },
   },
   de: {
-    tabs: { layers: "Ebenen", library: "Bibliothek" },
+    tabs: { layers: "Ebenen", library: "Bibliothek", catalog: "Katalog" },
     empty: {
       title: "Keine Ebenen",
       description:
@@ -157,7 +157,7 @@ export const messages = defineMessages({
     },
   },
   it: {
-    tabs: { layers: "Livelli", library: "Libreria" },
+    tabs: { layers: "Livelli", library: "Libreria", catalog: "Catalogo" },
     empty: {
       title: "Nessun livello",
       description:
@@ -196,7 +196,7 @@ export const messages = defineMessages({
     },
   },
   ja: {
-    tabs: { layers: "レイヤー", library: "ライブラリ" },
+    tabs: { layers: "レイヤー", library: "ライブラリ", catalog: "カタログ" },
     empty: {
       title: "レイヤーがありません",
       description: "コマ割りを選ぶか、ライブラリタブから要素を追加してください。",

@@ -4,6 +4,8 @@ import type {
   WorldItem,
 } from "@/components/comic-canvas/model"
 
+import type { AssetPayload } from "@/components/catalog/model"
+
 import type { SubscriptionCache } from "./credits"
 
 // The slice of the shared database this app uses. The other tables belong
@@ -49,6 +51,40 @@ export interface Database {
           facts?: string[]
           revision?: number
         }
+        Relationships: []
+      }
+      comic_assets: {
+        Row: ComicAssetRow
+        Insert: Omit<
+          ComicAssetRow,
+          "id" | "hidden" | "created_at" | "updated_at"
+        >
+        Update: Partial<
+          Pick<ComicAssetRow, "is_public" | "hidden" | "author_name">
+        >
+        Relationships: []
+      }
+      comic_asset_saves: {
+        Row: { user_id: string; asset_id: string; created_at: string }
+        Insert: { asset_id: string }
+        Update: never
+        Relationships: []
+      }
+      comic_asset_uses: {
+        Row: { user_id: string; asset_id: string; created_at: string }
+        Insert: { asset_id: string }
+        Update: never
+        Relationships: []
+      }
+      comic_asset_reports: {
+        Row: {
+          asset_id: string
+          user_id: string
+          reason: string
+          created_at: string
+        }
+        Insert: { asset_id: string; user_id: string; reason: string }
+        Update: never
         Relationships: []
       }
       billing_customers: {
@@ -144,6 +180,10 @@ export interface Database {
     Views: {}
     Functions: {
       my_credits: { Args: Record<string, never>; Returns: number }
+      comic_asset_stats: {
+        Args: Record<string, never>
+        Returns: { asset_id: string; saves: number; uses: number }[]
+      }
       spend_credits: {
         Args: { p_cost: number; p_kind: string; p_job: string }
         Returns: number
@@ -262,6 +302,23 @@ export type ApiJobRow = {
 }
 
 // What the pages know about the signed-in person.
+export type ComicAssetRow = {
+  id: string
+  user_id: string
+  author_name: string | null
+  kind: string
+  name: string
+  description: string
+  genres: string[]
+  color: string | null
+  image: string | null
+  payload: AssetPayload
+  is_public: boolean
+  hidden: boolean
+  created_at: string
+  updated_at: string
+}
+
 export interface Viewer {
   id: string
   email: string

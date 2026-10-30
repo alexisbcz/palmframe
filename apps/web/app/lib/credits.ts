@@ -52,6 +52,7 @@ export const COSTS = {
   translate: 2, // a carousel's lettering, into one language
   panel_check: 2, // a vision model reading one finished panel
   continuity_check: 2, // an LLM comparing a carousel with its series' facts
+  asset_idea: 2, // an LLM turning a rough idea into a catalog asset
 } as const
 
 export type Operation = keyof typeof COSTS

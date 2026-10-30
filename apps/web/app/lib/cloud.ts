@@ -21,7 +21,7 @@ async function sha256(blob: Blob) {
 const uploaded = new Map<string, Promise<string>>()
 
 // Stores an inline image once, under its content hash, and returns its URL.
-function uploadDataUrl(supabase: Supabase, userId: string, dataUrl: string) {
+export function uploadDataUrl(supabase: Supabase, userId: string, dataUrl: string) {
   let pending = uploaded.get(dataUrl)
   if (!pending) {
     pending = (async () => {

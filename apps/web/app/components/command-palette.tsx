@@ -6,6 +6,7 @@ import {
   CreditCardIcon,
   FileAddIcon,
   FolderLibraryIcon,
+  GridViewIcon,
   Login03Icon,
   Logout01Icon,
   Moon02Icon,
@@ -76,6 +77,8 @@ export function CommandPalette() {
         return openSettings()
       case "projects":
         return navigate("/projects")
+      case "catalog":
+        return navigate("/catalog")
       case "new":
         return viewer
           ? submit({ intent: "new" }, { method: "post", action: "/projects" })
@@ -117,6 +120,10 @@ export function CommandPalette() {
                 {t("projects")}
               </CommandItem>
             )}
+            <CommandItem id="catalog" textValue={t("catalog")}>
+              <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+              {t("catalog")}
+            </CommandItem>
             <CommandItem id="new" textValue={t("newCarousel")}>
               <HugeiconsIcon icon={FileAddIcon} strokeWidth={2} />
               {t("newCarousel")}
