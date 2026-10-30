@@ -20,6 +20,9 @@ export interface SeedAsset {
   payload: AssetPayload
   // The style its picture is drawn in.
   art?: "graphic" | "color" | "retro" | "noir" | "anime"
+  // Words people search for that it's in the spirit of. Never shown, and
+  // never sent to a model.
+  keywords?: string
   // What a story's picture shows.
   scene?: string
 }
@@ -970,6 +973,30 @@ export const SEED: SeedAsset[] = [
     "synthwave, neon glow, chromatic aberration, magenta and teal",
     "Synthwave palette of magenta and teal, neon rim glow, slight chromatic aberration."
   ),
+  style(
+    "style-gonzo-ink",
+    "Gonzo Ink",
+    ["scifi", "comedy", "crime"],
+    "Filthy, overcrowded future streets in obsessive scratchy line. Satire with dirt under its nails.",
+    "color",
+    null,
+    "balanced",
+    "(intricate linework:1.3), scratchy crosshatching, grotesque caricature, dense cluttered background, grimy cyberpunk city, expressive faces, garish color",
+    "American 1990s adult comic art: obsessively detailed scratchy pen lines and crosshatching, exaggerated rubbery expressive faces with grotesque caricature, every background packed with crowds, clutter, grime and absurd futuristic street life, flat slightly sickly digital colours with acid accents.",
+    "clean, minimal, empty background"
+  ),
+  style(
+    "style-seinen-realism",
+    "Seinen Realism",
+    ["crime", "drama"],
+    "Photographic faces, fine pen and dense screentone for adult political thrillers.",
+    "noir",
+    null,
+    "balanced",
+    "(realistic proportions:1.3), hyperdetailed face, fine pen linework, dense screentones, gekiga, sharp suit, intense stare, sweat",
+    "1980s Japanese adult manga: near-photorealistic faces and anatomy rendered in very fine pen lines, dense layered screentones for skin and suits, strong jaws, intense stares, beads of sweat, cinematic composition, severe high-contrast mood.",
+    "chibi, big eyes, cute, simple shading"
+  ),
 
   // Shots
   direction(
@@ -1244,10 +1271,340 @@ export const SEED: SeedAsset[] = [
     "a lone cloaked wanderer with a sword walking a snowy mountain road at dusk, seen from behind",
     "A wanderer carries a list of seven names. The carousel follows the last name on it, and the moment the wanderer learns who wrote the list."
   ),
+  // Everyday life: what carousels get shared for.
+  character(
+    "sam",
+    "Sam the Overthinker",
+    "boy",
+    ["slice", "comedy"],
+    "graphic",
+    "Has replayed one conversation from 2019 about four thousand times.",
+    [
+      "man in his late twenties",
+      "messy brown hair",
+      "dark circles under the eyes",
+      "worn grey hoodie",
+      "worried expression",
+    ]
+  ),
+  character(
+    "priya",
+    "Priya, Team Lead",
+    "girl",
+    ["slice", "comedy"],
+    "color",
+    "Runs on calendar invites and one remaining nerve.",
+    [
+      "woman in her late thirties",
+      "South Asian",
+      "neat dark bun",
+      "navy blazer",
+      "wireless earbuds",
+      "strained polite smile",
+    ]
+  ),
+  character(
+    "nana",
+    "Nana Rose",
+    "girl",
+    ["slice", "comedy"],
+    "color",
+    "Sends voice messages by accident and knows everything before you do.",
+    [
+      "woman in her seventies",
+      "white curly hair",
+      "floral cardigan",
+      "reading glasses on a chain",
+      "knowing smile",
+    ]
+  ),
+  character(
+    "marcus",
+    "Marcus from the Gym",
+    "boy",
+    ["comedy", "slice"],
+    "retro",
+    "Will tell you about his macros. You didn't ask.",
+    [
+      "muscular man in his thirties",
+      "short fade haircut",
+      "dark skin",
+      "tight sleeveless tank top",
+      "shaker bottle in hand",
+      "big grin",
+    ]
+  ),
+  character(
+    "lea",
+    "Léa, Permanent Intern",
+    "girl",
+    ["slice", "comedy"],
+    "anime",
+    "Twenty-six, three degrees, still not sure where the printer is.",
+    [
+      "woman in her mid twenties",
+      "shoulder-length brown hair",
+      "oversized office shirt",
+      "lanyard",
+      "nervous smile",
+      "stack of papers",
+    ]
+  ),
+  character(
+    "dad-joe",
+    "Dad, Assembling Furniture",
+    "boy",
+    ["comedy", "drama"],
+    "color",
+    "There are nine screws left over and he's fine with that.",
+    [
+      "man in his fifties",
+      "receding hair",
+      "polo shirt tucked into jeans",
+      "reading glasses",
+      "confident expression",
+    ]
+  ),
+  world(
+    "location",
+    "open-office",
+    "Open-Plan Office",
+    ["slice", "comedy"],
+    "graphic",
+    "Rows of monitors, one sad plant, and nowhere to hide.",
+    [
+      "open plan office",
+      "rows of desks with monitors",
+      "one wilting potted plant",
+      "glass meeting room",
+      "grey carpet",
+    ]
+  ),
+  world(
+    "location",
+    "bedroom-night",
+    "Bedroom, 3 a.m.",
+    ["slice", "drama"],
+    "graphic",
+    "Blue phone light and every decision you've ever made.",
+    [
+      "small dark bedroom at night",
+      "unmade bed",
+      "clothes on a chair",
+      "blue glow from a phone on the pillow",
+    ]
+  ),
+  world(
+    "location",
+    "kitchen-shared",
+    "Shared Flat Kitchen",
+    ["slice", "comedy"],
+    "color",
+    "Someone's dishes have been soaking since Tuesday.",
+    [
+      "small messy shared apartment kitchen",
+      "dishes piled in the sink",
+      "fridge covered in blank notes",
+      "mismatched mugs",
+    ]
+  ),
+  world(
+    "location",
+    "gym-floor",
+    "Gym, January",
+    ["comedy", "slice"],
+    "retro",
+    "Full of people who won't be here in February.",
+    [
+      "busy commercial gym",
+      "rows of treadmills",
+      "racks of dumbbells",
+      "large mirrors",
+      "fluorescent light",
+    ]
+  ),
+  world(
+    "location",
+    "airport-gate",
+    "Gate B22",
+    ["slice", "drama"],
+    "color",
+    "Delayed, then delayed again.",
+    [
+      "airport departure gate",
+      "rows of connected seats",
+      "large window onto a parked plane",
+      "suitcases",
+    ]
+  ),
+  world(
+    "location",
+    "cafe-laptop",
+    "Laptop Café",
+    ["slice", "romance"],
+    "anime",
+    "One flat white, four hours, and the good socket.",
+    [
+      "cosy independent cafe",
+      "completely empty with no people",
+      "laptop on a table",
+      "plants",
+      "soft daylight",
+    ]
+  ),
+  world(
+    "prop",
+    "cracked-phone",
+    "Phone at 2%",
+    ["slice", "comedy"],
+    "color",
+    "The screen's cracked and the charger is at home.",
+    [
+      "modern smartphone with a cracked screen",
+      "blank glowing screen",
+      "tangled charging cable",
+    ]
+  ),
+  world(
+    "prop",
+    "work-mug",
+    "Chipped Work Mug",
+    ["slice", "comedy"],
+    "graphic",
+    "Holds your fourth coffee of the morning.",
+    ["plain white chipped ceramic mug", "steaming coffee", "coffee ring stain"]
+  ),
+  world(
+    "prop",
+    "judging-cat",
+    "The Cat, Judging You",
+    ["comedy", "slice"],
+    "color",
+    "Has seen what you did and will be saying nothing.",
+    [
+      "fat ginger cat sitting upright",
+      "unimpressed half-closed eyes",
+      "tail wrapped around paws",
+    ]
+  ),
+  direction(
+    "pose",
+    "pose-doomscroll",
+    "Doomscrolling",
+    "Horizontal, one thumb moving, no plans to stop.",
+    ["lying in bed", "holding phone above face", "blank stare", "dark room"],
+    "Lying on their back in bed, phone held above their face, blank stare."
+  ),
+  direction(
+    "pose",
+    "pose-facepalm",
+    "Facepalm",
+    "The whole reply-all thread, in one gesture.",
+    ["facepalm", "hand covering face", "slumped shoulders"],
+    "One hand over their face, shoulders slumped in defeat."
+  ),
+  direction(
+    "pose",
+    "pose-desk-collapse",
+    "Forehead on Desk",
+    "4:58 p.m. on a Thursday.",
+    ["head on desk", "arms hanging", "exhausted", "office"],
+    "Forehead flat on the desk, arms hanging, completely spent."
+  ),
+  direction(
+    "pose",
+    "pose-awkward-wave",
+    "Awkward Wave",
+    "They were waving at the person behind you.",
+    ["awkward small wave", "frozen smile", "embarrassed", "sweat drop"],
+    "A small frozen wave and a smile that has already started to die."
+  ),
+  sfx(
+    "sfx-typing",
+    "typing…",
+    "Three dots that end friendships.",
+    ["slice", "comedy"],
+    "inter",
+    "#e5e7eb",
+    "#111111"
+  ),
+  sfx(
+    "sfx-ping",
+    "PING!",
+    "Someone's replied to the group.",
+    ["slice", "comedy"],
+    "bangers",
+    "#38bdf8",
+    "#0c1a2b"
+  ),
+  sfx(
+    "sfx-sigh",
+    "*sigh*",
+    "Do the work of a whole paragraph.",
+    ["slice", "drama"],
+    "comic",
+    "#fde68a",
+    "#111111"
+  ),
+  story(
+    "story-expectation",
+    "Expectation vs Reality",
+    ["comedy", "slice"],
+    "color",
+    "Pairs of slides: the plan, then what actually happened.",
+    "two side by side tables in a cafe, one elegant and perfect, one a chaotic mess of spilled coffee",
+    "Pairs of slides on one everyday situation. Each odd slide is the expectation, glossy and perfect. Each even slide is the reality, in the same framing, going wrong. The last pair ends on a small honest win."
+  ),
+  story(
+    "story-3am",
+    "My Brain at 3 A.M.",
+    ["slice", "comedy"],
+    "graphic",
+    "One person, one bed, and an escalating inner monologue.",
+    "",
+    "One person trying to sleep. Each slide, their brain brings up something worse, from a small awkward moment to a full existential crisis. In the last slide the alarm goes off."
+  ),
+  story(
+    "story-coworkers",
+    "Types of People at Work",
+    ["comedy", "slice"],
+    "retro",
+    "One archetype a slide. Readers tag their colleagues.",
+    "a line-up of different adult office workers standing side by side, each with a very different attitude",
+    "A list carousel. Slide 1 hooks with 'Which one are you?'. Each slide after shows one workplace archetype and their signature line. The last slide reveals the narrator is the worst of them."
+  ),
+  story(
+    "story-group-chat",
+    "The Group Chat",
+    ["comedy", "slice"],
+    "anime",
+    "A plan for Saturday slowly dies across six slides.",
+    "",
+    "Friends try to plan one dinner over a group chat. Every slide adds a new complication. Nobody can do Saturday. It ends with the one friend who booked the table sitting there alone, then the door opens."
+  ),
+  story(
+    "story-before-after",
+    "Before and After Therapy",
+    ["drama", "slice"],
+    "color",
+    "Same moments, handled differently. Warm, not preachy.",
+    "one adult sitting calmly on a bench at sunrise, seen from behind, with a soft warm light",
+    "Three everyday moments shown twice: how the character used to react, and how they react now. Gentle tone. The last slide is a small kind thing they say to themselves."
+  ),
 ]
 
 // What some pictures show, where the tags alone draw the wrong thing.
 const SCENES: Record<string, string> = {
+  "pose-awkward-wave":
+    "a tall grown man in his thirties in a business shirt, realistic adult proportions, giving a small awkward wave with a frozen embarrassed smile in an office corridor",
+  "pose-doomscroll":
+    "a grown woman in pyjamas lying on her back in bed in a dark room, holding a glowing phone at arm's length above her face, blank stare",
+  "pose-desk-collapse":
+    "a grown man in an office shirt slumped forward with his forehead flat on his desk, arms hanging by his sides, keyboard beside his face",
+  "story-group-chat":
+    "a grown woman alone at a restaurant table set for four, checking her phone, three empty chairs, candlelight",
+  "story-3am":
+    "a grown man awake in a dark bed staring at the ceiling, tangled black scribbles swirling above him",
   "shot-extreme-close":
     "extreme close-up filling the whole frame with one adult woman's narrowed eyes and brow, rain on her skin, nothing else visible",
   "shot-low-hero":
@@ -1264,10 +1621,59 @@ const SCENES: Record<string, string> = {
 
 for (const s of SEED) s.scene ??= SCENES[s.id]
 
+const KEYWORDS: Record<string, string> = {
+  "style-gonzo-ink": "transmetropolitan cyberpunk satire gonzo",
+  "style-seinen-realism": "sanctuary seinen gekiga political yakuza",
+}
+
+for (const s of SEED) s.keywords = KEYWORDS[s.id]
+
 // Rook is a person, whatever is under the helmet.
 SEED.find((s) => s.id === "rook")!.kind = "character"
 
 export const PACKS: Pack[] = [
+  {
+    id: "monday",
+    name: "Monday Morning",
+    blurb: "Stand-ups, reply-alls and the fourth coffee. Instantly shareable.",
+    assets: [
+      "style-ligne",
+      "priya",
+      "lea",
+      "open-office",
+      "work-mug",
+      "pose-desk-collapse",
+      "sfx-sigh",
+      "story-coworkers",
+    ],
+  },
+  {
+    id: "group-chat",
+    name: "Group Chat",
+    blurb: "Friends, phones and a dinner that will never happen.",
+    assets: [
+      "style-shojo",
+      "sam",
+      "cracked-phone",
+      "cafe-laptop",
+      "pose-doomscroll",
+      "sfx-typing",
+      "sfx-ping",
+      "story-group-chat",
+    ],
+  },
+  {
+    id: "night-brain",
+    name: "3 A.M. Brain",
+    blurb: "One person, one bed and an inner monologue that won't stop.",
+    assets: [
+      "sam",
+      "bedroom-night",
+      "judging-cat",
+      "light-screen",
+      "story-3am",
+    ],
+  },
   {
     id: "noir-city",
     name: "Rain City Noir",
@@ -1371,7 +1777,7 @@ export const OFFICIAL: Asset[] = SEED.map((s) => ({
       ? { ...s.payload, sheet: `/catalog/${s.id}-sheet.webp` }
       : s.payload,
   official: true,
-  keywords: s.art,
+  keywords: [s.art, s.keywords].filter(Boolean).join(" "),
   author: null,
   saves: 0,
   uses: 0,
