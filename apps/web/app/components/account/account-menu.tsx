@@ -222,7 +222,9 @@ export function AccountMenu() {
             {t("account.projects")}
           </DropdownMenuItem>
           <DropdownMenuItem id="catalog" textValue={t("account.catalog")}>
-            <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+            <Tile>
+              <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+            </Tile>
             {t("account.catalog")}
           </DropdownMenuItem>
           <DropdownMenuItem id="settings" textValue={t("account.settings")}>
