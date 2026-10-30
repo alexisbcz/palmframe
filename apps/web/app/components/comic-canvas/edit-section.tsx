@@ -304,7 +304,12 @@ export function EditSection({
                 key={v.src.slice(-64)}
                 type="button"
                 data-roving
-                title={t("versionTitle", { kind: t(`kinds.${v.kind}`) })}
+                title={[
+                  t("versionTitle", { kind: t(`kinds.${v.kind}`) }),
+                  v.model,
+                ]
+                  .filter(Boolean)
+                  .join(" · ")}
                 className={cn(
                   "relative cursor-pointer overflow-hidden rounded-md ring-1 ring-foreground/10 outline-none hover:ring-foreground/40 focus-visible:ring-2 focus-visible:ring-ring",
                   panel.src === v.src &&
@@ -314,7 +319,7 @@ export function EditSection({
                 onClick={() =>
                   editor.update(
                     panel.id,
-                    { src: v.src, engine: v.engine },
+                    { src: v.src, engine: v.engine, model: v.model },
                     `${panel.id}-version`
                   )
                 }

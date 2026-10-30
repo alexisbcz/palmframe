@@ -1,5 +1,6 @@
 import { COSTS, type Operation } from "@/lib/credits"
 import { kleinAvailable, renderKlein } from "@/lib/klein.server"
+import { IMAGE_MODELS } from "@/lib/image-models"
 import { imageResponse, payingConnection } from "@/lib/openrouter.server"
 import { getViewer } from "@/lib/supabase.server"
 
@@ -185,6 +186,7 @@ const png = (bytes: BodyInit | null, t0: number, r: EditRequest) =>
       "content-type": "image/png",
       "x-render-ms": String(Math.round(performance.now() - t0)),
       "x-seed": String(r.seed),
+      "x-model": IMAGE_MODELS[r.mode === "edit" ? "klein" : "anima"],
       "cache-control": "no-store",
     },
   })

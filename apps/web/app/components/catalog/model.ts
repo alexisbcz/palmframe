@@ -85,6 +85,7 @@ export type AssetPayload =
       tags: string[]
       // A model sheet: panels they're cast in draw from it.
       sheet?: string
+      sheetModel?: string
     }
   | { type: "world"; world: WorldItem["kind"]; tags: string[] }
   | { type: "outfit"; tags: string[] }
@@ -110,6 +111,8 @@ export interface Asset {
   genres: Genre[]
   color: AssetColor | null
   image: string | null
+  // What drew the image.
+  model: string | null
   payload: AssetPayload
   official: boolean
   // Searchable, but not shown.

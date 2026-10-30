@@ -1,9 +1,10 @@
 import * as React from "react"
-import { useSubmit } from "react-router"
+import { Link, useSubmit } from "react-router"
 import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowDown01Icon,
+  GridViewIcon,
   BubbleChatIcon,
   FileAddIcon,
   FloppyDiskIcon,
@@ -20,7 +21,7 @@ import {
   Undo02Icon,
 } from "@hugeicons/core-free-icons"
 
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import {
   Collapsible,
   CollapsibleContent,
@@ -82,6 +83,7 @@ import { hasPrompt, useGenerator } from "./use-generator"
 import { useAssetsFromUrl } from "@/components/catalog/editor-tab"
 import { useT } from "@/i18n/core"
 import { messages } from "./editor.messages"
+import { messages as sidebarMessages } from "./sidebar.messages"
 
 const ZOOM_STEPS = [0.1, 0.25, 0.33, 0.5, 0.67, 0.75, 1, 1.5, 2, 3, 4]
 
@@ -193,6 +195,7 @@ export function ComicCanvasEditor({
   }
 }) {
   const t = useT(messages)
+  const ts = useT(sidebarMessages)
   const editor = useComicEditor({ initial: cloud?.project })
   const series = useSeries(cloud?.series ?? null, editor)
   const submit = useSubmit()
@@ -411,6 +414,14 @@ export function ComicCanvasEditor({
           )}
         </div>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <Link
+            to="/catalog"
+            aria-label={ts("tabs.catalog")}
+            className={buttonVariants({ variant: "ghost" })}
+          >
+            <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+            <span className="max-sm:hidden">{ts("tabs.catalog")}</span>
+          </Link>
           {/* Signed in, these live in the account menu. */}
           {!viewer && (
             <div className="flex items-center gap-1.5 sm:gap-2">

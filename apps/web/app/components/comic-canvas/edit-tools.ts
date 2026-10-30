@@ -259,6 +259,10 @@ function softMask(
   return soft
 }
 
+// What drew the edit, by job, for the step that records it. Edits go through
+// several canvases, so it can't travel with the image.
+const models = new WeakMap<AbortSignal, string>()
+
 async function post(body: EditRequest, signal: AbortSignal) {
   const res = await fetch("/api/edit", {
     method: "POST",
@@ -274,6 +278,8 @@ async function post(body: EditRequest, signal: AbortSignal) {
       throw new Error(INSUFFICIENT_CREDITS)
     throw new Error(json?.error ?? `HTTP ${res.status}`)
   }
+  const model = res.headers.get("x-model")
+  if (model) models.set(signal, model)
   const url = URL.createObjectURL(await res.blob())
   try {
     return covered(await loadImage(url), body.width, body.height)
@@ -548,7 +554,7 @@ export async function runEdit(
     }
     const { w, h } = capped(out.width, out.height)
     const src = scaled(out, w, h).toDataURL("image/webp", 0.92)
-    applyVersion(editor, panelId, src, kind)
+    applyVersion(editor, panelId, src, kind, models.get(signal))
     if (kind === "inpaint" || kind === "erase") clearMask()
   } catch (e) {
     if (!controller.signal.aborted)
@@ -572,16 +578,21 @@ function applyVersion(
   editor: ComicEditor,
   panelId: string,
   src: string,
-  kind: EditKind
+  kind: EditKind,
+  model?: string
 ) {
   const panel = editor.findLayer(panelId)?.layer
   if (panel?.type !== "panel") return
   let versions: PanelVersion[] = panel.versions ?? []
   if (panel.src && !versions.some((v) => v.src === panel.src))
-    versions = [{ src: panel.src, kind: "original" }, ...versions]
+    versions = [
+      { src: panel.src, kind: "original", model: panel.model },
+      ...versions,
+    ]
   editor.update(panelId, {
     src,
-    versions: [{ src, kind }, ...versions].slice(0, MAX_VERSIONS),
+    model,
+    versions: [{ src, kind, model }, ...versions].slice(0, MAX_VERSIONS),
     // Outpainted images match the panel; show all of them.
     ...(kind === "outpaint" && {
       fit: "cover",

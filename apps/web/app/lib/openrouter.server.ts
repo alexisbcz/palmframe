@@ -431,6 +431,7 @@ export async function imageResponse(
         "x-render-ms": String(Math.round(performance.now() - t0)),
         "x-seed": String(r.seed),
         "x-billed": "openrouter",
+        "x-model": c.imageModel,
         ...(image.cost !== null && { "x-openrouter-cost": String(image.cost) }),
         "cache-control": "no-store",
       },

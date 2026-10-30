@@ -1,4 +1,5 @@
 import { COSTS } from "@/lib/credits"
+import { IMAGE_MODELS } from "@/lib/image-models"
 import {
   PostprocessError,
   enhanceFaces,
@@ -101,6 +102,10 @@ async function runOp(r: PostprocessRequest, request: Request) {
       headers["x-faces"] = String(result.faces)
     } else png = await restyle(r, request.signal)
     headers["x-render-ms"] = String(Math.round(performance.now() - t0))
+    headers["x-model"] =
+      IMAGE_MODELS[
+        r.op === "upscale" || r.op === "remove_bg" ? r.op : "anima"
+      ]
     return new Response(new Uint8Array(png), { headers })
   } catch (e) {
     if (e instanceof PostprocessError) return error(e.message, e.status)

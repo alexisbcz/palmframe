@@ -94,12 +94,13 @@ async function post(
       throw new Error(INSUFFICIENT_CREDITS)
     throw new Error(json?.error ?? `HTTP ${res.status}`)
   }
+  const model = res.headers.get("x-model") ?? undefined
   const blob = await res.blob()
   const img = await readImageFile(
     new File([blob], "panel.png", { type: blob.type }),
     body.op === "upscale" ? MAX_UPSCALE_SIDE : undefined
   )
-  return img.src
+  return { src: img.src, model }
 }
 
 // The result replaces the image and joins the panel's versions, next to
@@ -108,16 +109,21 @@ function apply(
   editor: ComicEditor,
   panelId: string,
   src: string,
-  kind: PanelVersion["kind"]
+  kind: PanelVersion["kind"],
+  model?: string
 ) {
   const panel = editor.findLayer(panelId)?.layer
   if (panel?.type !== "panel") return
   let versions: PanelVersion[] = panel.versions ?? []
   if (panel.src && !versions.some((v) => v.src === panel.src))
-    versions = [{ src: panel.src, kind: "original" }, ...versions]
+    versions = [
+      { src: panel.src, kind: "original", model: panel.model },
+      ...versions,
+    ]
   editor.update(panelId, {
     src,
-    versions: [{ src, kind }, ...versions].slice(0, MAX_VERSIONS),
+    model,
+    versions: [{ src, kind, model }, ...versions].slice(0, MAX_VERSIONS),
   })
 }
 
@@ -140,7 +146,7 @@ export async function runPostprocess(
     errors,
   })
   try {
-    const src = await post(
+    const { src, model } = await post(
       {
         op,
         image: panel.src,
@@ -153,7 +159,7 @@ export async function runPostprocess(
       },
       controller.signal
     )
-    apply(editor, panelId, src, op)
+    apply(editor, panelId, src, op, model)
     return true
   } catch (e) {
     if (!controller.signal.aborted)

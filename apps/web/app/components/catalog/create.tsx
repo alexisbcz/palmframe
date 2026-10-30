@@ -90,6 +90,7 @@ const SHEETED: AssetKind[] = ["character", "creature"]
 
 interface Take {
   src: string | null
+  model?: string
   failed?: boolean
 }
 
@@ -112,6 +113,7 @@ function payloadFor(
   look: Look,
   name: string,
   sheet: string | null,
+  sheetModel: string | undefined,
   who: "girl" | "boy" | "other"
 ): AssetPayload {
   switch (kind) {
@@ -121,7 +123,7 @@ function payloadFor(
         type: "character",
         character: kind === "creature" ? "other" : who,
         tags,
-        ...(sheet && { sheet }),
+        ...(sheet && { sheet, sheetModel }),
       }
     case "location":
     case "prop":
@@ -187,6 +189,7 @@ export function CreateAsset({
   const [takes, setTakes] = React.useState<Take[]>([])
   const [picked, setPicked] = React.useState<number | null>(null)
   const [sheet, setSheet] = React.useState<string | null>(null)
+  const [sheetModel, setSheetModel] = React.useState<string>()
   const [name, setName] = React.useState(remix ? `${remix.name} II` : "")
   const [description, setDescription] = React.useState("")
   const [tagText, setTagText] = React.useState("")
@@ -256,7 +259,7 @@ export function CreateAsset({
     // One at a time: a shared render queue gives nothing to parallel takes.
     for (let i = 0; i < n; i++) {
       try {
-        const { src } = await render(
+        const { src, model } = await render(
           {
             ...animaAssetPrompt(kind, words, look),
             ...renderSizeOf(RATIO[kind]),
@@ -265,7 +268,7 @@ export function CreateAsset({
           },
           current.signal
         )
-        setTakes((all) => all.map((x, j) => (j === i ? { src } : x)))
+        setTakes((all) => all.map((x, j) => (j === i ? { src, model } : x)))
         setPicked((p) => p ?? i)
       } catch (e) {
         setTakes((all) =>
@@ -284,7 +287,7 @@ export function CreateAsset({
     setBusy("sheet")
     setError(null)
     try {
-      const { src } = await render({
+      const { src, model } = await render({
         prompt: sheetPrompt(
           kind === "creature" ? "creature" : "person",
           words,
@@ -299,6 +302,7 @@ export function CreateAsset({
         refs: [image],
       })
       setSheet(src)
+      setSheetModel(model)
     } catch (e) {
       shown(e)
     } finally {
@@ -325,6 +329,7 @@ export function CreateAsset({
           genres,
           color: image ? await colorOf(image) : null,
           image: imageUrl,
+          model: picked !== null ? takes[picked]?.model : null,
           payload: payloadFor(
             kind,
             tags.length ? tags : [idea.trim()],
@@ -332,6 +337,7 @@ export function CreateAsset({
             look,
             name.trim(),
             sheetUrl,
+            sheetModel,
             who
           ),
           isPublic,

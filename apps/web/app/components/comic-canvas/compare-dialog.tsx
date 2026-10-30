@@ -33,6 +33,7 @@ import {
 interface Candidate {
   src: string
   engine?: Engine
+  model?: string
   seed?: number
 }
 
@@ -44,7 +45,14 @@ function candidatesOf(panel: PanelLayer, takes: Candidate[]) {
   const all = new Map<string, Candidate>()
   const sources: Candidate[] = [
     ...(panel.src
-      ? [{ src: panel.src, engine: panel.engine, seed: panel.seed }]
+      ? [
+          {
+            src: panel.src,
+            engine: panel.engine,
+            model: panel.model,
+            seed: panel.seed,
+          },
+        ]
       : []),
     ...(panel.versions ?? []),
     ...takes,
@@ -54,6 +62,7 @@ function candidatesOf(panel: PanelLayer, takes: Candidate[]) {
     all.set(c.src, {
       src: c.src,
       engine: known?.engine ?? c.engine,
+      model: known?.model ?? c.model,
       seed: known?.seed ?? c.seed,
     })
   }
@@ -111,6 +120,7 @@ export function CompareDialog({
         src: c.src,
         ...(c.seed !== undefined && { seed: c.seed }),
         engine: c.engine,
+        model: c.model,
       },
       `${panel.id}-version`
     )

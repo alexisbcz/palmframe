@@ -1,6 +1,7 @@
 import { MAX_REFS } from "@/components/comic-canvas/model"
 
 import { type Operation } from "./credits"
+import { IMAGE_MODELS } from "./image-models"
 import { kleinAvailable, renderKlein } from "./klein.server"
 
 // Renders a comic panel with Anima Turbo through a local ComfyUI.
@@ -148,6 +149,7 @@ export async function render(
           "content-type": "image/png",
           "x-render-ms": String(Math.round(performance.now() - t0)),
           "x-seed": String(r.seed),
+          "x-model": IMAGE_MODELS.klein,
           "cache-control": "no-store",
         },
       })
@@ -208,6 +210,7 @@ export async function render(
         "content-type": file.headers.get("content-type") ?? "image/png",
         "x-render-ms": String(Math.round(performance.now() - t0)),
         "x-seed": String(r.seed),
+        "x-model": IMAGE_MODELS.anima,
         "cache-control": "no-store",
       },
     })

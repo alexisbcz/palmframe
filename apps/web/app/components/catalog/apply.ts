@@ -116,7 +116,11 @@ export function applyAsset(editor: ComicEditor, asset: Asset): Applied {
 
   if (p.type === "backdrop") {
     if (!panel || !asset.image) return "needsPanel"
-    editor.update(panel.id, { src: absolute(asset.image)!, fit: "cover" })
+    editor.update(panel.id, {
+      src: absolute(asset.image)!,
+      model: asset.model ?? undefined,
+      fit: "cover",
+    })
     return "backdrop"
   }
 

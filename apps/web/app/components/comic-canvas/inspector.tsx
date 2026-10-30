@@ -69,6 +69,7 @@ import {
 import type { ComicEditor } from "./use-editor"
 import { hasPrompt, usesKlein, type Generator } from "./use-generator"
 import { messages } from "./inspector.messages"
+import { DrawnWith } from "./panel-tools"
 import { EditSection } from "./edit-section"
 import { GuideSection } from "./guide-section"
 import { PostprocessSection } from "./postprocess-tools"
@@ -490,6 +491,7 @@ function PanelSections({
 
       <GuideSection panel={layer} editor={editor} generator={generator} />
 
+      <DrawnWith panel={layer} />
       {layer.src && <EditSection panel={layer} editor={editor} />}
       {layer.src && <PostprocessSection panel={layer} editor={editor} />}
       {layer.src && <CheckSection panel={layer} editor={editor} />}

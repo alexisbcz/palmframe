@@ -32,7 +32,7 @@ export class CatalogError extends Error {
 }
 
 const COLUMNS =
-  "id, user_id, author_name, kind, name, description, genres, color, image, payload, is_public, hidden, created_at, updated_at"
+  "id, user_id, author_name, kind, name, description, genres, color, image, model, payload, is_public, hidden, created_at, updated_at"
 // How many community assets a search looks through, newest first.
 const MAX_COMMUNITY = 500
 const DAILY_LIMIT = 40
@@ -56,6 +56,7 @@ const toAsset = (row: ComicAssetRow, viewerId?: string): Asset | null => {
     genres: row.genres.filter(isGenre),
     color: isColor(row.color) ? row.color : null,
     image: row.image,
+    model: row.model,
     payload: row.payload,
     official: false,
     author: row.author_name,
@@ -265,7 +266,10 @@ function cleanPayload(
                   ? "other"
                   : "girl",
           tags,
-          ...(ownImage(v.sheet, userId) && { sheet: v.sheet as string }),
+          ...(ownImage(v.sheet, userId) && {
+            sheet: v.sheet as string,
+            sheetModel: line(v.sheetModel, 120),
+          }),
         }
       : null
   if (kind === "location" || kind === "prop")
@@ -384,6 +388,7 @@ export async function createAsset(viewer: Viewer, draft: unknown) {
       ),
       color: isColor(d.color) ? d.color : null,
       image: ownImage(d.image, viewer.id) ? (d.image as string) : null,
+      model: ownImage(d.image, viewer.id) ? line(d.model, 120) || null : null,
       payload,
       is_public: isPublic,
     })

@@ -90,6 +90,12 @@ function patched(layer: Layer, patch: Partial<Layer>) {
 
 // With `initial`, the project comes from the database and saves there
 // (useCloudSync); without it, it lives in this browser's localStorage.
+// A new image with no model named came from somewhere else, like an import.
+const withoutStaleModel = (patch: Partial<Layer>): Partial<Layer> =>
+  "src" in patch && !("model" in patch)
+    ? ({ ...patch, model: undefined } as Partial<Layer>)
+    : patch
+
 export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
   const local = !initial
   const [state, dispatch] = React.useReducer(reducer, undefined, () => ({
@@ -221,7 +227,7 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
               ? {
                   ...page,
                   layers: page.layers.map((l) =>
-                    l.id === id ? patched(l, patch) : l
+                    l.id === id ? patched(l, withoutStaleModel(patch)) : l
                   ),
                 }
               : page

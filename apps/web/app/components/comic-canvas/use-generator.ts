@@ -475,6 +475,7 @@ export async function render(
   return {
     src: img.src,
     ms: Number(res.headers.get("x-render-ms")) || 0,
+    model: res.headers.get("x-model") ?? undefined,
     // A connected OpenRouter account draws with its own model.
     engine:
       res.headers.get("x-billed") === "openrouter"
@@ -664,6 +665,7 @@ export interface Take {
   seed: number
   ms: number
   engine?: Engine
+  model?: string
 }
 
 export interface Job {
@@ -681,8 +683,8 @@ export const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
 export function withCurrentImage(panel: PanelLayer) {
   const versions = panel.versions ?? []
   if (!panel.src || versions.some((v) => v.src === panel.src)) return versions
-  const { src, engine, seed } = panel
-  const current: PanelVersion = { src, kind: "original", engine, seed }
+  const { src, engine, model, seed } = panel
+  const current: PanelVersion = { src, kind: "original", engine, model, seed }
   return [current, ...versions].slice(0, MAX_VERSIONS)
 }
 
@@ -742,6 +744,7 @@ export function useGenerator(editor: ComicEditor) {
             src: result.src,
             seed,
             engine: result.engine,
+            model: result.model,
             fit: "cover",
             imageZoom: 100,
             panX: 0,
@@ -796,6 +799,7 @@ export function useGenerator(editor: ComicEditor) {
                 src: result.src,
                 kind: "engine" as const,
                 engine: result.engine,
+                model: result.model,
                 seed,
               },
               ...versions,

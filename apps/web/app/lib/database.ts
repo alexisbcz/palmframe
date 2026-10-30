@@ -312,6 +312,7 @@ export type ComicAssetRow = {
   genres: string[]
   color: string | null
   image: string | null
+  model: string | null
   payload: AssetPayload
   is_public: boolean
   hidden: boolean

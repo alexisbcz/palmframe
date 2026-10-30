@@ -168,6 +168,8 @@ export function AssetDetail({
   const tags = "tags" in asset.payload ? asset.payload.tags : []
   const sheet =
     asset.payload.type === "character" ? asset.payload.sheet : undefined
+  const sheetModel =
+    asset.payload.type === "character" ? asset.payload.sheetModel : undefined
 
   const copy = async () => {
     await navigator.clipboard.writeText(prompt)
@@ -240,6 +242,27 @@ export function AssetDetail({
               className="size-9 bg-muted text-foreground hover:bg-muted/70"
             />
           </div>
+
+          {(asset.model || sheetModel) && (
+            <dl className="flex flex-col gap-0.5 text-xs text-muted-foreground">
+              {asset.model && (
+                <div className="flex justify-between gap-3">
+                  <dt>{t("detail.model")}</dt>
+                  <dd className="min-w-0 truncate text-foreground">
+                    {asset.model}
+                  </dd>
+                </div>
+              )}
+              {sheetModel && (
+                <div className="flex justify-between gap-3">
+                  <dt>{t("detail.sheetModel")}</dt>
+                  <dd className="min-w-0 truncate text-foreground">
+                    {sheetModel}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          )}
 
           {hasReference(asset) && (
             <p className="flex items-start gap-2 rounded-lg bg-muted p-2.5 text-xs text-muted-foreground">

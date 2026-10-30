@@ -6,6 +6,8 @@ import type {
   Genre,
   Pack,
 } from "./model"
+import { IMAGE_MODELS } from "@/lib/image-models"
+
 import colors from "./seed-colors.json"
 
 // The official assets. They ship with the app, so the catalog never starts
@@ -1892,9 +1894,14 @@ export const OFFICIAL: Asset[] = SEED.map((s) => ({
   color: ((colors as Record<string, string>)[s.id] ??
     null) as AssetColor | null,
   image: seedImage(s),
+  model: seedImage(s) ? IMAGE_MODELS.pruna : null,
   payload:
     s.payload.type === "character"
-      ? { ...s.payload, sheet: `/catalog/${s.id}-sheet.webp` }
+      ? {
+          ...s.payload,
+          sheet: `/catalog/${s.id}-sheet.webp`,
+          sheetModel: IMAGE_MODELS.prunaEdit,
+        }
       : s.payload,
   official: true,
   keywords: [s.art, s.keywords].filter(Boolean).join(" "),

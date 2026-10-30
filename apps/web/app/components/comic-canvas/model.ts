@@ -92,6 +92,8 @@ export interface PanelLayer extends BaseLayer {
   steps?: number
   // What drew the current image, when known.
   engine?: Engine
+  // That model's name as reported by the server. Goes when the image does.
+  model?: string
   // The prompt template and version that planned the shot ("story-planner@1").
   planner?: string
   // Images the panel had before and after AI edits, newest first, so an
@@ -167,6 +169,7 @@ export interface PanelVersion {
     // A take from the other engine, waiting to be compared (compare-dialog.tsx).
     | "engine"
   engine?: Engine
+  model?: string
   seed?: number
 }
 

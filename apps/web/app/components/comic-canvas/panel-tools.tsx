@@ -317,6 +317,17 @@ export function AdvancedFields({
   )
 }
 
+// What drew the panel's current image, when that's known.
+export function DrawnWith({ panel }: { panel: PanelLayer }) {
+  const t = useT(messages)
+  if (!panel.src || !panel.model) return null
+  return (
+    <p className="truncate text-xs text-muted-foreground">
+      {t("drawnWith", { model: panel.model })}
+    </p>
+  )
+}
+
 // This session's takes for the panel; click one to put it back.
 export function TakesGrid({
   panel,
@@ -365,6 +376,7 @@ export function TakesGrid({
                     src: take.src,
                     seed: take.seed,
                     engine: take.engine,
+                    model: take.model,
                   })
                 }
               >
