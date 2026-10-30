@@ -381,42 +381,44 @@ export function CreateAsset({
           </div>
 
           <div className="flex flex-col gap-2">
-            {(Object.keys(GROUPS) as AssetGroup[]).map((group) => (
-              <div key={group} className="flex items-start gap-2">
-                <span
-                  title={t(`groups.${group}`)}
-                  className="flex h-8 w-6 shrink-0 items-center justify-center text-muted-foreground"
-                >
-                  <HugeiconsIcon
-                    icon={GROUP_ICONS[group]}
-                    strokeWidth={2}
-                    className="size-4"
-                  />
-                </span>
-                <div className="flex flex-wrap gap-1">
-                  {GROUPS[group].map((k) => (
-                    <button
-                      key={k}
-                      type="button"
-                      aria-pressed={kind === k}
-                      className={cn(
-                        "flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/60",
-                        kind === k &&
-                          "border-foreground bg-foreground text-background hover:bg-foreground/90"
-                      )}
-                      onClick={() => choose(k)}
-                    >
-                      <HugeiconsIcon
-                        icon={KIND_ICONS[k]}
-                        strokeWidth={2}
-                        className="size-3.5"
-                      />
-                      {t(`kinds.${k}`)}
-                    </button>
-                  ))}
+            {(Object.keys(GROUPS) as AssetGroup[])
+              .filter((g) => g !== "comics")
+              .map((group) => (
+                <div key={group} className="flex items-start gap-2">
+                  <span
+                    title={t(`groups.${group}`)}
+                    className="flex h-8 w-6 shrink-0 items-center justify-center text-muted-foreground"
+                  >
+                    <HugeiconsIcon
+                      icon={GROUP_ICONS[group]}
+                      strokeWidth={2}
+                      className="size-4"
+                    />
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    {GROUPS[group].map((k) => (
+                      <button
+                        key={k}
+                        type="button"
+                        aria-pressed={kind === k}
+                        className={cn(
+                          "flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5 text-xs transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/60",
+                          kind === k &&
+                            "border-foreground bg-foreground text-background hover:bg-foreground/90"
+                        )}
+                        onClick={() => choose(k)}
+                      >
+                        <HugeiconsIcon
+                          icon={KIND_ICONS[k]}
+                          strokeWidth={2}
+                          className="size-3.5"
+                        />
+                        {t(`kinds.${k}`)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
           </div>
 
           <div className="flex flex-col gap-1.5">

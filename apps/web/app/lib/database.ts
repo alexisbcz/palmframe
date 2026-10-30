@@ -60,7 +60,19 @@ export interface Database {
           "id" | "hidden" | "created_at" | "updated_at"
         >
         Update: Partial<
-          Pick<ComicAssetRow, "is_public" | "hidden" | "author_name">
+          Pick<
+            ComicAssetRow,
+            | "is_public"
+            | "hidden"
+            | "author_name"
+            | "name"
+            | "description"
+            | "genres"
+            | "image"
+            | "model"
+            | "payload"
+            | "project"
+          >
         >
         Relationships: []
       }
@@ -314,6 +326,8 @@ export type ComicAssetRow = {
   image: string | null
   model: string | null
   payload: AssetPayload
+  project?: ComicProject | null
+  source_project?: string | null
   is_public: boolean
   hidden: boolean
   created_at: string

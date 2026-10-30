@@ -21,6 +21,7 @@ import {
 import type { AssetGroup, AssetKind } from "./model"
 
 export const GROUP_ICONS: Record<AssetGroup, typeof UserIcon> = {
+  comics: BookOpen01Icon,
   cast: UserGroupIcon,
   world: Tree06Icon,
   look: PaintBoardIcon,
@@ -29,6 +30,7 @@ export const GROUP_ICONS: Record<AssetGroup, typeof UserIcon> = {
 }
 
 export const KIND_ICONS: Record<AssetKind, typeof UserIcon> = {
+  comic: BookOpen01Icon,
   character: UserIcon,
   creature: GhostIcon,
   outfit: ShirtIcon,

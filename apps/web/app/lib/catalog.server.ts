@@ -16,7 +16,12 @@ import {
 import { OFFICIAL, PACKS } from "@/components/catalog/seed"
 import { PALETTES, STYLES } from "@/components/comic-canvas/use-generator"
 
+import type { ComicProject, Layer } from "@/components/comic-canvas/model"
+import { toProject } from "@/components/comic-canvas/model"
+import { carouselText } from "@/components/comic-canvas/story"
+
 import type { ComicAssetRow, Viewer } from "./database"
+import { SITE } from "./seo"
 import { supabaseAdmin } from "./supabase-admin.server"
 import { supabaseEnv, type getSupabase } from "./supabase.server"
 
@@ -272,6 +277,8 @@ function cleanPayload(
           }),
         }
       : null
+  // Comics only come in through publishComic.
+  if (kind === "comic") return null
   if (kind === "location" || kind === "prop")
     return tags.length ? { type: "world", world: kind, tags } : null
   if (kind === "outfit") return tags.length ? { type: "outfit", tags } : null
@@ -439,4 +446,170 @@ export async function reportAsset(viewer: Viewer, id: string, reason: string) {
       { onConflict: "asset_id,user_id", ignoreDuplicates: true }
     )
   if (error) throw new CatalogError(error.message, 500)
+}
+
+const MAX_SLIDES = 20
+
+// What goes public: the comic, not how it was made. Old versions, coverage
+// sheets and notes on a panel stay with the author.
+export function snapshot(project: ComicProject): ComicProject {
+  const clean = (l: Layer): Layer => {
+    if (l.type !== "panel") return l
+    const { versions, coverage, check, script, ...rest } = l
+    return rest
+  }
+  const { story, ...rest } = project
+  return {
+    ...rest,
+    pages: project.pages.map((p) => ({ ...p, layers: p.layers.map(clean) })),
+  }
+}
+
+export const comicText = (project: ComicProject) =>
+  [
+    carouselText(project),
+    ...(project.cast ?? []).flatMap((c) => [c.name, ...c.tags]),
+    ...(project.world ?? []).flatMap((w) => [w.name, ...w.tags]),
+  ].join(" ")
+
+export async function comicOf(supabase: Supabase, projectId: string) {
+  if (!isUuid(projectId)) return null
+  const { data } = await supabase
+    .from("comic_assets")
+    .select("id, name, description, genres, is_public")
+    .eq("source_project", projectId)
+    .maybeSingle()
+  return (
+    data && {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      genres: data.genres,
+      isPublic: data.is_public,
+    }
+  )
+}
+
+export async function publishComic(
+  supabase: Supabase,
+  viewer: Viewer,
+  body: Record<string, unknown>
+) {
+  const projectId = String(body.projectId ?? "")
+  if (!isUuid(projectId)) throw new CatalogError("No such carousel.", 404)
+  // Row-level security limits this to the person's own carousels.
+  const { data: row } = await supabase
+    .from("comic_projects")
+    .select("data")
+    .eq("id", projectId)
+    .maybeSingle()
+  const project = row && toProject(row.data)
+  if (!project) throw new CatalogError("No such carousel.", 404)
+  if (JSON.stringify(project).includes("data:image"))
+    throw new CatalogError("Wait for the carousel to finish saving.", 409)
+
+  const name = line(body.name, 80)
+  if (!name) throw new CatalogError("Give the comic a name.", 400)
+  const description = line(body.description, 400)
+  const pages = texts(body.pages, 500, MAX_SLIDES)
+  if (
+    !pages.length ||
+    pages.length !== project.pages.length ||
+    !pages.every((p) => ownImage(p, viewer.id))
+  )
+    throw new CatalogError("The slides didn't upload. Try again.", 400)
+  const refused = refusedForPublic(
+    `${name} ${description} ${comicText(project)}`
+  )
+  if (refused) throw new CatalogError(refused, 422)
+
+  const fields = {
+    name,
+    description,
+    genres: texts(body.genres, 20, 4).filter(isGenre),
+    image: pages[0]!,
+    payload: { type: "comic", pages } satisfies AssetPayload,
+    project: snapshot(project),
+    is_public: true,
+    author_name: publicName(viewer),
+  }
+  const admin = supabaseAdmin()
+  const { data: existing } = await admin
+    .from("comic_assets")
+    .select("id, hidden")
+    .eq("user_id", viewer.id)
+    .eq("source_project", projectId)
+    .maybeSingle()
+  if (existing?.hidden)
+    throw new CatalogError("This comic was reported and is under review.", 403)
+  if (existing) {
+    const { error } = await admin
+      .from("comic_assets")
+      .update(fields)
+      .eq("id", existing.id)
+    if (error) throw new CatalogError(error.message, 500)
+    return existing.id
+  }
+  const since = new Date(Date.now() - 86_400_000).toISOString()
+  const { count } = await admin
+    .from("comic_assets")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", viewer.id)
+    .gte("created_at", since)
+  if ((count ?? 0) >= DAILY_LIMIT)
+    throw new CatalogError("That's today's limit of new assets.", 429)
+  const { data, error } = await admin
+    .from("comic_assets")
+    .insert({
+      ...fields,
+      user_id: viewer.id,
+      kind: "comic",
+      color: null,
+      model: null,
+      source_project: projectId,
+    })
+    .select("id")
+    .single()
+  if (error) throw new CatalogError(error.message, 500)
+  return data.id
+}
+
+async function comicProject(supabase: Supabase, id: string) {
+  const official = OFFICIAL.find((a) => a.id === id)
+  if (official?.payload.type === "comic" && official.payload.project) {
+    const res = await fetch(`${SITE}${official.payload.project}`)
+    if (!res.ok) throw new CatalogError("That comic is unavailable.", 502)
+    // Its images are served from this site, and a copy opens anywhere.
+    const text = (await res.text()).replaceAll('"/comics/', `"${SITE}/comics/`)
+    return { name: official.name, project: toProject(JSON.parse(text)) }
+  }
+  if (!isUuid(id)) throw new CatalogError("No such comic.", 404)
+  // Public to everyone, or the person's own.
+  const { data } = await supabase
+    .from("comic_assets")
+    .select("name, kind, project")
+    .eq("id", id)
+    .maybeSingle()
+  if (!data || data.kind !== "comic")
+    throw new CatalogError("No such comic.", 404)
+  return { name: data.name, project: toProject(data.project) }
+}
+
+// A copy of the comic as the person's own carousel, independent of the original.
+export async function copyComic(supabase: Supabase, id: string) {
+  const { name, project } = await comicProject(supabase, id)
+  if (!project) throw new CatalogError("That comic can't be opened.", 500)
+  const { data, error } = await supabase
+    .from("comic_projects")
+    .insert({ title: name, data: project })
+    .select("id")
+    .single()
+  if (error) throw new CatalogError(error.message, 500)
+  await supabase
+    .from("comic_asset_uses")
+    .upsert(
+      { asset_id: id },
+      { onConflict: "user_id,asset_id", ignoreDuplicates: true }
+    )
+  return data.id
 }

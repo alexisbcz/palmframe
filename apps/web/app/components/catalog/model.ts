@@ -8,6 +8,7 @@ import type {
 // The catalog's shared vocabulary. A kind says how an asset looks in the
 // grid; its payload says what using it does to a carousel.
 export const GROUPS = {
+  comics: ["comic"],
   cast: ["character", "creature", "outfit"],
   world: ["location", "background", "prop"],
   look: ["style"],
@@ -28,6 +29,7 @@ export const groupOf = (kind: AssetKind) =>
 
 // Width over height of a kind's image, which is also its card.
 export const RATIO: Record<AssetKind, number> = {
+  comic: 4 / 5,
   character: 3 / 4,
   creature: 3 / 4,
   outfit: 3 / 4,
@@ -102,6 +104,10 @@ export type AssetPayload =
       strokeColor: string
     }
   | { type: "story"; brief: string; facts?: string[] }
+  // A whole carousel. `pages` are its slides as images; `project`, on an
+  // official comic, is the file to copy. People's comics keep theirs in the
+  // database, so that listings stay light.
+  | { type: "comic"; pages: string[]; project?: string }
 
 export interface Asset {
   id: string

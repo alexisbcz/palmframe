@@ -19,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
+import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "cn"
 
 import { useViewer } from "@/components/account/account-menu"
@@ -42,6 +43,7 @@ function promptOf(a: Asset) {
     return [p.recipe?.prose, p.recipe?.tags].filter(Boolean).join("\n")
   if (p.type === "story") return p.brief
   if (p.type === "sfx") return p.text
+  if (p.type === "comic") return ""
   if (p.type === "direction")
     return [p.prompt, p.tags.join(", ")].filter(Boolean).join("\n")
   return p.tags.join(", ")
@@ -91,6 +93,44 @@ function Report({ asset, onClose }: { asset: Asset; onClose: () => void }) {
         </p>
       )}
     </Dialog>
+  )
+}
+
+// A copy of the comic as the person's own carousel, opened in the editor.
+function CopyComic({ asset }: { asset: Asset }) {
+  const t = useT(messages)
+  const viewer = useViewer()
+  const navigate = useNavigate()
+  const [busy, setBusy] = React.useState(false)
+  const [error, setError] = React.useState<string | null>(null)
+  const copy = async () => {
+    if (!viewer) return navigate(`/login?next=/catalog/${asset.id}`)
+    setBusy(true)
+    setError(null)
+    try {
+      const { id } = await catalogRequest({
+        intent: "copy-comic",
+        id: asset.id,
+      })
+      navigate(`/p/${id}`)
+    } catch (e) {
+      setError((e as Error).message)
+      setBusy(false)
+    }
+  }
+  return (
+    <div className="flex flex-col gap-1">
+      <Button className="w-full" isDisabled={busy} onPress={() => void copy()}>
+        {busy && <Spinner data-icon="inline-start" />}
+        {t("comic.copy")}
+      </Button>
+      <p className="text-xs text-muted-foreground">{t("comic.copyHint")}</p>
+      {error && (
+        <p role="alert" className="text-xs text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
   )
 }
 
@@ -186,22 +226,38 @@ export function AssetDetail({
     >
       <div className="grid max-h-[calc(100svh-2rem)] overflow-y-auto md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-px bg-muted">
-          <div
-            className="relative max-h-[60svh] w-full md:max-h-none"
-            style={{ aspectRatio: RATIO[asset.kind] }}
-          >
-            {asset.payload.type === "sfx" ? (
-              <SfxArt payload={asset.payload} />
-            ) : (
-              asset.image && (
-                <img
-                  src={asset.image}
-                  alt={asset.name}
-                  className="size-full object-cover"
-                />
-              )
-            )}
-          </div>
+          {asset.payload.type === "comic" ? (
+            <ol aria-label={asset.name} className="flex flex-col gap-1">
+              {asset.payload.pages.map((src, i) => (
+                <li key={src}>
+                  <img
+                    src={src}
+                    alt={t("comic.slide", { n: i + 1 })}
+                    loading={i ? "lazy" : "eager"}
+                    className="w-full"
+                    style={{ aspectRatio: RATIO.comic }}
+                  />
+                </li>
+              ))}
+            </ol>
+          ) : (
+            <div
+              className="relative max-h-[60svh] w-full md:max-h-none"
+              style={{ aspectRatio: RATIO[asset.kind] }}
+            >
+              {asset.payload.type === "sfx" ? (
+                <SfxArt payload={asset.payload} />
+              ) : (
+                asset.image && (
+                  <img
+                    src={asset.image}
+                    alt={asset.name}
+                    className="size-full object-cover"
+                  />
+                )
+              )}
+            </div>
+          )}
           {sheet && (
             <img
               src={sheet}
@@ -236,7 +292,11 @@ export function AssetDetail({
 
           <div className="flex items-center gap-2">
             <div className="min-w-0 flex-1">
-              <UseMenu ids={[asset.id]} label={t("detail.use")} />
+              {asset.kind === "comic" ? (
+                <CopyComic asset={asset} />
+              ) : (
+                <UseMenu ids={[asset.id]} label={t("detail.use")} />
+              )}
             </div>
             <SaveButton
               asset={asset}
@@ -357,17 +417,21 @@ export function AssetDetail({
           )}
 
           <DialogFooter className="mt-auto flex-row flex-wrap justify-between border-t pt-3 sm:justify-between">
-            <Link
-              to={`/catalog/create?remix=${asset.id}`}
-              className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-            >
-              <HugeiconsIcon
-                icon={MagicWand01Icon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-              {t("detail.remix")}
-            </Link>
+            {asset.kind !== "comic" ? (
+              <Link
+                to={`/catalog/create?remix=${asset.id}`}
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              >
+                <HugeiconsIcon
+                  icon={MagicWand01Icon}
+                  strokeWidth={2}
+                  data-icon="inline-start"
+                />
+                {t("detail.remix")}
+              </Link>
+            ) : (
+              <span />
+            )}
             {!asset.official && !asset.mine && viewer && (
               <Button
                 variant="ghost"

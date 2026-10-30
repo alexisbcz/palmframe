@@ -153,6 +153,8 @@ export function applyAsset(editor: ComicEditor, asset: Asset): Applied {
     return "sfx"
   }
 
+  if (p.type === "comic") return "needsPanel"
+
   const story = [p.brief, ...(p.facts ?? [])].join("\n")
   editor.commitProject((project) => ({ ...project, story }))
   return "story"

@@ -39,7 +39,9 @@ export function CatalogTab({ editor }: { editor: ComicEditor }) {
       const params = writeFilters({ ...NO_FILTERS, q, group, limit: 60 })
       fetch(`/api/catalog?${params}`, { signal: controller.signal })
         .then((r) => r.json() as Promise<CatalogResult>)
-        .then((json) => setAssets(json.assets))
+        .then((json) =>
+          setAssets(json.assets.filter((a) => a.kind !== "comic"))
+        )
         .catch(() => {})
     }, 200)
     return () => {
@@ -73,21 +75,23 @@ export function CatalogTab({ editor }: { editor: ComicEditor }) {
         />
       </div>
       <div className="flex flex-wrap gap-1">
-        {(Object.keys(GROUPS) as AssetGroup[]).map((g) => (
-          <button
-            key={g}
-            type="button"
-            aria-pressed={group === g}
-            className={cn(
-              "h-6 cursor-pointer rounded-full border px-2 text-xs transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/60",
-              group === g &&
-                "border-foreground bg-foreground text-background hover:bg-foreground/90"
-            )}
-            onClick={() => setGroup(group === g ? null : g)}
-          >
-            {t(`groups.${g}`)}
-          </button>
-        ))}
+        {(Object.keys(GROUPS) as AssetGroup[])
+          .filter((g) => g !== "comics")
+          .map((g) => (
+            <button
+              key={g}
+              type="button"
+              aria-pressed={group === g}
+              className={cn(
+                "h-6 cursor-pointer rounded-full border px-2 text-xs transition-colors outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/60",
+                group === g &&
+                  "border-foreground bg-foreground text-background hover:bg-foreground/90"
+              )}
+              onClick={() => setGroup(group === g ? null : g)}
+            >
+              {t(`groups.${g}`)}
+            </button>
+          ))}
       </div>
       <p
         aria-live="polite"

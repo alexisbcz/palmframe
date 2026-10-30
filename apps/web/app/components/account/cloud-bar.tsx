@@ -1,3 +1,4 @@
+import { PublishComicButton } from "@/components/catalog/publish-comic"
 import type { ImageCache } from "@/components/comic-canvas/render"
 import {
   useCloudSync,
@@ -51,6 +52,14 @@ export function CloudBar({
         editor={editor}
         projectId={cloud.id}
         series={series}
+        save={sync.save}
+      />
+      <PublishComicButton
+        editor={editor}
+        images={images}
+        projectId={cloud.id}
+        userId={cloud.userId}
+        title={sync.title}
         save={sync.save}
       />
     </div>

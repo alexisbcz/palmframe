@@ -2,8 +2,11 @@ import { readFilters } from "@/components/catalog/model"
 import { createDefaultProject } from "@/components/comic-canvas/model"
 import {
   CatalogError,
+  comicOf,
+  copyComic,
   createAsset,
   getAssets,
+  publishComic,
   reportAsset,
   searchCatalog,
   setPublic,
@@ -31,6 +34,11 @@ export async function loader({ request }: Route.LoaderArgs) {
       .limit(6)
     return Response.json({ projects: data ?? [] })
   }
+  const comicOfProject = params.get("comicOf")
+  if (comicOfProject !== null)
+    return Response.json({
+      comic: viewer ? await comicOf(supabase, comicOfProject) : null,
+    })
   const ids = params.get("ids")
   if (ids !== null)
     return Response.json({
@@ -95,6 +103,10 @@ export async function action({ request }: Route.ActionArgs) {
       case "report":
         await reportAsset(viewer, id, String(body.reason))
         return Response.json({ ok: true })
+      case "publish-comic":
+        return Response.json({ id: await publishComic(supabase, viewer, body) })
+      case "copy-comic":
+        return Response.json({ id: await copyComic(supabase, id) })
       case "carousel": {
         const { data, error: failed } = await supabase
           .from("comic_projects")

@@ -40,6 +40,7 @@ export function assetPrompt(
     pose: `A comic panel of an adult figure in a dark coat, in this pose: ${words}.`,
     effect: `A comic panel of ${SUBJECT}, with this effect: ${words}.`,
     sfx: "",
+    comic: "",
     // Saying "cover" gets a title drawn on it, so this is only ever a scene.
     story: `One dramatic illustrated scene: ${words}.`,
   }[kind]

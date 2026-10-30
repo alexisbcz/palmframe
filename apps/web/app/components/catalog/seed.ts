@@ -160,7 +160,48 @@ const story = (
   payload: { type: "story", brief, ...(facts.length && { facts }) },
 })
 
+const comic = (
+  id: string,
+  file: string,
+  name: string,
+  genres: Genre[],
+  description: string
+): SeedAsset => ({
+  id: `comic-${id}`,
+  kind: "comic",
+  name,
+  description,
+  genres,
+  payload: {
+    type: "comic",
+    pages: [1, 2, 3, 4, 5, 6].map((n) => `/catalog/comic-${id}-${n}.webp`),
+    project: `/comics/${file}.json`,
+  },
+})
+
 export const SEED: SeedAsset[] = [
+  comic(
+    "lost-property",
+    "lost-property",
+    "Lost Property",
+    ["drama", "slice"],
+    "A station's lost-and-found clerk has broken one rule in twelve years. Then an old man comes in asking for a red umbrella."
+  ),
+  comic(
+    "night-fare",
+    "night-fare",
+    "Night Fare",
+    ["drama", "crime"],
+    "Every night at 3:14, the same man gets into Dee's cab and says the same two words: just drive."
+  ),
+  comic(
+    "handover",
+    "handover-final",
+    "Handover",
+    ["crime", "drama"],
+    "Flight 907. Eleven hours. Two couriers. One case, and two men at the back of the cabin who won't sit down."
+  ),
+
   // Characters
   character(
     "vale",

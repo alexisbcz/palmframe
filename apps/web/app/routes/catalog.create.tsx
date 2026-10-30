@@ -34,7 +34,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   return data(
     {
       userId: viewer.id,
-      kind: isKind(kind) ? kind : (remix?.kind ?? "character"),
+      // Comics are published from the editor, not drawn here.
+      kind: isKind(kind) && kind !== "comic" ? kind : "character",
       remix: remix ?? null,
     },
     { headers }
