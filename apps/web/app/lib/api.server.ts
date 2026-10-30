@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto"
 
 import {
+  sheetReady,
   toProject,
   type ComicProject,
   type PanelLayer,
@@ -11,8 +12,8 @@ import {
   buildPrompt,
   hasPrompt,
   kleinSize,
+  panelRefs,
   renderSize,
-  sheetCast,
 } from "@/components/comic-canvas/use-generator"
 import { operation, render, type GenerateRequest } from "./generate.server"
 
@@ -273,6 +274,7 @@ const panelView = (p: PanelLayer) => ({
   prompt: p.prompt ?? null,
   tags: p.tags ?? [],
   cast: p.cast ?? [],
+  world: p.world ?? [],
   seed: p.seed ?? null,
   ready: hasPrompt(p),
 })
@@ -294,7 +296,15 @@ export async function getProject(caller: Caller, id: string) {
       name: c.name,
       kind: c.kind,
       tags: c.tags,
-      has_sheet: !!c.sheet,
+      has_sheet: sheetReady(c),
+      sheet_status: c.sheet ? (c.status ?? null) : null,
+    })),
+    world: (project.world ?? []).map((w) => ({
+      id: w.id,
+      name: w.name,
+      kind: w.kind,
+      tags: w.tags,
+      has_image: !!w.image,
     })),
     pages: project.pages.map((page, index) => ({
       id: page.id,
@@ -309,15 +319,15 @@ export async function getProject(caller: Caller, id: string) {
   }
 }
 
-// What the editor would send to /api/generate for this panel: Klein from
-// model sheets when the cast has them, Anima Turbo otherwise.
+// What the editor would send to /api/generate for this panel: Klein when it
+// has reference images, Anima Turbo otherwise.
 function renderRequest(
   project: ComicProject,
   panel: PanelLayer,
   seed: number
 ): GenerateRequest {
-  const sheets = sheetCast(panel, project.cast)
-  if (sheets.length)
+  const { refs } = panelRefs(panel, project)
+  if (refs.length)
     return {
       prompt: buildKleinPrompt(panel, project),
       negative: "",
@@ -325,7 +335,7 @@ function renderRequest(
       seed,
       steps: 4,
       engine: "klein",
-      refs: sheets.map((c) => c.sheet!),
+      refs: refs.map((r) => r.src),
     }
   return {
     ...buildPrompt(panel, project),
@@ -749,7 +759,7 @@ export const capabilities = () => ({
     panel_ref: {
       credits: COSTS.panel_ref,
       engine: "klein",
-      note: "FLUX.2 Klein, when the panel's cast has model sheets.",
+      note: "FLUX.2 Klein, when the panel has reference images: approved model sheets, locations or props.",
     },
   },
   limits: {

@@ -12,6 +12,7 @@ import {
   toProject,
   uid,
   type Character,
+  type WorldItem,
   type ComicDoc,
   type ComicProject,
   type Layer,
@@ -425,6 +426,38 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     [commitProject]
   )
 
+  const saveWorldItem = React.useCallback(
+    (item: WorldItem) =>
+      commitProject((p) => {
+        const world = p.world ?? []
+        return {
+          ...p,
+          world: world.some((w) => w.id === item.id)
+            ? world.map((w) => (w.id === item.id ? item : w))
+            : [...world, item],
+        }
+      }),
+    [commitProject]
+  )
+
+  // Also detaches the item from every panel it was on.
+  const removeWorldItem = React.useCallback(
+    (id: string) =>
+      commitProject((p) => ({
+        ...p,
+        world: (p.world ?? []).filter((w) => w.id !== id),
+        pages: p.pages.map((page) => ({
+          ...page,
+          layers: page.layers.map((l) =>
+            l.type === "panel" && l.world?.includes(id)
+              ? { ...l, world: l.world.filter((w) => w !== id) }
+              : l
+          ),
+        })),
+      })),
+    [commitProject]
+  )
+
   // `key` lets a run of changes to one control collapse into one undo step.
   const setLook = React.useCallback(
     (patch: Partial<Look>, key?: string) =>
@@ -476,6 +509,8 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     replaceProject,
     saveCharacter,
     removeCharacter,
+    saveWorldItem,
+    removeWorldItem,
     setLook,
     undo: React.useCallback(() => dispatch({ type: "undo" }), []),
     redo: React.useCallback(() => dispatch({ type: "redo" }), []),

@@ -363,7 +363,7 @@ function StoryDialog({
   const toRender = panels
     .map((p) => ({ ...p, ...panelPatch(draft(p), cast) }))
     .filter(hasPrompt)
-  const cost = renderCost(toRender, cast)
+  const cost = renderCost(toRender, project)
   const openrouter = useOpenRouter()
   const short = !openrouter && balance !== null && balance < cost
   const nothing = !toRender.length && !panels.some((p) => draft(p).lines.trim())
