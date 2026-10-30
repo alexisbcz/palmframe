@@ -101,6 +101,10 @@ export interface PanelLayer extends BaseLayer {
   guide?: LayoutGuide
   // The last coverage sheet: this moment from nine cameras, to pick from.
   coverage?: CoverageSheet
+  // Lettering a carousel run planned and hasn't placed yet, as script lines.
+  script?: string
+  // Set once a run has drawn the panel: how many times it has been re-rolled.
+  rerolls?: number
 }
 
 export interface FaceBox {
@@ -502,6 +506,8 @@ export interface ComicProject {
   look?: Look
   // Pages read right to left, manga style: layouts mirror, panels number from the right.
   rtl?: boolean
+  // What the last carousel run was told, so a rerun can plan what's left.
+  story?: string
 }
 
 // The single-slide view the renderer and the editor panels work on.
@@ -599,6 +605,7 @@ export function toProject(value: unknown): ComicProject | null {
     world?: WorldItem[]
     look?: Look
     rtl?: boolean
+    story?: string
   } | null
   if (!v || typeof v.width !== "number" || typeof v.height !== "number")
     return null
@@ -624,6 +631,7 @@ export function toProject(value: unknown): ComicProject | null {
       ...(world && { world }),
       ...(v.look && typeof v.look === "object" && { look: v.look }),
       ...(v.rtl === true && { rtl: true }),
+      ...(typeof v.story === "string" && { story: v.story }),
     }
   }
   if (v.version === 1 && Array.isArray(v.layers)) {

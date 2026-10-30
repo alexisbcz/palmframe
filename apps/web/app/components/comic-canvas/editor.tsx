@@ -46,6 +46,7 @@ import { PublishButton } from "@/components/instagram/publish-dialog"
 
 import { Composer, type ComposerHandle } from "./composer"
 import { ExportButton } from "./export-panel"
+import { RunButton } from "./run-panel"
 import { StoryButton } from "./story-panel"
 import { roving } from "./roving"
 import { download, insertImageFile, pickFile } from "./actions"
@@ -382,6 +383,7 @@ export function ComicCanvasEditor({
             </DropdownMenu>
           </DropdownMenuTrigger>
           <StoryButton editor={editor} generator={generator} />
+          <RunButton editor={editor} generator={generator} />
           {cloud && <CloudBar editor={editor} cloud={cloud} images={images} />}
         </div>
         <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">

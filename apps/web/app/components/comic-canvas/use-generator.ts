@@ -513,7 +513,8 @@ export async function renderPortrait(
 export async function renderSheet(
   character: Character,
   seed: number,
-  look: Look = DEFAULT_LOOK
+  look: Look = DEFAULT_LOOK,
+  signal?: AbortSignal
 ) {
   const panel = createPanel({ x: 0, y: 0, width: 3, height: 2 })
   const prompt = [
@@ -525,15 +526,18 @@ export async function renderSheet(
   ]
     .filter(Boolean)
     .join(" ")
-  const { src } = await render({
-    prompt,
-    negative: "",
-    width: 1536,
-    height: 1024,
-    seed,
-    steps: 4,
-    engine: "klein",
-  })
+  const { src } = await render(
+    {
+      prompt,
+      negative: "",
+      width: 1536,
+      height: 1024,
+      seed,
+      steps: 4,
+      engine: "klein",
+    },
+    signal
+  )
   return src
 }
 
@@ -669,7 +673,24 @@ export interface Job {
 // Versions kept on a panel, as in edit-tools.
 const MAX_VERSIONS = 8
 
-const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
+export const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
+
+// The panel's versions with its current image among them, before it's replaced.
+export function withCurrentImage(panel: PanelLayer) {
+  const versions = panel.versions ?? []
+  if (!panel.src || versions.some((v) => v.src === panel.src)) return versions
+  const { src, engine, seed } = panel
+  const current: PanelVersion = { src, kind: "original", engine, seed }
+  return [current, ...versions].slice(0, MAX_VERSIONS)
+}
+
+// Every panel with something to draw, slide by slide, in the order they draw.
+export const promptedPanels = (project: ComicProject) =>
+  project.pages.flatMap((page) =>
+    page.layers
+      .filter((l): l is PanelLayer => l.type === "panel" && hasPrompt(l))
+      .sort((a, b) => a.y - b.y || a.x - b.x)
+  )
 
 // A coverage sheet is a job of its own: the panel can render meanwhile.
 export const coverageJob = (panelId: string) => `coverage:${panelId}`
@@ -682,9 +703,14 @@ export function useGenerator(editor: ComicEditor) {
 
   // `count` takes in a row, each on a new seed unless the seed is locked.
   // Every take lands in the panel as it finishes; pick another from Takes.
+  // `patch` lands with the image. Resolves to what went wrong, if anything did.
   const generate = React.useCallback(
-    async (panelId: string, count = 1) => {
-      if (controllers.current.has(panelId)) return
+    async (
+      panelId: string,
+      count = 1,
+      patch?: Partial<PanelLayer>
+    ): Promise<string | null> => {
+      if (controllers.current.has(panelId)) return null
       const controller = new AbortController()
       controllers.current.set(panelId, controller)
       setErrors(({ [panelId]: _, ...rest }) => rest)
@@ -692,7 +718,7 @@ export function useGenerator(editor: ComicEditor) {
       try {
         for (let take = 1; take <= count; take++) {
           const panel = editor.findLayer(panelId)?.layer
-          if (panel?.type !== "panel" || !hasPrompt(panel)) return
+          if (panel?.type !== "panel" || !hasPrompt(panel)) return null
           const seed =
             panel.lockSeed && panel.seed !== undefined
               ? panel.seed + take - 1
@@ -718,15 +744,15 @@ export function useGenerator(editor: ComicEditor) {
             imageZoom: 100,
             panX: 0,
             panY: 0,
+            ...patch,
           })
         }
+        return null
       } catch (e) {
-        if (!controller.signal.aborted) {
-          setErrors((err) => ({
-            ...err,
-            [panelId]: e instanceof Error ? e.message : String(e),
-          }))
-        }
+        if (controller.signal.aborted) return null
+        const message = e instanceof Error ? e.message : String(e)
+        setErrors((err) => ({ ...err, [panelId]: message }))
+        return message
       } finally {
         controllers.current.delete(panelId)
         setJobs(({ [panelId]: _, ...rest }) => rest)
@@ -761,17 +787,7 @@ export function useGenerator(editor: ComicEditor) {
         }))
         const now = editor.findLayer(panelId)?.layer
         if (now?.type === "panel") {
-          let versions: PanelVersion[] = now.versions ?? []
-          if (now.src && !versions.some((v) => v.src === now.src))
-            versions = [
-              {
-                src: now.src,
-                kind: "original",
-                engine: now.engine,
-                seed: now.seed,
-              },
-              ...versions,
-            ]
+          const versions = withCurrentImage(now)
           editor.update(panelId, {
             versions: [
               {
@@ -804,13 +820,8 @@ export function useGenerator(editor: ComicEditor) {
   // One at a time, slide by slide: ComfyUI renders serially anyway,
   // and this fills the carousel in reading order.
   const generateAll = React.useCallback(async () => {
-    const ids = editor.projectRef.current.pages.flatMap((page) =>
-      page.layers
-        .filter((l): l is PanelLayer => l.type === "panel" && hasPrompt(l))
-        .sort((a, b) => a.y - b.y || a.x - b.x)
-        .map((l) => l.id)
-    )
-    for (const id of ids) await generate(id)
+    const panels = promptedPanels(editor.projectRef.current)
+    for (const { id } of panels) await generate(id)
   }, [editor, generate])
 
   const cancel = React.useCallback((panelId: string) => {

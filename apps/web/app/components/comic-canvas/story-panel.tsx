@@ -39,12 +39,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useOpenRouter } from "@/components/account/account-menu"
 import { openSettings } from "@/components/settings/settings-dialog"
 import { useT } from "@/i18n/core"
-import {
-  INSUFFICIENT_CREDITS,
-  setCredits,
-  useCredits,
-} from "@/lib/credits-store"
-import type { PlannedPanel } from "@/routes/api.story"
+import { INSUFFICIENT_CREDITS, useCredits } from "@/lib/credits-store"
 
 import { Avatar } from "./cast"
 import { LayoutPicker } from "./layout-picker"
@@ -52,12 +47,11 @@ import { readingOrder } from "./layouts"
 import type { Character, ComicProject, Layer, PanelLayer } from "./model"
 import {
   bubblesFor,
-  draftFromPlan,
   draftOf,
   panelPatch,
   parseLines,
-  recapOf,
   renderCost,
+  requestPlan,
   speakerFaces,
   type PanelDraft,
 } from "./story"
@@ -101,12 +95,24 @@ function panelsOf(project: ComicProject, pageId: string) {
   )
 }
 
-function useStory(editor: ComicEditor, generator: Generator) {
-  const [pages, setPages] = React.useState<Record<string, PageStory>>({})
+// Whether the planner is set up, and what a plan costs.
+export function useStoryInfo() {
   const [info, setInfo] = React.useState<{
     available: boolean
     cost: number
   } | null>(null)
+  React.useEffect(() => {
+    fetch("/api/story")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => json && setInfo(json))
+      .catch(() => {})
+  }, [])
+  return info
+}
+
+function useStory(editor: ComicEditor, generator: Generator) {
+  const [pages, setPages] = React.useState<Record<string, PageStory>>({})
+  const info = useStoryInfo()
   const [rendering, setRendering] = React.useState<{
     pageId: string
     ids: string[]
@@ -116,10 +122,6 @@ function useStory(editor: ComicEditor, generator: Generator) {
   const controllers = React.useRef(new Map<string, AbortController>())
 
   React.useEffect(() => {
-    fetch("/api/story")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => json && setInfo(json))
-      .catch(() => {})
     const running = controllers.current
     return () => running.forEach((c) => c.abort())
   }, [])
@@ -145,46 +147,16 @@ function useStory(editor: ComicEditor, generator: Generator) {
       controllers.current.set(pageId, controller)
       patch(pageId, () => ({ planning: true, error: null, applied: false }))
       try {
-        const res = await fetch("/api/story", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            story,
-            panels: panels.map((p) => ({
-              id: p.id,
-              width: p.width,
-              height: p.height,
-            })),
-            cast: (project.cast ?? []).map((c) => ({
-              name: c.name,
-              kind: c.kind,
-              tags: c.tags,
-            })),
-            style: project.look?.style ?? "graphic",
-            rtl: !!project.rtl,
-            recap: recapOf(project, pageIndex),
-          }),
-        })
-        const credits = res.headers.get("x-credits")
-        if (credits !== null) setCredits(Number(credits))
-        const json = await res.json().catch(() => null)
-        if (!res.ok)
-          throw new Error(
-            json?.code === INSUFFICIENT_CREDITS
-              ? INSUFFICIENT_CREDITS
-              : (json?.error ?? `HTTP ${res.status}`)
-          )
+        const drafts = await requestPlan(
+          project,
+          pageIndex,
+          panels,
+          story,
+          controller.signal
+        )
         const now = panelsOf(editor.projectRef.current, pageId)
         if (!now || now.map((p) => p.id).join(",") !== frames)
           throw new Error("changed")
-        const cast = editor.projectRef.current.cast
-        const drafts = Object.fromEntries(
-          (json.panels as PlannedPanel[]).map((p) => [
-            p.panel_id,
-            draftFromPlan(p, cast, json.prompt),
-          ])
-        )
         patch(pageId, (s) => ({
           drafts: { ...s.drafts, ...drafts },
           version: s.version + 1,
@@ -217,7 +189,8 @@ function useStory(editor: ComicEditor, generator: Generator) {
       for (const panel of panels) {
         const draft = state.drafts[panel.id]
         if (!draft) continue
-        const next = { ...panel, ...panelPatch(draft, cast) }
+        // Its lettering is placed here now, not left for a carousel run.
+        const next = { ...panel, ...panelPatch(draft, cast), script: undefined }
         patched.set(panel.id, next)
         const bubbles = bubblesFor(
           next,

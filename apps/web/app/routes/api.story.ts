@@ -19,6 +19,12 @@ const MAX_STORY = 6_000
 
 export type DialogueKind = "say" | "think" | "shout" | "caption"
 
+// Where a slide sits in a story told across several.
+export interface StoryPart {
+  slide: number
+  slides: number
+}
+
 export interface StoryRequest {
   story: string
   // In reading order. Sizes tell the planner which frames are wide or tall.
@@ -28,6 +34,7 @@ export interface StoryRequest {
   rtl: boolean
   // What the slide before this one showed, so the story carries on.
   recap: string
+  part?: StoryPart
 }
 
 export interface PlannedPanel {
@@ -85,6 +92,12 @@ function parse(body: unknown): StoryRequest | null {
     style: typeof b.style === "string" ? b.style.slice(0, 40) : "graphic",
     rtl: b.rtl === true,
     recap: typeof b.recap === "string" ? b.recap.slice(0, 2_000) : "",
+    ...(Number.isInteger(b.part?.slide) &&
+      Number.isInteger(b.part?.slides) &&
+      b.part!.slide >= 1 &&
+      b.part!.slide <= b.part!.slides && {
+        part: { slide: b.part!.slide, slides: b.part!.slides },
+      }),
   }
 }
 

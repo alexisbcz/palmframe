@@ -11,6 +11,9 @@ export function setCredits(next: number | null) {
   for (const l of listeners) l()
 }
 
+// For code outside React, such as a run deciding whether to go on.
+export const getCredits = () => balance
+
 export function useCredits() {
   return React.useSyncExternalStore(
     (l) => (listeners.add(l), () => listeners.delete(l)),
