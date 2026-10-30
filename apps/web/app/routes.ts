@@ -24,6 +24,7 @@ export default [
   route("api/billing/checkout", "routes/api.billing.checkout.ts"),
   route("api/billing/portal", "routes/api.billing.portal.ts"),
   route("api/stripe/webhook", "routes/api.stripe.webhook.ts"),
+  route("sitemap.xml", "routes/sitemap.ts"),
   route("terms", "routes/terms.tsx"),
   route("privacy", "routes/privacy.tsx"),
   route("api/generate", "routes/api.generate.ts"),

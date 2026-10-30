@@ -17,7 +17,7 @@ import {
   TextButton,
   TextLink,
   authError,
-  pageTitle,
+  privateTitle,
   type SentKind,
 } from "@/components/auth/auth-ui"
 import { messages } from "@/components/auth/auth.messages"
@@ -29,7 +29,7 @@ import { getViewer } from "@/lib/supabase.server"
 import type { Route } from "./+types/signup"
 
 export const meta: Route.MetaFunction = ({ matches }) =>
-  pageTitle(matches, "signup.meta")
+  privateTitle(matches, "signup.meta")
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { viewer, headers } = await getViewer(request)

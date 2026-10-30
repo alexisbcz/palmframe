@@ -3,6 +3,7 @@ import { data, redirect } from "react-router"
 import { ComicCanvasEditor } from "@/components/comic-canvas/editor"
 import { toProject } from "@/components/comic-canvas/model"
 import { withShared } from "@/components/comic-canvas/series"
+import { PRIVATE } from "@/lib/seo"
 import { seriesOf } from "@/lib/series.server"
 import { getViewer } from "@/lib/supabase.server"
 import { instagramEnabled } from "@/lib/instagram.server"
@@ -13,6 +14,7 @@ export const meta: Route.MetaFunction = ({ loaderData }) => [
   {
     title: loaderData?.title ? `${loaderData.title} · Palmframe` : "Palmframe",
   },
+  PRIVATE,
 ]
 
 export async function loader({ request, params }: Route.LoaderArgs) {

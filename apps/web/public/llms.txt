@@ -1,0 +1,8 @@
+# Palmframe
+
+> Palmframe is an open-source tool for making comics with AI. People write a story, keep characters consistent with model sheets, letter panels on a canvas and post carousels to Instagram.
+
+- [Editor](https://www.palmframe.com/): the comic canvas, usable without an account
+- [Catalog](https://www.palmframe.com/catalog): reusable characters, places, styles, direction and story templates
+- [API docs](https://www.palmframe.com/docs/api): the developer API and MCP server
+- [Source code](https://github.com/alexisbcz/palmframe): MIT licensed

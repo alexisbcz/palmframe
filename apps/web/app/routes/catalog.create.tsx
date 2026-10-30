@@ -5,6 +5,7 @@ import { messages } from "@/components/catalog/catalog.messages"
 import { isKind } from "@/components/catalog/model"
 import { DEFAULT_LOCALE, isLocale, translate } from "@/i18n/core"
 import { getAssets } from "@/lib/catalog.server"
+import { PRIVATE } from "@/lib/seo"
 import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/catalog.create"
@@ -13,7 +14,10 @@ export const meta: Route.MetaFunction = ({ matches }) => {
   const locale = (matches[0] as { loaderData?: { locale?: unknown } })
     ?.loaderData?.locale
   const l = isLocale(locale) ? locale : DEFAULT_LOCALE
-  return [{ title: `${translate(messages, l, "create.title")} · Palmframe` }]
+  return [
+    { title: `${translate(messages, l, "create.title")} · Palmframe` },
+    PRIVATE,
+  ]
 }
 
 export async function loader({ request }: Route.LoaderArgs) {

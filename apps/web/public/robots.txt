@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /p/
+Disallow: /read/
+Disallow: /projects
+Disallow: /settings
+Disallow: /catalog/create
+Disallow: /comics/
+Disallow: /mcp
+
+Sitemap: https://www.palmframe.com/sitemap.xml

@@ -59,6 +59,7 @@ import {
 } from "@/i18n/core"
 import { withStoredImages } from "@/lib/cloud"
 import { COMICS_BUCKET } from "@/lib/database"
+import { PRIVATE } from "@/lib/seo"
 import { listSeries, type SeriesSummary } from "@/lib/series.server"
 import { useSupabase } from "@/lib/supabase.browser"
 import { getViewer } from "@/lib/supabase.server"
@@ -73,7 +74,7 @@ export const meta: Route.MetaFunction = ({ matches }) => {
     isLocale(locale) ? locale : DEFAULT_LOCALE,
     "projects.meta"
   )
-  return [{ title: `${title} · Palmframe` }]
+  return [{ title: `${title} · Palmframe` }, PRIVATE]
 }
 
 async function requireViewer(request: Request) {

@@ -277,3 +277,9 @@ export function pageTitle(
   )
   return [{ title: `${title} · Palmframe` }]
 }
+
+// Sign-in pages have nothing for a search engine to send people to.
+export const privateTitle = (
+  matches: readonly unknown[],
+  path: MessagePath<typeof messages.en>
+) => [...pageTitle(matches, path), { name: "robots", content: "noindex" }]

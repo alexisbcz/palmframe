@@ -11,14 +11,22 @@ import { messages } from "@/components/catalog/catalog.messages"
 import { UseMenu } from "@/components/catalog/use-menu"
 import { useT } from "@/i18n/core"
 import { getAssets, getPack } from "@/lib/catalog.server"
+import { seo } from "@/lib/seo"
 import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/catalog.kit"
 
-export const meta: Route.MetaFunction = ({ loaderData }) => [
-  { title: `${loaderData?.pack.name ?? "Kit"} · Palmframe` },
-  { name: "description", content: loaderData?.pack.blurb ?? "" },
-]
+export const meta: Route.MetaFunction = ({ loaderData }) => {
+  const pack = loaderData?.pack
+  if (!pack) return [{ title: "Palmframe" }]
+  return seo({
+    title: `${pack.name} · Palmframe catalog`,
+    description: pack.blurb,
+    path: `/catalog/kits/${pack.id}`,
+    image: "/og/catalog.png",
+    imageAlt: "The Palmframe catalog of characters, places and styles",
+  })
+}
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase, viewer, headers } = await getViewer(request)

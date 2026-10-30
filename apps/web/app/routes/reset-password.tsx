@@ -18,7 +18,7 @@ import {
   SubmitButton,
   TextLink,
   authError,
-  pageTitle,
+  privateTitle,
 } from "@/components/auth/auth-ui"
 import { messages } from "@/components/auth/auth.messages"
 import { useT } from "@/i18n/core"
@@ -28,7 +28,7 @@ import { getViewer } from "@/lib/supabase.server"
 import type { Route } from "./+types/reset-password"
 
 export const meta: Route.MetaFunction = ({ matches }) =>
-  pageTitle(matches, "reset.meta")
+  privateTitle(matches, "reset.meta")
 
 // The reset email signs the person in through /auth/callback first.
 export async function loader({ request }: Route.LoaderArgs) {

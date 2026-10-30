@@ -3,6 +3,7 @@ import { Link } from "react-router"
 import { Logo } from "@/components/auth/auth-ui"
 import { openSettings } from "@/components/settings/settings-dialog"
 import { DEFAULT_LOCALE, isLocale, translate, useT } from "@/i18n/core"
+import { seo } from "@/lib/seo"
 
 import type { Route } from "./+types/docs.api"
 import { messages } from "./docs.api.messages"
@@ -15,7 +16,12 @@ export const meta: Route.MetaFunction = ({ matches }) => {
     isLocale(locale) ? locale : DEFAULT_LOCALE,
     "meta"
   )
-  return [{ title: `${title} · Palmframe` }]
+  return seo({
+    title: `${title} · Palmframe`,
+    description:
+      "The Palmframe developer API and MCP server: create carousels, generate panels and track credits from your own tools.",
+    path: "/docs/api",
+  })
 }
 
 export function loader({ request }: Route.LoaderArgs) {

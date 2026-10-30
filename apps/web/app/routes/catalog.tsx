@@ -34,6 +34,7 @@ import {
 } from "@/components/catalog/model"
 import { DEFAULT_LOCALE, isLocale, translate, useT } from "@/i18n/core"
 import { packCards, searchCatalog } from "@/lib/catalog.server"
+import { SITE, seo } from "@/lib/seo"
 import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/catalog"
@@ -42,11 +43,23 @@ export const meta: Route.MetaFunction = ({ matches }) => {
   const locale = (matches[0] as { loaderData?: { locale?: unknown } })
     ?.loaderData?.locale
   const l = isLocale(locale) ? locale : DEFAULT_LOCALE
+  const description = translate(messages, l, "meta.description")
   return [
-    { title: `${translate(messages, l, "meta.title")} · Palmframe` },
+    ...seo({
+      title: `${translate(messages, l, "meta.title")} · Palmframe`,
+      description,
+      path: "/catalog",
+      image: "/og/catalog.png",
+      imageAlt: "The Palmframe catalog of characters, places and styles",
+    }),
     {
-      name: "description",
-      content: translate(messages, l, "meta.description"),
+      "script:ld+json": {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        name: "Palmframe catalog",
+        url: `${SITE}/catalog`,
+        description,
+      },
     },
   ]
 }
