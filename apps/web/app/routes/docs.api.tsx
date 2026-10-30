@@ -97,6 +97,10 @@ export default function ApiDocs({ loaderData }: Route.ComponentProps) {
           <Code>{`Authorization: Bearer pf_live_…`}</Code>
         </section>
         <section className="flex flex-col gap-3">
+          <h2 className="font-medium">{t("access.title")}</h2>
+          <p className="text-sm text-muted-foreground">{t("access.body")}</p>
+        </section>
+        <section className="flex flex-col gap-3">
           <h2 className="font-medium">{t("flow.title")}</h2>
           <p className="text-sm text-muted-foreground">{t("flow.body")}</p>
           <Code>{flow(o)}</Code>

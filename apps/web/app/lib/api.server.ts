@@ -16,6 +16,7 @@ import {
 } from "@/components/comic-canvas/use-generator"
 import { operation, render, type GenerateRequest } from "./generate.server"
 
+import { API_SCOPES, isApiScope, type ApiScope } from "./api-scopes"
 import { COSTS } from "./credits"
 import { COMICS_BUCKET, type ApiJobRow } from "./database"
 import { supabaseAdmin } from "./supabase-admin.server"
@@ -33,6 +34,19 @@ export const RATE_LIMITS = { read: 120, write: 20 } as const
 // bound how long the line gets.
 export const MAX_ACTIVE_PER_USER = 2
 export const MAX_ACTIVE_GLOBAL = 8
+
+// The scopes that open each kind of request: a key needs one of them, and a
+// scope the code doesn't know opens nothing. `any` is for what every working
+// key needs, like polling the render it started.
+export type Access = "read" | "write" | "any"
+const ACCESS: Record<
+  Access,
+  { rate: keyof typeof RATE_LIMITS; scopes: readonly ApiScope[] }
+> = {
+  read: { rate: "read", scopes: ["read"] },
+  write: { rate: "write", scopes: ["generate"] },
+  any: { rate: "read", scopes: API_SCOPES },
+}
 
 export class ApiError extends Error {
   constructor(
@@ -66,12 +80,12 @@ export const apiError = (e: unknown) =>
 // { error: { code, message } }.
 export async function respond(
   request: Request,
-  kind: keyof typeof RATE_LIMITS,
+  access: Access,
   work: (caller: Caller) => Promise<unknown>,
   status = 200
 ) {
   try {
-    const caller = await authenticate(request, kind)
+    const caller = await authenticate(request, access)
     return Response.json(await work(caller), {
       status,
       headers: { "cache-control": "no-store" },
@@ -99,7 +113,18 @@ export function newKey() {
 export interface Caller {
   userId: string
   keyId: string
+  scopes: ApiScope[]
+  // Null reaches every project.
+  projects: string[] | null
+  creditLimit: number | null
+  creditsSpent: number
 }
+
+export const allowed = (caller: Caller, access: Access) =>
+  ACCESS[access].scopes.some((s) => caller.scopes.includes(s))
+
+const reaches = (caller: Caller, projectId: string) =>
+  !caller.projects || caller.projects.includes(projectId)
 
 // Module state kept on globalThis, so a dev reload doesn't drop live jobs.
 const state: ApiState = ((
@@ -130,10 +155,11 @@ export function limit(keyId: string, kind: keyof typeof RATE_LIMITS) {
   state.hits.set(id, recent)
 }
 
-// `Authorization: Bearer pf_live_…` → the key's owner.
+// `Authorization: Bearer pf_live_…` → the key's owner, if the key's scopes
+// open this kind of request.
 export async function authenticate(
   request: Request,
-  kind: keyof typeof RATE_LIMITS
+  access: Access
 ): Promise<Caller> {
   const header = request.headers.get("authorization") ?? ""
   const key = header.match(/^Bearer\s+(\S+)$/i)?.[1]
@@ -146,13 +172,15 @@ export async function authenticate(
   const db = supabaseAdmin()
   const { data, error } = await db
     .from("api_keys")
-    .select("id, user_id, last_used_at")
+    .select(
+      "id, user_id, scopes, project_ids, credit_limit, credits_spent, last_used_at"
+    )
     .eq("hash", hashKey(key))
     .is("revoked_at", null)
     .maybeSingle()
   if (error) throw error
   if (!data) throw new ApiError(401, "unauthorized", "Unknown or revoked key.")
-  limit(data.id, kind)
+  limit(data.id, ACCESS[access].rate)
   // Best effort, at most once a minute.
   if (!data.last_used_at || Date.now() - Date.parse(data.last_used_at) > 60_000)
     void db
@@ -160,7 +188,21 @@ export async function authenticate(
       .update({ last_used_at: new Date().toISOString() })
       .eq("id", data.id)
       .then(() => {})
-  return { userId: data.user_id, keyId: data.id }
+  const caller: Caller = {
+    userId: data.user_id,
+    keyId: data.id,
+    scopes: data.scopes.filter(isApiScope),
+    projects: data.project_ids,
+    creditLimit: data.credit_limit,
+    creditsSpent: data.credits_spent,
+  }
+  if (!allowed(caller, access))
+    throw new ApiError(
+      403,
+      "insufficient_scope",
+      `This key needs the ${ACCESS[access].scopes.join(" or ")} scope.`
+    )
+  return caller
 }
 
 export async function balance(caller: Caller) {
@@ -168,14 +210,22 @@ export async function balance(caller: Caller) {
     p_user: caller.userId,
   })
   if (error) throw error
-  return { credits: data }
+  return {
+    credits: data,
+    key: {
+      credit_limit: caller.creditLimit,
+      credits_spent: caller.creditsSpent,
+    },
+  }
 }
 
 export async function listProjects(caller: Caller) {
-  const { data, error } = await supabaseAdmin()
+  let query = supabaseAdmin()
     .from("comic_projects")
     .select("id, title, cover, revision, slide_count, created_at, updated_at")
     .eq("user_id", caller.userId)
+  if (caller.projects) query = query.in("id", caller.projects)
+  const { data, error } = await query
     .order("updated_at", { ascending: false })
     .limit(100)
   if (error) throw error
@@ -198,7 +248,7 @@ async function loadProject(caller: Caller, id: string) {
     .eq("user_id", caller.userId)
     .maybeSingle()
   if (error) throw error
-  const project = data && toProject(data.data)
+  const project = data && reaches(caller, data.id) && toProject(data.data)
   if (!data || !project)
     throw new ApiError(404, "not_found", "No such project.")
   return { row: data, project }
@@ -375,7 +425,8 @@ async function jobOf(caller: Caller, id: string) {
     .eq("user_id", caller.userId)
     .maybeSingle()
   if (error) throw error
-  if (!data) throw new ApiError(404, "not_found", "No such operation.")
+  if (!data || !reaches(caller, data.project_id))
+    throw new ApiError(404, "not_found", "No such operation.")
   return data
 }
 
@@ -421,7 +472,7 @@ export async function startJob(caller: Caller, input: StartInput) {
     )
   const replay = await byIdempotencyKey(caller, key)
   if (replay) {
-    if (replay.id !== input.estimate_id)
+    if (replay.id !== input.estimate_id || !reaches(caller, replay.project_id))
       throw new ApiError(
         409,
         "idempotency_conflict",
@@ -493,21 +544,28 @@ export async function startJob(caller: Caller, input: StartInput) {
     )
   }
 
-  const spent = await db.rpc("spend_credits_for", {
+  const spent = await db.rpc("spend_credits_for_key", {
     p_user: caller.userId,
+    p_key: caller.keyId,
     p_cost: est.cost,
     p_kind: est.operation,
     p_job: est.id,
   })
   if (spent.error) {
     const short = spent.error.code === "P0402"
+    const capped = spent.error.code === "P0403"
     await finish(est.id, {
       status: "failed",
-      error: short ? spent.error.message : "Could not charge credits.",
+      error:
+        short || capped ? spent.error.message : "Could not charge credits.",
     })
     throw new ApiError(
-      short ? 402 : 500,
-      short ? "insufficient_credits" : "charge_failed",
+      short ? 402 : capped ? 403 : 500,
+      short
+        ? "insufficient_credits"
+        : capped
+          ? "key_credit_limit"
+          : "charge_failed",
       spent.error.message
     )
   }
@@ -649,19 +707,19 @@ async function placeImage(job: ApiJobRow, src: string, seed: number) {
 
 // A job left queued or running by a server that restarted can't finish:
 // it fails and is refunded when someone looks at it.
-async function reap(job: ApiJobRow) {
+async function reap(caller: Caller, job: ApiJobRow) {
   if (
     (job.status === "queued" || job.status === "running") &&
     !state.live.has(job.id)
   ) {
     await fail(job, "failed", "The server restarted during this job.")
-    return jobOf({ userId: job.user_id, keyId: "" }, job.id)
+    return jobOf(caller, job.id)
   }
   return job
 }
 
 export async function getJob(caller: Caller, id: string) {
-  return jobView(await reap(await jobOf(caller, id)))
+  return jobView(await reap(caller, await jobOf(caller, id)))
 }
 
 export async function cancelJob(caller: Caller, id: string) {
