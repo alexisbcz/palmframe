@@ -10,12 +10,17 @@ import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
+  BitcoinIcon,
+  CodeIcon,
+  Comment01Icon,
   Copy01Icon,
   Delete02Icon,
+  NewsIcon,
   SentIcon,
   PlusSignIcon,
   RadioIcon,
   SparklesIcon,
+  WikipediaIcon,
 } from "@hugeicons/core-free-icons"
 
 import {
@@ -161,6 +166,14 @@ async function post(body: unknown) {
   if (!res.ok) throw new Error(json.error ?? "failed")
   return json
 }
+
+const PRESET_ICONS = {
+  newsroom: NewsIcon,
+  hackernews: CodeIcon,
+  wikipedia: WikipediaIcon,
+  bluesky: Comment01Icon,
+  crypto: BitcoinIcon,
+} satisfies Record<MachinePreset["id"], unknown>
 
 const list = (s: string) =>
   s
@@ -1411,6 +1424,7 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
           </Button>
           <DropdownMenu
             placement="bottom end"
+            className="w-84 max-w-[calc(100vw-2rem)]"
             onAction={(key) => {
               const preset = PRESETS.find((p) => p.id === key)
               if (preset) void create(preset)
@@ -1421,8 +1435,21 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
                 key={p.id}
                 id={p.id}
                 textValue={t(`presets.${p.id}`)}
+                className="min-h-13 gap-3 px-2"
               >
-                {t(`presets.${p.id}`)}
+                <HugeiconsIcon
+                  icon={PRESET_ICONS[p.id]}
+                  strokeWidth={2}
+                  className="text-muted-foreground"
+                />
+                <span className="flex min-w-0 flex-col">
+                  <span className="truncate font-medium">
+                    {t(`presets.${p.id}`)}
+                  </span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {t(`presetHints.${p.id}`)}
+                  </span>
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenu>

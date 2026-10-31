@@ -19,6 +19,13 @@ export const messages = defineMessages({
       bluesky: "Comics talk on Bluesky",
       crypto: "Crypto price swings",
     },
+    presetHints: {
+      newsroom: "Fresh AI news, posted as it breaks",
+      hackernews: "Top Hacker News story every 3 hours",
+      wikipedia: "Pages rewritten fast, often breaking news",
+      bluesky: "Spikes in webtoon, manga and comic talk",
+      crypto: "BTC, ETH and SOL moving 2% in an hour",
+    },
     sources: {
       bluesky: "Bluesky posts",
       wikipedia: "Wikipedia edits",
@@ -198,6 +205,13 @@ export const messages = defineMessages({
       bluesky: "La BD sur Bluesky",
       crypto: "Variations des cryptos",
     },
+    presetHints: {
+      newsroom: "L’actu IA fraîche, dès qu’elle tombe",
+      hackernews: "Le top de Hacker News toutes les 3 h",
+      wikipedia: "Les pages réécrites à toute vitesse",
+      bluesky: "Pics sur le webtoon, le manga et la BD",
+      crypto: "BTC, ETH et SOL : 2 % en 1 h",
+    },
     sources: {
       bluesky: "Publications Bluesky",
       wikipedia: "Modifications Wikipédia",
@@ -375,11 +389,18 @@ export const messages = defineMessages({
       text: "Empieza con una plantilla y ajusta lo que escucha.",
     },
     presets: {
-      newsroom: "Una cuenta de noticias flash sobre IA",
+      newsroom: "Noticias flash sobre IA",
       hackernews: "Lo que leen los builders",
       wikipedia: "Última hora en Wikipedia",
       bluesky: "Cómics en Bluesky",
       crypto: "Saltos de precio cripto",
+    },
+    presetHints: {
+      newsroom: "Noticias de IA en cuanto salen",
+      hackernews: "Lo mejor de Hacker News cada 3 h",
+      wikipedia: "Páginas que se reescriben a toda prisa",
+      bluesky: "Picos sobre webtoon, manga y cómic",
+      crypto: "BTC, ETH y SOL: 2 % en 1 h",
     },
     sources: {
       bluesky: "Publicaciones de Bluesky",
@@ -563,6 +584,13 @@ export const messages = defineMessages({
       bluesky: "Comics auf Bluesky",
       crypto: "Krypto-Kurssprünge",
     },
+    presetHints: {
+      newsroom: "Frische KI-News, sobald sie erscheinen",
+      hackernews: "Top-Thema auf Hacker News, alle 3 Std.",
+      wikipedia: "Seiten, die rasant neu entstehen",
+      bluesky: "Spitzen bei Webtoon und Manga",
+      crypto: "BTC, ETH und SOL: 2 % in 1 Std.",
+    },
     sources: {
       bluesky: "Bluesky-Beiträge",
       wikipedia: "Wikipedia-Bearbeitungen",
@@ -742,6 +770,13 @@ export const messages = defineMessages({
       wikipedia: "Ultime notizie su Wikipedia",
       bluesky: "Fumetti su Bluesky",
       crypto: "Sbalzi di prezzo cripto",
+    },
+    presetHints: {
+      newsroom: "Notizie sull’IA appena escono",
+      hackernews: "Il top di Hacker News ogni 3 ore",
+      wikipedia: "Pagine riscritte a tutta velocità",
+      bluesky: "Picchi su webtoon, manga e fumetti",
+      crypto: "BTC, ETH e SOL: 2% in 1 ora",
     },
     sources: {
       bluesky: "Post di Bluesky",
@@ -924,6 +959,13 @@ export const messages = defineMessages({
       wikipedia: "Wikipedia の速報",
       bluesky: "Bluesky のコミック話題",
       crypto: "暗号資産の価格変動",
+    },
+    presetHints: {
+      newsroom: "AIの最新ニュースをすぐ投稿",
+      hackernews: "Hacker Newsの注目記事を3時間ごとに",
+      wikipedia: "急速に書き換えられているページ",
+      bluesky: "マンガ・コミックの話題の急増",
+      crypto: "BTC・ETH・SOLの1時間で2%の変動",
     },
     sources: {
       bluesky: "Bluesky の投稿",
