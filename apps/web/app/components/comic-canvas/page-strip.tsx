@@ -24,7 +24,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { SlideCheckBadge } from "./check-tools"
 import { messages as checkMessages } from "./check.messages"
 import { MAX_SLIDES, type ComicDoc, type Layer } from "./model"
-import { drawDoc, loadImages, type ImageCache } from "./render"
+import { fontsReady, drawDoc, loadImages, type ImageCache } from "./render"
 import { roving } from "./roving"
 import { projectShots, repeatedShots } from "./shot-variety"
 import type { ComicEditor } from "./use-editor"
@@ -70,6 +70,18 @@ const Thumbnail = React.memo(function Thumbnail({
   React.useEffect(() => {
     loadImages(doc, images, () => setLoaded((n) => n + 1))
   }, [doc, images])
+
+  // Memoised thumbnails don't redraw with their parent, so lettering fonts
+  // that arrive late need their own redraw.
+  React.useEffect(() => {
+    let live = true
+    void fontsReady().then(() => {
+      if (live) setLoaded((n) => n + 1)
+    })
+    return () => {
+      live = false
+    }
+  }, [])
 
   React.useEffect(() => {
     const canvas = ref.current

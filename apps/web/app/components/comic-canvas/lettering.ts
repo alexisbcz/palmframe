@@ -45,7 +45,7 @@ const statusOf = (l: LetteringLayer, t?: LetteringTranslation): LineStatus =>
   !t ? "missing" : t.source === l.text ? "done" : "stale"
 
 // A bubble keeps its default layer name until someone names it.
-const UNNAMED = /^(speech|thought|shout|message|caption)(\s+\d+)?$/i
+const UNNAMED = /^(speech|thought|shout|message|caption)(\s+\d+)?( copy)*$/i
 
 // A best guess at who says a line, for the translator's sake: the name the
 // script gave the bubble, the character its tail points at, or the only

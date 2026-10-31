@@ -86,6 +86,7 @@ export function Reader({
     const onKey = (e: KeyboardEvent) => {
       const forward = rtl ? "ArrowLeft" : "ArrowRight"
       const back = rtl ? "ArrowRight" : "ArrowLeft"
+      if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return
       if (e.key !== forward && e.key !== back) return
       // On the focused track the browser would scroll a slide further.
       e.preventDefault()
