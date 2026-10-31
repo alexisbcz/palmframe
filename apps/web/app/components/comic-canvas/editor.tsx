@@ -222,6 +222,7 @@ export function ComicCanvasEditor({
     requestAnimationFrame(() => composerRef.current?.focus())
   }, [setDocks])
   const images = React.useMemo<ImageCache>(() => new Map(), [])
+  const [title, setTitle] = React.useState(cloud?.title)
   const [view, setView] = React.useState({ zoom: 0.5, fit: true })
   const onZoom = React.useCallback(
     (zoom: number, fit = false) => setView({ zoom, fit }),
@@ -419,6 +420,7 @@ export function ComicCanvasEditor({
               cloud={cloud}
               images={images}
               series={series}
+              onTitle={setTitle}
             />
           )}
         </div>
@@ -445,7 +447,21 @@ export function ComicCanvasEditor({
             </div>
           )}
           {cloud && <ShareButton projectId={cloud.id} />}
-          <ExportButton editor={editor} images={images} />
+          <ExportButton
+            editor={editor}
+            images={images}
+            details={{
+              title,
+              series: series.context?.title,
+              number: series.context?.episode,
+              // Without a name of their own it's part of their email, which
+              // shouldn't travel inside a shared file.
+              writer:
+                viewer && viewer.name !== viewer.email.split("@")[0]
+                  ? viewer.name
+                  : undefined,
+            }}
+          />
           {instagram && viewer && (
             <PublishButton editor={editor} images={images} />
           )}
