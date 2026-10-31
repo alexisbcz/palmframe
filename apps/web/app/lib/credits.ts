@@ -59,6 +59,7 @@ export const COSTS = {
   brand_kit: 5, // reading a brand's logos, colours and fonts from its site
   studio_lookup: 1, // one search of ads or videos, or reading one link
   studio_board: 4, // an LLM planning a comic from a source
+  deep_dive: 40, // an agent researching a lead and writing an article
 } as const
 
 export type Operation = keyof typeof COSTS

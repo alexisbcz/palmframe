@@ -493,6 +493,7 @@ const KINDS = [
   "machine_image",
   "brand_kit",
   "studio_lookup",
+  "deep_dive",
   "studio_board",
   "edit",
   "vary",

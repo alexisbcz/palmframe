@@ -1,3 +1,4 @@
+import type { AgentMessage } from "@earendil-works/pi-agent-core"
 import type {
   Character,
   ComicProject,
@@ -7,6 +8,13 @@ import type {
 import type { AssetPayload } from "@/components/catalog/model"
 
 import type { SubscriptionCache } from "./credits"
+import type {
+  DeepDiveStatus,
+  Fact,
+  Finding,
+  LogLine,
+  Source,
+} from "./deepdive/model"
 import type { DetectorState } from "./machines/detect"
 import type {
   Item,
@@ -116,6 +124,12 @@ export interface Database {
           status?: MachineItemRow["status"]
         }
         Update: { status?: MachineItemRow["status"] }
+        Relationships: []
+      }
+      comic_deep_dives: {
+        Row: DeepDiveRow
+        Insert: { user_id: string; lead: string; job: string }
+        Update: Partial<Omit<DeepDiveRow, "id" | "user_id" | "lead" | "job">>
         Relationships: []
       }
       comic_brand_kits: {
@@ -472,6 +486,28 @@ export type MachineRow = {
   failures: number
   slug: string | null
   public: boolean
+  created_at: string
+  updated_at: string
+}
+
+export type DeepDiveRow = {
+  id: string
+  user_id: string
+  lead: string
+  status: DeepDiveStatus
+  title: string
+  dek: string
+  body: string
+  messages: AgentMessage[]
+  log: LogLine[]
+  facts: Fact[]
+  sources: Source[]
+  findings: Finding[]
+  problems: string[]
+  submits: number
+  slices: number
+  leased_until: string | null
+  job: string
   created_at: string
   updated_at: string
 }
