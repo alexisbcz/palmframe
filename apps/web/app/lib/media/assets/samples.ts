@@ -1,0 +1,336 @@
+import type { AssetSpec } from "@/lib/media/model"
+
+const sourceUrl = "https://www.example.com/report/2026"
+
+// Fixtures for the tests, and for rendering every chart to look at it.
+export const SAMPLES: Record<string, AssetSpec> = {
+  bar: {
+    kind: "figure",
+    chart: "bar",
+    title: "Who spends most on data centres",
+    unit: "$bn",
+    sourceUrl,
+    series: [
+      { label: "Amazon", value: 125 },
+      { label: "Microsoft", value: 94 },
+      { label: "Alphabet", value: 85 },
+      { label: "Meta", value: 72, estimate: true },
+      { label: "Oracle", value: 25 },
+    ],
+  },
+  line: {
+    kind: "figure",
+    chart: "line",
+    title: "Solar module prices keep falling",
+    unit: "$",
+    sourceUrl,
+    series: [
+      { label: "2018", value: 0.38 },
+      { label: "2019", value: 0.3 },
+      { label: "2020", value: 0.27 },
+      { label: "2021", value: 0.33 },
+      { label: "2022", value: 0.28 },
+      { label: "2023", value: 0.21 },
+      { label: "2024", value: 0.13 },
+      { label: "2025", value: 0.1, estimate: true },
+      { label: "2026", value: 0.09, estimate: true },
+    ],
+  },
+  stat: {
+    kind: "figure",
+    chart: "stat",
+    title: "How much of the grid runs on wind",
+    unit: "%",
+    sourceUrl,
+    series: [{ label: "of Denmark's electricity in 2025", value: 58.4 }],
+  },
+  statEstimate: {
+    kind: "figure",
+    chart: "stat",
+    title: "What one training run costs",
+    unit: "$M",
+    sourceUrl,
+    series: [
+      {
+        label: "our napkin number for a frontier model",
+        value: 190,
+        estimate: true,
+      },
+    ],
+  },
+  statMany: {
+    kind: "figure",
+    chart: "stat",
+    title: "The company in four numbers",
+    unit: "$M",
+    sourceUrl,
+    series: [
+      { label: "Annual revenue", value: 412 },
+      { label: "Net loss", value: -88 },
+      { label: "Cash on hand", value: 1250 },
+      { label: "Burn next year", value: 300, estimate: true },
+    ],
+  },
+  comparison: {
+    kind: "figure",
+    chart: "comparison",
+    title: "Same flight, two very different fares",
+    unit: "€",
+    sourceUrl,
+    series: [
+      { label: "Booked in January", value: 89 },
+      { label: "Booked the day before", value: 412 },
+    ],
+  },
+  comparisonFour: {
+    kind: "figure",
+    chart: "comparison",
+    title: "Cost of a kilowatt-hour by source",
+    unit: "¢",
+    sourceUrl,
+    series: [
+      { label: "Onshore wind", value: 3.3 },
+      { label: "Utility solar", value: 4.4 },
+      { label: "Gas", value: 7.1 },
+      { label: "New nuclear", value: 14.2, estimate: true },
+    ],
+  },
+  waterfall: {
+    kind: "figure",
+    chart: "waterfall",
+    title: "Napkin math: what a $20 subscription leaves",
+    unit: "$",
+    sourceUrl,
+    series: [
+      { label: "Subscription", value: 20 },
+      { label: "Inference", value: -9.5 },
+      { label: "App store fee", value: -3 },
+      { label: "Support", value: -1.2, estimate: true },
+      { label: "Add-on revenue", value: 1.5 },
+    ],
+  },
+  long: {
+    kind: "figure",
+    chart: "bar",
+    title:
+      "An extremely long chart title that keeps going and going well past the point where anyone sensible would stop, because hostile input is hostile and the frame must hold no matter what the writer agent hands it",
+    unit: "billion euros, constant 2020 prices",
+    sourceUrl:
+      "https://www.example.com/a/very/long/path/that/goes/on/and/on/and/on/and/on/and/on/and/on/and/on/and/on/and/on/and/on/and/on/report.pdf",
+    series: [
+      {
+        label:
+          "A label that is far too long to sit on one line beside a bar without any help at all from the layout",
+        value: 123456789.12,
+      },
+      {
+        label: "Antidisestablishmentarianismantidisestablishmentarianism",
+        value: 0.001,
+      },
+      { label: "Short", value: 500 },
+    ],
+  },
+  negative: {
+    kind: "figure",
+    chart: "bar",
+    title: "Quarterly result by region",
+    unit: "$M",
+    sourceUrl,
+    series: [
+      { label: "Americas", value: 40 },
+      { label: "Europe", value: -25 },
+      { label: "Asia", value: 0 },
+      { label: "Africa", value: -3, estimate: true },
+    ],
+  },
+  zero: {
+    kind: "figure",
+    chart: "bar",
+    title: "Every value is zero",
+    sourceUrl,
+    series: [
+      { label: "A", value: 0 },
+      { label: "B", value: 0 },
+    ],
+  },
+  one: {
+    kind: "figure",
+    chart: "line",
+    title: "A line with one point",
+    unit: "%",
+    sourceUrl,
+    series: [{ label: "2025", value: 12 }],
+  },
+  fifty: {
+    kind: "figure",
+    chart: "bar",
+    title: "Fifty daily readings",
+    unit: "GW",
+    sourceUrl,
+    series: Array.from({ length: 50 }, (_, i) => ({
+      label: `Day ${i + 1}`,
+      value: Math.round(40 + 30 * Math.sin(i / 5) + i / 2),
+      estimate: i > 44,
+    })),
+  },
+  fiftyLine: {
+    kind: "figure",
+    chart: "line",
+    title: "Fifty daily readings, as a line",
+    unit: "GW",
+    sourceUrl,
+    series: Array.from({ length: 50 }, (_, i) => ({
+      label: `Day ${i + 1}`,
+      value: Math.round(40 + 30 * Math.sin(i / 5) - i / 2),
+      estimate: i > 44,
+    })),
+  },
+  fiftyWaterfall: {
+    kind: "figure",
+    chart: "waterfall",
+    title: "Fifty small changes",
+    sourceUrl,
+    series: Array.from({ length: 50 }, (_, i) => ({
+      label: `Step ${i + 1}`,
+      value: i % 3 ? 5 + i : -4 - i,
+    })),
+  },
+  japanese: {
+    kind: "figure",
+    chart: "bar",
+    title: "日本の半導体投資は過去最高に",
+    unit: "億円",
+    sourceUrl,
+    series: [
+      { label: "東京エレクトロン", value: 1200 },
+      { label: "ルネサス エレクトロニクス", value: 830 },
+      { label: "ソニーグループ", value: 640, estimate: true },
+    ],
+  },
+  arabic: {
+    kind: "figure",
+    chart: "bar",
+    title: "إنتاج النفط في دول الخليج",
+    unit: "%",
+    sourceUrl,
+    series: [
+      { label: "السعودية", value: 42 },
+      { label: "الإمارات", value: 21 },
+      { label: "الكويت", value: 13, estimate: true },
+    ],
+  },
+  hebrew: {
+    kind: "figure",
+    chart: "comparison",
+    title: "מחירי הדירות בתל אביב",
+    unit: "%",
+    sourceUrl,
+    series: [
+      { label: "תל אביב", value: 12 },
+      { label: "ירושלים", value: 7 },
+    ],
+  },
+  stress: {
+    kind: "figure",
+    chart: "bar",
+    title: "Huge and tiny numbers",
+    sourceUrl,
+    series: [
+      { label: "Big", value: 1e21 },
+      { label: "Tiny", value: 1e-9 },
+    ],
+  },
+  xml: {
+    kind: "figure",
+    chart: "bar",
+    title: `<script>alert("x")</script> & "co" </text>`,
+    sourceUrl,
+    series: [
+      { label: "A & B <b>", value: 1 },
+      { label: `]]><!-- "'`, value: 2 },
+      { label: "ctrl\u0007‮char", value: 3 },
+    ],
+  },
+  mapEurope: {
+    kind: "map",
+    title: "Where Europe is building its chip plants",
+    sourceUrl,
+    places: [
+      { name: "Dresden", lat: 51.05, lng: 13.74, value: "$11bn" },
+      { name: "Magdeburg", lat: 52.13, lng: 11.63 },
+      { name: "Grenoble", lat: 45.19, lng: 5.72, value: "$8bn" },
+      { name: "Catania", lat: 37.5, lng: 15.09 },
+      { name: "Eindhoven", lat: 51.44, lng: 5.47 },
+    ],
+  },
+  mapWorld: {
+    kind: "map",
+    title: "The cables that carry the internet land here",
+    sourceUrl,
+    places: [
+      { name: "Marseille", lat: 43.3, lng: 5.37 },
+      { name: "Singapore", lat: 1.35, lng: 103.82 },
+      { name: "Los Angeles", lat: 34.05, lng: -118.24 },
+      { name: "Fortaleza", lat: -3.72, lng: -38.54 },
+      { name: "Tokyo", lat: 35.68, lng: 139.69 },
+    ],
+  },
+  mapOne: {
+    kind: "map",
+    title: "The port at the centre of the dispute",
+    sourceUrl,
+    places: [
+      { name: "Rotterdam", lat: 51.92, lng: 4.48, value: "14.5M containers" },
+    ],
+  },
+  mapDense: {
+    kind: "map",
+    title: "Ten plants in one small region",
+    sourceUrl,
+    places: [
+      ["Lille", 50.63, 3.06],
+      ["Roubaix", 50.69, 3.17],
+      ["Tourcoing", 50.72, 3.16],
+      ["Lens", 50.43, 2.83],
+      ["Arras", 50.29, 2.78],
+      ["Douai", 50.37, 3.08],
+      ["Valenciennes", 50.36, 3.52],
+      ["Cambrai", 50.18, 3.23],
+      ["Dunkirk", 51.03, 2.38],
+      ["Calais", 50.95, 1.86],
+    ].map(([name, lat, lng]) => ({
+      name: name as string,
+      lat: lat as number,
+      lng: lng as number,
+    })),
+  },
+  mapPacific: {
+    kind: "map",
+    title: "Across the date line",
+    sourceUrl,
+    places: [
+      { name: "Suva", lat: -18.14, lng: 178.44 },
+      { name: "Apia", lat: -13.83, lng: -171.76 },
+      { name: "Nuku'alofa", lat: -21.14, lng: -175.2 },
+    ],
+  },
+  mapFifty: {
+    kind: "map",
+    title: "Fifty sites, far more than the map has room to name",
+    sourceUrl,
+    places: Array.from({ length: 50 }, (_, i) => ({
+      name: `Site number ${i + 1}`,
+      lat: 44 + (i % 7) * 1.1,
+      lng: 2 + (i % 11) * 1.3,
+    })),
+  },
+  mapJapan: {
+    kind: "map",
+    title: "九州の半導体工場",
+    sourceUrl,
+    places: [
+      { name: "熊本", lat: 32.8, lng: 130.71, value: "1200億円" },
+      { name: "福岡", lat: 33.59, lng: 130.4 },
+    ],
+  },
+}
