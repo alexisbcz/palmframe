@@ -1,0 +1,41 @@
+name: Render video
+
+# Encoding takes minutes, which a Vercel function doesn't have. Run by hand or
+# dispatched with a manifest URL. The MP4 lands as a workflow artifact; nothing
+# here publishes it, and the job holds no secrets.
+on:
+  workflow_dispatch:
+    inputs:
+      manifest_url:
+        description: "https URL of a video manifest (videoManifest in lib/media/formats/youtube.ts)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Install ffmpeg with libass, and the caption font
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends ffmpeg fonts-inter
+      - name: Render
+        env:
+          MANIFEST_URL: ${{ inputs.manifest_url }}
+        run: node .github/scripts/render-video.mjs "$MANIFEST_URL" --out render-out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video-${{ github.run_id }}
+          path: render-out
+          if-no-files-found: error
+          retention-days: 7
