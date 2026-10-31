@@ -79,6 +79,11 @@ import {
 } from "@/lib/machines/datasets"
 import { createDetector } from "@/lib/machines/detect"
 import {
+  type DiscordOutput,
+  discordOutputs,
+  discordReady,
+} from "@/lib/machines/discord.server"
+import {
   type DismissReason,
   type RetractReason,
   type Feed,
@@ -154,7 +159,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!viewer.labs.machines)
     throw redirect("/projects?settings=labs", { headers })
   const posting = instagramEnabled()
-  const [machines, drafts, items, feedStates, accounts, connection] =
+  const [machines, drafts, items, feedStates, accounts, connection, discord] =
     await Promise.all([
       supabase.from("comic_machines").select("*").order("created_at"),
       supabase
@@ -178,6 +183,7 @@ export async function loader({ request }: Route.LoaderArgs) {
         return profile ? listAccounts(profile) : []
       })().catch(() => []),
       payingConnection(viewer.id).catch(() => null),
+      discordOutputs(viewer.id).catch(() => []),
     ])
   return {
     machines: (machines.data ?? []) as MachineRow[],
@@ -189,6 +195,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       OUTPUT_PLATFORMS.includes(a.platform as OutputPlatform)
     ),
     posting,
+    discord,
+    discordReady: discordReady(),
     canDraw: imageAvailable(connection),
     formats: availableFormats(),
     scheduled: !!process.env.MACHINES_CRON_SECRET?.trim(),
@@ -216,8 +224,10 @@ async function post(body: unknown) {
     stopped?: Notice
     manual?: number
     errors?: string[]
+    wait?: number
   }
-  if (!res.ok) throw new Error(json.error ?? "failed")
+  if (!res.ok)
+    throw Object.assign(new Error(json.error ?? "failed"), { wait: json.wait })
   return json
 }
 
@@ -239,6 +249,14 @@ const list = (s: string) =>
     .filter(Boolean)
 
 const MAX_LINES = 40
+
+const DISCORD_ERRORS = [
+  "discord_url",
+  "discord_wait",
+  "discord_gone",
+  "discord_missing",
+  "discord_halted",
+] as const
 
 const LINE_ERRORS = [
   "one_stance",
@@ -675,6 +693,18 @@ function Draft({
             {t("posts.retractManual")}
           </p>
         )}
+      {draft.discord_status && (
+        <p
+          className={cn(
+            "text-xs",
+            draft.discord_status === "left"
+              ? "text-destructive"
+              : "text-muted-foreground"
+          )}
+        >
+          {t(`discord.status.${draft.discord_status}`)}
+        </p>
+      )}
       {failed && (
         <p role="alert" className="text-sm text-destructive">
           {failed}
@@ -1288,11 +1318,145 @@ function BlueskyConnect({ onDone }: { onDone: () => void }) {
   )
 }
 
+// The webhook goes one way: it's sent once from this box and nothing ever sends it
+// back, so the page knows only that there is one, and the end of its id.
+function DiscordConnect({
+  machineId,
+  output,
+  onDone,
+}: {
+  machineId: string
+  output: DiscordOutput | undefined
+  onDone: () => void
+}) {
+  const t = useT(messages)
+  const [url, setUrl] = React.useState("")
+  const [busy, setBusy] = React.useState(false)
+  const [note, setNote] = React.useState<{ ok: boolean; text: string } | null>(
+    null
+  )
+  const act = async (work: () => Promise<string>) => {
+    setBusy(true)
+    setNote(null)
+    try {
+      setNote({ ok: true, text: await work() })
+      onDone()
+    } catch (e) {
+      const { message, wait } = e as Error & { wait?: number }
+      const known = DISCORD_ERRORS.find((c) => c === message)
+      setNote({
+        ok: false,
+        text: t(`discord.errors.${known ?? "failed"}`, { n: wait ?? 0 }),
+      })
+      if (message === "discord_gone") onDone()
+    } finally {
+      setBusy(false)
+    }
+  }
+  const save = () =>
+    act(async () => {
+      await post({ intent: "discord_connect", id: machineId, url })
+      setUrl("")
+      return t("discord.saved")
+    })
+  const off = output?.state === "disabled"
+  return (
+    <div className="flex flex-col gap-2 rounded-lg bg-muted/50 p-3">
+      <p className="text-sm font-medium">{t("discord.title")}</p>
+      <p className="text-sm text-muted-foreground">{t("discord.hint")}</p>
+      {output && (
+        <p
+          className={cn(
+            "text-sm",
+            off ? "text-destructive" : "text-muted-foreground"
+          )}
+        >
+          {off
+            ? t("discord.disabled")
+            : t("discord.connected", { hint: output.hint })}
+        </p>
+      )}
+      <ButtonGroup className="w-full">
+        <Input
+          aria-label={t("discord.url")}
+          placeholder={t("discord.placeholder")}
+          type="password"
+          autoComplete="off"
+          className="min-w-0 flex-1"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+        />
+        <Button
+          variant="outline"
+          isDisabled={busy || !url.trim()}
+          onPress={save}
+        >
+          {t("discord.save")}
+          {busy ? (
+            <Spinner />
+          ) : (
+            <HugeiconsIcon
+              icon={SentIcon}
+              strokeWidth={2}
+              className="rtl:rotate-180"
+            />
+          )}
+        </Button>
+      </ButtonGroup>
+      {output && (
+        <div className="flex flex-wrap gap-2">
+          {!off && (
+            <Button
+              variant="outline"
+              size="sm"
+              isDisabled={busy}
+              onPress={() =>
+                act(async () => {
+                  await post({ intent: "discord_test", id: machineId })
+                  return t("discord.tested")
+                })
+              }
+            >
+              {t("discord.test")}
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            isDisabled={busy}
+            onPress={() =>
+              act(async () => {
+                await post({ intent: "discord_remove", id: machineId })
+                return t("discord.removed")
+              })
+            }
+          >
+            {t("discord.remove")}
+          </Button>
+        </div>
+      )}
+      {note && (
+        <p
+          role={note.ok ? "status" : "alert"}
+          className={cn(
+            "text-sm",
+            note.ok ? "text-muted-foreground" : "text-destructive"
+          )}
+        >
+          {note.text}
+        </p>
+      )}
+    </div>
+  )
+}
+
 function Filter({
   machine,
   outlets,
   accounts,
   posting,
+  discord,
+  discordReady,
   canDraw,
   formats,
 }: {
@@ -1300,6 +1464,8 @@ function Filter({
   outlets: { id: string; name: string }[]
   accounts: Connected[]
   posting: boolean
+  discord: DiscordOutput | undefined
+  discordReady: boolean
   canDraw: boolean
   formats: FormatId[]
 }) {
@@ -1555,6 +1721,13 @@ function Filter({
             </div>
             <BlueskyConnect onDone={() => revalidator.revalidate()} />
           </>
+        )}
+        {discordReady && (
+          <DiscordConnect
+            machineId={machine.id}
+            output={discord}
+            onDone={() => revalidator.revalidate()}
+          />
         )}
         {outputs.some((o) => o.platform === "instagram") && !image && (
           <p className="text-sm text-muted-foreground">
@@ -1820,6 +1993,8 @@ function Machine({
   now,
   accounts,
   posting,
+  discord,
+  discordReady,
   canDraw,
   formats,
   scheduled,
@@ -1832,6 +2007,8 @@ function Machine({
   now: number
   accounts: Connected[]
   posting: boolean
+  discord: DiscordOutput | undefined
+  discordReady: boolean
   canDraw: boolean
   formats: FormatId[]
   scheduled: boolean
@@ -1958,6 +2135,8 @@ function Machine({
         outlets={machines.filter((m) => m.public && m.id !== machine.id)}
         accounts={accounts}
         posting={posting}
+        discord={discord}
+        discordReady={discordReady}
         canDraw={canDraw}
         formats={formats}
       />
@@ -1995,6 +2174,8 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
     readAt,
     accounts,
     posting,
+    discord,
+    discordReady,
     canDraw,
     formats,
     scheduled,
@@ -2120,6 +2301,8 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
             now={readAt}
             accounts={accounts}
             posting={posting}
+            discord={discord.find((d) => d.machine_id === current.id)}
+            discordReady={discordReady}
             canDraw={canDraw}
             formats={formats}
             scheduled={scheduled}

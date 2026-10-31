@@ -1,10 +1,6 @@
-import {
-  createCipheriv,
-  createDecipheriv,
-  createHash,
-  randomBytes,
-} from "node:crypto"
+import { createHash, randomBytes } from "node:crypto"
 
+import { openSecret, sealSecret, secretsAvailable } from "./secret-box.server"
 import { supabaseAdmin } from "./supabase-admin.server"
 
 // Bring your own OpenRouter account. A connected key pays for renders, edits
@@ -33,37 +29,7 @@ export class OpenRouterError extends Error {
   }
 }
 
-// AES-256-GCM under OPENROUTER_KEY_SECRET; the stored value is iv + data + tag.
-function secret() {
-  const s = process.env.OPENROUTER_KEY_SECRET?.trim()
-  if (!s) throw new Error("OPENROUTER_KEY_SECRET must be set.")
-  return createHash("sha256").update(s).digest()
-}
-
-export const openRouterAvailable = () =>
-  !!process.env.OPENROUTER_KEY_SECRET?.trim() &&
-  !!process.env.SUPABASE_SECRET_KEY?.trim()
-
-function encrypt(key: string) {
-  const iv = randomBytes(12)
-  const cipher = createCipheriv("aes-256-gcm", secret(), iv)
-  const data = Buffer.concat([cipher.update(key, "utf8"), cipher.final()])
-  return Buffer.concat([iv, data, cipher.getAuthTag()]).toString("base64")
-}
-
-function decrypt(stored: string) {
-  const raw = Buffer.from(stored, "base64")
-  const decipher = createDecipheriv(
-    "aes-256-gcm",
-    secret(),
-    raw.subarray(0, 12)
-  )
-  decipher.setAuthTag(raw.subarray(-16))
-  return Buffer.concat([
-    decipher.update(raw.subarray(12, -16)),
-    decipher.final(),
-  ]).toString("utf8")
-}
+export const openRouterAvailable = secretsAvailable
 
 export async function getConnection(
   userId: string
@@ -76,7 +42,7 @@ export async function getConnection(
     .maybeSingle()
   if (!data) return null
   return {
-    key: decrypt(data.key_ciphertext),
+    key: openSecret(data.key_ciphertext),
     hint: data.key_hint,
     enabled: data.enabled,
     imageModel: data.image_model,
@@ -96,7 +62,7 @@ export async function saveKey(userId: string, key: string) {
     .from("openrouter_connections")
     .upsert({
       user_id: userId,
-      key_ciphertext: encrypt(key),
+      key_ciphertext: sealSecret(key),
       key_hint: key.slice(-4),
       enabled: true,
       image_model: existing?.imageModel ?? DEFAULT_IMAGE_MODEL,

@@ -17,6 +17,15 @@ import {
 } from "@/lib/instagram.server"
 import { lineStopFor, machinesHalted } from "@/lib/machines/control.server"
 import { feedRefusal } from "@/lib/machines/datasets"
+import { parseWebhook } from "@/lib/machines/discord"
+import {
+  carryToDiscord,
+  connectDiscord,
+  discordReady,
+  removeDiscord,
+  testDiscord,
+  withdrawDiscord,
+} from "@/lib/machines/discord.server"
 import { evidenceLimit } from "@/lib/machines/gate"
 import {
   DISMISS_REASONS,
@@ -60,6 +69,14 @@ const body = z.discriminatedUnion("intent", [
     id,
     text: z.string().trim().min(1).max(500),
   }),
+  // Never logged, stored as sent or returned: see `connectDiscord`.
+  z.object({
+    intent: z.literal("discord_connect"),
+    id,
+    url: z.string().max(300),
+  }),
+  z.object({ intent: z.literal("discord_remove"), id }),
+  z.object({ intent: z.literal("discord_test"), id }),
   z.object({
     intent: z.literal("bluesky"),
     identifier: z.string().trim().min(3).max(253),
@@ -239,7 +256,7 @@ export async function action({ request }: Route.ActionArgs) {
           request.signal
         )
         if (!draft) return Response.json({ passed: true })
-        const { error } = await supabaseAdmin()
+        const { data: filed, error } = await supabaseAdmin()
           .from("comic_machine_drafts")
           .upsert(
             {
@@ -254,7 +271,11 @@ export async function action({ request }: Route.ActionArgs) {
             },
             { onConflict: "machine_id,signal_id", ignoreDuplicates: true }
           )
-        return error ? fail(error.message, 500) : Response.json({ ok: true })
+          .select("id, held")
+        if (error) return fail(error.message, 500)
+        const post = filed[0]
+        if (post && !post.held) await carryToDiscord(post.id, machine)
+        return Response.json({ ok: true })
       } catch (e) {
         if (e instanceof OutOfCredits) return fail("credits", 402)
         return fail(e instanceof Error ? e.message : String(e), 502)
@@ -267,12 +288,15 @@ export async function action({ request }: Route.ActionArgs) {
         .eq("id", r.id)
         .maybeSingle()
       if (!owned) return fail("Not found", 404)
-      const { error } = await supabaseAdmin()
+      const { data: dismissed, error } = await supabaseAdmin()
         .from("comic_machine_drafts")
         .update({ status: "dismissed", dismiss_reason: r.reason ?? null })
         .eq("id", r.id)
         .in("status", ["new", "failed", "used"])
-      return error ? fail(error.message, 500) : Response.json({ ok: true })
+        .select("id")
+      if (error) return fail(error.message, 500)
+      if (dismissed.length) await withdrawDiscord(r.id)
+      return Response.json({ ok: true })
     }
     // A person read it: it may go out, in their words if they changed it.
     // Changed words are checked like the agent's, and a hold shows them why.
@@ -282,7 +306,7 @@ export async function action({ request }: Route.ActionArgs) {
       const { data: draft } = await supabase
         .from("comic_machine_drafts")
         .select(
-          "id, machine_id, text, scene, alt, evidence, sources, signal, desk"
+          "id, machine_id, text, scene, alt, evidence, sources, signal, desk, held"
         )
         .eq("id", r.id)
         .maybeSingle()
@@ -319,7 +343,13 @@ export async function action({ request }: Route.ActionArgs) {
         .in("status", ["new", "failed"])
         .select("id")
       if (!approved?.length) return fail("Not found", 404)
+      // Discord only carries words that passed. The channel shouldn't keep words a
+      // person just changed, and a hold they overruled stays out of it.
+      const changed = r.text !== draft.text
+      if (changed) await withdrawDiscord(r.id)
       if (held) return Response.json({ ok: false, held, errors: [] })
+      if (changed || !draft.held)
+        await carryToDiscord(r.id, machine as MachineRow)
       const result = await publishDraft(r.id, machine as MachineRow)
       return Response.json({
         ok: !!result?.published,
@@ -344,6 +374,36 @@ export async function action({ request }: Route.ActionArgs) {
       )
       if (!result) return fail("Not found", 404)
       return Response.json({ ok: true, manual: result.manual.length })
+    }
+    case "discord_connect":
+    case "discord_remove":
+    case "discord_test": {
+      if (!discordReady()) return fail("Not found", 404)
+      const { data: machine } = await supabase
+        .from("comic_machines")
+        .select("id, user_id, name, config, public")
+        .eq("id", r.id)
+        .maybeSingle()
+      if (!machine) return fail("Not found", 404)
+      if (r.intent === "discord_remove")
+        return (await removeDiscord(machine.id))
+          ? Response.json({ ok: true })
+          : fail("failed", 500)
+      if (r.intent === "discord_connect") {
+        const webhook = parseWebhook(r.url)
+        if (!webhook) return fail("discord_url", 400)
+        return (await connectDiscord(machine, webhook))
+          ? Response.json({ ok: true })
+          : fail("failed", 500)
+      }
+      const tested = await testDiscord(machine)
+      if (tested === "sent") return Response.json({ ok: true })
+      if (typeof tested === "object")
+        return Response.json(
+          { error: "discord_wait", ...tested },
+          { status: 429 }
+        )
+      return fail(`discord_${tested}`, 409)
     }
     case "bluesky": {
       if (!instagramEnabled()) return fail("Not found", 404)

@@ -239,6 +239,17 @@ Run the unit tests with `bun test apps/web/app/lib/machines`. They include
 `gate.mutation.test.ts`, which corrupts good posts and scores what the gate
 catches, what it holds by mistake and what it can't see.
 
+### Discord output
+
+A machine can send each post to a Discord channel through a webhook an owner pastes on it. The message carries the post with its signature and links that open a compose window on X, Bluesky, Threads, Reddit and, when the post has a link, LinkedIn. A person presses send, so this works on review machines and far stances, and a post in the channel doesn't count as published.
+
+- **The webhook is a credential.** Only `https://discord.com/api/webhooks/` and `https://discordapp.com/api/webhooks/` are accepted, and the URL goes through the address checks of `fetchPublic` without following redirects. It's encrypted with `OPENROUTER_KEY_SECRET`, in a table only the server reads, and never returned to a page. Without that secret the output doesn't show.
+- **Only what passed goes.** A held post, a post the standards desk blocked, held or never read, and a hold an owner overruled stay out of the channel. Halts and election freezes stop delivery too.
+- **Taken back means taken down.** Dismissing, retracting or rewording a post removes its message. A message that can't be removed is marked on the post for a person to delete.
+- **Discord's answers.** A 429 waits for `Retry-After`, 401, 403 and 404 turn the output off until a new webhook is saved, and other failures retry four times.
+
+LinkedIn's share link takes no text, so that's the one place the signature can't travel. The message tells the person to add it.
+
 ## Adding components
 
 From the repository root, run:

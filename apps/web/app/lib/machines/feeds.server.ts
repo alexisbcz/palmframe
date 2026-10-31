@@ -77,16 +77,18 @@ const open = (
   url: URL,
   addresses: LookupAddress[],
   headers: Record<string, string>,
-  signal: AbortSignal
+  signal: AbortSignal,
+  method = "GET",
+  body?: string
 ) =>
   new Promise<IncomingMessage>((resolve, reject) => {
     request(
       url,
-      { headers, signal, lookup: pinnedLookup(addresses) as never },
+      { method, headers, signal, lookup: pinnedLookup(addresses) as never },
       resolve
     )
       .on("error", reject)
-      .end()
+      .end(body)
   })
 
 function unpacked(res: IncomingMessage) {
@@ -174,6 +176,50 @@ export async function fetchPublic(raw: string, options: FetchOptions = {}) {
     return decodeBody(await readBody(res, truncate), type)
   }
   throw new Error("Too many redirects.")
+}
+
+// One write to a host on a closed list. Same address checks as `fetchPublic`, but
+// a redirect is an answer and never followed: the URL can hold a credential, and
+// nothing should repeat it to wherever a response points.
+export async function sendPublic(
+  raw: string,
+  options: {
+    method: "POST" | "DELETE"
+    hosts: readonly string[]
+    body?: string
+    signal?: AbortSignal
+  }
+) {
+  const { method, hosts, body, signal } = options
+  const url = new URL(raw)
+  if (!hosts.includes(url.hostname)) throw new Error("Not an allowed host.")
+  const res = await open(
+    url,
+    await publicAddresses(url),
+    {
+      "user-agent": "PalmframeMachines/1.0 (+https://www.palmframe.com)",
+      ...(body && {
+        "content-type": "application/json",
+        "content-length": String(Buffer.byteLength(body)),
+      }),
+    },
+    AbortSignal.any([
+      AbortSignal.timeout(TIMEOUT_MS),
+      ...(signal ? [signal] : []),
+    ]),
+    method,
+    body
+  )
+  const header = (name: string) => {
+    const value = res.headers[name]
+    return Array.isArray(value) ? value[0] : value
+  }
+  return {
+    status: res.statusCode ?? 0,
+    retryAfter: header("retry-after") ?? null,
+    global: header("x-ratelimit-global") === "true",
+    text: (await readBody(res, true)).toString("utf8"),
+  }
 }
 
 export async function readArticle(url: string, signal?: AbortSignal) {

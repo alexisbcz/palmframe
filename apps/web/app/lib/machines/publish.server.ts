@@ -9,6 +9,7 @@ import {
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
 import { lineStopFor, machinesHalted } from "./control.server"
+import { withdrawDiscord } from "./discord.server"
 import { HOLD_MS, NEEDS_IMAGE, compose, publishOutcome } from "./gate"
 import type { MachineOutput, PublishReceipt, RetractReason } from "./model"
 import { RETRACTABLE, machineConfig } from "./model"
@@ -112,6 +113,7 @@ export async function publishDraft(
       .from("comic_machine_drafts")
       .update({ status: "expired" })
       .eq("id", draft.id)
+    await withdrawDiscord(draft.id)
     return nothing
   }
 
@@ -177,6 +179,7 @@ export async function retractDraft(
     .select("*")
     .maybeSingle()
   if (!draft) return null
+  await withdrawDiscord(draft.id)
   const receipts: PublishReceipt[] = []
   for (const r of draft.receipts) {
     if (!r.postId || r.error) {

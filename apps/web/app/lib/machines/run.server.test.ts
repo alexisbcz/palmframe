@@ -41,6 +41,13 @@ const db = {
   deskRequests: [] as string[],
   unpublished: [] as string[],
   unpublishError: false,
+  discord: [] as { url: string; method: string; body?: string }[],
+  discordAnswer: {
+    status: 200,
+    retryAfter: null as string | null,
+    text: '{"id":"777"}',
+  },
+  discordDown: false,
 }
 
 const passedResult = (reason: string): AgentResult => ({
@@ -107,6 +114,10 @@ class Query {
   }
   not(column: string, _: string, __: null) {
     this.filters.push((r) => r[column] != null)
+    return this
+  }
+  lte(column: string, value: string) {
+    this.filters.push((r) => String(r[column] ?? "") <= value)
     return this
   }
   gte(column: string, value: string) {
@@ -286,12 +297,35 @@ mock.module("./feeds.server", () => ({
     db.fetched.push(feed.preset)
     return db.dataset
   },
+  // No Discord here: this fixture's requests stop at this list. Mocks outlive this
+  // file, so anything else takes the real path, whose refusals fetch.test.ts checks.
+  sendPublic: async (
+    url: string,
+    o: Parameters<typeof realFeeds.sendPublic>[1]
+  ) => {
+    if (!url.startsWith("https://discord.com/api/webhooks/123456789012345678"))
+      return realFeeds.sendPublic(url, o)
+    db.discord.push({ url, method: o.method, body: o.body })
+    if (db.discordDown) throw new Error("socket hang up")
+    return { global: false, ...db.discordAnswer }
+  },
 }))
 
 const { runMachines } = await import("./run.server")
 const { publishDraft, retractDraft } = await import("./publish.server")
 const { approvalCheck } = await import("./standards.server")
 const { publicMachine } = await import("./feed-page.server")
+const {
+  carryToDiscord,
+  connectDiscord,
+  deliverDiscord,
+  discordOutputs,
+  flushDiscord,
+  removeDiscord,
+  testDiscord,
+  withdrawDiscord,
+} = await import("./discord.server")
+const { parseWebhook } = await import("./discord")
 
 const config = (o: Partial<MachineConfig> = {}): MachineConfig => ({
   keywords: [],
@@ -427,6 +461,9 @@ beforeEach(() => {
     deskRequests: [],
     unpublished: [],
     unpublishError: false,
+    discord: [],
+    discordAnswer: { status: 200, retryAfter: null, text: '{"id":"777"}' },
+    discordDown: false,
   })
 })
 
@@ -1520,5 +1557,348 @@ describe("rival outlets", () => {
     await runMachines("https://palmframe.test")
     assert.notEqual(drafts()[0]!.held, null)
     assert.equal(db.posted.length, 0)
+  })
+})
+
+describe("the Discord route", () => {
+  // Made up: the right shape, and no webhook anywhere.
+  const HOOK =
+    "https://discord.com/api/webhooks/123456789012345678/not-a-real-token_not-a-real-token_not-a-real-token"
+  const FAR: Line = { ...LINE, stance: "far-left" }
+  const PASS = { verdict: "pass", rule: "none", part: "post", why: "" }
+
+  beforeEach(() => {
+    process.env.OPENROUTER_KEY_SECRET = "a-test-secret"
+    process.env.SUPABASE_SECRET_KEY = "a-test-key"
+  })
+
+  const connect = () =>
+    connectDiscord({ id: MACHINE, user_id: USER }, parseWebhook(HOOK)!)
+  const row = () => db.tables.comic_machine_discord?.[0] as Row
+  const sent = () => db.discord.filter((c) => c.method === "POST")
+  const draftOf = (o: Row = {}) => {
+    db.tables.comic_machine_drafts = [
+      {
+        id: "d1",
+        machine_id: MACHINE,
+        user_id: USER,
+        text: "Revenue grew 40% in 2026.",
+        link: "https://example.com/a",
+        sources: [],
+        status: "new",
+        held: null,
+        desk: null,
+        created_at: new Date().toISOString(),
+        discord_status: "pending",
+        discord_attempts: 0,
+        discord_next_at: new Date(0).toISOString(),
+        receipts: [],
+        ...o,
+      },
+    ]
+    return db.tables.comic_machine_drafts[0]!
+  }
+  // Waits are measured from now, so a later tick is a row made due again.
+  const due = () => {
+    drafts()[0]!.discord_next_at = new Date(0).toISOString()
+    if (db.tables.comic_machine_discord?.[0])
+      db.tables.comic_machine_discord[0].retry_at = null
+  }
+
+  test("the webhook is stored sealed, and no page can get it back", async () => {
+    await connect()
+    assert.ok(!JSON.stringify(row()).includes("not-a-real-token"))
+    assert.equal(row().webhook_hint, "5678")
+    const outputs = await discordOutputs(USER)
+    assert.deepEqual(outputs, [
+      { machine_id: MACHINE, state: "active", hint: "5678" },
+    ])
+  })
+
+  test("a post goes with its signature, and no ping can go with it", async () => {
+    inbox()
+    seed(machine({}, { publish_mode: "review" }))
+    await connect()
+    db.agent = () => filing("Revenue grew 40% in 2026.")
+    await runMachines("https://palmframe.test")
+    assert.equal(sent().length, 1)
+    assert.ok(sent()[0]!.url.startsWith(`${HOOK}?wait=true`))
+    const body = JSON.parse(sent()[0]!.body!)
+    assert.deepEqual(body.allowed_mentions, { parse: [] })
+    assert.match(body.embeds[0].description, /AI-written/)
+    assert.equal(drafts()[0]!.discord_status, "sent")
+    assert.equal(drafts()[0]!.discord_message_id, "777")
+    // In a channel, waiting for a person, is not published.
+    assert.equal(drafts()[0]!.status, "new")
+    assert.deepEqual(drafts()[0]!.receipts, [])
+  })
+
+  test("a far stance reaches Discord and still can't publish", async () => {
+    await connect()
+    draftOf({ desk: "pass" })
+    calendar()
+    const far = machine({ line: FAR }, { publish_mode: "review" })
+    assert.equal(await deliverDiscord("d1", far), "sent")
+    assert.equal(drafts()[0]!.status, "new")
+    assert.equal(db.posted.length, 0)
+  })
+
+  test("a held post doesn't go", async () => {
+    inbox()
+    seed(machine({}, { publish_mode: "review" }))
+    await connect()
+    db.agent = () => filing("Revenue grew 75% in 2026.")
+    await runMachines("https://palmframe.test")
+    assert.notEqual(drafts()[0]!.held, null)
+    assert.equal(drafts()[0]!.discord_status ?? null, null)
+    assert.equal(sent().length, 0)
+  })
+
+  test("the desk's block and the desk's silence both keep a post out", async () => {
+    for (const desk of [
+      { verdict: "block", rule: "hate", part: "post", why: "no" },
+      "down" as const,
+    ]) {
+      db.tables.comic_machine_drafts = []
+      db.discord = []
+      db.tables.comic_machine_runs = []
+      inbox()
+      seed(machine({ style: "deadpan" }, { publish_mode: "review" }))
+      await connect()
+      db.desk = desk
+      db.agent = () => filing("Revenue grew 40% in 2026.")
+      await runMachines("https://palmframe.test")
+      assert.equal(drafts().length, 1)
+      assert.equal(drafts()[0]!.discord_status ?? null, null)
+      assert.equal(sent().length, 0)
+    }
+  })
+
+  test("a desk machine's post goes once the desk has passed it", async () => {
+    inbox()
+    seed(machine({ style: "deadpan" }, { publish_mode: "review" }))
+    await connect()
+    db.desk = PASS
+    db.agent = () => filing("Revenue grew 40% in 2026.")
+    await runMachines("https://palmframe.test")
+    assert.equal(drafts()[0]!.desk, "pass")
+    assert.equal(sent().length, 1)
+  })
+
+  test("what changed since it was queued is looked at again", async () => {
+    await connect()
+    const m = machine()
+    for (const change of [
+      { status: "dismissed" },
+      { status: "blocked" },
+      { status: "retracted" },
+      { held: "A number no source states." },
+    ]) {
+      draftOf(change)
+      assert.equal(await deliverDiscord("d1", m), "skipped")
+      assert.equal(drafts()[0]!.discord_status, "withdrawn")
+    }
+    draftOf({ desk: "hold" })
+    await deliverDiscord("d1", machine({ style: "deadpan" }))
+    assert.equal(drafts()[0]!.discord_status, "withdrawn")
+    assert.equal(sent().length, 0)
+  })
+
+  test("a halt stops it, and it goes once the halt lifts", async () => {
+    await connect()
+    draftOf()
+    db.tables.comic_machines_control = [{ id: true, halted: true }]
+    assert.equal(await deliverDiscord("d1", machine()), "busy")
+    assert.equal(await testDiscord(machine()), "halted")
+    assert.equal(db.discord.length, 0)
+    db.tables.comic_machines_control = [{ id: true, halted: false }]
+    assert.equal(await flushDiscord([machine()], Date.now() + 1000), 1)
+  })
+
+  test("a freeze stops it", async () => {
+    await connect()
+    draftOf({ desk: "pass" })
+    calendar([{ from: hours(-1), to: hours(1), label: "Vote" }])
+    const far = machine({ line: FAR }, { publish_mode: "review" })
+    assert.equal(await deliverDiscord("d1", far), "skipped")
+    assert.equal(sent().length, 0)
+    assert.equal(drafts()[0]!.discord_status, "pending")
+  })
+
+  test("a machine that's off keeps its queue", async () => {
+    await connect()
+    draftOf()
+    assert.equal(await flushDiscord([], Date.now() + 1000), 0)
+    assert.equal(sent().length, 0)
+  })
+
+  test("429 waits out Retry-After and doesn't count as a failed try", async () => {
+    await connect()
+    draftOf()
+    db.discordAnswer = { status: 429, retryAfter: "120", text: "" }
+    const before = Date.now()
+    await flushDiscord([machine()], Date.now() + 1000)
+    assert.equal(drafts()[0]!.discord_status, "pending")
+    assert.equal(drafts()[0]!.discord_attempts, 0)
+    const next = Date.parse(drafts()[0]!.discord_next_at as string)
+    assert.ok(next >= before + 120_000)
+    assert.ok(Date.parse(row().retry_at as string) >= before + 120_000)
+
+    // Nothing goes to that webhook before then, not even a test.
+    drafts()[0]!.discord_next_at = new Date(0).toISOString()
+    await flushDiscord([machine()], Date.now() + 1000)
+    assert.equal(sent().length, 1)
+    const waited = await testDiscord(machine())
+    assert.ok(typeof waited === "object" && waited.wait > 100)
+
+    due()
+    db.discordAnswer = { status: 200, retryAfter: null, text: '{"id":"8"}' }
+    await flushDiscord([machine()], Date.now() + 1000)
+    assert.equal(drafts()[0]!.discord_status, "sent")
+  })
+
+  test("404 turns the output off, and a new webhook turns it on", async () => {
+    await connect()
+    draftOf()
+    db.discordAnswer = { status: 404, retryAfter: null, text: '{"code":10015}' }
+    await flushDiscord([machine()], Date.now() + 1000)
+    assert.equal(row().state, "disabled")
+    assert.equal(drafts()[0]!.discord_status, "failed")
+    draftOf({ id: "d1" })
+    assert.equal(await deliverDiscord("d1", machine()), "skipped")
+    assert.equal(sent().length, 1)
+    await connect()
+    assert.equal(row().state, "active")
+  })
+
+  test("a failing server is retried, then given up on", async () => {
+    await connect()
+    draftOf()
+    db.discordDown = true
+    for (let i = 0; i < 5; i++) {
+      due()
+      await flushDiscord([machine()], Date.now() + 1000)
+    }
+    assert.equal(sent().length, 5)
+    assert.equal(drafts()[0]!.discord_status, "failed")
+  })
+
+  test("a logged failure holds neither the URL nor the error", async () => {
+    const logged: unknown[][] = []
+    const original = console.error
+    console.error = (...args: unknown[]) => void logged.push(args)
+    try {
+      await connect()
+      draftOf()
+      db.discordDown = true
+      await flushDiscord([machine()], Date.now() + 1000)
+    } finally {
+      console.error = original
+    }
+    assert.ok(logged.length)
+    assert.ok(!JSON.stringify(logged).includes("not-a-real-token"))
+  })
+
+  test("a post too old to be news doesn't go", async () => {
+    await connect()
+    draftOf({ created_at: new Date(Date.now() - 49 * 3_600_000).toISOString() })
+    assert.equal(await deliverDiscord("d1", machine()), "skipped")
+    assert.equal(drafts()[0]!.discord_status, "failed")
+    assert.equal(sent().length, 0)
+  })
+
+  test("what's stored is checked again before any request", async () => {
+    await connect()
+    draftOf()
+    const { sealSecret } = await import("@/lib/secret-box.server")
+    row().webhook_ciphertext = sealSecret("https://evil.test/api/webhooks/1/2")
+    await deliverDiscord("d1", machine())
+    assert.equal(db.discord.length, 0)
+    assert.equal(row().state, "disabled")
+  })
+
+  test("an overlapping run can't send a post twice", async () => {
+    await connect()
+    draftOf()
+    await Promise.all([
+      deliverDiscord("d1", machine()),
+      deliverDiscord("d1", machine()),
+    ])
+    assert.equal(sent().length, 1)
+  })
+
+  test("retracting takes the message down", async () => {
+    await connect()
+    draftOf({
+      status: "published",
+      discord_status: "sent",
+      discord_message_id: "777",
+    })
+    await retractDraft("d1", { id: MACHINE, user_id: USER }, "error")
+    assert.equal(db.discord[0]!.method, "DELETE")
+    assert.equal(db.discord[0]!.url, `${HOOK}/messages/777`)
+    assert.equal(drafts()[0]!.discord_status, "withdrawn")
+  })
+
+  test("a message that won't come down is left for a person", async () => {
+    await connect()
+    draftOf({ discord_status: "sent", discord_message_id: "777" })
+    db.discordAnswer = { status: 500, retryAfter: null, text: "" }
+    await withdrawDiscord("d1")
+    assert.equal(drafts()[0]!.discord_status, "left")
+  })
+
+  test("a message already deleted counts as removed", async () => {
+    await connect()
+    draftOf({ discord_status: "sent", discord_message_id: "777" })
+    db.discordAnswer = { status: 404, retryAfter: null, text: '{"code":10008}' }
+    await withdrawDiscord("d1")
+    assert.equal(drafts()[0]!.discord_status, "withdrawn")
+  })
+
+  test("a queued post is taken back without a request", async () => {
+    await connect()
+    draftOf()
+    await withdrawDiscord("d1")
+    assert.equal(drafts()[0]!.discord_status, "withdrawn")
+    assert.equal(db.discord.length, 0)
+  })
+
+  test("removing the webhook drops what was queued", async () => {
+    await connect()
+    draftOf()
+    await removeDiscord(MACHINE)
+    assert.equal(row(), undefined)
+    assert.equal(drafts()[0]!.discord_status, "withdrawn")
+  })
+
+  test("after a person's edit, the new words go", async () => {
+    await connect()
+    draftOf({ discord_status: "withdrawn" })
+    await carryToDiscord("d1", machine())
+    assert.equal(drafts()[0]!.discord_status, "sent")
+    assert.equal(sent().length, 1)
+    await carryToDiscord("d1", machine())
+    assert.equal(sent().length, 1)
+  })
+
+  test("a test message goes out, once in a while", async () => {
+    await connect()
+    assert.equal(await testDiscord(machine()), "sent")
+    assert.deepEqual(JSON.parse(sent()[0]!.body!).allowed_mentions, {
+      parse: [],
+    })
+    assert.equal(sent()[0]!.url, HOOK)
+    const again = await testDiscord(machine())
+    assert.ok(typeof again === "object" && again.wait > 0)
+    assert.equal(sent().length, 1)
+  })
+
+  test("a test that finds the webhook gone turns the output off", async () => {
+    await connect()
+    db.discordAnswer = { status: 404, retryAfter: null, text: "" }
+    assert.equal(await testDiscord(machine()), "gone")
+    assert.equal(row().state, "disabled")
+    assert.equal(await testDiscord(machine()), "missing")
   })
 })

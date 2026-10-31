@@ -3,7 +3,7 @@ import { createServer, get } from "node:http"
 import type { AddressInfo } from "node:net"
 import { after, before, describe, test } from "node:test"
 
-import { pinnedLookup } from "./feeds.server"
+import { pinnedLookup, sendPublic } from "./feeds.server"
 
 // `fetchPublic` only speaks https to public addresses, so it can't be pointed at
 // a local server. What it depends on can: the connection takes its address from
@@ -46,5 +46,38 @@ describe("the pinned lookup", () => {
       assert.equal(address, "1.1.1.1")
       assert.equal(family, 4)
     })
+  })
+})
+
+// Each of these is refused before any connection is made.
+describe("a write to a closed list of hosts", () => {
+  const hosts = ["discord.com", "discordapp.com"]
+
+  test("refuses any other host", async () => {
+    await assert.rejects(
+      sendPublic("https://evil.test/api/webhooks/1/2", {
+        method: "POST",
+        hosts,
+      })
+    )
+  })
+
+  test("refuses plain http, even to a listed host", async () => {
+    await assert.rejects(
+      sendPublic("http://discord.com/api/webhooks/1/2", {
+        method: "POST",
+        hosts,
+      })
+    )
+  })
+
+  test("refuses a listed name that resolves to a private address", async () => {
+    await assert.rejects(
+      sendPublic("https://127.0.0.1/api/webhooks/1/2", {
+        method: "POST",
+        hosts: ["127.0.0.1"],
+      }),
+      /isn't public/
+    )
   })
 })

@@ -8,6 +8,7 @@ import { splitMemory, tally } from "./agent.logic"
 import { runAgent } from "./agent.server"
 import { lineStopFor, machinesHalted } from "./control.server"
 import { type Detector, createDetector } from "./detect"
+import { flushDiscord, hasDiscord } from "./discord.server"
 import {
   FeedBusy,
   FeedRefused,
@@ -473,6 +474,9 @@ async function edition(
   }
 
   const auto = machine.publish_mode === "auto" && !held && !isFar(config.line)
+  // Far stances and review machines too: this hands a post to a person. `held` is
+  // set on anything the gate or the desk didn't pass, and on what the desk never read.
+  const toDiscord = !held && (await hasDiscord(machine.id))
   const { data: draft, error } = await admin
     .from("comic_machine_drafts")
     .insert({
@@ -499,6 +503,10 @@ async function edition(
       // Stored in review mode too: the reviewer is who the reason is for.
       held,
       status: blocked ? "blocked" : auto ? "approved" : "new",
+      ...(toDiscord && {
+        discord_status: "pending" as const,
+        discord_next_at: new Date(now).toISOString(),
+      }),
     })
     .select("id")
     .single()
@@ -696,6 +704,9 @@ export async function runMachines(origin: string) {
       console.error("Media runs not resumed", e)
     )
   const published = await publishQueue(machines, deadline + 20_000)
+  await flushDiscord(machines, deadline + 20_000).catch((e) =>
+    console.error("Discord queue failed", (e as Error)?.name)
+  )
   await admin
     .from("comic_machine_items")
     .delete()

@@ -434,6 +434,11 @@ export function compose(
   return `${signed(clip(body, words))}\n${link}`
 }
 
+// A post with no link, cut to a limit of its own. Same promise as `compose`: the
+// signature's room comes off first.
+export const fitSigned = (text: string, limit: number, signature: string) =>
+  `${clip(text.trim(), limit - graphemes(signature) - 2)}\n\n${signature}`
+
 // The most words a post can have on the tightest place it goes, after the
 // signature and the link. `compose` would have to cut anything longer, and it
 // cuts from the end, which is where the take is.

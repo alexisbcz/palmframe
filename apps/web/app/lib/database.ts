@@ -120,6 +120,8 @@ export interface Database {
           take_note?: string | null
           desk?: DeskState | null
           block_rule?: string | null
+          discord_status?: DiscordStatus | null
+          discord_next_at?: string | null
         }
         Update: {
           status?: MachineDraftRow["status"]
@@ -132,6 +134,10 @@ export interface Database {
           desk?: DeskState | null
           retracted_at?: string | null
           retract_reason?: RetractReason | null
+          discord_status?: DiscordStatus | null
+          discord_message_id?: string | null
+          discord_attempts?: number
+          discord_next_at?: string | null
         }
         Relationships: []
       }
@@ -158,6 +164,16 @@ export interface Database {
         Row: MachineLineNoteRow
         Insert: Omit<MachineLineNoteRow, "id" | "created_at">
         Update: never
+        Relationships: []
+      }
+      comic_machine_discord: {
+        Row: MachineDiscordRow
+        Insert: Pick<
+          MachineDiscordRow,
+          "machine_id" | "user_id" | "webhook_ciphertext" | "webhook_hint"
+        > &
+          Partial<MachineDiscordRow>
+        Update: Partial<Omit<MachineDiscordRow, "machine_id" | "user_id">>
         Relationships: []
       }
       comic_machine_feed_state: {
@@ -689,7 +705,32 @@ export type MachineDraftRow = {
   block_rule: string | null
   retracted_at: string | null
   retract_reason: RetractReason | null
+  // Where this post is on its way to Discord, if the machine has that output.
+  discord_status: DiscordStatus | null
+  discord_message_id: string | null
+  discord_attempts: number
+  discord_next_at: string | null
   created_at: string
+}
+
+// pending, on its way. sent, in the channel. failed, gave up. withdrawn, nothing
+// left there. left, taken back here and still there, so a person has to delete it.
+export type DiscordStatus = "pending" | "sent" | "failed" | "withdrawn" | "left"
+
+// Only the server reads this table. The webhook is a credential, so a page gets
+// `discordOutputs` from discord.server.ts and never this row.
+export type MachineDiscordRow = {
+  machine_id: string
+  user_id: string
+  webhook_ciphertext: string
+  // The end of the webhook's id, which is no secret, and never of its token.
+  webhook_hint: string
+  state: "active" | "disabled"
+  retry_at: string | null
+  last_sent_at: string | null
+  last_test_at: string | null
+  created_at: string
+  updated_at: string
 }
 
 export type ArenaCalendarRow = {

@@ -128,6 +128,38 @@ export const messages = defineMessages({
       rivalsHint:
         "Its posts can be answered in a take and never count as facts. Both public pages say they have the same owner.",
     },
+    discord: {
+      title: "Discord",
+      hint: "Each post that passes the checks lands in a channel with links that open a compose window, so someone can read it and post it by hand. This works on review machines and far stances too, and doesn't count as publishing.",
+      url: "Discord webhook URL",
+      placeholder: "https://discord.com/api/webhooks/…",
+      save: "Save webhook",
+      saved: "Webhook saved. It won't be shown again.",
+      connected: "Connected, webhook ending in {hint}.",
+      disabled:
+        "Discord says this webhook is gone, so this output is off. Save a new one to turn it back on.",
+      test: "Send a test message",
+      tested: "Test message sent. Check the channel.",
+      remove: "Remove",
+      removed: "Webhook removed.",
+      errors: {
+        discord_url:
+          "That isn't a Discord webhook URL. It should start with https://discord.com/api/webhooks/.",
+        discord_wait: "Discord asked us to wait. Try again in {n} seconds.",
+        discord_gone:
+          "Discord says this webhook is gone, so the output is off.",
+        discord_missing: "Save a webhook first.",
+        discord_halted: "Machines are halted right now, so nothing was sent.",
+        failed: "That didn't work. Try again.",
+      },
+      status: {
+        pending: "Discord: on its way",
+        sent: "Discord: in the channel",
+        failed: "Discord: didn't arrive",
+        withdrawn: "Discord: taken back",
+        left: "Discord: couldn't be removed, so delete it in the channel",
+      },
+    },
     out: {
       title: "Where it publishes",
       public: "Public page with an RSS feed",
@@ -492,6 +524,39 @@ export const messages = defineMessages({
       rivals: "Répondre à vos autres médias",
       rivalsHint:
         "Ses posts peuvent recevoir une réponse dans un commentaire et ne comptent jamais comme des faits. Les deux pages publiques indiquent qu'elles ont le même propriétaire.",
+    },
+    discord: {
+      title: "Discord",
+      hint: "Chaque post qui passe les contrôles arrive dans un salon avec des liens qui ouvrent une fenêtre de rédaction, pour qu'une personne le lise et le publie à la main. Cela fonctionne aussi avec les machines en relecture et les lignes extrêmes, et ne compte pas comme une publication.",
+      url: "URL du webhook Discord",
+      placeholder: "https://discord.com/api/webhooks/…",
+      save: "Enregistrer le webhook",
+      saved: "Webhook enregistré. Il ne sera plus affiché.",
+      connected: "Connecté, webhook se terminant par {hint}.",
+      disabled:
+        "Discord indique que ce webhook n'existe plus : cette sortie est désactivée. Enregistrez-en un nouveau pour la réactiver.",
+      test: "Envoyer un message de test",
+      tested: "Message de test envoyé. Vérifiez le salon.",
+      remove: "Retirer",
+      removed: "Webhook retiré.",
+      errors: {
+        discord_url:
+          "Ce n'est pas une URL de webhook Discord. Elle doit commencer par https://discord.com/api/webhooks/.",
+        discord_wait:
+          "Discord demande de patienter. Réessayez dans {n} secondes.",
+        discord_gone:
+          "Discord indique que ce webhook n'existe plus : la sortie est désactivée.",
+        discord_missing: "Enregistrez d'abord un webhook.",
+        discord_halted: "Les machines sont à l'arrêt : rien n'a été envoyé.",
+        failed: "Ça n'a pas marché. Réessayez.",
+      },
+      status: {
+        pending: "Discord : en route",
+        sent: "Discord : dans le salon",
+        failed: "Discord : pas arrivé",
+        withdrawn: "Discord : retiré",
+        left: "Discord : impossible à retirer, supprimez-le dans le salon",
+      },
     },
     out: {
       title: "Où elle publie",
@@ -862,6 +927,40 @@ export const messages = defineMessages({
       rivalsHint:
         "Sus publicaciones pueden responderse en un comentario y nunca cuentan como hechos. Las dos páginas públicas indican que tienen el mismo propietario.",
     },
+    discord: {
+      title: "Discord",
+      hint: "Cada publicación que pasa los controles llega a un canal con enlaces que abren una ventana de redacción, para que alguien la lea y la publique a mano. También funciona con máquinas en revisión y líneas extremas, y no cuenta como publicar.",
+      url: "URL del webhook de Discord",
+      placeholder: "https://discord.com/api/webhooks/…",
+      save: "Guardar webhook",
+      saved: "Webhook guardado. No se volverá a mostrar.",
+      connected: "Conectado, webhook que termina en {hint}.",
+      disabled:
+        "Discord dice que este webhook ya no existe, así que esta salida está desactivada. Guarda uno nuevo para reactivarla.",
+      test: "Enviar un mensaje de prueba",
+      tested: "Mensaje de prueba enviado. Revisa el canal.",
+      remove: "Quitar",
+      removed: "Webhook quitado.",
+      errors: {
+        discord_url:
+          "Esa no es una URL de webhook de Discord. Debe empezar por https://discord.com/api/webhooks/.",
+        discord_wait:
+          "Discord pide esperar. Inténtalo de nuevo en {n} segundos.",
+        discord_gone:
+          "Discord dice que este webhook ya no existe, así que la salida está desactivada.",
+        discord_missing: "Guarda primero un webhook.",
+        discord_halted:
+          "Las máquinas están detenidas, así que no se envió nada.",
+        failed: "No ha funcionado. Inténtalo de nuevo.",
+      },
+      status: {
+        pending: "Discord: en camino",
+        sent: "Discord: en el canal",
+        failed: "Discord: no llegó",
+        withdrawn: "Discord: retirado",
+        left: "Discord: no se pudo retirar, bórralo en el canal",
+      },
+    },
     out: {
       title: "Dónde publica",
       public: "Página pública con feed RSS",
@@ -1229,6 +1328,40 @@ export const messages = defineMessages({
       rivals: "Auf deine anderen Medien antworten",
       rivalsHint:
         "Auf seine Beiträge kann ein Kommentar antworten, sie zählen aber nie als Fakten. Beide öffentlichen Seiten nennen denselben Eigentümer.",
+    },
+    discord: {
+      title: "Discord",
+      hint: "Jeder Beitrag, der die Prüfungen besteht, landet mit Links zum Verfassen in einem Kanal, damit jemand ihn lesen und von Hand posten kann. Das funktioniert auch bei Maschinen in Prüfung und extremen Linien und zählt nicht als Veröffentlichung.",
+      url: "Discord-Webhook-URL",
+      placeholder: "https://discord.com/api/webhooks/…",
+      save: "Webhook speichern",
+      saved: "Webhook gespeichert. Er wird nicht mehr angezeigt.",
+      connected: "Verbunden, Webhook endet auf {hint}.",
+      disabled:
+        "Laut Discord gibt es diesen Webhook nicht mehr, deshalb ist diese Ausgabe aus. Speichere einen neuen, um sie wieder einzuschalten.",
+      test: "Testnachricht senden",
+      tested: "Testnachricht gesendet. Sieh im Kanal nach.",
+      remove: "Entfernen",
+      removed: "Webhook entfernt.",
+      errors: {
+        discord_url:
+          "Das ist keine Discord-Webhook-URL. Sie muss mit https://discord.com/api/webhooks/ beginnen.",
+        discord_wait:
+          "Discord bittet um Geduld. Versuche es in {n} Sekunden erneut.",
+        discord_gone:
+          "Laut Discord gibt es diesen Webhook nicht mehr, deshalb ist die Ausgabe aus.",
+        discord_missing: "Speichere zuerst einen Webhook.",
+        discord_halted:
+          "Die Maschinen sind angehalten, also wurde nichts gesendet.",
+        failed: "Das hat nicht geklappt. Versuche es erneut.",
+      },
+      status: {
+        pending: "Discord: unterwegs",
+        sent: "Discord: im Kanal",
+        failed: "Discord: nicht angekommen",
+        withdrawn: "Discord: zurückgezogen",
+        left: "Discord: konnte nicht entfernt werden, lösche es im Kanal",
+      },
     },
     out: {
       title: "Wo sie veröffentlicht",
@@ -1599,6 +1732,39 @@ export const messages = defineMessages({
       rivalsHint:
         "Ai suoi post si può rispondere in un commento e non contano mai come fatti. Entrambe le pagine pubbliche indicano lo stesso proprietario.",
     },
+    discord: {
+      title: "Discord",
+      hint: "Ogni post che supera i controlli arriva in un canale con link che aprono una finestra di scrittura, così qualcuno può leggerlo e pubblicarlo a mano. Funziona anche con le macchine in revisione e le linee estreme, e non conta come pubblicazione.",
+      url: "URL del webhook Discord",
+      placeholder: "https://discord.com/api/webhooks/…",
+      save: "Salva webhook",
+      saved: "Webhook salvato. Non verrà più mostrato.",
+      connected: "Collegato, webhook che termina con {hint}.",
+      disabled:
+        "Discord dice che questo webhook non esiste più, quindi questa uscita è disattivata. Salvane uno nuovo per riattivarla.",
+      test: "Invia un messaggio di prova",
+      tested: "Messaggio di prova inviato. Controlla il canale.",
+      remove: "Rimuovi",
+      removed: "Webhook rimosso.",
+      errors: {
+        discord_url:
+          "Questo non è un URL di webhook Discord. Deve iniziare con https://discord.com/api/webhooks/.",
+        discord_wait: "Discord chiede di attendere. Riprova tra {n} secondi.",
+        discord_gone:
+          "Discord dice che questo webhook non esiste più, quindi l'uscita è disattivata.",
+        discord_missing: "Salva prima un webhook.",
+        discord_halted:
+          "Le macchine sono ferme, quindi non è stato inviato nulla.",
+        failed: "Non ha funzionato. Riprova.",
+      },
+      status: {
+        pending: "Discord: in arrivo",
+        sent: "Discord: nel canale",
+        failed: "Discord: non arrivato",
+        withdrawn: "Discord: ritirato",
+        left: "Discord: impossibile rimuoverlo, eliminalo nel canale",
+      },
+    },
     out: {
       title: "Dove pubblica",
       public: "Pagina pubblica con feed RSS",
@@ -1967,6 +2133,39 @@ export const messages = defineMessages({
       rivals: "自分の他のメディアに応答する",
       rivalsHint:
         "投稿にはテイクで応答できますが、事実としては扱われません。両方の公開ページに同じ所有者であることが表示されます。",
+    },
+    discord: {
+      title: "Discord",
+      hint: "チェックを通過した投稿は、投稿画面を開くリンク付きでチャンネルに届きます。担当者が読んで手動で投稿できます。レビュー中のマシンや極端な立場のマシンでも使え、公開には数えられません。",
+      url: "Discord Webhook URL",
+      placeholder: "https://discord.com/api/webhooks/…",
+      save: "Webhookを保存",
+      saved: "Webhookを保存しました。今後は表示されません。",
+      connected: "接続済み。Webhookの末尾は {hint} です。",
+      disabled:
+        "DiscordによるとこのWebhookは存在しないため、この出力はオフです。新しいWebhookを保存すると再開します。",
+      test: "テストメッセージを送信",
+      tested: "テストメッセージを送信しました。チャンネルをご確認ください。",
+      remove: "削除",
+      removed: "Webhookを削除しました。",
+      errors: {
+        discord_url:
+          "Discord Webhook URLではありません。https://discord.com/api/webhooks/ で始まる必要があります。",
+        discord_wait:
+          "Discordから待機を求められました。{n}秒後にもう一度お試しください。",
+        discord_gone:
+          "DiscordによるとこのWebhookは存在しないため、出力をオフにしました。",
+        discord_missing: "先にWebhookを保存してください。",
+        discord_halted: "マシンは停止中のため、何も送信していません。",
+        failed: "うまくいきませんでした。もう一度お試しください。",
+      },
+      status: {
+        pending: "Discord: 送信中",
+        sent: "Discord: チャンネルに投稿済み",
+        failed: "Discord: 届きませんでした",
+        withdrawn: "Discord: 取り下げ済み",
+        left: "Discord: 削除できませんでした。チャンネルで削除してください",
+      },
     },
     out: {
       title: "公開先",
