@@ -72,6 +72,7 @@ import { messages } from "./inspector.messages"
 import { DrawnWith } from "./panel-tools"
 import { EditSection } from "./edit-section"
 import { GuideSection } from "./guide-section"
+import { KnifeSection } from "./knife-section"
 import { PostprocessSection } from "./postprocess-tools"
 
 type Setter<L extends Layer> = <K extends keyof L>(key: K, value: L[K]) => void
@@ -495,6 +496,8 @@ function PanelSections({
           </>
         )}
       </Section>
+
+      <KnifeSection panel={layer} editor={editor} />
 
       <GuideSection panel={layer} editor={editor} generator={generator} />
 
