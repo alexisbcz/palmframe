@@ -333,6 +333,8 @@ export const messages = defineMessages({
         "This line is paused for an election window in its arena. Nothing runs or publishes until it ends.",
       no_calendar:
         "This line can't run: nobody has reviewed the election calendar for its arena.",
+      line_left:
+        "This machine dropped its line, so it stays paused for 48 hours and its drafts can't go out in that time.",
       not_public: "This line can't publish without its public page.",
       no_desk:
         "Stances and funny styles need Claude, so this machine doesn't run on an OpenRouter connection.",
@@ -735,6 +737,8 @@ export const messages = defineMessages({
         "Cette ligne est en pause pour une période électorale. Rien ne tourne ni ne sort avant la fin.",
       no_calendar:
         "Cette ligne ne peut pas tourner : personne n’a relu le calendrier électoral de ce territoire.",
+      line_left:
+        "Cette machine a abandonné sa ligne : elle reste en pause 48 heures et ses brouillons ne peuvent pas sortir pendant ce temps.",
       not_public: "Cette ligne ne peut pas publier sans sa page publique.",
       no_desk:
         "Les positions et les styles drôles ont besoin de Claude : cette machine ne tourne pas sur une connexion OpenRouter.",
@@ -1137,6 +1141,8 @@ export const messages = defineMessages({
         "Esta línea está en pausa por un periodo electoral. Nada funciona ni se publica hasta que termine.",
       no_calendar:
         "Esta línea no puede funcionar: nadie ha revisado el calendario electoral de su territorio.",
+      line_left:
+        "Esta máquina dejó su línea, así que sigue en pausa 48 horas y sus borradores no pueden salir durante ese tiempo.",
       not_public: "Esta línea no puede publicar sin su página pública.",
       no_desk:
         "Las posturas y los estilos de humor necesitan Claude, así que esta máquina no funciona con una conexión de OpenRouter.",
@@ -1538,6 +1544,8 @@ export const messages = defineMessages({
         "Diese Linie pausiert wegen eines Wahlzeitraums. Bis zu dessen Ende läuft und erscheint nichts.",
       no_calendar:
         "Diese Linie kann nicht laufen: Niemand hat den Wahlkalender für ihr Gebiet geprüft.",
+      line_left:
+        "Diese Maschine hat ihre Linie aufgegeben. Sie bleibt 48 Stunden pausiert, und ihre Entwürfe können in dieser Zeit nicht erscheinen.",
       not_public:
         "Diese Linie kann ohne ihre öffentliche Seite nicht veröffentlichen.",
       no_desk:
@@ -1942,6 +1950,8 @@ export const messages = defineMessages({
         "Questa linea è in pausa per un periodo elettorale. Nulla gira o esce fino alla fine.",
       no_calendar:
         "Questa linea non può funzionare: nessuno ha rivisto il calendario elettorale del suo territorio.",
+      line_left:
+        "Questa macchina ha abbandonato la sua linea: resta in pausa per 48 ore e le sue bozze non possono uscire in quel periodo.",
       not_public:
         "Questa linea non può pubblicare senza la sua pagina pubblica.",
       no_desk:
@@ -2341,6 +2351,8 @@ export const messages = defineMessages({
         "選挙期間のため、この方針は一時停止中です。終了まで実行も公開もされません。",
       no_calendar:
         "この方針は実行できません。この地域の選挙カレンダーが確認されていません。",
+      line_left:
+        "このマシンはラインを取り下げたため、48時間停止します。その間、下書きは公開できません。",
       not_public: "公開ページがないと、この方針では公開できません。",
       no_desk:
         "立場とユーモア系スタイルには Claude が必要なため、このマシンは OpenRouter 接続では動作しません。",

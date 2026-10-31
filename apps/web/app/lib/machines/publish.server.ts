@@ -8,13 +8,14 @@ import {
 } from "@/lib/instagram.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
-import { lineStopFor, machinesHalted } from "./control.server"
+import { lastLineNote, lineStopFor, machinesHalted } from "./control.server"
 import { withdrawDiscord } from "./discord.server"
 import { HOLD_MS, NEEDS_IMAGE, compose, publishOutcome } from "./gate"
 import type { MachineOutput, PublishReceipt, RetractReason } from "./model"
 import { RETRACTABLE, machineConfig } from "./model"
 import { signOff } from "./signature"
 import { type LineStop, usesDesk } from "./stance"
+import { UNREADABLE_CONFIG, UNREAD_REASON } from "./standards.server"
 
 const receipt = (
   o: MachineOutput,
@@ -71,11 +72,23 @@ export interface PublishResult {
   errors: PublishReceipt[]
 }
 
+// An approved draft that can't go out, back in front of a person. Left approved
+// it would hold a place in the queue for good.
+const backToReview = (id: string, machineId: string, held: string) =>
+  supabaseAdmin()
+    .from("comic_machine_drafts")
+    .update({ status: "new", held })
+    .eq("id", id)
+    .eq("machine_id", machineId)
+    .eq("status", "approved")
+
 // Claims the draft first, so two overlapping runs can't both send it. The halt
 // is read on every call, so it also stops a queue that's already draining. A
 // halted draft stays approved and goes out once the halt is lifted. So does one
-// stopped by its arena's calendar, unless it's stale by then. Machines the desk
-// reads only publish words it has read: `approved` alone isn't enough for them.
+// stopped by its arena's calendar, unless it's stale by then. Words the desk has
+// stopped or couldn't read never go, whatever the machine is now, and machines
+// the desk reads only publish words it has read: `approved` isn't enough. Settings
+// that don't parse can't say which rules apply, so nothing goes on them.
 export async function publishDraft(
   id: string,
   machine: MachineRow
@@ -83,31 +96,37 @@ export async function publishDraft(
   const nothing = { published: false, halted: false, errors: [] }
   if (await machinesHalted()) return { ...nothing, halted: true }
   const config = machineConfig.safeParse(machine.config)
-  const stored = machine.config as { line?: unknown } | null
-  const stopped: LineStop | null = config.success
-    ? await lineStopFor(machine, config.data, Date.now())
-    : stored?.line
-      ? "no_calendar"
-      : null
+  if (!config.success) {
+    await backToReview(id, machine.id, UNREADABLE_CONFIG)
+    return nothing
+  }
+  const stopped = await lineStopFor(machine, config.data, Date.now())
   if (stopped) return { ...nothing, stopped }
   const admin = supabaseAdmin()
-  let claim = admin
+  const claim = admin
     .from("comic_machine_drafts")
     .update({ status: "publishing" })
     .eq("id", id)
     .eq("machine_id", machine.id)
     .eq("status", "approved")
-  if (config.success && usesDesk(config.data))
-    claim = claim.in("desk", ["pass", "hold"])
-  const { data: draft } = await claim.select("*").maybeSingle()
-  if (!draft) return null
+  const { data: draft } = await (
+    usesDesk(config.data)
+      ? claim.in("desk", ["pass", "hold"])
+      : claim.or("desk.is.null,desk.in.(pass,hold)")
+  )
+    .select("*")
+    .maybeSingle()
+  if (!draft) {
+    // Another run having claimed it first has moved it on from `approved`.
+    await backToReview(id, machine.id, UNREAD_REASON)
+    return null
+  }
 
   // What a freeze held back is old news once it lifts, and a political post
   // going out days late can read as something else entirely.
   if (
-    config.success &&
-    config.data.line &&
-    Date.now() - Date.parse(draft.created_at) > HOLD_MS
+    Date.now() - Date.parse(draft.created_at) > HOLD_MS &&
+    (config.data.line || (await lastLineNote(machine.id)) !== null)
   ) {
     await admin
       .from("comic_machine_drafts")
@@ -132,10 +151,7 @@ export async function publishDraft(
       console.error("Machine profile lookup failed", e)
     }
   }
-  const signature = signOff(
-    config.success ? config.data.language : "en",
-    draft.sources
-  )
+  const signature = signOff(config.data.language, draft.sources)
   const sent: PublishReceipt[] = []
   for (const output of pending)
     sent.push(await sendOne(draft, output, profileId, signature))

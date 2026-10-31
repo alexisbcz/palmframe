@@ -1,4 +1,7 @@
 import assert from "node:assert/strict"
+import { readFileSync, readdirSync } from "node:fs"
+import { join } from "node:path"
+import { fileURLToPath } from "node:url"
 import { describe, test } from "node:test"
 
 import {
@@ -774,5 +777,43 @@ describe("the run ledger's inputs", () => {
       detail: "https://x.test/a",
     })
     assert.equal(noticeOf("Couldn't read x: y."), null)
+  })
+})
+
+describe("the migrations", () => {
+  const dir = fileURLToPath(
+    new URL("../../../../../supabase/migrations", import.meta.url)
+  )
+  const files = readdirSync(dir).sort()
+
+  test("no two share a version, which Supabase keys on", () => {
+    const versions = files.map((f) => f.split("_")[0])
+    assert.equal(new Set(versions).size, versions.length)
+  })
+
+  test("the machines' own run after main's comic styles", () => {
+    const styles = files.findIndex((f) => f.includes("create_comic_styles"))
+    if (styles < 0) return
+    for (const name of ["foundations", "stances", "sources", "discord"]) {
+      const at = files.findIndex((f) => f.endsWith(`machines_${name}.sql`))
+      assert.ok(at > styles, name)
+    }
+  })
+
+  test("owners can't delete the drafts the line rules read", () => {
+    const all = files.map((f) => readFileSync(join(dir, f), "utf8")).join("\n")
+    const last = (needle: string) => all.lastIndexOf(needle)
+    assert.ok(
+      last(`drop policy "Owners delete their drafts"`) >
+        last(`create policy "Owners delete their drafts"`)
+    )
+    const revoked = last("revoke delete on public.comic_machine_drafts")
+    assert.ok(revoked > 0)
+    assert.ok(
+      revoked >
+        last(
+          "grant select, insert, update, delete on public.comic_machine_drafts"
+        )
+    )
   })
 })

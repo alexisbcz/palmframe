@@ -136,6 +136,7 @@ export interface Database {
           retract_reason?: RetractReason | null
           discord_status?: DiscordStatus | null
           discord_message_id?: string | null
+          discord_webhook_id?: string | null
           discord_attempts?: number
           discord_next_at?: string | null
         }
@@ -708,6 +709,7 @@ export type MachineDraftRow = {
   // Where this post is on its way to Discord, if the machine has that output.
   discord_status: DiscordStatus | null
   discord_message_id: string | null
+  discord_webhook_id: string | null
   discord_attempts: number
   discord_next_at: string | null
   created_at: string

@@ -26,7 +26,7 @@ import {
   testDiscord,
   withdrawDiscord,
 } from "@/lib/machines/discord.server"
-import { evidenceLimit } from "@/lib/machines/gate"
+import { evidenceLimit, holdReason } from "@/lib/machines/gate"
 import {
   DISMISS_REASONS,
   RETRACT_REASONS,
@@ -38,7 +38,10 @@ import {
 } from "@/lib/machines/model"
 import { publishDraft, retractDraft } from "@/lib/machines/publish.server"
 import { usesDesk } from "@/lib/machines/stance"
-import { approvalCheck } from "@/lib/machines/standards.server"
+import {
+  UNREADABLE_CONFIG,
+  approvalCheck,
+} from "@/lib/machines/standards.server"
 import { OutOfCredits, writeDraft } from "@/lib/machines/writer.server"
 import { payingConnection } from "@/lib/openrouter.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
@@ -256,6 +259,8 @@ export async function action({ request }: Route.ActionArgs) {
           request.signal
         )
         if (!draft) return Response.json({ passed: true })
+        const evidence = [r.signal.facts, ...r.signal.samples].join("\n")
+        const { language } = machineConfig.parse(machine.config)
         const { data: filed, error } = await supabaseAdmin()
           .from("comic_machine_drafts")
           .upsert(
@@ -264,17 +269,16 @@ export async function action({ request }: Route.ActionArgs) {
               user_id: viewer.id,
               signal_id: r.signal.id,
               signal: r.signal,
-              evidence: evidenceLimit(
-                [r.signal.facts, ...r.signal.samples].join("\n")
-              ),
+              evidence: evidenceLimit(evidence),
               ...draft,
+              held: holdReason(draft.text, evidence, [r.signal], language),
             },
             { onConflict: "machine_id,signal_id", ignoreDuplicates: true }
           )
           .select("id, held")
         if (error) return fail(error.message, 500)
         const post = filed[0]
-        if (post && !post.held) await carryToDiscord(post.id, machine)
+        if (post?.held === null) await carryToDiscord(post.id, machine)
         return Response.json({ ok: true })
       } catch (e) {
         if (e instanceof OutOfCredits) return fail("credits", 402)
@@ -320,22 +324,23 @@ export async function action({ request }: Route.ActionArgs) {
       if (await machinesHalted())
         return Response.json({ ok: false, halted: true, errors: [] })
       const config = machineConfig.safeParse(machine.config)
-      const language = config.success ? config.data.language : "en"
       if (config.success) {
         const stopped = await lineStopFor(machine, config.data, Date.now())
         if (stopped) return Response.json({ ok: false, stopped, errors: [] })
       }
-      const { held, desk } = await approvalCheck(
-        r.text,
-        draft,
-        language,
-        config.success && usesDesk(config.data),
-        request.signal
-      )
+      const { held, desk } = config.success
+        ? await approvalCheck(
+            r.text,
+            draft,
+            config.data.language,
+            usesDesk(config.data),
+            request.signal
+          )
+        : { held: UNREADABLE_CONFIG, desk: draft.desk }
       const { data: approved } = await supabaseAdmin()
         .from("comic_machine_drafts")
         .update(
-          held
+          held !== null
             ? { text: r.text, held, desk }
             : { status: "approved", text: r.text, held: null, desk }
         )
@@ -347,8 +352,8 @@ export async function action({ request }: Route.ActionArgs) {
       // person just changed, and a hold they overruled stays out of it.
       const changed = r.text !== draft.text
       if (changed) await withdrawDiscord(r.id)
-      if (held) return Response.json({ ok: false, held, errors: [] })
-      if (changed || !draft.held)
+      if (held !== null) return Response.json({ ok: false, held, errors: [] })
+      if (changed || draft.held === null)
         await carryToDiscord(r.id, machine as MachineRow)
       const result = await publishDraft(r.id, machine as MachineRow)
       return Response.json({

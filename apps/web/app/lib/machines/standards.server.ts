@@ -29,6 +29,9 @@ const MAX_EVIDENCE = 20_000
 export const UNREAD_REASON =
   "The standards desk couldn't read this, so it can't go out yet."
 
+export const UNREADABLE_CONFIG =
+  "This machine's settings couldn't be read, so this can't go out yet."
+
 // The reader gets the words and what they stand on. Nothing about the machine
 // reaches this function, so nothing can tell it the stance. Null is every way
 // of not getting an answer, and each caller treats that as a no.
@@ -164,7 +167,8 @@ async function reviewDesk(
 
 // What a person pressing approve meets. Changed words go through the gate and
 // then the desk. They can overrule a hold by approving the same words again,
-// but never a block, and nothing the desk hasn't read gets through.
+// but never a block, and nothing the desk hasn't read gets through. A draft the
+// desk has an opinion on keeps it, whatever the machine has been saved as since.
 export async function approvalCheck(
   text: string,
   draft: Parameters<typeof reviewHold>[1] & {
@@ -177,7 +181,7 @@ export async function approvalCheck(
   abort: AbortSignal
 ): Promise<{ held: string | null; desk: DeskState | null }> {
   const held = reviewHold(text, draft, language)
-  if (!desk) return { held, desk: draft.desk }
+  if (!desk && draft.desk === null) return { held, desk: null }
   const changed = text !== draft.text
   if (held) return { held, desk: changed ? "unread" : draft.desk }
   if (changed || draft.desk === "unread" || !draft.desk)

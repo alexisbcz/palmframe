@@ -69,7 +69,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
       }
       return `<item>
 <title>${xml(p.text.slice(0, 120))}</title>
-<description>${xml(masthead ? `${p.text}\n\n${signature}` : p.text)}</description>
+<description>${xml(`${p.text}\n\n${signature}`)}</description>
 <link>${xml(p.link ?? page)}</link>
 <guid isPermaLink="false">${p.id}</guid>
 <pubDate>${new Date(p.published_at).toUTCString()}</pubDate>
@@ -83,7 +83,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 <link>${xml(page)}</link>
 <description>${xml(
       [
-        declared,
+        declared || signature,
         machine.mission || machine.name,
         sameOwner.length
           ? `${t("page.sameOwner")}: ${sameOwner.map((o) => o.name).join(", ")}`

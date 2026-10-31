@@ -39,6 +39,7 @@ const db = {
   desk: { verdict: "pass", rule: "none", part: "post", why: "" } as
     object | "down" | "refused",
   deskRequests: [] as string[],
+  written: "",
   unpublished: [] as string[],
   unpublishError: false,
   discord: [] as { url: string; method: string; body?: string }[],
@@ -112,8 +113,21 @@ class Query {
     this.filters.push((r) => r[column] == null)
     return this
   }
+  // Handles `column` and `column->>key`, where JSON null reads as null.
   not(column: string, _: string, __: null) {
-    this.filters.push((r) => r[column] != null)
+    const [name, key] = column.split("->>") as [string, string?]
+    this.filters.push((r) => {
+      const value = r[name] as Row | null | undefined
+      return (key ? value?.[key] : value) != null
+    })
+    return this
+  }
+  // Only the two shapes the publisher sends.
+  or(filter: string) {
+    assert.equal(filter, "desk.is.null,desk.in.(pass,hold)")
+    this.filters.push(
+      (r) => r.desk == null || ["pass", "hold"].includes(r.desk as string)
+    )
     return this
   }
   lte(column: string, value: string) {
@@ -151,20 +165,24 @@ class Query {
       return { data: null, error: { message: "unreachable" } }
     const rows = (db.tables[this.table] ??= [])
     if (this.op === "upsert") {
+      const added: Row[] = []
       for (const row of [this.value].flat()) {
         const same = rows.find((r) =>
           this.conflict.every((c) => r[c] === row[c])
         )
         if (same && !this.ignore) Object.assign(same, row)
-        if (!same)
-          rows.push({
+        if (!same) {
+          const fresh = {
             id: `row-${++db.id}`,
             created_at: new Date().toISOString(),
             status: "new",
             ...row,
-          })
+          }
+          rows.push(fresh)
+          added.push(fresh)
+        }
       }
-      return { data: null, error: null }
+      return { data: added, error: null }
     }
     const hits = rows.filter((r) => this.filters.every((f) => f(r)))
     if (this.op === "insert") {
@@ -216,6 +234,25 @@ const anthropic = await import("@anthropic-ai/sdk")
 mock.module("@anthropic-ai/sdk", () => ({
   ...anthropic,
   default: class extends anthropic.default {
+    // The hand-run writer.
+    override beta = {
+      messages: {
+        create: async () => ({
+          stop_reason: "end_turn",
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({
+                post: true,
+                text: db.written,
+                scene: "",
+                alt: "",
+              }),
+            },
+          ],
+        }),
+      },
+    } as never
     override messages = {
       create: async (request: unknown) => {
         db.deskRequests.push(JSON.stringify(request))
@@ -245,14 +282,24 @@ mock.module("./agent.server", () => ({
     return db.agent()
   },
 }))
+const realPipeline = { ...(await import("@/lib/media/pipeline.server")) }
 mock.module("@/lib/media/pipeline.server", () => ({
+  ...realPipeline,
   resumeStalled: async () => {},
   startMachineStory: async () => {
     db.stories++
     return true
   },
   afterStory: async () => {},
-  afterRendition: async () => {},
+}))
+const viewers = { ...(await import("@/lib/supabase.server")) }
+mock.module("@/lib/supabase.server", () => ({
+  ...viewers,
+  getViewer: async () => ({
+    supabase: admin,
+    viewer: { id: USER, labs: { machines: true } },
+    headers: new Headers(),
+  }),
 }))
 const openrouter = await import("@/lib/openrouter.server")
 mock.module("@/lib/openrouter.server", () => ({
@@ -267,6 +314,8 @@ mock.module("@/lib/studio/scrapecreators.server", () => ({
 }))
 mock.module("@/lib/instagram.server", () => ({
   InstagramError: class extends Error {},
+  connectBluesky: async () => {},
+  profileFor: async () => "profile",
   instagramEnabled: () => true,
   existingProfile: async () => "profile",
   postToAccount: async (r: { text: string }) => {
@@ -313,7 +362,9 @@ mock.module("./feeds.server", () => ({
 
 const { runMachines } = await import("./run.server")
 const { publishDraft, retractDraft } = await import("./publish.server")
-const { approvalCheck } = await import("./standards.server")
+const { UNREAD_REASON, approvalCheck } = await import("./standards.server")
+const { action } = await import("@/routes/api.machines")
+const { loader: rss } = await import("@/routes/machine.rss")
 const { publicMachine } = await import("./feed-page.server")
 const {
   carryToDiscord,
@@ -459,6 +510,7 @@ beforeEach(() => {
     stories: 0,
     desk: { verdict: "pass", rule: "none", part: "post", why: "" },
     deskRequests: [],
+    written: "",
     unpublished: [],
     unpublishError: false,
     discord: [],
@@ -1110,7 +1162,8 @@ describe("the standards desk", () => {
         },
       ]
       assert.equal(await publishDraft("d1", m), null)
-      assert.equal(drafts()[0]!.status, "approved")
+      assert.equal(drafts()[0]!.status, "new")
+      assert.equal(drafts()[0]!.held, UNREAD_REASON)
     }
     assert.equal(db.posted.length, 0)
   })
@@ -1832,6 +1885,7 @@ describe("the Discord route", () => {
     draftOf({
       status: "published",
       discord_status: "sent",
+      discord_webhook_id: "123456789012345678",
       discord_message_id: "777",
     })
     await retractDraft("d1", { id: MACHINE, user_id: USER }, "error")
@@ -1842,7 +1896,11 @@ describe("the Discord route", () => {
 
   test("a message that won't come down is left for a person", async () => {
     await connect()
-    draftOf({ discord_status: "sent", discord_message_id: "777" })
+    draftOf({
+      discord_status: "sent",
+      discord_message_id: "777",
+      discord_webhook_id: "123456789012345678",
+    })
     db.discordAnswer = { status: 500, retryAfter: null, text: "" }
     await withdrawDiscord("d1")
     assert.equal(drafts()[0]!.discord_status, "left")
@@ -1850,7 +1908,11 @@ describe("the Discord route", () => {
 
   test("a message already deleted counts as removed", async () => {
     await connect()
-    draftOf({ discord_status: "sent", discord_message_id: "777" })
+    draftOf({
+      discord_status: "sent",
+      discord_message_id: "777",
+      discord_webhook_id: "123456789012345678",
+    })
     db.discordAnswer = { status: 404, retryAfter: null, text: '{"code":10008}' }
     await withdrawDiscord("d1")
     assert.equal(drafts()[0]!.discord_status, "withdrawn")
@@ -1900,5 +1962,426 @@ describe("the Discord route", () => {
     assert.equal(await testDiscord(machine()), "gone")
     assert.equal(row().state, "disabled")
     assert.equal(await testDiscord(machine()), "missing")
+  })
+})
+
+describe("confirmed fixes", () => {
+  const HOOK =
+    "https://discord.com/api/webhooks/123456789012345678/not-a-real-token_not-a-real-token_not-a-real-token"
+  const OTHER_HOOK =
+    "https://discord.com/api/webhooks/123456789012349999/not-a-real-token_not-a-real-token_not-a-real-token"
+  const FIXED_LINE = {
+    stance: "left",
+    arena: "fr",
+    publisher: "Pub",
+    contact: "desk@example.com",
+    scrutiny: [],
+  } as unknown as Line
+  const ago = (h: number) => new Date(Date.now() - h * 3_600_000).toISOString()
+  const reviewed = (windows: object[] = []) => {
+    db.tables.comic_arena_calendars = [
+      {
+        arena: "fr",
+        reviewed_until: ago(-1000),
+        reviewed_by: "t",
+        windows,
+      },
+    ]
+  }
+  const row = (o: Row = {}): Row => ({
+    id: "d1",
+    machine_id: MACHINE,
+    user_id: USER,
+    status: "approved",
+    desk: null,
+    held: null,
+    text: "Revenue grew 40%",
+    link: null,
+    sources: [],
+    receipts: [],
+    evidence: "Revenue grew 40%",
+    signal: null,
+    scene: "",
+    alt: "",
+    created_at: ago(1),
+    ...o,
+  })
+  const call = (body: object) =>
+    action({
+      request: new Request("https://x.test/api/machines", {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    } as never) as Promise<Response>
+  const secrets = () => {
+    process.env.OPENROUTER_KEY_SECRET = "a-test-secret"
+    process.env.SUPABASE_SECRET_KEY = "a-test-key"
+  }
+
+  describe("a hold with no reason", () => {
+    test("counts as unread, so an auto machine can't publish it", async () => {
+      seed(machine({ style: "deadpan" }, { outputs: [ACCOUNT] }))
+      inbox()
+      db.agent = () => filing("Revenue grew 40%")
+      db.desk = { verdict: "hold", rule: "harm", part: "post", why: "   " }
+      const result = await runMachines("https://x.test")
+      assert.equal(result.published, 0)
+      assert.equal(drafts()[0]!.status, "new")
+      assert.equal(drafts()[0]!.desk, "unread")
+      assert.equal(db.posted.length, 0)
+    })
+
+    test("can't approve edited words on the first press", async () => {
+      db.desk = { verdict: "block", rule: "hate", part: "post", why: "" }
+      const r = await approvalCheck(
+        "Revenue grew 40% again.",
+        {
+          text: "Revenue grew 40%.",
+          evidence: "Revenue grew 40%",
+          sources: [{}],
+          signal: null,
+          scene: "",
+          alt: "",
+          desk: "pass",
+        },
+        "en",
+        true,
+        AbortSignal.timeout(1000)
+      )
+      assert.equal(r.desk, "unread")
+      assert.equal(r.held, UNREAD_REASON)
+    })
+  })
+
+  describe("a hand-run draft", () => {
+    const UUID = "11111111-1111-4111-8111-111111111111"
+    const signal = {
+      id: "s1",
+      source: "crypto",
+      title: "BTC",
+      facts: "BTC rose 5% in 10 minutes.",
+      samples: [],
+      url: "https://example.com/s",
+      at: 1,
+      measure: { type: "move", from: 1, to: 2, change: 5, minutes: 10 },
+    }
+
+    test("goes through the gate, and a hold stays out of Discord", async () => {
+      secrets()
+      seed(machine({}, { id: UUID, publish_mode: "review" }))
+      await connectDiscord({ id: UUID, user_id: USER }, parseWebhook(HOOK)!)
+      db.written = "BTC rose 90% in 10 minutes."
+      const res = await call({ intent: "draft", id: UUID, signal })
+      assert.equal(res.status, 200)
+      assert.match(String(drafts()[0]!.held), /90%/)
+      assert.equal(db.discord.length, 0)
+    })
+
+    test("that passes still reaches Discord", async () => {
+      secrets()
+      seed(machine({}, { id: UUID, publish_mode: "review" }))
+      await connectDiscord({ id: UUID, user_id: USER }, parseWebhook(HOOK)!)
+      db.written = "BTC rose 5% in 10 minutes."
+      await call({ intent: "draft", id: UUID, signal })
+      assert.equal(drafts()[0]!.held, null)
+      assert.equal(db.discord.length, 1)
+    })
+  })
+
+  describe("the draft's own record decides, not the machine's settings", () => {
+    test("words the desk stopped don't publish once it's saved plain", async () => {
+      for (const desk of ["block", "unread"]) {
+        db.tables.comic_machine_drafts = [row({ desk })]
+        assert.equal(await publishDraft("d1", machine()), null)
+        assert.equal(drafts()[0]!.status, "new")
+      }
+      assert.equal(db.posted.length, 0)
+    })
+
+    test("settings that don't parse send it back, line or no line", async () => {
+      db.tables.comic_machine_drafts = [row()]
+      const broken = { ...machine(), config: { keywords: "nope" } } as never
+      const result = await publishDraft("d1", broken)
+      assert.equal(result?.published, false)
+      assert.equal(drafts()[0]!.status, "new")
+      assert.ok(drafts()[0]!.held)
+    })
+
+    test("a person's approve still meets the desk on a plain machine", async () => {
+      db.desk = "down"
+      const r = await approvalCheck(
+        "Revenue grew 40%",
+        {
+          text: "Revenue grew 40%",
+          evidence: "",
+          sources: [],
+          signal: null,
+          scene: "",
+          alt: "",
+          desk: "unread",
+        },
+        "en",
+        false,
+        AbortSignal.timeout(1000)
+      )
+      assert.equal(r.held, UNREAD_REASON)
+    })
+
+    test("a blocked draft can't be approved after the style is dropped", async () => {
+      const r = await approvalCheck(
+        "Revenue grew 40%",
+        {
+          text: "Revenue grew 40%",
+          evidence: "",
+          sources: [],
+          signal: null,
+          scene: "",
+          alt: "",
+          desk: "block",
+        },
+        "en",
+        false,
+        AbortSignal.timeout(1000)
+      )
+      assert.notEqual(r.held, null)
+    })
+
+    test("dropping a line doesn't walk a draft past a freeze", async () => {
+      db.tables.comic_machine_line_notes = [
+        { machine_id: MACHINE, to_stance: null, created_at: ago(1) },
+      ]
+      db.tables.comic_machine_drafts = [row({ desk: "pass" })]
+      const m = machine({}, { outputs: [ACCOUNT] })
+      assert.equal((await publishDraft("d1", m))?.stopped, "line_left")
+      assert.equal(drafts()[0]!.status, "approved")
+      assert.equal(db.posted.length, 0)
+    })
+
+    test("and what it left behind expires once that wait is over", async () => {
+      db.tables.comic_machine_line_notes = [
+        { machine_id: MACHINE, to_stance: null, created_at: ago(49) },
+      ]
+      db.tables.comic_machine_drafts = [
+        row({ desk: "pass", created_at: ago(60) }),
+      ]
+      await publishDraft("d1", machine({}, { outputs: [ACCOUNT] }))
+      assert.equal(drafts()[0]!.status, "expired")
+      assert.equal(db.posted.length, 0)
+    })
+
+    test("a machine that never had a line isn't held up", async () => {
+      db.tables.comic_machine_drafts = [row({ created_at: ago(60) })]
+      assert.equal((await publishDraft("d1", machine()))?.published, true)
+    })
+
+    test("Discord won't carry words the desk stopped on a plain machine", async () => {
+      secrets()
+      await connectDiscord({ id: MACHINE, user_id: USER }, parseWebhook(HOOK)!)
+      db.tables.comic_machine_drafts = [
+        row({
+          status: "new",
+          desk: "unread",
+          discord_status: "pending",
+          discord_attempts: 0,
+        }),
+      ]
+      await deliverDiscord("d1", machine())
+      assert.equal(db.discord.length, 0)
+      assert.equal(drafts()[0]!.discord_status, "withdrawn")
+    })
+  })
+
+  describe("the publish queue", () => {
+    test("stuck rows don't fill it for everyone else", async () => {
+      const other = machine({}, { id: "machine-2", outputs: [] })
+      const stuck = machine({ style: "wry" }, {})
+      db.tables.comic_machines = [stuck, other] as unknown as Row[]
+      db.tables.comic_machine_drafts = [
+        ...Array.from({ length: 20 }, (_, i) =>
+          row({ id: `s${i}`, desk: null })
+        ),
+        row({ id: "ok", machine_id: "machine-2" }),
+      ]
+      for (const m of db.tables.comic_machines!) m.next_run_at = ago(-1)
+      const result = await runMachines("https://x.test")
+      assert.equal(result.published, 1)
+      assert.equal(drafts().filter((d) => d.status === "new").length, 20)
+    })
+
+    test("a frozen machine's backlog can't fill it either", async () => {
+      reviewed([{ from: ago(1), to: ago(-1), label: "Vote" }])
+      const other = machine({}, { id: "machine-2" })
+      const frozen = machine({ line: FIXED_LINE }, { publish_mode: "review" })
+      db.tables.comic_machines = [frozen, other] as unknown as Row[]
+      db.tables.comic_machine_drafts = [
+        ...Array.from({ length: 20 }, (_, i) =>
+          row({ id: `f${i}`, desk: "pass" })
+        ),
+        row({ id: "ok", machine_id: "machine-2" }),
+      ]
+      for (const m of db.tables.comic_machines!) m.next_run_at = ago(-1)
+      const result = await runMachines("https://x.test")
+      assert.equal(result.published, 1)
+      assert.equal(drafts().filter((d) => d.status === "approved").length, 20)
+    })
+  })
+
+  describe("a Story on a machine the desk reads", () => {
+    const story = {
+      article: { body: "Revenue grew 40% in 2026." },
+      facts: [],
+      sources: [
+        {
+          title: "A",
+          url: "https://example.com/a",
+          text: "Revenue grew 40% in 2026.",
+        },
+      ],
+      lead: "https://example.com/a",
+    }
+    const rendition = { parts: [{ text: "Revenue grew 40% in 2026." }] }
+    const file = (m: MachineRow) => {
+      seed(m)
+      return realPipeline.afterRendition(
+        {
+          id: "r1",
+          machine_id: MACHINE,
+          format: "linkedin",
+          user_id: USER,
+          status: "done",
+          problems: [],
+        } as never,
+        rendition as never,
+        story as never
+      )
+    }
+
+    test("is filed for the desk, and can't sit approved forever", async () => {
+      await file(
+        machine(
+          { style: "deadpan" },
+          { outputs: [{ ...ACCOUNT, platform: "linkedin" }] }
+        )
+      )
+      assert.equal(drafts().length, 1)
+      assert.equal(drafts()[0]!.status, "new")
+      assert.equal(drafts()[0]!.desk, "unread")
+      assert.equal(drafts()[0]!.held, UNREAD_REASON)
+    })
+
+    test("a plain machine's still goes straight out", async () => {
+      await file(
+        machine({}, { outputs: [{ ...ACCOUNT, platform: "linkedin" }] })
+      )
+      assert.equal(drafts()[0]!.status, "approved")
+      assert.equal(drafts()[0]!.desk, null)
+    })
+  })
+
+  describe("a message already in a Discord channel", () => {
+    const sentDraft = (o: Row = {}) => {
+      db.tables.comic_machine_drafts = [
+        row({
+          status: "new",
+          discord_status: "sent",
+          discord_message_id: "777",
+          discord_webhook_id: "123456789012345678",
+          ...o,
+        }),
+      ]
+    }
+    const DELETES = () => db.discord.filter((c) => c.method === "DELETE")
+
+    test("comes out when a freeze starts, on a machine that's off too", async () => {
+      secrets()
+      reviewed([{ from: ago(1), to: ago(-1), label: "Vote" }])
+      seed(
+        machine(
+          { line: FIXED_LINE },
+          { enabled: false, publish_mode: "review" }
+        )
+      )
+      await connectDiscord({ id: MACHINE, user_id: USER }, parseWebhook(HOOK)!)
+      sentDraft()
+      await runMachines("https://x.test")
+      assert.equal(DELETES().length, 1)
+      assert.equal(drafts()[0]!.discord_status, "withdrawn")
+    })
+
+    test("comes out when it goes stale, and not before", async () => {
+      secrets()
+      reviewed()
+      seed(
+        machine(
+          { line: FIXED_LINE },
+          { enabled: false, publish_mode: "review" }
+        )
+      )
+      await connectDiscord({ id: MACHINE, user_id: USER }, parseWebhook(HOOK)!)
+      sentDraft()
+      await runMachines("https://x.test")
+      assert.equal(DELETES().length, 0)
+      sentDraft({ created_at: ago(49) })
+      await runMachines("https://x.test")
+      assert.equal(DELETES().length, 1)
+    })
+
+    test("a plain machine's messages stay up", async () => {
+      secrets()
+      seed(machine({}, { enabled: false }))
+      await connectDiscord({ id: MACHINE, user_id: USER }, parseWebhook(HOOK)!)
+      sentDraft({ created_at: ago(100) })
+      await runMachines("https://x.test")
+      assert.equal(DELETES().length, 0)
+    })
+
+    test("dropping the line doesn't leave them up", async () => {
+      secrets()
+      db.tables.comic_machine_line_notes = [
+        { machine_id: MACHINE, to_stance: null, created_at: ago(1) },
+      ]
+      seed(machine({}, { enabled: false }))
+      await connectDiscord({ id: MACHINE, user_id: USER }, parseWebhook(HOOK)!)
+      sentDraft()
+      await runMachines("https://x.test")
+      assert.equal(DELETES().length, 1)
+    })
+
+    test("is only taken back through the webhook that sent it", async () => {
+      secrets()
+      await connectDiscord(
+        { id: MACHINE, user_id: USER },
+        parseWebhook(OTHER_HOOK)!
+      )
+      sentDraft()
+      await withdrawDiscord("d1")
+      assert.equal(db.discord.length, 0)
+      assert.equal(drafts()[0]!.discord_status, "left")
+      assert.equal(drafts()[0]!.discord_message_id, "777")
+    })
+
+    test("records which webhook sent it", async () => {
+      secrets()
+      await connectDiscord({ id: MACHINE, user_id: USER }, parseWebhook(HOOK)!)
+      db.tables.comic_machine_drafts = [
+        row({ status: "new", discord_status: "pending", discord_attempts: 0 }),
+      ]
+      await deliverDiscord("d1", machine())
+      assert.equal(drafts()[0]!.discord_webhook_id, "123456789012345678")
+    })
+  })
+
+  test("RSS says a machine wrote it, with or without a line", async () => {
+    seed(machine({ style: "wry" }, { slug: "desk" }))
+    db.tables.comic_machine_drafts = [
+      row({ status: "published", published_at: ago(1) }),
+    ]
+    const res = (await rss({
+      params: { slug: "desk" },
+      request: new Request("https://x.test/m/desk/rss"),
+    } as never)) as Response
+    const body = await res.text()
+    assert.match(body, /<description>Revenue grew 40%\n\nAI-written/)
+    assert.match(body, /<channel>[\s\S]*?<description>AI-written/)
   })
 })

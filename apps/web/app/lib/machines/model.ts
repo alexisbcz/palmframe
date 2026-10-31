@@ -308,6 +308,7 @@ export const RUN_DECISIONS = [
   "frozen",
   "no_calendar",
   "not_public",
+  "line_left",
   "no_desk",
 ] as const
 export type RunDecision = (typeof RUN_DECISIONS)[number]
@@ -321,6 +322,7 @@ export const NOTICES = [
   "frozen",
   "no_calendar",
   "not_public",
+  "line_left",
   "no_desk",
 ] as const
 export type Notice = (typeof NOTICES)[number]

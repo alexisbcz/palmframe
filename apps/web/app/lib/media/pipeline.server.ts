@@ -16,6 +16,8 @@ import {
   type OutputPlatform,
   machineConfig,
 } from "@/lib/machines/model"
+import { usesDesk } from "@/lib/machines/stance"
+import { UNREAD_REASON } from "@/lib/machines/standards.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
 import { availableFormats } from "./formats"
@@ -208,7 +210,10 @@ export async function afterRendition(
     today: today ?? 0,
     dailyCap: config.dailyCap,
   })
-  const auto = machine.publish_mode === "auto" && !held
+  // The desk has to read every post on a machine it reads, and hasn't read this.
+  // Filed unread, a person's approve runs the desk on it before it can go.
+  const unread = usesDesk(config)
+  const auto = machine.publish_mode === "auto" && !held && !unread
   const { error } = await admin.from("comic_machine_drafts").insert({
     machine_id: machine.id,
     user_id: machine.user_id,
@@ -222,7 +227,12 @@ export async function afterRendition(
     link: story.lead.startsWith("https://") ? story.lead : null,
     platform,
     evidence: evidenceLimit(evidence),
-    held: machine.publish_mode === "auto" ? held : null,
+    held: unread
+      ? (held ?? UNREAD_REASON)
+      : machine.publish_mode === "auto"
+        ? held
+        : null,
+    desk: unread ? ("unread" as const) : null,
     status: auto ? "approved" : "new",
   })
   // A rerun of the same rendition has already filed its draft.

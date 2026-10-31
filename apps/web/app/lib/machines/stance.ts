@@ -197,7 +197,7 @@ export const arenaCalendar = z.object({
   windows: z.array(electionWindow),
 })
 
-export type LineStop = "frozen" | "no_calendar" | "not_public"
+export type LineStop = "frozen" | "no_calendar" | "not_public" | "line_left"
 
 // Null when a line in this arena may publish now. A missing, unreadable or
 // out-of-date calendar stops the line: nobody has said this moment is safe.

@@ -8,7 +8,7 @@ import { splitMemory, tally } from "./agent.logic"
 import { runAgent } from "./agent.server"
 import { lineStopFor, machinesHalted } from "./control.server"
 import { type Detector, createDetector } from "./detect"
-import { flushDiscord, hasDiscord } from "./discord.server"
+import { flushDiscord, hasDiscord, sweepDiscord } from "./discord.server"
 import {
   FeedBusy,
   FeedRefused,
@@ -54,6 +54,7 @@ const REPLAY_LIMIT_MS = 30 * 60_000
 const DEADLINE_MS = 110_000
 const MAX_MACHINES_PER_RUN = 50
 const MAX_EDITIONS_PER_RUN = 8
+const PUBLISH_BATCH = 20
 // A new edition takes this long at worst; later machines wait for the next tick.
 const EDITION_MS = 45_000
 const INBOX_DAYS = 14
@@ -441,7 +442,7 @@ async function edition(
     !config.line &&
     // The desk reads the picture's description first, so nothing it stopped is
     // ever drawn and stored in a public bucket.
-    !(desk && held) &&
+    !(desk && held !== null) &&
     filed.scene &&
     imageAvailable(connection) &&
     (connection || affordable(COSTS.machine_image))
@@ -473,10 +474,11 @@ async function edition(
     }
   }
 
-  const auto = machine.publish_mode === "auto" && !held && !isFar(config.line)
+  const auto =
+    machine.publish_mode === "auto" && held === null && !isFar(config.line)
   // Far stances and review machines too: this hands a post to a person. `held` is
   // set on anything the gate or the desk didn't pass, and on what the desk never read.
-  const toDiscord = !held && (await hasDiscord(machine.id))
+  const toDiscord = held === null && (await hasDiscord(machine.id))
   const { data: draft, error } = await admin
     .from("comic_machine_drafts")
     .insert({
@@ -528,7 +530,7 @@ async function edition(
     )
   // A Story is an extra. It can't cost the machine the post it just filed, and
   // nothing pays for research on a post that may never go out.
-  if (!held && !config.line && affordable(COSTS.deep_dive)) {
+  if (held === null && !config.line && affordable(COSTS.deep_dive)) {
     const started = await startMachineStory(
       machine,
       config.media,
@@ -552,28 +554,39 @@ async function edition(
   return { drafts: blocked ? 0 : 1, failed: false }
 }
 
-// Everything approved, whether by a person or by an auto machine.
+// Everything approved, whether by a person or by an auto machine, up to a batch of
+// sends. Rows that can't go leave the queue: a draft that can't be claimed goes
+// back to review, and a machine that can't publish right now drops out for this
+// run. Either way the queue is read again, so they can't fill every place in it.
 async function publishQueue(machines: MachineRow[], deadline: number) {
   const byId = new Map(machines.map((m) => [m.id, m]))
-  const { data } = await supabaseAdmin()
-    .from("comic_machine_drafts")
-    .select("id, machine_id")
-    .eq("status", "approved")
-    .order("created_at")
-    .limit(20)
+  const open = new Set(byId.keys())
   let published = 0
-  for (const row of data ?? []) {
-    if (Date.now() > deadline) break
-    const machine = byId.get(row.machine_id)
-    if (!machine) continue
-    const result = await publishDraft(row.id, machine)
-    if (result?.halted) break
-    if (result?.published) published++
-    if (result?.errors.length)
-      await supabaseAdmin()
-        .from("comic_machines")
-        .update({ last_error: result.errors[0]!.error })
-        .eq("id", machine.id)
+  let tried = 0
+  while (open.size && tried < PUBLISH_BATCH) {
+    const { data } = await supabaseAdmin()
+      .from("comic_machine_drafts")
+      .select("id, machine_id")
+      .eq("status", "approved")
+      .in("machine_id", [...open])
+      .order("created_at")
+      .limit(PUBLISH_BATCH)
+    if (!data?.length) break
+    for (const row of data) {
+      if (Date.now() > deadline || tried >= PUBLISH_BATCH) return published
+      if (!open.has(row.machine_id)) continue
+      const machine = byId.get(row.machine_id)!
+      const result = await publishDraft(row.id, machine)
+      if (result?.halted) return published
+      if (result?.stopped) open.delete(machine.id)
+      if (result?.published || result?.errors.length) tried++
+      if (result?.published) published++
+      if (result?.errors.length)
+        await supabaseAdmin()
+          .from("comic_machines")
+          .update({ last_error: result.errors[0]!.error })
+          .eq("id", machine.id)
+    }
   }
   return published
 }
@@ -603,8 +616,16 @@ export async function runMachines(origin: string) {
     errors: 0,
     halted: false,
   }
+  const sweep = () =>
+    sweepDiscord(now, deadline + 20_000).catch((e) =>
+      console.error("Discord sweep failed", (e as Error)?.name)
+    )
   // Before anything that spends or sends, including resuming stalled Stories.
-  if (await machinesHalted()) return { ...summary, halted: true }
+  // Taking messages back isn't sending, so a halt doesn't stop it.
+  if (await machinesHalted()) {
+    await sweep()
+    return { ...summary, halted: true }
+  }
   await expireHeld(now)
 
   const { data, error } = await admin
@@ -707,6 +728,7 @@ export async function runMachines(origin: string) {
   await flushDiscord(machines, deadline + 20_000).catch((e) =>
     console.error("Discord queue failed", (e as Error)?.name)
   )
+  await sweep()
   await admin
     .from("comic_machine_items")
     .delete()

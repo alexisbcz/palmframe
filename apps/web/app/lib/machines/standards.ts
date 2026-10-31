@@ -55,13 +55,15 @@ const answer = z.object({
 export type DeskAnswer = z.infer<typeof answer>
 
 // Null for anything but a well-formed answer. A hold or block with no rule on
-// the list isn't one: the owner would be told nothing.
+// the list or no reason isn't one: the owner would be told nothing. The schema
+// can't say this, because the API takes no string lengths and a pass has no why.
 export function parseAnswer(raw: unknown): DeskAnswer | null {
   const parsed = answer.safeParse(raw)
   if (!parsed.success) return null
   const { verdict, rule, why } = parsed.data
-  if (verdict !== "pass" && !RULES.includes(rule)) return null
-  return { ...parsed.data, why: why.trim().slice(0, 280) }
+  const reason = why.trim().slice(0, 280)
+  if (verdict !== "pass" && (!RULES.includes(rule) || !reason)) return null
+  return { ...parsed.data, why: reason }
 }
 
 // Phrases, not words: "parasites" is a health story and "invasion" is a war. A

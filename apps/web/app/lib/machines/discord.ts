@@ -13,6 +13,7 @@ const WEBHOOK =
   /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/(\d{17,20})\/([\w-]{30,100})\/?$/
 
 export interface Webhook {
+  id: string
   url: string
   hint: string
 }
@@ -22,6 +23,7 @@ export function parseWebhook(raw: string): Webhook | null {
   if (!match) return null
   const [, host, id, token] = match
   return {
+    id: id!,
     url: `https://${host}/api/webhooks/${id}/${token}`,
     hint: id!.slice(-4),
   }

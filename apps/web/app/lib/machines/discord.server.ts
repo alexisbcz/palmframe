@@ -30,6 +30,7 @@ const LEASE_MS = 2 * 60_000
 const FREEZE_RETRY_MS = 15 * 60_000
 const TEST_GAP_MS = 10_000
 const MAX_PER_RUN = 20
+const MAX_SWEPT_MACHINES = 500
 
 const draftsTable = () => supabaseAdmin().from("comic_machine_drafts")
 
@@ -207,6 +208,7 @@ async function queue(id: string, machine: Machine) {
       discord_status: "pending",
       discord_attempts: 0,
       discord_message_id: null,
+      discord_webhook_id: null,
       discord_next_at: new Date().toISOString(),
     })
     .eq("id", id)
@@ -249,8 +251,8 @@ export async function deliverDiscord(
   const config = machineConfig.safeParse(machine.config)
   const gone =
     !config.success ||
-    !!draft.held ||
-    (usesDesk(config.data) && draft.desk !== "pass") ||
+    draft.held != null ||
+    ((usesDesk(config.data) || draft.desk != null) && draft.desk !== "pass") ||
     ["blocked", "dismissed", "expired", "retracted"].includes(draft.status)
   if (gone) {
     await setDraft({ discord_status: "withdrawn" })
@@ -311,6 +313,7 @@ export async function deliverDiscord(
       const { data: kept } = await setDraft({
         discord_status: "sent",
         discord_message_id: outcome.messageId,
+        discord_webhook_id: webhook.id,
         discord_next_at: null,
       })
         .eq("discord_status", "pending")
@@ -320,6 +323,7 @@ export async function deliverDiscord(
         await setDraft({
           discord_status: "sent",
           discord_message_id: outcome.messageId,
+          discord_webhook_id: webhook.id,
         })
         await withdrawDiscord(id)
       }
@@ -386,13 +390,58 @@ export async function flushDiscord(
   return sent
 }
 
+// Compose links work for as long as a message stays up, so what the desk and the
+// calendar decided before sending has to be looked at again afterwards. A line
+// machine's messages come out when a freeze starts, or when they've gone stale.
+// It reads every line machine, on or off: turning one off doesn't end a freeze.
+export async function sweepDiscord(now: number, deadline: number) {
+  if (!discordReady()) return
+  const admin = supabaseAdmin()
+  const columns = "id, public, config"
+  const { data: lined } = await admin
+    .from("comic_machines")
+    .select(columns)
+    .not("config->>line", "is", null)
+    .limit(MAX_SWEPT_MACHINES)
+  const { data: left } = await admin
+    .from("comic_machine_line_notes")
+    .select("machine_id")
+    .is("to_stance", null)
+    .gte("created_at", new Date(now - HOLD_MS).toISOString())
+  const ids = (left ?? []).flatMap((n) => n.machine_id ?? [])
+  const { data: dropped } = ids.length
+    ? await admin.from("comic_machines").select(columns).in("id", ids)
+    : { data: [] }
+  const stale = new Date(now - HOLD_MS).toISOString()
+  for (const machine of [...(lined ?? []), ...(dropped ?? [])]) {
+    const config = machineConfig.safeParse(machine.config)
+    const stopped =
+      !config.success || (await lineStopFor(machine, config.data, now))
+    const sent = draftsTable()
+      .select("id")
+      .eq("machine_id", machine.id)
+      .eq("discord_status", "sent")
+    const { data } = await (stopped ? sent : sent.lt("created_at", stale))
+      .order("created_at")
+      .limit(MAX_PER_RUN)
+    for (const { id } of data ?? []) {
+      if (Date.now() > deadline) return
+      await withdrawDiscord(id)
+    }
+  }
+}
+
 // Takes a post back out of the channel, or at least out of the queue. Not stopped
 // by a halt, like a retraction. A message that can't be removed is marked, so the
-// page can ask a person to delete it.
+// page can ask a person to delete it. So is one sent through a webhook the machine
+// no longer has: only that webhook can delete it, and asking the new one could come
+// back as "no such message", which would read as removed.
 export async function withdrawDiscord(id: string) {
   try {
     const { data: draft } = await draftsTable()
-      .select("machine_id, discord_status, discord_message_id")
+      .select(
+        "machine_id, discord_status, discord_message_id, discord_webhook_id"
+      )
       .eq("id", id)
       .maybeSingle()
     if (!draft) return
@@ -401,7 +450,7 @@ export async function withdrawDiscord(id: string) {
     const row = status === "pending" ? null : await hook(draft.machine_id)
     const webhook = row && stored(row.webhook_ciphertext)
     let removed = status === "pending"
-    if (webhook && messageId) {
+    if (webhook && messageId && webhook.id === draft.discord_webhook_id) {
       const outcome = await call(
         `${webhook.url}/messages/${messageId}`,
         "DELETE"

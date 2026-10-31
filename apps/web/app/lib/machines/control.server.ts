@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
+import { HOLD_MS } from "./gate"
 import type { MachineConfig } from "./model"
 import { type LineStop, calendarStop } from "./stance"
 
@@ -24,16 +25,39 @@ export async function machinesHalted() {
   }
 }
 
+// When this machine last changed its declared line, or null if it never had one.
+// A note that can't be read counts as one made just now.
+export async function lastLineNote(machineId: string) {
+  try {
+    const { data, error } = await supabaseAdmin()
+      .from("comic_machine_line_notes")
+      .select("created_at")
+      .eq("machine_id", machineId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) throw new Error(error.message)
+    return data ? Date.parse(data.created_at) : null
+  } catch (e) {
+    console.error("Line notes unreadable", e)
+    return Date.now()
+  }
+}
+
 // Why a line machine can't publish right now, or null when it can. Checked before
 // an edition starts and again in publishDraft, because a draft approved before a
 // freeze can still be waiting when one begins. A calendar nobody can read counts
-// as no calendar.
+// as no calendar. A machine that has just dropped its line waits as long as its
+// drafts can last, or saving it without one would walk them past a freeze.
 export async function lineStopFor(
-  machine: { public: boolean },
+  machine: { id: string; public: boolean },
   config: Pick<MachineConfig, "line">,
   now: number
 ): Promise<LineStop | null> {
-  if (!config.line) return null
+  if (!config.line) {
+    const noted = await lastLineNote(machine.id)
+    return noted !== null && now - noted < HOLD_MS ? "line_left" : null
+  }
   if (!machine.public) return "not_public"
   try {
     const { data, error } = await supabaseAdmin()
