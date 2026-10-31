@@ -3,7 +3,6 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Alert02Icon,
   LibraryIcon,
-  PlusSignIcon,
   ScanEyeIcon,
   Tick02Icon,
 } from "@hugeicons/core-free-icons"
@@ -17,6 +16,7 @@ import {
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
   Dialog,
   DialogDescription,
@@ -443,7 +443,7 @@ export function SeriesPicker({
             ))}
           </ul>
         )}
-        <div className="flex gap-2">
+        <ButtonGroup className="w-full">
           <Input
             aria-label={t("name")}
             value={title}
@@ -453,22 +453,14 @@ export function SeriesPicker({
             className="min-w-0 flex-1"
           />
           <Button
-            variant={list?.length ? "outline" : "default"}
+            className="data-pressed:scale-100!"
             isDisabled={busy || !title.trim()}
             onPress={() => void join()}
           >
-            {busy ? (
-              <Spinner data-icon="inline-start" />
-            ) : (
-              <HugeiconsIcon
-                icon={PlusSignIcon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
-            )}
+            {busy && <Spinner />}
             {t("picker.create")}
           </Button>
-        </div>
+        </ButtonGroup>
         {error && (
           <p role="alert" className="text-sm text-destructive">
             {t("failed", { error })}

@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Copy01Icon, Link01Icon, Tick02Icon } from "@hugeicons/core-free-icons"
 
 import { Button, LinkButton } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
   Dialog,
   DialogDescription,
@@ -112,7 +113,7 @@ function ShareDialog({
 
       {token && (
         <div className="flex flex-col gap-3">
-          <div className="flex gap-2">
+          <ButtonGroup className="w-full">
             <Input
               readOnly
               aria-label={t("link")}
@@ -120,7 +121,7 @@ function ShareDialog({
               onFocus={(e) => e.currentTarget.select()}
               className="min-w-0 flex-1 font-mono text-xs"
             />
-            <Button variant="outline" onPress={copy}>
+            <Button className="data-pressed:scale-100!" onPress={copy}>
               <HugeiconsIcon
                 icon={copied ? Tick02Icon : Copy01Icon}
                 strokeWidth={2}
@@ -128,7 +129,7 @@ function ShareDialog({
               />
               {copied ? t("copied") : t("copy")}
             </Button>
-          </div>
+          </ButtonGroup>
           <p className="text-xs text-muted-foreground">{t("hint")}</p>
           <div className="flex items-center justify-between gap-2">
             <LinkButton
