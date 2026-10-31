@@ -7,6 +7,7 @@ import type { CanvasMenuRequest } from "./canvas-menu"
 import type { Layer } from "./model"
 import {
   drawDoc,
+  docText,
   fontsReady,
   hitTest,
   loadImages,
@@ -92,8 +93,12 @@ export function Stage({
   const [redraw, setRedraw] = React.useState(0)
   const bump = React.useCallback(() => setRedraw((n) => n + 1), [])
 
+  const lettering = docText(doc)
   React.useEffect(() => {
-    fontsReady().then(bump)
+    fontsReady(lettering).then(bump)
+  }, [lettering, bump])
+
+  React.useEffect(() => {
     document.fonts.addEventListener("loadingdone", bump)
     return () => document.fonts.removeEventListener("loadingdone", bump)
   }, [bump])

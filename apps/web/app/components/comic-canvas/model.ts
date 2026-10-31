@@ -173,9 +173,9 @@ export interface PanelVersion {
   seed?: number
 }
 
-// A bubble's lettering in another language. The artwork and the original
-// text stay as they are; the bubble is refitted when a language is rendered.
-export interface BubbleTranslation {
+// A line of lettering in another language. The artwork and the original text
+// stay as they are; the layer is refitted when a language is rendered.
+export interface LetteringTranslation {
   text: string
   // The original it translates: when `text` moves on, this line is out of date.
   source: string
@@ -198,7 +198,7 @@ export interface BubbleLayer extends BaseLayer {
   // Tail tip, relative to the bubble centre, in unrotated layer space.
   tailX: number
   tailY: number
-  translations?: Partial<Record<Locale, BubbleTranslation>>
+  translations?: Partial<Record<Locale, LetteringTranslation>>
 }
 
 export interface TextLayer extends BaseLayer {
@@ -211,9 +211,11 @@ export interface TextLayer extends BaseLayer {
   color: string
   strokeColor: string
   strokeWidth: number
+  translations?: Partial<Record<Locale, LetteringTranslation>>
 }
 
-export type Layer = PanelLayer | BubbleLayer | TextLayer
+export type LetteringLayer = BubbleLayer | TextLayer
+export type Layer = PanelLayer | LetteringLayer
 export type LayerType = Layer["type"]
 
 export interface ComicDoc {

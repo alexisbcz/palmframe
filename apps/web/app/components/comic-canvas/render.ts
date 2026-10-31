@@ -278,12 +278,16 @@ function bubbleTail(l: BubbleLayer) {
   return p
 }
 
+// Every lettering font is Latin only. Japanese falls through to this one
+// rather than to whatever the machine has, so it draws the same everywhere.
+const JAPANESE = '"Noto Sans JP Variable"'
+
 function fontString(font: keyof typeof FONTS, size: number) {
   const f = FONTS[font]
-  return `${f.weight} ${size}px ${f.family}, sans-serif`
+  return `${f.weight} ${size}px ${f.family}, ${JAPANESE}, sans-serif`
 }
 
-const CJK = /[\u3040-\u30ff\u3400-\u9fff\uf900-\ufaff]/
+const CJK = /[\u3000-\u30ff\u3400-\u9fff\uf900-\ufaff\uff00-\uffef]/
 
 // Japanese has no spaces to break on: split by word, with punctuation staying
 // on the word before it, so a line never starts with "。".
@@ -416,10 +420,15 @@ function drawBubble(ctx: Ctx, l: BubbleLayer, part?: LayerPart) {
   )
 }
 
-function drawText(ctx: Ctx, l: TextLayer) {
-  const text = l.uppercase ? l.text.toUpperCase() : l.text
+export const TEXT_LINE_HEIGHT = 1.05
+
+export function textLines(ctx: Ctx, l: TextLayer, text: string) {
   ctx.font = fontString(l.font, l.fontSize)
-  const lines = wrap(ctx, text, l.width)
+  return wrap(ctx, l.uppercase ? text.toUpperCase() : text, l.width)
+}
+
+function drawText(ctx: Ctx, l: TextLayer) {
+  const lines = textLines(ctx, l, l.text)
   const x =
     l.align === "left" ? -l.width / 2 : l.align === "right" ? l.width / 2 : 0
   ctx.textAlign = l.align
@@ -428,12 +437,12 @@ function drawText(ctx: Ctx, l: TextLayer) {
   if (l.strokeWidth > 0) {
     ctx.lineWidth = l.strokeWidth * 2
     ctx.strokeStyle = l.strokeColor
-    drawLines(ctx, lines, l.fontSize, 1.05, x, (line, x, y) =>
+    drawLines(ctx, lines, l.fontSize, TEXT_LINE_HEIGHT, x, (line, x, y) =>
       ctx.strokeText(line, x, y)
     )
   }
   ctx.fillStyle = l.color
-  drawLines(ctx, lines, l.fontSize, 1.05, x, (line, x, y) =>
+  drawLines(ctx, lines, l.fontSize, TEXT_LINE_HEIGHT, x, (line, x, y) =>
     ctx.fillText(line, x, y)
   )
 }
@@ -466,12 +475,35 @@ export function hitTest(doc: ComicDoc, px: number, py: number) {
   return null
 }
 
-export function fontsReady() {
-  return Promise.all(
-    Object.values(FONTS).map((f) =>
+// The lettering of a page, for fontsReady.
+export const docText = (doc: Pick<ComicDoc, "layers">) =>
+  doc.layers.map((l) => (l.type === "panel" ? "" : l.text)).join("")
+
+let japanese: Promise<unknown> | null = null
+
+// Only pages with Japanese fetch its styles, and then only the slices of the
+// font their characters fall in, which is why this needs the text.
+async function japaneseReady(text: string) {
+  if (!CJK.test(text)) return
+  japanese ??= import("@fontsource-variable/noto-sans-jp/wght.css").catch(
+    (e) => {
+      japanese = null
+      throw e
+    }
+  )
+  await japanese
+  await document.fonts.load(`700 40px ${JAPANESE}`, text)
+}
+
+// Call with the text about to be drawn or measured, or Japanese comes out in
+// the fallback font the first time.
+export function fontsReady(text = "") {
+  return Promise.all([
+    ...Object.values(FONTS).map((f) =>
       document.fonts.load(`${f.weight} 40px ${f.family}`)
-    )
-  ).catch(() => undefined)
+    ),
+    japaneseReady(text),
+  ]).catch(() => undefined)
 }
 
 export function loadImages(
@@ -513,7 +545,7 @@ export async function renderToBlob(
   // JPEG and WebP only, 0 to 1.
   quality = 0.92
 ) {
-  await Promise.all([fontsReady(), loadImages(doc, cache)])
+  await Promise.all([fontsReady(docText(doc)), loadImages(doc, cache)])
   const canvas = document.createElement("canvas")
   canvas.width = Math.round(doc.width * scale)
   canvas.height = Math.round(doc.height * scale)

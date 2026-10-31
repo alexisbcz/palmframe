@@ -4,6 +4,7 @@ import type { ComicDoc, Layer, PanelLayer } from "./model"
 import {
   drawDoc,
   drawLayerPart,
+  docText,
   fontsReady,
   loadImages,
   toPage,
@@ -131,7 +132,7 @@ export async function renderPsd(
   dpi = 72
 ) {
   const { writePsdUint8Array } = await import("ag-psd")
-  await Promise.all([fontsReady(), loadImages(doc, images)])
+  await Promise.all([fontsReady(docText(doc)), loadImages(doc, images)])
   const width = Math.round(doc.width * scale)
   const height = Math.round(doc.height * scale)
   const opts: RenderOptions = { scale, images }

@@ -24,6 +24,7 @@ import { SliderInput } from "./controls"
 import { messages } from "./export.messages"
 import { translatedPage } from "./lettering"
 import { LetteringSection } from "./lettering-section"
+import type { SeriesContext } from "./series"
 import { renderPsd } from "./psd"
 import { renderToBlob, type ImageCache } from "./render"
 import { roving } from "./roving"
@@ -130,9 +131,11 @@ type Status =
 export function ExportButton({
   editor,
   images,
+  series,
 }: {
   editor: ComicEditor
   images: ImageCache
+  series: SeriesContext | null
 }) {
   const t = useT(messages)
   const [open, setOpen] = React.useState(false)
@@ -186,7 +189,7 @@ export function ExportButton({
           )}
         />
       </Button>
-      {open && <ExportPanel editor={editor} images={images} />}
+      {open && <ExportPanel editor={editor} images={images} series={series} />}
     </div>
   )
 }
@@ -254,9 +257,11 @@ function Label({
 function ExportPanel({
   editor,
   images,
+  series,
 }: {
   editor: ComicEditor
   images: ImageCache
+  series: SeriesContext | null
 }) {
   const t = useT(messages)
   const { locale } = useLocale()
@@ -423,6 +428,7 @@ function ExportPanel({
       />
 
       <LetteringSection
+        series={series}
         editor={editor}
         language={language}
         onLanguage={setLanguage}

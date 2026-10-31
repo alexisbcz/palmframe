@@ -8,6 +8,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { pageDoc, type ComicProject } from "@/components/comic-canvas/model"
+import { letteringOrder } from "@/components/comic-canvas/reading-order"
 import { renderToBlob, type ImageCache } from "@/components/comic-canvas/render"
 import { useT } from "@/i18n/core"
 
@@ -17,11 +18,8 @@ const ABUSE_EMAIL = "abuse@palmframe.com"
 
 // The lettering in reading order, for screen readers.
 function altText(project: ComicProject, index: number) {
-  return [...project.pages[index]!.layers]
-    .sort((a, b) => a.y - b.y || a.x - b.x)
-    .flatMap((l) =>
-      l.type !== "panel" && l.text.trim() ? [l.text.trim()] : []
-    )
+  return letteringOrder(project.pages[index]!.layers, project.rtl)
+    .map(({ layer }) => layer.text.trim())
     .join(" ")
 }
 
@@ -68,25 +66,36 @@ export function Reader({
   const track = React.useRef<HTMLDivElement>(null)
   const [index, setIndex] = React.useState(0)
   const count = project.pages.length
+  const rtl = !!project.rtl
 
-  const goTo = React.useCallback((i: number) => {
-    const el = track.current
-    if (!el) return
-    const still = matchMedia("(prefers-reduced-motion: reduce)").matches
-    el.scrollTo({
-      left: i * el.clientWidth,
-      behavior: still ? "auto" : "smooth",
-    })
-  }, [])
+  // A right-to-left track scrolls from 0 into negative numbers.
+  const goTo = React.useCallback(
+    (i: number) => {
+      const el = track.current
+      if (!el) return
+      const still = matchMedia("(prefers-reduced-motion: reduce)").matches
+      el.scrollTo({
+        left: (rtl ? -i : i) * el.clientWidth,
+        behavior: still ? "auto" : "smooth",
+      })
+    },
+    [rtl]
+  )
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") goTo(Math.min(index + 1, count - 1))
-      if (e.key === "ArrowLeft") goTo(Math.max(index - 1, 0))
+      const forward = rtl ? "ArrowLeft" : "ArrowRight"
+      const back = rtl ? "ArrowRight" : "ArrowLeft"
+      if (e.key !== forward && e.key !== back) return
+      // On the focused track the browser would scroll a slide further.
+      e.preventDefault()
+      goTo(
+        Math.min(Math.max(index + (e.key === forward ? 1 : -1), 0), count - 1)
+      )
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [goTo, index, count])
+  }, [goTo, index, count, rtl])
 
   const report = `mailto:${ABUSE_EMAIL}?subject=${encodeURIComponent(
     t("reportSubject")
@@ -108,17 +117,16 @@ export function Reader({
         )}
       </header>
 
-      <div className="relative min-h-0 flex-1">
+      <div dir={rtl ? "rtl" : "ltr"} className="relative min-h-0 flex-1">
         <div
           ref={track}
-          dir="ltr"
           role="group"
           aria-roledescription={t("carousel")}
           aria-label={title || t("untitled")}
           tabIndex={0}
           onScroll={(e) => {
             const el = e.currentTarget
-            setIndex(Math.round(el.scrollLeft / el.clientWidth))
+            setIndex(Math.round(Math.abs(el.scrollLeft) / el.clientWidth))
           }}
           className="flex size-full snap-x snap-mandatory [scrollbar-width:none] overflow-x-auto overscroll-x-contain outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset [&::-webkit-scrollbar]:hidden"
         >
@@ -160,7 +168,11 @@ export function Reader({
                 onPress={() => goTo(index - 1)}
                 className="absolute start-3 top-1/2 -translate-y-1/2 max-sm:hidden"
               >
-                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+                <HugeiconsIcon
+                  icon={ArrowLeft01Icon}
+                  strokeWidth={2}
+                  className="rtl:rotate-180"
+                />
               </Button>
               <Tooltip>{t("previous")}</Tooltip>
             </TooltipTrigger>
@@ -173,7 +185,11 @@ export function Reader({
                 onPress={() => goTo(index + 1)}
                 className="absolute end-3 top-1/2 -translate-y-1/2 max-sm:hidden"
               >
-                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  strokeWidth={2}
+                  className="rtl:rotate-180"
+                />
               </Button>
               <Tooltip>{t("next")}</Tooltip>
             </TooltipTrigger>

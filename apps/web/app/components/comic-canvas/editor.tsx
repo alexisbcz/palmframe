@@ -469,7 +469,11 @@ export function ComicCanvasEditor({
             </div>
           )}
           {cloud && <ShareButton projectId={cloud.id} />}
-          <ExportButton editor={editor} images={images} />
+          <ExportButton
+            editor={editor}
+            images={images}
+            series={series.context}
+          />
           {instagram && viewer && (
             <PublishButton editor={editor} images={images} />
           )}

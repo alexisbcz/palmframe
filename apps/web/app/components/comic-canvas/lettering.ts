@@ -1,17 +1,28 @@
 import type { Locale } from "@/i18n/core"
 
+import type { TranslateLine } from "@/routes/api.translate"
+
+import { pageFaces } from "./check"
 import {
   pageDoc,
   type BubbleLayer,
-  type BubbleTranslation,
+  type Character,
   type ComicDoc,
   type ComicProject,
+  type Layer,
+  type LetteringLayer,
+  type LetteringTranslation,
+  type PanelLayer,
+  type TextLayer,
 } from "./model"
+import { distance, letteringOrder } from "./reading-order"
 import {
   BUBBLE_LINE_HEIGHT,
+  TEXT_LINE_HEIGHT,
   bubbleTextBox,
   fitText,
   fontsReady,
+  textLines,
   toLocal,
   toPage,
 } from "./render"
@@ -21,39 +32,68 @@ export type LineStatus = "missing" | "stale" | "done"
 export interface LetteringLine {
   id: string
   page: number
-  shape: BubbleLayer["shape"]
+  // Counted from 1 in the page's reading order, when the page has panels.
+  panel?: number
+  shape: BubbleLayer["shape"] | "sfx"
+  speaker?: string
   text: string
-  translation?: BubbleTranslation
+  translation?: LetteringTranslation
   status: LineStatus
 }
 
-const statusOf = (l: BubbleLayer, t?: BubbleTranslation): LineStatus =>
+const statusOf = (l: LetteringLayer, t?: LetteringTranslation): LineStatus =>
   !t ? "missing" : t.source === l.text ? "done" : "stale"
 
-// Every bubble with something to translate, in reading order.
+// A bubble keeps its default layer name until someone names it.
+const UNNAMED = /^(speech|thought|shout|message|caption)(\s+\d+)?$/i
+
+// A best guess at who says a line, for the translator's sake: the name the
+// script gave the bubble, the character its tail points at, or the only
+// character in the shot.
+export function speakerOf(
+  l: LetteringLayer,
+  panel: PanelLayer,
+  cast: Character[] = []
+) {
+  if (l.type !== "bubble" || l.shape === "caption") return undefined
+  const name = l.name.trim()
+  if (name && !UNNAMED.test(name)) return name
+  const nameOf = (id: string | null | undefined) =>
+    cast.find((c) => c.id === id)?.name.trim() || undefined
+
+  if (l.tail) {
+    const tip = toPage(l, l.tailX, l.tailY)
+    const closest = pageFaces(panel)
+      .filter((f) => nameOf(f.who))
+      .map((f) => ({ who: f.who, away: distance(f, tip.x, tip.y) }))
+      .sort((a, b) => a.away - b.away)[0]
+    if (closest) return nameOf(closest.who)
+  }
+  return panel.cast?.length === 1 ? nameOf(panel.cast[0]) : undefined
+}
+
+// Every line with something to translate, panel by panel in reading order.
 export function letteringLines(
   project: ComicProject,
   language: Locale
 ): LetteringLine[] {
-  const side = project.rtl ? -1 : 1
   return project.pages.flatMap((page, index) =>
-    page.layers
-      .filter(
-        (l): l is BubbleLayer =>
-          l.type === "bubble" && !l.hidden && !!l.text.trim()
-      )
-      .sort((a, b) => a.y - b.y || (a.x - b.x) * side)
-      .map((l) => {
+    letteringOrder(page.layers, project.rtl).map(
+      ({ layer: l, panel, frame }) => {
         const translation = l.translations?.[language]
+        const speaker = frame && speakerOf(l, frame, project.cast)
         return {
           id: l.id,
           page: index,
-          shape: l.shape,
+          ...(frame && { panel }),
+          shape: l.type === "bubble" ? l.shape : "sfx",
+          ...(speaker && { speaker }),
           text: l.text,
           translation,
           status: statusOf(l, translation),
         }
-      })
+      }
+    )
   )
 }
 
@@ -65,15 +105,49 @@ export function linesToTranslate(lines: LetteringLine[]) {
   return behind.length ? behind : open
 }
 
-function mapBubbles(
+// How many lines either side of a line being translated travel with it.
+const CONTEXT_REACH = 8
+
+// What a run sends: the lines to translate, among their neighbours in reading
+// order. Those are read-only, so redoing one line still reads as dialogue and
+// matches what the lines around it already say.
+export function requestLines(
+  lines: LetteringLine[],
+  pending: LetteringLine[]
+): TranslateLine[] {
+  const open = new Set(pending.map((l) => l.id))
+  return lines.flatMap((l, i) => {
+    const near = lines
+      .slice(Math.max(0, i - CONTEXT_REACH), i + CONTEXT_REACH + 1)
+      .some((n) => open.has(n.id))
+    if (!near) return []
+    const { id, page, panel, shape, speaker, text } = l
+    return [
+      {
+        id,
+        page: page + 1,
+        panel,
+        shape,
+        speaker,
+        text,
+        ...(!open.has(id) && {
+          readOnly: true,
+          translation: l.translation?.text,
+        }),
+      },
+    ]
+  })
+}
+
+function mapLettering(
   project: ComicProject,
-  fn: (l: BubbleLayer) => BubbleLayer
+  fn: (l: LetteringLayer) => LetteringLayer
 ): ComicProject {
   return {
     ...project,
     pages: project.pages.map((page) => ({
       ...page,
-      layers: page.layers.map((l) => (l.type === "bubble" ? fn(l) : l)),
+      layers: page.layers.map((l) => (l.type === "panel" ? l : fn(l))),
     })),
   }
 }
@@ -88,7 +162,7 @@ export function withTranslations(
 ) {
   const sources = new Map(sent.map((l) => [l.id, l.text]))
   const texts = new Map(results.map((l) => [l.id, l.text]))
-  return mapBubbles(project, (l) => {
+  return mapLettering(project, (l) => {
     const text = texts.get(l.id)
     if (
       !text ||
@@ -103,14 +177,14 @@ export function withTranslations(
   })
 }
 
-// A line typed by hand. Emptied, the bubble goes back to having no translation.
+// A line typed by hand. Emptied, it goes back to having no translation.
 export function withEditedLine(
   project: ComicProject,
   language: Locale,
   id: string,
   text: string
 ) {
-  return mapBubbles(project, (l) => {
+  return mapLettering(project, (l) => {
     if (l.id !== id) return l
     const { [language]: _, ...others } = l.translations ?? {}
     return {
@@ -215,20 +289,51 @@ export function refitBubble(
   return { ...fitted, tailX: tail.x, tailY: tail.y }
 }
 
-// A slide with a language's lettering in place. Bubbles are measured here
-// rather than stored, so moving one later moves it in every language.
+// Loose lettering over new text. The box stays where it is, so an effect keeps
+// its place in the art, and the type shrinks until the text fits. It can use
+// the room the original took, for lettering that was already spilling out.
+export function refitText(
+  ctx: CanvasRenderingContext2D,
+  l: TextLayer,
+  text: string
+): TextLayer {
+  const original = textLines(ctx, l, l.text)
+  const { size } = fitText(
+    ctx,
+    l.uppercase ? text.toUpperCase() : text,
+    l.font,
+    l.fontSize,
+    l.width,
+    Math.max(l.height, original.length * l.fontSize * TEXT_LINE_HEIGHT),
+    TEXT_LINE_HEIGHT
+  )
+  return {
+    ...l,
+    text,
+    fontSize: size,
+    strokeWidth: (l.strokeWidth * size) / l.fontSize,
+  }
+}
+
+// A slide with a language's lettering in place. Lettering is measured here
+// rather than stored, so moving a bubble later moves it in every language.
 export async function translatedDoc(
   doc: ComicDoc,
   language: Locale | null
 ): Promise<ComicDoc> {
   if (!language) return doc
-  await fontsReady()
+  const translated = (l: Layer) =>
+    l.type === "panel" ? undefined : l.translations?.[language]?.text
+  await fontsReady(doc.layers.map(translated).join(""))
   const ctx = document.createElement("canvas").getContext("2d")!
   return {
     ...doc,
     layers: doc.layers.map((l) => {
-      const text = l.type === "bubble" && l.translations?.[language]?.text
-      return l.type === "bubble" && text ? refitBubble(ctx, l, text, doc) : l
+      const text = translated(l)
+      if (!text || l.type === "panel") return l
+      return l.type === "bubble"
+        ? refitBubble(ctx, l, text, doc)
+        : refitText(ctx, l, text)
     }),
   }
 }

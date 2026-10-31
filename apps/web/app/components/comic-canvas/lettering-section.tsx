@@ -28,19 +28,23 @@ import { messages } from "./lettering.messages"
 import {
   letteringLines,
   linesToTranslate,
+  requestLines,
   withEditedLine,
   withTranslations,
 } from "./lettering"
+import type { SeriesContext } from "./series"
 import type { ComicEditor } from "./use-editor"
 
-// The Export panel's language switch: pick a language, translate the bubbles
+// The Export panel's language switch: pick a language, translate the lettering
 // into it, and fix any line by hand. The artwork is never touched.
 export function LetteringSection({
   editor,
+  series,
   language,
   onLanguage,
 }: {
   editor: ComicEditor
+  series: SeriesContext | null
   language: Locale | null
   onLanguage: (language: Locale | null) => void
 }) {
@@ -64,11 +68,12 @@ export function LetteringSection({
   const pending = linesToTranslate(lines)
   const translated = lines.filter((l) => l.status !== "missing").length
   const stale = lines.filter((l) => l.status === "stale").length
+  const facts = series?.facts ?? []
   const fresh = lines.length > 0 && translated === lines.length && !stale
 
   const translate = async () => {
     if (!language || !pending.length) return
-    const sent = pending.map(({ id, shape, text }) => ({ id, shape, text }))
+    const sent = pending.map(({ id, text }) => ({ id, text }))
     setBusy(true)
     setError(null)
     try {
@@ -77,8 +82,9 @@ export function LetteringSection({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           language,
-          lines: sent,
+          lines: requestLines(lines, pending),
           cast: (project.cast ?? []).map((c) => c.name),
+          facts,
         }),
       })
       const credits = res.headers.get("x-credits")
@@ -153,6 +159,7 @@ export function LetteringSection({
           <p className="text-xs text-muted-foreground">
             {t("progress", { done: translated, total: lines.length })}
             {stale > 0 && ` · ${t("stale", { count: stale })}`}
+            {facts.length > 0 && ` · ${t("facts", { count: facts.length })}`}
           </p>
           {info?.available === false ? (
             <p className="text-xs text-muted-foreground">{t("unavailable")}</p>
