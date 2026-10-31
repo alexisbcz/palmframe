@@ -24,9 +24,9 @@ import {
 } from "@/i18n/core"
 import { messages } from "./auth.messages"
 
-// Inline links on the auth and legal pages are always underlined, in ink.
+// Inline links on the auth and legal pages are blue and always underlined.
 export const linkClass =
-  "rounded-xs text-foreground underline decoration-foreground/35 underline-offset-4 transition-[text-decoration-color] duration-150 ease-out outline-none hover:decoration-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+  "rounded-xs text-blue-600 underline decoration-current/35 underline-offset-4 transition-[text-decoration-color] duration-150 ease-out outline-none hover:decoration-current focus-visible:ring-3 focus-visible:ring-ring/50 dark:text-blue-400"
 
 export function TextLink({
   className,
@@ -65,7 +65,7 @@ export function Logo() {
   return (
     <Link
       to="/"
-      className="flex items-center gap-2 self-center rounded-sm text-xl outline-none lettering focus-visible:ring-3 focus-visible:ring-ring/50"
+      className="flex items-center gap-2 self-center rounded-sm lettering text-xl outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <img src="/icon.svg" alt="" width={28} height={28} className="size-7" />
       Palmframe
@@ -104,7 +104,7 @@ export function AuthCard({
             <HugeiconsIcon icon={icon} strokeWidth={2} className="size-5" />
           </span>
         )}
-        <CardTitle className="text-3xl lettering">{title}</CardTitle>
+        <CardTitle className="lettering text-3xl">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>{children}</CardContent>
@@ -143,11 +143,7 @@ export function SubmitButton({
   children: React.ReactNode
 }) {
   return (
-    <Button
-      type="submit"
-      className="w-full"
-      isDisabled={pending}
-    >
+    <Button type="submit" className="w-full" isDisabled={pending}>
       {pending ? (
         <Spinner />
       ) : (
