@@ -31,6 +31,7 @@ import { COSTS } from "@/lib/credits"
 import { SfxArt } from "./card"
 import { messages } from "./catalog.messages"
 import { catalogRequest } from "./client"
+import { Gallery } from "./gallery"
 import { RATIO, hasReference, type Asset } from "./model"
 import { SaveButton } from "./save-button"
 import { UseMenu } from "./use-menu"
@@ -231,44 +232,43 @@ export function AssetDetail({
       <div className="grid max-h-[calc(100svh-2rem)] overflow-y-auto md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
         <div className="flex flex-col gap-px bg-muted">
           {asset.payload.type === "comic" ? (
-            <ol aria-label={asset.name} className="flex flex-col gap-1">
-              {asset.payload.pages.map((src, i) => (
-                <li key={src}>
-                  <img
-                    src={src}
-                    alt={t("comic.slide", { n: i + 1 })}
-                    loading={i ? "lazy" : "eager"}
-                    className="w-full"
-                    style={{ aspectRatio: RATIO.comic }}
-                  />
-                </li>
-              ))}
-            </ol>
-          ) : (
+            <Gallery
+              key={asset.id}
+              label={asset.name}
+              images={asset.payload.pages.map((src, i) => ({
+                src,
+                alt: t("comic.slide", { n: i + 1 }),
+              }))}
+              style={{ aspectRatio: RATIO.comic }}
+            />
+          ) : asset.payload.type === "sfx" ? (
             <div
               className="relative max-h-[60svh] w-full md:max-h-none"
               style={{ aspectRatio: RATIO[asset.kind] }}
             >
-              {asset.payload.type === "sfx" ? (
-                <SfxArt payload={asset.payload} />
-              ) : (
-                asset.image && (
-                  <img
-                    src={asset.image}
-                    alt={asset.name}
-                    className="size-full object-cover"
-                  />
-                )
-              )}
+              <SfxArt payload={asset.payload} />
             </div>
-          )}
-          {sheet && (
-            <img
-              src={sheet}
-              alt={t("detail.sheetOf", { name: asset.name })}
-              loading="lazy"
-              className="w-full bg-white"
-            />
+          ) : (
+            asset.image && (
+              <Gallery
+                key={asset.id}
+                label={asset.name}
+                images={[
+                  { src: asset.image, alt: asset.name },
+                  ...(sheet
+                    ? [
+                        {
+                          src: sheet,
+                          alt: t("detail.sheetOf", { name: asset.name }),
+                          contain: true,
+                        },
+                      ]
+                    : []),
+                ]}
+                className="max-h-[60svh] md:max-h-none"
+                style={{ aspectRatio: RATIO[asset.kind] }}
+              />
+            )
           )}
         </div>
 
