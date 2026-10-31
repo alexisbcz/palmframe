@@ -268,7 +268,7 @@ export function Composer({
             }}
             className="min-h-12 w-full flex-1 resize-none bg-transparent px-2 py-1 text-[15px] outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed max-sm:col-start-1 max-sm:row-start-1"
           />
-          <div className="-m-1 flex min-w-0 [scrollbar-width:none] items-center gap-1.5 overflow-x-auto p-1 max-sm:col-span-2 max-sm:row-start-2">
+          <div className="-m-1 flex min-w-0 items-center gap-1.5 p-1 max-sm:col-span-2 max-sm:row-start-2 max-sm:overflow-x-auto max-sm:[scrollbar-width:none] sm:flex-wrap">
             <div className="relative">
               <Chip
                 pressed={open === "cast"}
