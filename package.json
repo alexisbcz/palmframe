@@ -8,6 +8,7 @@
     "dev": "turbo dev",
     "format": "turbo format",
     "typecheck": "turbo typecheck",
+    "test": "bun test",
     "lint:prose": "vale README.md"
   },
   "devDependencies": {
