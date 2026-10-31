@@ -2,6 +2,8 @@ import { z } from "zod"
 
 import { FORMATS } from "@/lib/media/model"
 
+import { type Line, STYLES, isFar, lineSchema } from "./stance"
+
 // Content machines: small media outlets. Each one hears its sources, an agent
 // decides what is worth a post, and the post goes out on a schedule.
 // Shared by the browser (the live wire) and the server (the scheduled runner),
@@ -128,18 +130,50 @@ export const machineConfig = z.object({
   image: z.boolean().default(false),
   // Research the post's lead into a Story and render it into these formats.
   media: mediaConfig.default(NO_MEDIA),
+  // A declared political line, or null for an outlet without one.
+  line: lineSchema.nullable().default(null),
+  // How the take sounds, on its own or on top of a line.
+  style: z.enum(STYLES).default("plain"),
 })
 export type MachineConfig = z.infer<typeof machineConfig>
 
-export const machineInput = z.object({
-  id: z.uuid().optional(),
-  name: z.string().trim().min(1).max(80),
-  source: z.enum(SOURCES),
-  config: machineConfig,
-  publish_mode: z.enum(PUBLISH_MODES).default("review"),
-  outputs: z.array(outputSchema).max(5).default([]),
-  public: z.boolean().default(false),
-})
+// What a line machine can't be, in the first version. Pictures and Stories
+// aren't read by the standards desk the way a post is, and Instagram can't post
+// without a picture. The database enforces the rest: see the guard trigger.
+export function lineProblems(m: {
+  config: { line: Line | null; image: boolean; media: MediaConfig }
+  public: boolean
+  publish_mode: PublishMode
+  outputs: MachineOutput[]
+}) {
+  const { line, image, media } = m.config
+  if (!line) return []
+  return [
+    !m.public && "A line machine needs its public page.",
+    image && "A line machine doesn't draw pictures.",
+    media.enabled && "A line machine doesn't make Stories.",
+    m.outputs.some((o) => o.platform === "instagram") &&
+      "A line machine can't post to Instagram, which needs a picture.",
+    isFar(line) &&
+      m.publish_mode === "auto" &&
+      "A far stance is reviewed by a person, always.",
+  ].filter((p) => typeof p === "string")
+}
+
+export const machineInput = z
+  .object({
+    id: z.uuid().optional(),
+    name: z.string().trim().min(1).max(80),
+    source: z.enum(SOURCES),
+    config: machineConfig,
+    publish_mode: z.enum(PUBLISH_MODES).default("review"),
+    outputs: z.array(outputSchema).max(5).default([]),
+    public: z.boolean().default(false),
+  })
+  .superRefine((m, ctx) => {
+    for (const message of lineProblems(m))
+      ctx.addIssue({ code: "custom", message })
+  })
 
 // One thing a source said, before any filtering.
 export type Reading =
@@ -233,6 +267,7 @@ export const AGENT_DECISIONS = [
   "exhausted",
   "invalid",
   "failed",
+  "blocked",
 ] as const
 export const RUN_DECISIONS = [
   ...AGENT_DECISIONS,
@@ -244,12 +279,23 @@ export const RUN_DECISIONS = [
   "no_credits",
   "deadline",
   "error",
+  "frozen",
+  "no_calendar",
+  "not_public",
+  "no_desk",
 ] as const
 export type RunDecision = (typeof RUN_DECISIONS)[number]
 
 // A machine's last_error is either a sentence or one of these codes, which the
 // page words in the reader's language.
-export const NOTICES = ["budget", "unreadable"] as const
+export const NOTICES = [
+  "budget",
+  "unreadable",
+  "frozen",
+  "no_calendar",
+  "not_public",
+  "no_desk",
+] as const
 export type Notice = (typeof NOTICES)[number]
 
 export function noticeOf(lastError: string) {
@@ -265,6 +311,28 @@ export interface PublishReceipt {
   url: string | null
   postId: string | null
   error: string | null
+  // Set once someone retracts the post: taken down here, or left to do by hand.
+  retraction?: "removed" | "manual"
+}
+
+// Why a published post came down. A closed list, because it shows publicly in
+// six languages.
+export const RETRACT_REASONS = [
+  "error",
+  "source",
+  "standards",
+  "owner",
+] as const
+export type RetractReason = (typeof RETRACT_REASONS)[number]
+
+// Where the publishing service can take a post down. Instagram can't, so the
+// owner has to delete it there, and the page says so.
+export const RETRACTABLE: Record<OutputPlatform, boolean> = {
+  bluesky: true,
+  twitter: true,
+  threads: true,
+  linkedin: true,
+  instagram: false,
 }
 
 export const slugify = (name: string) =>
@@ -295,6 +363,8 @@ const base = {
   everyMinutes: 60,
   image: false,
   media: NO_MEDIA,
+  line: null,
+  style: "plain" as const,
 }
 
 export const PRESETS: MachinePreset[] = [

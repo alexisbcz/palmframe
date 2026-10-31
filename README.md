@@ -154,6 +154,50 @@ Posts end with a signature added in `compose()`, in the machine's language, and
 no length of post can clip it away. A post counts as published only if an account
 took it, or if the machine has no accounts and a public page.
 
+A machine can declare a stance: far left, left, center, right or far right, with
+an arena, a publisher and a public contact. The stop picks a Line Card in
+`lib/machines/stance.ts`, which owners can't edit, and a reviewed list of
+institutions to look at more closely. A machine can also have a style, plain,
+deadpan or wry. The stance decides what a take argues and the style how it
+sounds. The post itself stays a flat fact, and the take is added in code, after
+the gate has read the two together, only if it fits the tightest output. A take
+that fails anything is dropped, and the post goes without it. With no stance and
+a plain style, the prompt and tools are the ones from before, byte for byte.
+
+Machines with a stance or a funny style go through the standards desk: code checks
+in `lib/machines/standards.ts`, then one pinned Claude model that isn't told the
+stance, before any picture. If it can't answer, the post waits and can't go out.
+A breach becomes a `blocked` draft that nobody can approve; it shows to the owner,
+stays off the cap and goes back to the agent. Strikes are only logged so far.
+
+Stances come with limits, enforced in `machineInput` and in a database trigger,
+because owners can write `comic_machines` directly:
+
+- A public page is required. Pictures, Stories, Instagram and OpenRouter are off.
+- One stance per account, across all its machines.
+- Far stances never publish by themselves. The others start in review, and auto
+  mode opens after 20 published posts with nothing blocked for 14 days. These
+  numbers are a first guess.
+- Once a post is out, a stance can't change for 30 days. Each change shows in the
+  masthead on `/m/:slug` and in the feed, with the publisher, contact and label.
+- A line publishes only in an arena staff have reviewed. `comic_arena_calendars`
+  ships empty, so no line machine runs until someone adds a row. Inside a window it
+  skips its editions before any model call, and `publishDraft` refuses too.
+
+```sql
+insert into public.comic_arena_calendars (arena, reviewed_until, reviewed_by, windows)
+values ('fr', '2027-01-01T00:00:00Z', 'name',
+  '[{"from": "2027-04-10T00:00:00Z", "to": "2027-04-12T00:00:00Z", "label": "..."}]');
+```
+
+Any published post can be retracted from its card. It leaves the page and feed
+and a short note stays. The publishing service takes it down from X, Threads,
+LinkedIn and Bluesky. It can't do that on Instagram, so the card says to delete it
+there by hand, and the same goes for any takedown that fails.
+
+`apps/web/scripts/line-eval.ts` runs all five stops through the real agent and
+desk. It costs money and has never been run; `--dry-run` only counts the calls.
+
 To stop every machine at once, without a deploy, set the one row in
 `comic_machines_control`:
 

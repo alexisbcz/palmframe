@@ -6,7 +6,7 @@ import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
 import { splitMemory, tally } from "./agent.logic"
 import { runAgent } from "./agent.server"
-import { machinesHalted } from "./control.server"
+import { lineStopFor, machinesHalted } from "./control.server"
 import { type Detector, createDetector } from "./detect"
 import { FeedBusy, FeedUnreadable, NotModified, readFeed } from "./feeds.server"
 import {
@@ -16,7 +16,6 @@ import {
   evidenceLimit,
   evidenceOf,
   freshItems,
-  holdReason,
   isDue,
   nextRunAt,
 } from "./gate"
@@ -33,6 +32,8 @@ import {
 } from "./model"
 import { publishDraft } from "./publish.server"
 import { openSource } from "./sources"
+import { isFar, usesDesk } from "./stance"
+import { judgePost } from "./standards.server"
 
 // One wake-up of the scheduled runner. Functions can't hold a socket for
 // long, so each source is heard briefly: Bluesky and Wikipedia replay what
@@ -219,8 +220,13 @@ async function edition(
   // A stopped machine keeps listening, so it has an inbox when it comes back.
   const usage = await dayUsage(machine, now)
   const stop = budgetStop(usage, config, COSTS.machine_run)
+  // A plain skip before any model call: nothing about an election window is
+  // left to a prompt or a word list.
+  const lineStop = await lineStopFor(machine, config, now)
   const heard = await gather(
-    stop ? { ...config, feeds: config.feeds.filter(isFree) } : config,
+    stop || lineStop
+      ? { ...config, feeds: config.feeds.filter(isFree) }
+      : config,
     now,
     abort
   )
@@ -230,6 +236,11 @@ async function edition(
   if (stop) {
     if (stop === "breaker") l.error = "budget"
     await noteRun(machine, stop)
+    return quiet
+  }
+  if (lineStop) {
+    l.error = lineStop
+    await noteRun(machine, lineStop)
     return quiet
   }
 
@@ -261,6 +272,14 @@ async function edition(
     await noteRun(machine, "no_writer")
     return quiet
   }
+  const desk = usesDesk(config)
+  // The desk runs on the platform's key, and nobody has decided who pays for
+  // that on an OpenRouter account.
+  if (connection && desk) {
+    l.error = "no_desk"
+    await noteRun(machine, "no_desk")
+    return quiet
+  }
   const job = `machine:${machine.id}:${Math.floor(now / 60_000)}`
   const shown = inbox.slice(0, 30)
   let credits = connection ? 0 : COSTS.machine_run
@@ -287,7 +306,9 @@ async function edition(
 
   const { data: drafts } = await admin
     .from("comic_machine_drafts")
-    .select("text, status, receipts, sources, signal, dismiss_reason")
+    .select(
+      "text, status, receipts, sources, signal, dismiss_reason, block_rule"
+    )
     .eq("machine_id", machine.id)
     .order("created_at", { ascending: false })
     .limit(MEMORY_ROWS)
@@ -333,6 +354,18 @@ async function edition(
     return quiet
   }
   const { filed } = result
+  const evidence = `${evidenceOf(filed.sources)}\n${filed.read}`
+  const judged = await judgePost(
+    filed,
+    evidence,
+    filed.sources,
+    filed.link,
+    config,
+    machine.outputs,
+    abort
+  )
+  const { held } = judged
+  const blocked = judged.desk === "block"
   const affordable = (cost: number) =>
     usage.credits + credits + cost <= config.maxCreditsPerDay
 
@@ -342,6 +375,10 @@ async function edition(
   const charged = !connection
   if (
     config.image &&
+    !config.line &&
+    // The desk reads the picture's description first, so nothing it stopped is
+    // ever drawn and stored in a public bucket.
+    !(desk && held) &&
     filed.scene &&
     imageAvailable(connection) &&
     (connection || affordable(COSTS.machine_image))
@@ -373,16 +410,18 @@ async function edition(
     }
   }
 
-  const evidence = `${evidenceOf(filed.sources)}\n${filed.read}`
-  const held = holdReason(filed.text, evidence, filed.sources, config.language)
-  const auto = machine.publish_mode === "auto" && !held
+  const auto = machine.publish_mode === "auto" && !held && !isFar(config.line)
   const { data: draft, error } = await admin
     .from("comic_machine_drafts")
     .insert({
       machine_id: machine.id,
       user_id: machine.user_id,
       signal_id: `post:${draftKey}`,
-      text: filed.text,
+      text: judged.text,
+      take: judged.take,
+      take_note: judged.takeNote,
+      desk: judged.desk,
+      block_rule: judged.blockRule,
       scene: filed.scene,
       alt: filed.alt,
       prompt: filed.prompt,
@@ -396,7 +435,7 @@ async function edition(
       evidence: evidenceLimit(evidence),
       // Stored in review mode too: the reviewer is who the reason is for.
       held,
-      status: auto ? "approved" : "new",
+      status: blocked ? "blocked" : auto ? "approved" : "new",
     })
     .select("id")
     .single()
@@ -418,7 +457,7 @@ async function edition(
     )
   // A Story is an extra. It can't cost the machine the post it just filed, and
   // nothing pays for research on a post that may never go out.
-  if (!held && affordable(COSTS.deep_dive)) {
+  if (!held && !config.line && affordable(COSTS.deep_dive)) {
     const started = await startMachineStory(
       machine,
       config.media,
@@ -431,13 +470,15 @@ async function edition(
     })
     if (started) credits += COSTS.deep_dive
   }
-  await endRun("filed", {
+  // Strikes aren't counted yet: this row is the log they'll be read from.
+  await endRun(blocked ? "blocked" : "filed", {
     prompt: filed.prompt,
     agent_text: filed.text,
     draft_id: draft.id,
     cited: tally(filed.sources),
+    ...(blocked && { reason: `${judged.blockRule}: ${held}`.slice(0, 1000) }),
   })
-  return { drafts: 1, failed: false }
+  return { drafts: blocked ? 0 : 1, failed: false }
 }
 
 // Everything approved, whether by a person or by an auto machine.

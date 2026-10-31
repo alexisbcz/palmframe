@@ -25,10 +25,13 @@ import type {
   PostSource,
   PublishMode,
   PublishReceipt,
+  RetractReason,
   Signal,
   SourceId,
   RunDecision,
 } from "./machines/model"
+import type { DeskState } from "./machines/standards"
+import type { Arena, Stance } from "./machines/stance"
 import type { FormatId, Part } from "./media/model"
 import type {
   Board,
@@ -113,6 +116,10 @@ export interface Database {
           platform?: OutputPlatform | null
           status?: MachineDraftRow["status"]
           evidence?: string
+          take?: string
+          take_note?: string | null
+          desk?: DeskState | null
+          block_rule?: string | null
         }
         Update: {
           status?: MachineDraftRow["status"]
@@ -122,6 +129,9 @@ export interface Database {
           receipts?: PublishReceipt[]
           published_at?: string | null
           dismiss_reason?: DismissReason | null
+          desk?: DeskState | null
+          retracted_at?: string | null
+          retract_reason?: RetractReason | null
         }
         Relationships: []
       }
@@ -136,6 +146,18 @@ export interface Database {
         Row: MachineControlRow
         Insert: Partial<MachineControlRow>
         Update: Partial<Pick<MachineControlRow, "halted" | "reason">>
+        Relationships: []
+      }
+      comic_arena_calendars: {
+        Row: ArenaCalendarRow
+        Insert: ArenaCalendarRow
+        Update: Partial<ArenaCalendarRow>
+        Relationships: []
+      }
+      comic_machine_line_notes: {
+        Row: MachineLineNoteRow
+        Insert: Omit<MachineLineNoteRow, "id" | "created_at">
+        Update: never
         Relationships: []
       }
       comic_machine_items: {
@@ -613,6 +635,8 @@ export type MachineDraftRow = {
     | "published"
     | "failed"
     | "expired"
+    | "blocked"
+    | "retracted"
   project_id: string | null
   prompt: string | null
   sources: PostSource[]
@@ -625,6 +649,32 @@ export type MachineDraftRow = {
   // What the post stood on when it was written, for checking an edit.
   evidence: string
   dismiss_reason: DismissReason | null
+  // The take as the agent wrote it, kept even when it didn't go out.
+  take: string
+  // Why the take was left out.
+  take_note: string | null
+  // What the standards desk said. Null on machines it doesn't read.
+  desk: DeskState | null
+  block_rule: string | null
+  retracted_at: string | null
+  retract_reason: RetractReason | null
+  created_at: string
+}
+
+export type ArenaCalendarRow = {
+  arena: Arena
+  reviewed_until: string
+  reviewed_by: string
+  windows: unknown
+}
+
+// One line per declared stance, written by the guard trigger.
+export type MachineLineNoteRow = {
+  id: string
+  machine_id: string | null
+  user_id: string
+  from_stance: Stance | null
+  to_stance: Stance | null
   created_at: string
 }
 

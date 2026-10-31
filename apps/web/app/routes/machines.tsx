@@ -71,10 +71,12 @@ import {
 import { createDetector } from "@/lib/machines/detect"
 import {
   type DismissReason,
+  type RetractReason,
   type Feed,
   type MachineConfig,
   type MachineOutput,
   type MachinePreset,
+  type Notice,
   DISMISS_REASONS,
   EVERY_MINUTES,
   FEED_KINDS,
@@ -84,6 +86,8 @@ import {
   OUTPUT_PLATFORMS,
   type OutputPlatform,
   type PublishMode,
+  RETRACTABLE,
+  RETRACT_REASONS,
   type Reading,
   type Signal,
   MAX_MACHINES,
@@ -96,6 +100,23 @@ import {
   DEFAULT_CREDITS_PER_DAY,
   noticeOf,
 } from "@/lib/machines/model"
+import {
+  type Arena,
+  type Scrutiny,
+  type Stance,
+  type Style,
+  ARENAS,
+  FAR_STANCES,
+  LINE_REVIEW_POSTS,
+  MAX_SCRUTINY,
+  SCRUTINY,
+  STANCES,
+  STANCE_COOLDOWN_DAYS,
+  STYLES,
+  lineOf,
+  styleOf,
+  usesDesk,
+} from "@/lib/machines/stance"
 import { imageAvailable } from "@/lib/machines/image.server"
 import { openSource } from "@/lib/machines/sources"
 import { payingConnection } from "@/lib/openrouter.server"
@@ -169,6 +190,8 @@ async function post(body: unknown) {
     passed?: boolean
     ok?: boolean
     halted?: boolean
+    stopped?: Notice
+    manual?: number
     errors?: string[]
   }
   if (!res.ok) throw new Error(json.error ?? "failed")
@@ -190,6 +213,14 @@ const list = (s: string) =>
     .filter(Boolean)
 
 const MAX_LINES = 40
+
+const LINE_ERRORS = [
+  "one_stance",
+  "cooldown",
+  "review_first",
+  "line_rules",
+  "no_desk",
+] as const
 
 interface WireLine {
   key: string
@@ -282,6 +313,10 @@ function Wire({ machine }: { machine: MachineRow }) {
   const [busy, setBusy] = React.useState<string | null>(null)
   const [notes, setNotes] = React.useState<Record<string, string>>({})
   const live = wire.status === "connecting" || wire.status === "on"
+  const writes = !usesDesk({
+    line: lineOf(machine.config),
+    style: styleOf(machine.config),
+  })
 
   const write = async (signal: Signal) => {
     setBusy(signal.id)
@@ -348,19 +383,21 @@ function Wire({ machine }: { machine: MachineRow }) {
                   </p>
                 )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                isDisabled={busy !== null}
-                onPress={() => write(signal)}
-              >
-                {busy === signal.id ? (
-                  <Spinner />
-                ) : (
-                  <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
-                )}
-                {t("wire.write")}
-              </Button>
+              {writes && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  isDisabled={busy !== null}
+                  onPress={() => write(signal)}
+                >
+                  {busy === signal.id ? (
+                    <Spinner />
+                  ) : (
+                    <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
+                  )}
+                  {t("wire.write")}
+                </Button>
+              )}
             </div>
           ))}
         </div>
@@ -430,6 +467,8 @@ function Status({ draft }: { draft: MachineDraftRow }) {
     failed: t("posts.failed"),
     published: t("posts.published"),
     expired: t("posts.expired"),
+    blocked: t("posts.blocked"),
+    retracted: t("posts.retracted"),
   }
   const label = labels[draft.status]
   if (!label) return null
@@ -475,6 +514,12 @@ function Draft({
       setBusy(false)
     }
   }
+  const retract = (reason: RetractReason) =>
+    act(async () => {
+      const r = await post({ intent: "retract", id: draft.id, reason })
+      if (r.manual) setFailed(t("posts.retractLeft", { n: r.manual }))
+      revalidator.revalidate()
+    })
   const dismiss = (reason?: DismissReason) =>
     act(async () => {
       await post({ intent: "dismiss", id: draft.id, reason })
@@ -508,9 +553,27 @@ function Draft({
       {draft.scene && !draft.image_url && (
         <p className="text-sm text-muted-foreground">{draft.scene}</p>
       )}
-      {draft.held && (
-        <p role="status" className="text-sm text-amber-600 dark:text-amber-400">
-          {t("posts.held", { reason: draft.held })}
+      {draft.held &&
+        (draft.status === "blocked" ? (
+          <p role="status" className="text-sm text-destructive">
+            {t("posts.blockedReason", { reason: draft.held })}
+          </p>
+        ) : (
+          <p
+            role="status"
+            className="text-sm text-amber-600 dark:text-amber-400"
+          >
+            {t("posts.held", { reason: draft.held })}
+          </p>
+        ))}
+      {draft.take_note && (
+        <p className="text-sm text-muted-foreground">
+          {t("posts.takeDropped", { reason: draft.take_note })}
+        </p>
+      )}
+      {draft.status === "retracted" && draft.retract_reason && (
+        <p className="text-sm text-muted-foreground">
+          {t(`retractReasons.${draft.retract_reason}`)}
         </p>
       )}
       {!draft.prompt && (
@@ -540,7 +603,26 @@ function Draft({
             <li key={r.accountId} className="min-w-0 truncate">
               {t(`platforms.${r.platform}`)} · {r.username}
               {" · "}
-              {r.error ? (
+              {r.retraction === "removed" ? (
+                t("posts.removed")
+              ) : r.retraction === "manual" ? (
+                <span className="text-destructive">
+                  {t("posts.byHand")}
+                  {r.url && (
+                    <>
+                      {" · "}
+                      <a
+                        href={r.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        {t("posts.view")}
+                      </a>
+                    </>
+                  )}
+                </span>
+              ) : r.error ? (
                 <span className="text-destructive">{r.error}</span>
               ) : r.url ? (
                 <a
@@ -558,6 +640,12 @@ function Draft({
           ))}
         </ul>
       )}
+      {draft.status === "published" &&
+        draft.receipts.some((r) => !RETRACTABLE[r.platform]) && (
+          <p className="text-sm text-muted-foreground">
+            {t("posts.retractManual")}
+          </p>
+        )}
       {failed && (
         <p role="alert" className="text-sm text-destructive">
           {failed}
@@ -573,6 +661,8 @@ function Draft({
               act(async () => {
                 const r = await post({ intent: "approve", id: draft.id, text })
                 if (r.halted) setFailed(t("posts.halted"))
+                else if (r.stopped)
+                  setFailed(t(`notices.${r.stopped}`, { feeds: "" }))
                 else if (r.errors?.length) setFailed(r.errors[0]!)
                 revalidator.revalidate()
               })
@@ -625,6 +715,27 @@ function Draft({
             </Button>
           )
         )}
+        {draft.status === "published" && (
+          <DropdownMenuTrigger>
+            <Button variant="outline" size="sm" isDisabled={busy}>
+              {t("posts.retract")}
+            </Button>
+            <DropdownMenu
+              aria-label={t("posts.retract")}
+              className="min-w-48"
+              onAction={(key) => {
+                const reason = RETRACT_REASONS.find((r) => r === key)
+                if (reason) void retract(reason)
+              }}
+            >
+              {RETRACT_REASONS.map((reason) => (
+                <DropdownMenuItem key={reason} id={reason}>
+                  {t(`retractReasons.${reason}`)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenu>
+          </DropdownMenuTrigger>
+        )}
         {(editable || draft.status === "used") && (
           <DropdownMenuTrigger>
             <Button variant="ghost" size="sm" isDisabled={busy}>
@@ -660,6 +771,15 @@ function makeFeed(kind: Feed["kind"], value: string): Feed {
   if (kind === "rss") return { kind, url: value.trim() }
   if (kind === "hackernews") return { kind }
   return { kind, query: value.trim() }
+}
+
+interface LineFields {
+  stance: Stance | ""
+  arena: Arena
+  publisher: string
+  contact: string
+  scrutiny: Scrutiny[]
+  style: Style
 }
 
 function FeedsEditor({
@@ -731,6 +851,160 @@ function FeedsEditor({
           {t("agent.addFeed")}
         </Button>
       </div>
+    </fieldset>
+  )
+}
+
+// The stance and style fields of one machine. What a stance rules out elsewhere
+// in the form is applied by the form, so this only reports it.
+function LineEditor({
+  value,
+  outputs,
+  onStance,
+  onChange,
+}: {
+  value: LineFields
+  outputs: MachineOutput[]
+  onStance: (stance: Stance | "") => void
+  onChange: (fields: Partial<LineFields>) => void
+}) {
+  const t = useT(messages)
+  const { stance, arena, publisher, contact, scrutiny, style } = value
+  const platforms = [...new Set(outputs.map((o) => o.platform))]
+  return (
+    <fieldset className="flex flex-col gap-3 border-t pt-4">
+      <legend className="text-sm font-medium">{t("line.title")}</legend>
+      <p className="text-sm text-muted-foreground">{t("line.hint")}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label={t("line.stance")} htmlFor="machine-stance">
+          <NativeSelect
+            id="machine-stance"
+            value={stance}
+            onChange={(e) => onStance(e.target.value as Stance | "")}
+          >
+            <option value="">{t("line.none")}</option>
+            {STANCES.map((s) => (
+              <option key={s} value={s}>
+                {t(`stances.${s}`)}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+        <Field label={t("line.style")} htmlFor="machine-style">
+          <NativeSelect
+            id="machine-style"
+            value={style}
+            onChange={(e) => onChange({ style: e.target.value as Style })}
+          >
+            {STYLES.map((s) => (
+              <option key={s} value={s}>
+                {t(`styles.${s}`)}
+              </option>
+            ))}
+          </NativeSelect>
+        </Field>
+      </div>
+      {(stance || style !== "plain") && (
+        <p className="text-sm text-muted-foreground">
+          {t(stance ? "line.styleWithStance" : "line.styleAlone")}
+        </p>
+      )}
+      {style !== "plain" && (
+        <p className="text-sm text-muted-foreground">{t("line.styleLimits")}</p>
+      )}
+      {stance && (
+        <>
+          <Field label={t("line.arena")} htmlFor="machine-arena">
+            <NativeSelect
+              id="machine-arena"
+              value={arena}
+              onChange={(e) => onChange({ arena: e.target.value as Arena })}
+            >
+              {ARENAS.map((a) => (
+                <option key={a} value={a}>
+                  {t(`arenas.${a}`)}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+          <Field
+            label={t("line.publisher")}
+            htmlFor="machine-publisher"
+            hint={t("line.publisherHint")}
+          >
+            <Input
+              id="machine-publisher"
+              value={publisher}
+              minLength={2}
+              maxLength={120}
+              required
+              onChange={(e) => onChange({ publisher: e.target.value })}
+            />
+          </Field>
+          <Field
+            label={t("line.contact")}
+            htmlFor="machine-contact"
+            hint={t("line.contactHint")}
+          >
+            <Input
+              id="machine-contact"
+              value={contact}
+              maxLength={200}
+              required
+              onChange={(e) => onChange({ contact: e.target.value })}
+            />
+          </Field>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="text-sm font-medium">
+              {t("line.scrutiny")}
+            </legend>
+            <p className="text-sm text-muted-foreground">
+              {t("line.scrutinyHint", { n: MAX_SCRUTINY })}
+            </p>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {SCRUTINY.map((s) => (
+                <Checkbox
+                  key={s}
+                  isSelected={scrutiny.includes(s)}
+                  isDisabled={
+                    !scrutiny.includes(s) && scrutiny.length >= MAX_SCRUTINY
+                  }
+                  onChange={(on) =>
+                    onChange({
+                      scrutiny: on
+                        ? [...scrutiny, s]
+                        : scrutiny.filter((x) => x !== s),
+                    })
+                  }
+                >
+                  {t(`scrutiny.${s}`)}
+                </Checkbox>
+              ))}
+            </div>
+          </fieldset>
+          <ul className="flex list-disc flex-col gap-1 ps-4 text-sm text-muted-foreground">
+            <li>
+              {FAR_STANCES.includes(stance)
+                ? t("line.far")
+                : t("line.review", { n: LINE_REVIEW_POSTS })}
+            </li>
+            <li>{t("line.off")}</li>
+            <li>{t("line.oneStance")}</li>
+            <li>{t("line.cooldown", { days: STANCE_COOLDOWN_DAYS })}</li>
+            <li>{t("line.calendar")}</li>
+          </ul>
+          {platforms.length > 0 && (
+            <div className="flex flex-col gap-1 text-sm">
+              <p className="font-medium">{t("line.checklist")}</p>
+              <ul className="flex list-disc flex-col gap-1 ps-4 text-muted-foreground">
+                {platforms.map((p) => (
+                  <li key={p}>{t(`line.checks.${p}`)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
+      )}
     </fieldset>
   )
 }
@@ -837,6 +1111,31 @@ function Filter({
   const [mode, setMode] = React.useState<PublishMode>(machine.publish_mode)
   const [outputs, setOutputs] = React.useState<MachineOutput[]>(machine.outputs)
   const [isPublic, setPublic] = React.useState(machine.public)
+  // The stored config again: older machines have neither field.
+  const storedLine = lineOf(c)
+  const [line, setLine] = React.useState<LineFields>({
+    stance: storedLine?.stance ?? "",
+    arena: storedLine?.arena ?? ARENAS[0],
+    publisher: storedLine?.publisher ?? "",
+    contact: storedLine?.contact ?? "",
+    scrutiny: storedLine?.scrutiny ?? [],
+    style: styleOf(c),
+  })
+  const onLine = !!line.stance
+  // A new stance goes back to review, and a far one never leaves it.
+  const autoClosed =
+    !!line.stance &&
+    (FAR_STANCES.includes(line.stance) || line.stance !== storedLine?.stance)
+  const pickStance = (stance: Stance | "") => {
+    setLine((old) => ({ ...old, stance }))
+    if (!stance) return
+    setPublic(true)
+    setImage(false)
+    setMedia(NO_MEDIA)
+    setOutputs((old) => old.filter((o) => o.platform !== "instagram"))
+    if (stance !== storedLine?.stance || FAR_STANCES.includes(stance))
+      setMode("review")
+  }
   const [confirmAuto, setConfirmAuto] = React.useState(false)
   const [note, setNote] = React.useState<{ ok: boolean; text: string } | null>(
     null
@@ -895,6 +1194,16 @@ function Filter({
             everyMinutes: every,
             image,
             media,
+            line: line.stance
+              ? {
+                  stance: line.stance,
+                  arena: line.arena,
+                  publisher: line.publisher,
+                  contact: line.contact,
+                  scrutiny: line.scrutiny,
+                }
+              : null,
+            style: line.style,
           } satisfies MachineConfig,
           publish_mode: mode,
           outputs,
@@ -903,8 +1212,14 @@ function Filter({
       })
       setNote({ ok: true, text: t("form.saved") })
       revalidator.revalidate()
-    } catch {
-      setNote({ ok: false, text: t("errors.generic") })
+    } catch (e) {
+      const code = LINE_ERRORS.find(
+        (c) => e instanceof Error && e.message === c
+      )
+      setNote({
+        ok: false,
+        text: t(code ? `errors.${code}` : "errors.generic"),
+      })
     } finally {
       setBusy(false)
     }
@@ -939,6 +1254,12 @@ function Filter({
           onChange={(e) => setMission(e.target.value)}
         />
       </Field>
+      <LineEditor
+        value={line}
+        outputs={outputs}
+        onStance={pickStance}
+        onChange={(fields) => setLine((old) => ({ ...old, ...fields }))}
+      />
       <FeedsEditor feeds={feeds} onChange={setFeeds} />
       <Field
         label={t("agent.every")}
@@ -966,6 +1287,7 @@ function Filter({
           <Switch
             aria-label={t("out.public")}
             isSelected={isPublic}
+            isDisabled={onLine}
             onChange={setPublic}
           />
           {t("out.public")}
@@ -985,6 +1307,7 @@ function Filter({
             <Switch
               aria-label={`${t(`platforms.${a.platform as OutputPlatform}`)} ${a.username}`}
               isSelected={outputs.some((o) => o.accountId === a.id)}
+              isDisabled={onLine && a.platform === "instagram"}
               onChange={(on) => toggleOutput(a, on)}
             />
             <span className="truncate">
@@ -1019,7 +1342,7 @@ function Filter({
           <Switch
             aria-label={t("out.image")}
             isSelected={image}
-            isDisabled={!canDraw && !image}
+            isDisabled={onLine || (!canDraw && !image)}
             onChange={setImage}
           />
           {t("out.image")}
@@ -1035,6 +1358,7 @@ function Filter({
               <Switch
                 aria-label={t("out.story")}
                 isSelected={media.enabled}
+                isDisabled={onLine}
                 onChange={(enabled) => setMedia({ ...media, enabled })}
               />
               {t("out.story")}
@@ -1078,7 +1402,7 @@ function Filter({
             onChange={(e) => setMode(e.target.value as PublishMode)}
           >
             <option value="review">{t("out.review")}</option>
-            <option value="auto" disabled={nowhere}>
+            <option value="auto" disabled={nowhere || autoClosed}>
               {t("out.auto")}
             </option>
           </NativeSelect>

@@ -45,6 +45,9 @@ export const ATTEMPTS_PER_CAP = 2
 // breaker, until the X link decision is made.
 export const X_LINK_CREDITS = 20
 
+// What a post from a machine with a take can be, before the signature and link.
+export const LINE_POST_MAX = 215
+
 // Statuses that count against the daily cap. Dismissed and expired posts took
 // nobody's attention, and held ones are filtered out on top of this list.
 export const PUBLISHED_TRACK = [
@@ -54,6 +57,7 @@ export const PUBLISHED_TRACK = [
   "publishing",
   "published",
   "failed",
+  "retracted",
 ] as const
 
 const graphemes = (s: string) => [...new Intl.Segmenter().segment(s)].length
@@ -428,6 +432,66 @@ export function compose(
   if ((platform === "bluesky" && cost > 100) || words < MIN_BODY)
     return signed(clip(body, room))
   return `${signed(clip(body, words))}\n${link}`
+}
+
+// The most words a post can have on the tightest place it goes, after the
+// signature and the link. `compose` would have to cut anything longer, and it
+// cuts from the end, which is where the take is.
+export function takeRoom(
+  outputs: readonly { platform: OutputPlatform }[],
+  link: string | null,
+  signature: string
+) {
+  const room = (platform: OutputPlatform) => {
+    const words = LIMITS[platform] - graphemes(signature) - 2
+    if (!link || platform === "instagram") return words
+    return words - 1 - (platform === "twitter" ? X_LINK : graphemes(link))
+  }
+  return Math.min(LINE_POST_MAX, ...outputs.map((o) => room(o.platform)))
+}
+
+export const joinTake = (text: string, take: string) =>
+  take ? `${text.trim()} ${take.trim()}` : text.trim()
+
+export interface SettledPost {
+  text: string
+  take: string
+  // Why the agent's take didn't go out with the post, for its owner.
+  takeNote: string | null
+  held: string | null
+}
+
+// Decides once, before anything is stored, what goes out. The whole post has to
+// pass, take included, and a take that doesn't pass or fit costs the take, never
+// the post. Only the fact can hold a post.
+export function settleTake(
+  filed: { text: string; take: string },
+  evidence: string,
+  sources: readonly unknown[],
+  language: string,
+  room: number
+): SettledPost {
+  const text = filed.text.trim()
+  const take = filed.take.trim()
+  const held =
+    holdReason(text, evidence, sources, language) ??
+    (graphemes(text) > LINE_POST_MAX
+      ? "It's longer than a post from this machine can be."
+      : null)
+  if (held || !take)
+    return {
+      text,
+      take: "",
+      takeNote: take ? "The post was held, so the take was left out." : null,
+      held,
+    }
+  const whole = joinTake(text, take)
+  if (graphemes(whole) > room)
+    return { text, take: "", takeNote: "The take didn't fit.", held: null }
+  const failed = holdReason(whole, evidence, sources, language)
+  return failed
+    ? { text, take: "", takeNote: failed, held: null }
+    : { text: whole, take, takeNote: null, held: null }
 }
 
 function clip(s: string, max: number) {

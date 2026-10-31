@@ -66,6 +66,17 @@ export const messages = defineMessages({
       youtube: "YouTube search",
     },
     posts: {
+      blocked: "Stopped by the standards desk",
+      blockedReason: "This can't be approved: {reason}",
+      takeDropped: "The take was left out: {reason}",
+      take: "Take: {take}",
+      retracted: "Retracted",
+      retract: "Retract",
+      retractManual:
+        "Instagram can't be retracted from here. Delete the post there yourself.",
+      removed: "Taken down",
+      byHand: "Delete this one by hand",
+      retractLeft: "Delete {n} by hand: the service couldn't take them down.",
       expired: "Expired",
       halted:
         "Publishing is paused for now. Nothing was sent, so try again later.",
@@ -129,6 +140,17 @@ export const messages = defineMessages({
       confirm: "Post automatically",
     },
     page: {
+      stance: "Stance",
+      publisher: "Publisher",
+      contact: "Contact",
+      arena: "Speaks to",
+      aiWritten: "AI-written",
+      changed: "Changed from {from} to {to} on {date}",
+      declared: "Declared {to} on {date}",
+      removed: "Stance removed on {date}",
+      retracted: "Retracted on {date}. {reason}.",
+      take: "Take",
+      changes: "Stance history",
       byline: "Written and published by an AI agent.",
       rss: "RSS",
       empty: "Nothing published yet.",
@@ -188,7 +210,81 @@ export const messages = defineMessages({
         "Brand kits, ad research, trends and content machines that turn into comics. Turning this off stops every machine.",
       open: "Open Studio",
     },
+    stances: {
+      "far-left": "Far left",
+      left: "Left",
+      center: "Center",
+      right: "Right",
+      "far-right": "Far right",
+    },
+    styles: { plain: "Plain", deadpan: "Deadpan", wry: "Wry" },
+    arenas: { fr: "France", us: "United States" },
+    scrutiny: {
+      government: "The government",
+      regulators: "Regulators",
+      large_employers: "Large employers",
+      banks: "Banks",
+      large_landlords: "Large landlords",
+      public_spending: "Public spending",
+      tech_platforms: "Tech platforms",
+    },
+    retractReasons: {
+      error: "It got something wrong",
+      source: "Its source didn't hold up",
+      standards: "It fell short of our standards",
+      owner: "The publisher took it down",
+    },
+    line: {
+      title: "Editorial line",
+      hint: "An optional public stance. It's shown on this machine's page and in its feed, and every post is checked against the same limits at every stop.",
+      stance: "Stance",
+      none: "No stance",
+      arena: "Speaks to",
+      publisher: "Publisher",
+      publisherHint:
+        "The person or organization who answers for this outlet. Shown publicly.",
+      contact: "Public contact",
+      contactHint: "An email address or an https link. Shown publicly.",
+      scrutiny: "Look closer at",
+      scrutinyHint:
+        "Up to {n}. This ranks what the agent reads and proves nothing.",
+      style: "Style",
+      styleWithStance:
+        "The stance decides what a take argues, and the style decides how it sounds. The post itself stays a flat fact.",
+      styleAlone:
+        "The post stays a flat fact, and the joke goes in a take. A take that fails a check is left out, and the post goes without it.",
+      styleLimits:
+        "Funny machines pass on private people, disasters and injuries. Nobody hurt is ever the joke.",
+      review:
+        "A stance starts in review. Auto mode opens after {n} published posts under this stance, with nothing blocked in the last 14 days.",
+      far: "A far stance is always reviewed by a person, and never publishes by itself.",
+      off: "With a stance, this machine keeps a public page, and draws no pictures, makes no Stories and doesn't post to Instagram. It needs Claude, so an OpenRouter connection can't pay for it.",
+      cooldown:
+        "Once a post is out, a stance can't change for {days} days, and each change shows on the public page.",
+      oneStance: "An account holds one stance across all its machines.",
+      calendar:
+        "A line machine only runs where staff have reviewed the election calendar, and stops during election windows.",
+      checklist: "Before this goes out, on each account",
+      checks: {
+        bluesky: "Bluesky: add the bot label and say who runs it in the bio.",
+        twitter:
+          "X: turn on the Automated label and name the managing account.",
+        threads:
+          "Threads: say in the bio that the account is AI-written and who runs it.",
+        linkedin:
+          "LinkedIn: say in the summary that the page is AI-written and who runs it.",
+        instagram:
+          "Instagram: posts carry the AI label; say who runs the account in the bio.",
+      },
+    },
     notices: {
+      frozen:
+        "This line is paused for an election window in its arena. Nothing runs or publishes until it ends.",
+      no_calendar:
+        "This line can't run: nobody has reviewed the election calendar for its arena.",
+      not_public: "This line can't publish without its public page.",
+      no_desk:
+        "Stances and funny styles need Claude, so this machine doesn't run on an OpenRouter connection.",
       budget:
         "This machine reached its daily credit limit. It's still listening, and picks up again tomorrow (UTC).",
       unreadable: "These feeds answered, but no entry could be used: {feeds}",
@@ -201,6 +297,17 @@ export const messages = defineMessages({
       tone: "Wrong tone",
     },
     errors: {
+      one_stance:
+        "Another of your machines holds a different stance. An account holds one.",
+      cooldown:
+        "This stance changed too recently. It can change again after 30 days.",
+      review_first: "This machine has to stay in review for now.",
+      line_rules:
+        "A line machine needs its public page, and a far stance has to stay in review.",
+      no_desk:
+        "Stances and funny styles need Claude, so they can't run on an OpenRouter connection.",
+      no_wire:
+        "A machine with a stance or a funny style only writes on its schedule.",
       generic: "Something went wrong. Try again.",
       credits: "You don't have enough credits for this draft.",
     },
@@ -270,6 +377,18 @@ export const messages = defineMessages({
       youtube: "Recherche YouTube",
     },
     posts: {
+      blocked: "Arrêté par le contrôle éditorial",
+      blockedReason: "Impossible d’approuver : {reason}",
+      takeDropped: "Le commentaire a été retiré : {reason}",
+      take: "Commentaire : {take}",
+      retracted: "Retiré",
+      retract: "Retirer",
+      retractManual:
+        "Instagram ne permet pas le retrait depuis ici. Supprimez le post là-bas vous-même.",
+      removed: "Retiré",
+      byHand: "À supprimer à la main",
+      retractLeft:
+        "{n} à supprimer à la main : le service n’a pas pu les retirer.",
       expired: "Expiré",
       halted:
         "La publication est suspendue pour le moment. Rien n'a été envoyé : réessayez plus tard.",
@@ -336,6 +455,17 @@ export const messages = defineMessages({
       confirm: "Publier automatiquement",
     },
     page: {
+      stance: "Position",
+      publisher: "Éditeur",
+      contact: "Contact",
+      arena: "S’adresse à",
+      aiWritten: "Écrit par une IA",
+      changed: "Passé de {from} à {to} le {date}",
+      declared: "{to} déclaré le {date}",
+      removed: "Position retirée le {date}",
+      retracted: "Retiré le {date}. {reason}.",
+      take: "Commentaire",
+      changes: "Historique de la position",
       byline: "Écrit et publié par un agent IA.",
       rss: "RSS",
       empty: "Rien de publié pour l’instant.",
@@ -396,7 +526,82 @@ export const messages = defineMessages({
         "Kits de marque, veille publicitaire, tendances et machines à contenu qui deviennent des BD. Désactiver cette option arrête toutes les machines.",
       open: "Ouvrir Studio",
     },
+    stances: {
+      "far-left": "Extrême gauche",
+      left: "Gauche",
+      center: "Centre",
+      right: "Droite",
+      "far-right": "Extrême droite",
+    },
+    styles: { plain: "Neutre", deadpan: "Pince-sans-rire", wry: "Ironique" },
+    arenas: { fr: "France", us: "États-Unis" },
+    scrutiny: {
+      government: "Le gouvernement",
+      regulators: "Les régulateurs",
+      large_employers: "Les grands employeurs",
+      banks: "Les banques",
+      large_landlords: "Les grands propriétaires",
+      public_spending: "La dépense publique",
+      tech_platforms: "Les plateformes tech",
+    },
+    retractReasons: {
+      error: "Il contenait une erreur",
+      source: "Sa source n’a pas tenu",
+      standards: "Il ne respectait pas nos règles",
+      owner: "L’éditeur l’a retiré",
+    },
+    line: {
+      title: "Ligne éditoriale",
+      hint: "Une position publique, facultative. Elle apparaît sur la page et dans le flux de cette machine, et chaque post passe les mêmes limites, quelle que soit la position.",
+      stance: "Position",
+      none: "Aucune position",
+      arena: "S’adresse à",
+      publisher: "Éditeur",
+      publisherHint:
+        "La personne ou l’organisation qui répond de ce média. Affiché publiquement.",
+      contact: "Contact public",
+      contactHint: "Une adresse e-mail ou un lien https. Affiché publiquement.",
+      scrutiny: "Regarder de plus près",
+      scrutinyHint:
+        "Jusqu’à {n}. Cela classe ce que l’agent lit et ne prouve rien.",
+      style: "Style",
+      styleWithStance:
+        "La position décide de ce que défend le commentaire, le style de la façon dont il sonne. Le post lui-même reste un fait brut.",
+      styleAlone:
+        "Le post reste un fait brut et la blague va dans le commentaire. Un commentaire qui échoue à un contrôle est retiré, et le post part sans lui.",
+      styleLimits:
+        "Les machines drôles laissent de côté les particuliers, les catastrophes et les blessures. On ne rit jamais d’une victime.",
+      review:
+        "Une position commence en relecture. Le mode automatique s’ouvre après {n} posts publiés sous cette position, sans aucun blocage depuis 14 jours.",
+      far: "Une position extrême est toujours relue par une personne et ne publie jamais seule.",
+      off: "Avec une position, cette machine garde une page publique, ne dessine pas d’images, ne crée pas de Stories et ne publie pas sur Instagram. Elle a besoin de Claude : une connexion OpenRouter ne peut pas la payer.",
+      cooldown:
+        "Dès qu’un post est sorti, la position ne peut plus changer pendant {days} jours, et chaque changement apparaît sur la page publique.",
+      oneStance: "Un compte a une seule position pour toutes ses machines.",
+      calendar:
+        "Une machine à ligne ne tourne que si l’équipe a relu le calendrier électoral, et s’arrête pendant les périodes électorales.",
+      checklist: "Avant la mise en ligne, sur chaque compte",
+      checks: {
+        bluesky:
+          "Bluesky : ajoutez le label bot et indiquez qui gère le compte dans la bio.",
+        twitter:
+          "X : activez le label Automated et nommez le compte gestionnaire.",
+        threads:
+          "Threads : indiquez dans la bio que le compte est écrit par une IA et qui le gère.",
+        linkedin:
+          "LinkedIn : indiquez dans le résumé que la page est écrite par une IA et qui la gère.",
+        instagram:
+          "Instagram : les posts portent le label IA ; indiquez dans la bio qui gère le compte.",
+      },
+    },
     notices: {
+      frozen:
+        "Cette ligne est en pause pour une période électorale. Rien ne tourne ni ne sort avant la fin.",
+      no_calendar:
+        "Cette ligne ne peut pas tourner : personne n’a relu le calendrier électoral de ce territoire.",
+      not_public: "Cette ligne ne peut pas publier sans sa page publique.",
+      no_desk:
+        "Les positions et les styles drôles ont besoin de Claude : cette machine ne tourne pas sur une connexion OpenRouter.",
       budget:
         "Cette machine a atteint sa limite de crédits du jour. Elle écoute toujours et reprend demain (UTC).",
       unreadable:
@@ -410,6 +615,17 @@ export const messages = defineMessages({
       tone: "Mauvais ton",
     },
     errors: {
+      one_stance:
+        "Une autre de vos machines a une position différente. Un compte n’en a qu’une.",
+      cooldown:
+        "Cette position a changé trop récemment. Elle pourra changer après 30 jours.",
+      review_first: "Cette machine doit rester en relecture pour l’instant.",
+      line_rules:
+        "Une machine à ligne a besoin de sa page publique, et une position extrême doit rester en relecture.",
+      no_desk:
+        "Les positions et les styles drôles ont besoin de Claude : ils ne tournent pas sur une connexion OpenRouter.",
+      no_wire:
+        "Une machine avec une position ou un style drôle n’écrit que selon son planning.",
       generic: "Une erreur est survenue. Réessayez.",
       credits: "Vous n’avez pas assez de crédits pour ce brouillon.",
     },
@@ -479,6 +695,17 @@ export const messages = defineMessages({
       youtube: "Búsqueda en YouTube",
     },
     posts: {
+      blocked: "Detenido por el control editorial",
+      blockedReason: "No se puede aprobar: {reason}",
+      takeDropped: "Se quitó el comentario: {reason}",
+      take: "Comentario: {take}",
+      retracted: "Retirado",
+      retract: "Retirar",
+      retractManual:
+        "Instagram no permite retirar desde aquí. Borra tú el post allí.",
+      removed: "Retirado",
+      byHand: "Borrar a mano",
+      retractLeft: "Borra {n} a mano: el servicio no pudo retirarlos.",
       expired: "Caducado",
       halted:
         "La publicación está en pausa por ahora. No se ha enviado nada: inténtalo más tarde.",
@@ -545,6 +772,17 @@ export const messages = defineMessages({
       confirm: "Publicar automáticamente",
     },
     page: {
+      stance: "Postura",
+      publisher: "Editor",
+      contact: "Contacto",
+      arena: "Se dirige a",
+      aiWritten: "Escrito por IA",
+      changed: "Cambió de {from} a {to} el {date}",
+      declared: "{to} declarada el {date}",
+      removed: "Postura retirada el {date}",
+      retracted: "Retirado el {date}. {reason}.",
+      take: "Comentario",
+      changes: "Historial de la postura",
       byline: "Escrito y publicado por un agente de IA.",
       rss: "RSS",
       empty: "Aún no hay nada publicado.",
@@ -604,7 +842,82 @@ export const messages = defineMessages({
         "Kits de marca, análisis de anuncios, tendencias y máquinas de contenido que se convierten en cómics. Al desactivarlo se detienen todas las máquinas.",
       open: "Abrir Studio",
     },
+    stances: {
+      "far-left": "Extrema izquierda",
+      left: "Izquierda",
+      center: "Centro",
+      right: "Derecha",
+      "far-right": "Extrema derecha",
+    },
+    styles: { plain: "Sobrio", deadpan: "Humor seco", wry: "Irónico" },
+    arenas: { fr: "Francia", us: "Estados Unidos" },
+    scrutiny: {
+      government: "El gobierno",
+      regulators: "Los reguladores",
+      large_employers: "Las grandes empresas",
+      banks: "Los bancos",
+      large_landlords: "Los grandes propietarios",
+      public_spending: "El gasto público",
+      tech_platforms: "Las plataformas tecnológicas",
+    },
+    retractReasons: {
+      error: "Contenía un error",
+      source: "Su fuente no se sostuvo",
+      standards: "No cumplía nuestras normas",
+      owner: "El editor lo retiró",
+    },
+    line: {
+      title: "Línea editorial",
+      hint: "Una postura pública opcional. Aparece en la página y el feed de esta máquina, y cada post pasa los mismos límites en cualquier postura.",
+      stance: "Postura",
+      none: "Sin postura",
+      arena: "Se dirige a",
+      publisher: "Editor",
+      publisherHint:
+        "La persona u organización que responde por este medio. Se muestra en público.",
+      contact: "Contacto público",
+      contactHint: "Un correo o un enlace https. Se muestra en público.",
+      scrutiny: "Mirar más de cerca",
+      scrutinyHint:
+        "Hasta {n}. Esto ordena lo que lee el agente y no demuestra nada.",
+      style: "Estilo",
+      styleWithStance:
+        "La postura decide qué defiende el comentario, y el estilo cómo suena. El post sigue siendo un hecho sin más.",
+      styleAlone:
+        "El post sigue siendo un hecho sin más y la broma va en el comentario. Un comentario que no pasa un control se quita, y el post sale sin él.",
+      styleLimits:
+        "Las máquinas de humor descartan a particulares, desastres y lesiones. Nadie herido es nunca la broma.",
+      review:
+        "Una postura empieza en revisión. El modo automático se abre tras {n} posts publicados con esta postura, sin bloqueos en los últimos 14 días.",
+      far: "Una postura extrema siempre la revisa una persona y nunca publica sola.",
+      off: "Con una postura, esta máquina mantiene una página pública, no dibuja imágenes, no crea Stories y no publica en Instagram. Necesita Claude, así que una conexión de OpenRouter no puede pagarla.",
+      cooldown:
+        "Cuando sale un post, la postura no puede cambiar durante {days} días, y cada cambio aparece en la página pública.",
+      oneStance: "Una cuenta tiene una sola postura en todas sus máquinas.",
+      calendar:
+        "Una máquina con línea solo funciona si el equipo ha revisado el calendario electoral, y se detiene durante los periodos electorales.",
+      checklist: "Antes de publicar, en cada cuenta",
+      checks: {
+        bluesky:
+          "Bluesky: añade la etiqueta de bot e indica en la bio quién lleva la cuenta.",
+        twitter:
+          "X: activa la etiqueta Automated y nombra la cuenta responsable.",
+        threads:
+          "Threads: indica en la bio que la cuenta la escribe una IA y quién la lleva.",
+        linkedin:
+          "LinkedIn: indica en el resumen que la página la escribe una IA y quién la lleva.",
+        instagram:
+          "Instagram: los posts llevan la etiqueta de IA; indica en la bio quién lleva la cuenta.",
+      },
+    },
     notices: {
+      frozen:
+        "Esta línea está en pausa por un periodo electoral. Nada funciona ni se publica hasta que termine.",
+      no_calendar:
+        "Esta línea no puede funcionar: nadie ha revisado el calendario electoral de su territorio.",
+      not_public: "Esta línea no puede publicar sin su página pública.",
+      no_desk:
+        "Las posturas y los estilos de humor necesitan Claude, así que esta máquina no funciona con una conexión de OpenRouter.",
       budget:
         "Esta máquina ha alcanzado su límite diario de créditos. Sigue escuchando y volverá mañana (UTC).",
       unreadable:
@@ -618,6 +931,17 @@ export const messages = defineMessages({
       tone: "Tono equivocado",
     },
     errors: {
+      one_stance:
+        "Otra de tus máquinas tiene una postura distinta. Una cuenta solo tiene una.",
+      cooldown:
+        "Esta postura cambió hace muy poco. Podrá cambiar pasados 30 días.",
+      review_first: "Esta máquina debe seguir en revisión por ahora.",
+      line_rules:
+        "Una máquina con línea necesita su página pública, y una postura extrema debe seguir en revisión.",
+      no_desk:
+        "Las posturas y los estilos de humor necesitan Claude, así que no funcionan con una conexión de OpenRouter.",
+      no_wire:
+        "Una máquina con postura o estilo de humor solo escribe según su horario.",
       generic: "Algo ha fallado. Inténtalo de nuevo.",
       credits: "No tienes créditos suficientes para este borrador.",
     },
@@ -687,6 +1011,18 @@ export const messages = defineMessages({
       youtube: "YouTube-Suche",
     },
     posts: {
+      blocked: "Von der Standards-Prüfung gestoppt",
+      blockedReason: "Kann nicht freigegeben werden: {reason}",
+      takeDropped: "Der Kommentar wurde weggelassen: {reason}",
+      take: "Kommentar: {take}",
+      retracted: "Zurückgezogen",
+      retract: "Zurückziehen",
+      retractManual:
+        "Instagram lässt sich von hier nicht zurückziehen. Lösche den Post dort selbst.",
+      removed: "Entfernt",
+      byHand: "Von Hand löschen",
+      retractLeft:
+        "{n} von Hand löschen: Der Dienst konnte sie nicht entfernen.",
       expired: "Abgelaufen",
       halted:
         "Das Veröffentlichen ist gerade pausiert. Es wurde nichts gesendet, versuche es später noch einmal.",
@@ -751,6 +1087,17 @@ export const messages = defineMessages({
       confirm: "Automatisch posten",
     },
     page: {
+      stance: "Haltung",
+      publisher: "Herausgeber",
+      contact: "Kontakt",
+      arena: "Richtet sich an",
+      aiWritten: "Von KI geschrieben",
+      changed: "Am {date} von {from} zu {to} geändert",
+      declared: "{to} erklärt am {date}",
+      removed: "Haltung entfernt am {date}",
+      retracted: "Zurückgezogen am {date}. {reason}.",
+      take: "Kommentar",
+      changes: "Verlauf der Haltung",
       byline: "Von einem KI-Agenten geschrieben und veröffentlicht.",
       rss: "RSS",
       empty: "Noch nichts veröffentlicht.",
@@ -810,7 +1157,84 @@ export const messages = defineMessages({
         "Brand-Kits, Anzeigen-Recherche, Trends und Content-Maschinen, aus denen Comics werden. Beim Ausschalten stoppen alle Maschinen.",
       open: "Studio öffnen",
     },
+    stances: {
+      "far-left": "Linksaußen",
+      left: "Links",
+      center: "Mitte",
+      right: "Rechts",
+      "far-right": "Rechtsaußen",
+    },
+    styles: { plain: "Sachlich", deadpan: "Trocken", wry: "Ironisch" },
+    arenas: { fr: "Frankreich", us: "USA" },
+    scrutiny: {
+      government: "Die Regierung",
+      regulators: "Aufsichtsbehörden",
+      large_employers: "Große Arbeitgeber",
+      banks: "Banken",
+      large_landlords: "Große Vermieter",
+      public_spending: "Öffentliche Ausgaben",
+      tech_platforms: "Tech-Plattformen",
+    },
+    retractReasons: {
+      error: "Er enthielt einen Fehler",
+      source: "Seine Quelle hielt nicht stand",
+      standards: "Er entsprach nicht unseren Standards",
+      owner: "Der Herausgeber hat ihn entfernt",
+    },
+    line: {
+      title: "Redaktionelle Linie",
+      hint: "Eine optionale öffentliche Haltung. Sie steht auf der Seite und im Feed dieser Maschine, und jeder Post unterliegt bei jeder Haltung denselben Grenzen.",
+      stance: "Haltung",
+      none: "Keine Haltung",
+      arena: "Richtet sich an",
+      publisher: "Herausgeber",
+      publisherHint:
+        "Die Person oder Organisation, die für dieses Medium einsteht. Wird öffentlich gezeigt.",
+      contact: "Öffentlicher Kontakt",
+      contactHint:
+        "Eine E-Mail-Adresse oder ein https-Link. Wird öffentlich gezeigt.",
+      scrutiny: "Genauer hinsehen bei",
+      scrutinyHint:
+        "Bis zu {n}. Das ordnet, was der Agent liest, und beweist nichts.",
+      style: "Stil",
+      styleWithStance:
+        "Die Haltung bestimmt, was ein Kommentar vertritt, der Stil, wie er klingt. Der Post selbst bleibt eine nüchterne Tatsache.",
+      styleAlone:
+        "Der Post bleibt eine nüchterne Tatsache, der Witz steht im Kommentar. Fällt ein Kommentar bei einer Prüfung durch, geht der Post ohne ihn raus.",
+      styleLimits:
+        "Lustige Maschinen lassen Privatpersonen, Katastrophen und Verletzungen aus. Wer zu Schaden kam, ist nie der Witz.",
+      review:
+        "Eine Haltung beginnt in der Prüfung. Der Automatikmodus öffnet sich nach {n} veröffentlichten Posts unter dieser Haltung, ohne Sperre in den letzten 14 Tagen.",
+      far: "Eine Außenposition wird immer von einem Menschen geprüft und veröffentlicht nie selbst.",
+      off: "Mit einer Haltung behält diese Maschine eine öffentliche Seite, zeichnet keine Bilder, erstellt keine Stories und postet nicht auf Instagram. Sie braucht Claude, eine OpenRouter-Verbindung kann sie also nicht bezahlen.",
+      cooldown:
+        "Sobald ein Post erschienen ist, kann sich die Haltung {days} Tage lang nicht ändern, und jede Änderung steht auf der öffentlichen Seite.",
+      oneStance: "Ein Konto hat über alle Maschinen hinweg eine Haltung.",
+      calendar:
+        "Eine Maschine mit Linie läuft nur, wenn das Team den Wahlkalender geprüft hat, und stoppt in Wahlzeiträumen.",
+      checklist: "Vor dem Start, bei jedem Konto",
+      checks: {
+        bluesky:
+          "Bluesky: Bot-Label setzen und in der Bio nennen, wer das Konto betreibt.",
+        twitter:
+          "X: Automated-Label aktivieren und das verwaltende Konto nennen.",
+        threads:
+          "Threads: in der Bio sagen, dass eine KI schreibt und wer das Konto betreibt.",
+        linkedin:
+          "LinkedIn: in der Beschreibung sagen, dass eine KI schreibt und wer die Seite betreibt.",
+        instagram:
+          "Instagram: Posts tragen das KI-Label; in der Bio nennen, wer das Konto betreibt.",
+      },
+    },
     notices: {
+      frozen:
+        "Diese Linie pausiert wegen eines Wahlzeitraums. Bis zu dessen Ende läuft und erscheint nichts.",
+      no_calendar:
+        "Diese Linie kann nicht laufen: Niemand hat den Wahlkalender für ihr Gebiet geprüft.",
+      not_public:
+        "Diese Linie kann ohne ihre öffentliche Seite nicht veröffentlichen.",
+      no_desk:
+        "Haltungen und lustige Stile brauchen Claude, daher läuft diese Maschine nicht über eine OpenRouter-Verbindung.",
       budget:
         "Diese Maschine hat ihr Tageslimit an Credits erreicht. Sie hört weiter zu und macht morgen (UTC) weiter.",
       unreadable:
@@ -824,6 +1248,17 @@ export const messages = defineMessages({
       tone: "Falscher Ton",
     },
     errors: {
+      one_stance:
+        "Eine andere deiner Maschinen hat eine andere Haltung. Ein Konto hat nur eine.",
+      cooldown:
+        "Diese Haltung wurde erst kürzlich geändert. Sie kann nach 30 Tagen wieder geändert werden.",
+      review_first: "Diese Maschine muss vorerst in der Prüfung bleiben.",
+      line_rules:
+        "Eine Maschine mit Linie braucht ihre öffentliche Seite, und eine Außenposition muss in der Prüfung bleiben.",
+      no_desk:
+        "Haltungen und lustige Stile brauchen Claude und laufen daher nicht über eine OpenRouter-Verbindung.",
+      no_wire:
+        "Eine Maschine mit Haltung oder lustigem Stil schreibt nur nach Zeitplan.",
       generic: "Etwas ist schiefgelaufen. Versuche es noch einmal.",
       credits: "Du hast nicht genug Credits für diesen Entwurf.",
     },
@@ -893,6 +1328,18 @@ export const messages = defineMessages({
       youtube: "Ricerca YouTube",
     },
     posts: {
+      blocked: "Fermato dal controllo editoriale",
+      blockedReason: "Non si può approvare: {reason}",
+      takeDropped: "Il commento è stato tolto: {reason}",
+      take: "Commento: {take}",
+      retracted: "Ritirato",
+      retract: "Ritira",
+      retractManual:
+        "Instagram non si può ritirare da qui. Elimina il post direttamente lì.",
+      removed: "Rimosso",
+      byHand: "Da eliminare a mano",
+      retractLeft:
+        "{n} da eliminare a mano: il servizio non è riuscito a rimuoverli.",
       expired: "Scaduto",
       halted:
         "La pubblicazione è in pausa per ora. Non è stato inviato nulla: riprova più tardi.",
@@ -959,6 +1406,17 @@ export const messages = defineMessages({
       confirm: "Pubblica automaticamente",
     },
     page: {
+      stance: "Posizione",
+      publisher: "Editore",
+      contact: "Contatto",
+      arena: "Si rivolge a",
+      aiWritten: "Scritto da IA",
+      changed: "Passata da {from} a {to} il {date}",
+      declared: "{to} dichiarata il {date}",
+      removed: "Posizione rimossa il {date}",
+      retracted: "Ritirato il {date}. {reason}.",
+      take: "Commento",
+      changes: "Storia della posizione",
       byline: "Scritto e pubblicato da un agente IA.",
       rss: "RSS",
       empty: "Ancora nessun post.",
@@ -1018,7 +1476,84 @@ export const messages = defineMessages({
         "Kit del brand, analisi degli annunci, tendenze e macchine di contenuti che diventano fumetti. Disattivandolo si fermano tutte le macchine.",
       open: "Apri Studio",
     },
+    stances: {
+      "far-left": "Estrema sinistra",
+      left: "Sinistra",
+      center: "Centro",
+      right: "Destra",
+      "far-right": "Estrema destra",
+    },
+    styles: { plain: "Sobrio", deadpan: "Impassibile", wry: "Ironico" },
+    arenas: { fr: "Francia", us: "Stati Uniti" },
+    scrutiny: {
+      government: "Il governo",
+      regulators: "Le autorità di controllo",
+      large_employers: "I grandi datori di lavoro",
+      banks: "Le banche",
+      large_landlords: "I grandi proprietari",
+      public_spending: "La spesa pubblica",
+      tech_platforms: "Le piattaforme tech",
+    },
+    retractReasons: {
+      error: "Conteneva un errore",
+      source: "La sua fonte non ha retto",
+      standards: "Non rispettava i nostri standard",
+      owner: "L’editore l’ha rimosso",
+    },
+    line: {
+      title: "Linea editoriale",
+      hint: "Una posizione pubblica facoltativa. Compare sulla pagina e nel feed di questa macchina, e ogni post rispetta gli stessi limiti in ogni posizione.",
+      stance: "Posizione",
+      none: "Nessuna posizione",
+      arena: "Si rivolge a",
+      publisher: "Editore",
+      publisherHint:
+        "La persona o l’organizzazione che risponde di questa testata. Mostrato pubblicamente.",
+      contact: "Contatto pubblico",
+      contactHint:
+        "Un indirizzo email o un link https. Mostrato pubblicamente.",
+      scrutiny: "Guardare più da vicino",
+      scrutinyHint:
+        "Fino a {n}. Ordina ciò che l’agente legge e non prova nulla.",
+      style: "Stile",
+      styleWithStance:
+        "La posizione decide cosa sostiene il commento, lo stile come suona. Il post resta un fatto asciutto.",
+      styleAlone:
+        "Il post resta un fatto asciutto e la battuta va nel commento. Un commento che non supera un controllo viene tolto, e il post esce senza.",
+      styleLimits:
+        "Le macchine comiche lasciano stare privati, disastri e infortuni. Chi si è fatto male non è mai la battuta.",
+      review:
+        "Una posizione parte in revisione. La modalità automatica si apre dopo {n} post pubblicati con questa posizione, senza blocchi negli ultimi 14 giorni.",
+      far: "Una posizione estrema è sempre rivista da una persona e non pubblica mai da sola.",
+      off: "Con una posizione, questa macchina mantiene una pagina pubblica, non disegna immagini, non crea Stories e non pubblica su Instagram. Ha bisogno di Claude, quindi una connessione OpenRouter non può pagarla.",
+      cooldown:
+        "Quando esce un post, la posizione non può cambiare per {days} giorni, e ogni cambio compare sulla pagina pubblica.",
+      oneStance: "Un account ha una sola posizione su tutte le macchine.",
+      calendar:
+        "Una macchina con linea funziona solo se il team ha rivisto il calendario elettorale, e si ferma nei periodi elettorali.",
+      checklist: "Prima di uscire, su ogni account",
+      checks: {
+        bluesky:
+          "Bluesky: aggiungi l’etichetta bot e indica nella bio chi gestisce l’account.",
+        twitter:
+          "X: attiva l’etichetta Automated e indica l’account responsabile.",
+        threads:
+          "Threads: indica nella bio che l’account è scritto da un’IA e chi lo gestisce.",
+        linkedin:
+          "LinkedIn: indica nel riepilogo che la pagina è scritta da un’IA e chi la gestisce.",
+        instagram:
+          "Instagram: i post hanno l’etichetta IA; indica nella bio chi gestisce l’account.",
+      },
+    },
     notices: {
+      frozen:
+        "Questa linea è in pausa per un periodo elettorale. Nulla gira o esce fino alla fine.",
+      no_calendar:
+        "Questa linea non può funzionare: nessuno ha rivisto il calendario elettorale del suo territorio.",
+      not_public:
+        "Questa linea non può pubblicare senza la sua pagina pubblica.",
+      no_desk:
+        "Posizioni e stili comici hanno bisogno di Claude, quindi questa macchina non funziona con una connessione OpenRouter.",
       budget:
         "Questa macchina ha raggiunto il limite giornaliero di crediti. Continua ad ascoltare e riprende domani (UTC).",
       unreadable:
@@ -1032,6 +1567,17 @@ export const messages = defineMessages({
       tone: "Tono sbagliato",
     },
     errors: {
+      one_stance:
+        "Un’altra tua macchina ha una posizione diversa. Un account ne ha una sola.",
+      cooldown:
+        "Questa posizione è cambiata da poco. Potrà cambiare dopo 30 giorni.",
+      review_first: "Per ora questa macchina deve restare in revisione.",
+      line_rules:
+        "Una macchina con linea ha bisogno della sua pagina pubblica, e una posizione estrema deve restare in revisione.",
+      no_desk:
+        "Posizioni e stili comici hanno bisogno di Claude, quindi non funzionano con una connessione OpenRouter.",
+      no_wire:
+        "Una macchina con posizione o stile comico scrive solo secondo il suo programma.",
       generic: "Qualcosa è andato storto. Riprova.",
       credits: "Non hai abbastanza crediti per questa bozza.",
     },
@@ -1101,6 +1647,18 @@ export const messages = defineMessages({
       youtube: "YouTube検索",
     },
     posts: {
+      blocked: "基準チェックで停止",
+      blockedReason: "承認できません：{reason}",
+      takeDropped: "テイクは外されました：{reason}",
+      take: "テイク：{take}",
+      retracted: "取り下げ済み",
+      retract: "取り下げる",
+      retractManual:
+        "Instagram はここから取り下げできません。Instagram で直接削除してください。",
+      removed: "削除済み",
+      byHand: "手動で削除してください",
+      retractLeft:
+        "{n} 件は手動で削除してください。サービスから削除できませんでした。",
       expired: "期限切れ",
       halted:
         "公開は現在停止中です。何も送信されていません。後でもう一度お試しください。",
@@ -1165,6 +1723,17 @@ export const messages = defineMessages({
       confirm: "自動で投稿",
     },
     page: {
+      stance: "立場",
+      publisher: "発行者",
+      contact: "連絡先",
+      arena: "対象",
+      aiWritten: "AIが執筆",
+      changed: "{date}に{from}から{to}へ変更",
+      declared: "{date}に{to}を表明",
+      removed: "{date}に立場を削除",
+      retracted: "{date}に取り下げ。{reason}。",
+      take: "テイク",
+      changes: "立場の履歴",
       byline: "AIエージェントが執筆・公開しました。",
       rss: "RSS",
       empty: "まだ投稿はありません。",
@@ -1224,7 +1793,82 @@ export const messages = defineMessages({
         "ブランドキット、広告リサーチ、トレンド、コンテンツマシンをコミックにつなげます。オフにするとすべてのマシンが停止します。",
       open: "Studio を開く",
     },
+    stances: {
+      "far-left": "極左",
+      left: "左派",
+      center: "中道",
+      right: "右派",
+      "far-right": "極右",
+    },
+    styles: { plain: "標準", deadpan: "真顔", wry: "皮肉" },
+    arenas: { fr: "フランス", us: "アメリカ" },
+    scrutiny: {
+      government: "政府",
+      regulators: "規制当局",
+      large_employers: "大企業",
+      banks: "銀行",
+      large_landlords: "大家主",
+      public_spending: "公共支出",
+      tech_platforms: "テックプラットフォーム",
+    },
+    retractReasons: {
+      error: "誤りがありました",
+      source: "情報源が確かではありませんでした",
+      standards: "基準を満たしていませんでした",
+      owner: "発行者が取り下げました",
+    },
+    line: {
+      title: "編集方針",
+      hint: "公開する立場（任意）です。このマシンのページとフィードに表示され、どの立場でもすべての投稿に同じ制限がかかります。",
+      stance: "立場",
+      none: "立場なし",
+      arena: "対象",
+      publisher: "発行者",
+      publisherHint:
+        "このメディアに責任を負う個人または組織です。公開されます。",
+      contact: "公開連絡先",
+      contactHint: "メールアドレスまたは https リンクです。公開されます。",
+      scrutiny: "注視する対象",
+      scrutinyHint:
+        "最大 {n} 件。エージェントが読む順番を決めるだけで、何かを証明するものではありません。",
+      style: "スタイル",
+      styleWithStance:
+        "立場はテイクの主張を決め、スタイルはその語り口を決めます。投稿本文は淡々とした事実のままです。",
+      styleAlone:
+        "投稿本文は淡々とした事実のままで、ジョークはテイクに入ります。テイクがチェックを通らなければ外され、本文だけが投稿されます。",
+      styleLimits:
+        "ユーモア系のマシンは、私人、災害、けがを扱いません。傷ついた人を笑いの種にはしません。",
+      review:
+        "立場を設定するとレビューから始まります。この立場で {n} 件公開され、直近14日間にブロックがなければ自動モードが使えます。",
+      far: "極端な立場は必ず人がレビューし、自動では公開されません。",
+      off: "立場を設定すると、公開ページが必須になり、画像、ストーリー、Instagram 投稿は使えません。Claude が必要なため、OpenRouter 接続では利用できません。",
+      cooldown:
+        "投稿が公開されると、立場は {days} 日間変更できません。変更はすべて公開ページに表示されます。",
+      oneStance: "1つのアカウントのマシンはすべて同じ立場になります。",
+      calendar:
+        "方針のあるマシンは、スタッフが選挙カレンダーを確認した地域でのみ動作し、選挙期間中は停止します。",
+      checklist: "公開前に各アカウントで",
+      checks: {
+        bluesky:
+          "Bluesky：ボットラベルを付け、運営者をプロフィールに記載してください。",
+        twitter:
+          "X：Automated ラベルを有効にし、管理アカウントを示してください。",
+        threads:
+          "Threads：AI が書いていることと運営者をプロフィールに記載してください。",
+        linkedin:
+          "LinkedIn：AI が書いていることと運営者を概要に記載してください。",
+        instagram:
+          "Instagram：投稿には AI ラベルが付きます。運営者をプロフィールに記載してください。",
+      },
+    },
     notices: {
+      frozen:
+        "選挙期間のため、この方針は一時停止中です。終了まで実行も公開もされません。",
+      no_calendar:
+        "この方針は実行できません。この地域の選挙カレンダーが確認されていません。",
+      not_public: "公開ページがないと、この方針では公開できません。",
+      no_desk:
+        "立場とユーモア系スタイルには Claude が必要なため、このマシンは OpenRouter 接続では動作しません。",
       budget:
         "このマシンは 1 日のクレジット上限に達しました。受信は続いており、明日 (UTC) に再開します。",
       unreadable:
@@ -1238,6 +1882,16 @@ export const messages = defineMessages({
       tone: "トーンが合わない",
     },
     errors: {
+      one_stance:
+        "別のマシンが異なる立場になっています。1つのアカウントで持てる立場は1つです。",
+      cooldown: "この立場は最近変更されたばかりです。30日後に変更できます。",
+      review_first: "このマシンは当面レビューのままにする必要があります。",
+      line_rules:
+        "方針のあるマシンには公開ページが必要で、極端な立場はレビューのままにする必要があります。",
+      no_desk:
+        "立場とユーモア系スタイルには Claude が必要なため、OpenRouter 接続では動作しません。",
+      no_wire:
+        "立場やユーモア系スタイルのあるマシンは、スケジュールでのみ執筆します。",
       generic: "問題が発生しました。もう一度お試しください。",
       credits: "この下書きに必要なクレジットが足りません。",
     },

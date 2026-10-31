@@ -324,6 +324,19 @@ export async function postToAccount(r: MachinePostRequest) {
   return toResult(body.post, body)
 }
 
+// Takes a published post down from one account. The service does this for X,
+// Threads, LinkedIn and Bluesky, and refuses Instagram.
+export async function unpublishPost(r: {
+  postId: string
+  platform: string
+  accountId: string
+}) {
+  await call(`/posts/${encodeURIComponent(r.postId)}/unpublish`, {
+    method: "POST",
+    body: JSON.stringify({ platform: r.platform, accountId: r.accountId }),
+  })
+}
+
 export type PublishMode = "now" | "schedule"
 export type PublishAs = "feed" | "story"
 

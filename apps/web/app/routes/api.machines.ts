@@ -15,17 +15,21 @@ import {
   instagramEnabled,
   profileFor,
 } from "@/lib/instagram.server"
-import { machinesHalted } from "@/lib/machines/control.server"
-import { evidenceLimit, reviewHold } from "@/lib/machines/gate"
+import { lineStopFor, machinesHalted } from "@/lib/machines/control.server"
+import { evidenceLimit } from "@/lib/machines/gate"
 import {
   DISMISS_REASONS,
+  RETRACT_REASONS,
   machineConfig,
   machineInput,
   signalSchema,
   slugify,
 } from "@/lib/machines/model"
-import { publishDraft } from "@/lib/machines/publish.server"
+import { publishDraft, retractDraft } from "@/lib/machines/publish.server"
+import { usesDesk } from "@/lib/machines/stance"
+import { approvalCheck } from "@/lib/machines/standards.server"
 import { OutOfCredits, writeDraft } from "@/lib/machines/writer.server"
+import { payingConnection } from "@/lib/openrouter.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 import { getViewer } from "@/lib/supabase.server"
 
@@ -45,6 +49,11 @@ const body = z.discriminatedUnion("intent", [
   }),
   z.object({ intent: z.literal("comic"), id }),
   z.object({
+    intent: z.literal("retract"),
+    id,
+    reason: z.enum(RETRACT_REASONS),
+  }),
+  z.object({
     intent: z.literal("approve"),
     id,
     text: z.string().trim().min(1).max(500),
@@ -55,6 +64,14 @@ const body = z.discriminatedUnion("intent", [
     appPassword: z.string().trim().min(8).max(64),
   }),
 ])
+
+// What the machines' guard trigger says, as codes the page can word.
+const LINE_REFUSALS: Record<string, string> = {
+  P0430: "one_stance",
+  P0431: "cooldown",
+  P0432: "review_first",
+  P0433: "line_rules",
+}
 
 const fail = (error: string, status: number) =>
   Response.json({ error }, { status })
@@ -111,6 +128,8 @@ export async function action({ request }: Route.ActionArgs) {
         !fields.public
       )
         return fail("Invalid request.", 400)
+      if (usesDesk(fields.config) && (await payingConnection(viewer.id)))
+        return fail("no_desk", 409)
       if (fields.public) {
         const { data: own } = machineId
           ? await supabase
@@ -144,6 +163,8 @@ export async function action({ request }: Route.ActionArgs) {
             .select("id")
             .single()
       if (saved.error?.code === "P0429") return fail("limit", 409)
+      const refused = LINE_REFUSALS[saved.error?.code ?? ""]
+      if (refused) return fail(refused, 409)
       if (saved.error) return fail(saved.error.message, 500)
       return Response.json({ id: saved.data.id })
     }
@@ -173,6 +194,9 @@ export async function action({ request }: Route.ActionArgs) {
         .maybeSingle()
       const machine = data as MachineRow | null
       if (!machine) return fail("Not found", 404)
+      // This writer has no take and no desk.
+      if (usesDesk(machineConfig.parse(machine.config)))
+        return fail("no_wire", 409)
       const job = crypto.randomUUID()
       try {
         const draft = await writeDraft(
@@ -239,7 +263,9 @@ export async function action({ request }: Route.ActionArgs) {
     case "approve": {
       const { data: draft } = await supabase
         .from("comic_machine_drafts")
-        .select("id, machine_id, text, evidence, sources, signal")
+        .select(
+          "id, machine_id, text, scene, alt, evidence, sources, signal, desk"
+        )
         .eq("id", r.id)
         .maybeSingle()
       if (!draft) return fail("Not found", 404)
@@ -252,17 +278,24 @@ export async function action({ request }: Route.ActionArgs) {
       if (await machinesHalted())
         return Response.json({ ok: false, halted: true, errors: [] })
       const config = machineConfig.safeParse(machine.config)
-      const held = reviewHold(
+      const language = config.success ? config.data.language : "en"
+      if (config.success) {
+        const stopped = await lineStopFor(machine, config.data, Date.now())
+        if (stopped) return Response.json({ ok: false, stopped, errors: [] })
+      }
+      const { held, desk } = await approvalCheck(
         r.text,
         draft,
-        config.success ? config.data.language : "en"
+        language,
+        config.success && usesDesk(config.data),
+        request.signal
       )
       const { data: approved } = await supabaseAdmin()
         .from("comic_machine_drafts")
         .update(
           held
-            ? { text: r.text, held }
-            : { status: "approved", text: r.text, held: null }
+            ? { text: r.text, held, desk }
+            : { status: "approved", text: r.text, held: null, desk }
         )
         .eq("id", r.id)
         .in("status", ["new", "failed"])
@@ -273,8 +306,26 @@ export async function action({ request }: Route.ActionArgs) {
       return Response.json({
         ok: !!result?.published,
         halted: !!result?.halted,
+        stopped: result?.stopped,
         errors: result?.errors.map((e) => e.error) ?? [],
       })
+    }
+    // Owner's own call, on any published post, at any time. Works during a halt
+    // or a freeze, which only stop things going out.
+    case "retract": {
+      const { data: draft } = await supabase
+        .from("comic_machine_drafts")
+        .select("id, machine_id")
+        .eq("id", r.id)
+        .maybeSingle()
+      if (!draft) return fail("Not found", 404)
+      const result = await retractDraft(
+        r.id,
+        { id: draft.machine_id, user_id: viewer.id },
+        r.reason
+      )
+      if (!result) return fail("Not found", 404)
+      return Response.json({ ok: true, manual: result.manual.length })
     }
     case "bluesky": {
       if (!instagramEnabled()) return fail("Not found", 404)

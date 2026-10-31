@@ -7,6 +7,7 @@ import type { MachineRow } from "@/lib/database"
 
 import type { AgentResult, Memory } from "./agent.logic"
 import { DEFAULT_CREDITS_PER_DAY, type MachineConfig } from "./model"
+import type { Line } from "./stance"
 
 // The real runner, publisher, ledger and limits over an in-memory database.
 // Nothing here reaches a model, a feed or a social account, and the SQL itself
@@ -30,6 +31,11 @@ const db = {
   searches: 0,
   stories: 0,
   id: 0,
+  desk: { verdict: "pass", rule: "none", part: "post", why: "" } as
+    object | "down" | "refused",
+  deskRequests: [] as string[],
+  unpublished: [] as string[],
+  unpublishError: false,
 }
 
 const passedResult = (reason: string): AgentResult => ({
@@ -156,6 +162,24 @@ const admin = {
   },
 }
 
+const anthropic = await import("@anthropic-ai/sdk")
+mock.module("@anthropic-ai/sdk", () => ({
+  ...anthropic,
+  default: class extends anthropic.default {
+    override messages = {
+      create: async (request: unknown) => {
+        db.deskRequests.push(JSON.stringify(request))
+        if (db.desk === "down") throw new Error("overloaded")
+        return db.desk === "refused"
+          ? { stop_reason: "refusal", content: [] }
+          : {
+              stop_reason: "end_turn",
+              content: [{ type: "text", text: JSON.stringify(db.desk) }],
+            }
+      },
+    } as never
+  },
+}))
 mock.module("@/lib/supabase-admin.server", () => ({
   supabaseAdmin: () => admin,
 }))
@@ -200,10 +224,15 @@ mock.module("@/lib/instagram.server", () => ({
       ? { postId: "p", url: null, error: db.postError }
       : { postId: "p", url: "https://x.test/p", error: null }
   },
+  unpublishPost: async (r: { postId: string }) => {
+    if (db.unpublishError) throw new Error("no")
+    db.unpublished.push(r.postId)
+  },
 }))
 
 const { runMachines } = await import("./run.server")
-const { publishDraft } = await import("./publish.server")
+const { publishDraft, retractDraft } = await import("./publish.server")
+const { approvalCheck } = await import("./standards.server")
 
 const config = (o: Partial<MachineConfig> = {}): MachineConfig => ({
   keywords: [],
@@ -225,6 +254,8 @@ const config = (o: Partial<MachineConfig> = {}): MachineConfig => ({
     formats: [],
     storiesPerDay: 1,
   },
+  line: null,
+  style: "plain",
   ...o,
 })
 
@@ -276,7 +307,7 @@ const inbox = (title = "Revenue grew 40% in 2026") => {
   ]
 }
 
-const filing = (text: string): AgentResult => {
+const filing = (text: string, take = ""): AgentResult => {
   const source = {
     key: "item-1",
     source: "Example",
@@ -290,6 +321,7 @@ const filing = (text: string): AgentResult => {
     prompt: "machine-editor@1",
     filed: {
       text,
+      take,
       scene: "",
       alt: "",
       sources: [source],
@@ -328,6 +360,10 @@ beforeEach(() => {
     postError: null,
     searches: 0,
     stories: 0,
+    desk: { verdict: "pass", rule: "none", part: "post", why: "" },
+    deskRequests: [],
+    unpublished: [],
+    unpublishError: false,
   })
 })
 
@@ -700,5 +736,447 @@ describe("held posts", () => {
       plain: "new",
       sent: "published",
     })
+  })
+})
+
+const LINE: Line = {
+  stance: "left",
+  arena: "fr",
+  publisher: "Norvia Press",
+  contact: "desk@example.com",
+  scrutiny: [],
+}
+
+const hours = (n: number) => new Date(Date.now() + n * 3_600_000).toISOString()
+
+// A reviewed calendar with no election in it, unless a test adds one.
+const calendar = (windows: Row[] = []) => {
+  db.tables.comic_arena_calendars = [
+    { arena: "fr", reviewed_until: hours(24 * 90), windows },
+  ]
+}
+
+const lineMachine = (
+  c: Partial<MachineConfig> = {},
+  o: Partial<MachineRow> = {}
+) => machine({ line: LINE, ...c }, { publish_mode: "review", ...o })
+
+const fired = async (m: MachineRow, result: AgentResult) => {
+  seed(m)
+  inbox()
+  db.agent = () => result
+  await runMachines("https://x.test")
+  return drafts()[0]!
+}
+
+describe("a plain machine", () => {
+  test("never reaches the desk, and ignores a stray take", async () => {
+    const draft = await fired(machine(), filing("Revenue grew 40%.", "Bold."))
+    assert.equal(db.deskRequests.length, 0)
+    assert.equal(draft.text, "Revenue grew 40%.")
+    assert.equal(draft.desk, null)
+    assert.equal(draft.status, "published")
+  })
+})
+
+describe("election calendar", () => {
+  test("no reviewed calendar means no run and no model call", async () => {
+    seed(lineMachine())
+    inbox()
+    await runMachines("https://x.test")
+    assert.equal(db.agentCalls.length, 0)
+    assert.equal(runs()[0]!.decision, "no_calendar")
+    assert.equal(db.tables.comic_machines![0]!.last_error, "no_calendar")
+  })
+
+  test("an expired review counts as none", async () => {
+    calendar()
+    db.tables.comic_arena_calendars![0]!.reviewed_until = hours(-1)
+    seed(lineMachine())
+    inbox()
+    await runMachines("https://x.test")
+    assert.equal(runs()[0]!.decision, "no_calendar")
+  })
+
+  test("a window skips the edition before any model call", async () => {
+    calendar([{ from: hours(-1), to: hours(1), label: "Vote" }])
+    seed(lineMachine())
+    inbox()
+    await runMachines("https://x.test")
+    assert.equal(db.agentCalls.length, 0)
+    assert.equal(runs()[0]!.decision, "frozen")
+  })
+
+  test("publishDraft refuses in a window, so approving can't get past it", async () => {
+    calendar([{ from: hours(-1), to: hours(1), label: "Vote" }])
+    const m = lineMachine({}, { outputs: [ACCOUNT] })
+    seed(m)
+    db.tables.comic_machine_drafts = [
+      {
+        id: "d1",
+        machine_id: MACHINE,
+        status: "approved",
+        desk: "pass",
+        text: "Fact.",
+        receipts: [],
+        created_at: hours(-1),
+      },
+    ]
+    const result = await publishDraft("d1", m)
+    assert.equal(result?.stopped, "frozen")
+    assert.equal(drafts()[0]!.status, "approved")
+    assert.equal(db.posted.length, 0)
+  })
+
+  test("publishDraft refuses with no calendar, and a broken one", async () => {
+    const m = lineMachine()
+    const row = { id: "d1", machine_id: MACHINE, status: "approved" }
+    db.tables.comic_machine_drafts = [{ ...row, desk: "pass", receipts: [] }]
+    assert.equal((await publishDraft("d1", m))?.stopped, "no_calendar")
+    db.tables.comic_arena_calendars = [{ arena: "fr", windows: "soon" }]
+    assert.equal((await publishDraft("d1", m))?.stopped, "no_calendar")
+  })
+
+  test("a line without its public page doesn't publish", async () => {
+    calendar()
+    const m = lineMachine({}, { public: false })
+    assert.equal((await publishDraft("d1", m))?.stopped, "not_public")
+  })
+
+  test("what a freeze held back expires instead of going out late", async () => {
+    calendar()
+    const m = lineMachine({}, { outputs: [ACCOUNT] })
+    seed(m)
+    db.tables.comic_machine_drafts = [
+      {
+        id: "d1",
+        machine_id: MACHINE,
+        status: "approved",
+        desk: "pass",
+        text: "Fact.",
+        receipts: [],
+        created_at: hours(-49),
+      },
+    ]
+    await publishDraft("d1", m)
+    assert.equal(drafts()[0]!.status, "expired")
+    assert.equal(db.posted.length, 0)
+  })
+})
+
+describe("line machines", () => {
+  test("a far stance stays in review even if the row says auto", async () => {
+    calendar()
+    const m = lineMachine(
+      { line: { ...LINE, stance: "far-right" } },
+      { publish_mode: "auto" }
+    )
+    const draft = await fired(m, filing("Revenue grew 40%."))
+    assert.equal(draft.status, "new")
+    assert.equal(draft.held, null)
+  })
+
+  test("center can run by itself once a row says auto", async () => {
+    calendar()
+    const m = lineMachine(
+      { line: { ...LINE, stance: "center" } },
+      { publish_mode: "auto" }
+    )
+    assert.equal(
+      (await fired(m, filing("Revenue grew 40%."))).status,
+      "published"
+    )
+  })
+
+  test("the take goes out with the fact", async () => {
+    calendar()
+    const draft = await fired(
+      lineMachine(),
+      filing("Revenue grew 40%.", "We think that should worry you.")
+    )
+    assert.equal(
+      draft.text,
+      "Revenue grew 40%. We think that should worry you."
+    )
+    assert.equal(draft.take, "We think that should worry you.")
+  })
+
+  test("a take with a made-up number costs the take, not the post", async () => {
+    calendar()
+    const draft = await fired(
+      lineMachine(),
+      filing("Revenue grew 40%.", "That's 77% too much.")
+    )
+    assert.equal(draft.text, "Revenue grew 40%.")
+    assert.equal(draft.held, null)
+    assert.match(String(draft.take_note), /77%/)
+  })
+
+  test("a take that doesn't fit is dropped", async () => {
+    calendar()
+    const draft = await fired(
+      lineMachine(),
+      filing("Revenue grew 40%.", "x ".repeat(120).trim())
+    )
+    assert.equal(draft.text, "Revenue grew 40%.")
+    assert.equal(draft.take_note, "The take didn't fit.")
+  })
+
+  test("the desk can cost just the take", async () => {
+    calendar()
+    db.desk = {
+      verdict: "hold",
+      rule: "cause_as_fact",
+      part: "take",
+      why: "No.",
+    }
+    const draft = await fired(
+      lineMachine({}, { publish_mode: "auto" }),
+      filing("Revenue grew 40%.", "Greed did this.")
+    )
+    assert.equal(draft.text, "Revenue grew 40%.")
+    assert.equal(draft.take_note, "No.")
+    assert.equal(draft.desk, "pass")
+    assert.equal(draft.held, null)
+  })
+
+  test("Stories never start, whatever the row says", async () => {
+    calendar()
+    await fired(
+      lineMachine({
+        media: { enabled: true, formats: ["x_thread"], storiesPerDay: 1 },
+      }),
+      filing("Revenue grew 40%.")
+    )
+    assert.equal(db.stories, 0)
+  })
+})
+
+describe("the standards desk", () => {
+  test("is never told the stance, publisher or brief", async () => {
+    calendar()
+    await fired(
+      lineMachine({ mission: "Secret brief", voice: "Secret voice" }),
+      filing("Revenue grew 40%.", "We think so.")
+    )
+    assert.equal(db.deskRequests.length, 1)
+    const sent = db.deskRequests[0]!
+    for (const word of ["left", "Norvia", "Secret", "Desk\\"]) {
+      assert.equal(sent.includes(word), false, word)
+    }
+    assert.match(sent, /We think so/)
+  })
+
+  test("fails closed when it is down", async () => {
+    calendar()
+    db.desk = "down"
+    const draft = await fired(
+      lineMachine(
+        { line: { ...LINE, stance: "center" } },
+        { publish_mode: "auto" }
+      ),
+      filing("Revenue grew 40%.")
+    )
+    assert.equal(draft.status, "new")
+    assert.equal(draft.desk, "unread")
+    assert.notEqual(draft.held, null)
+  })
+
+  test("fails closed on a refusal and on a malformed answer", async () => {
+    calendar()
+    db.desk = "refused"
+    const refused = await fired(lineMachine(), filing("Revenue grew 40%."))
+    assert.equal(refused.desk, "unread")
+    db.tables.comic_machine_drafts = []
+    db.desk = { verdict: "block", rule: "made_up", part: "post", why: "x" }
+    const odd = await fired(lineMachine(), filing("Revenue grew 40%."))
+    assert.equal(odd.desk, "unread")
+  })
+
+  test("publishDraft won't send words the desk hasn't passed", async () => {
+    calendar()
+    const m = lineMachine({}, { outputs: [ACCOUNT] })
+    seed(m)
+    for (const desk of [null, "unread", "block"]) {
+      db.tables.comic_machine_drafts = [
+        {
+          id: "d1",
+          machine_id: MACHINE,
+          status: "approved",
+          desk,
+          text: "Fact.",
+          receipts: [],
+          created_at: hours(-1),
+        },
+      ]
+      assert.equal(await publishDraft("d1", m), null)
+      assert.equal(drafts()[0]!.status, "approved")
+    }
+    assert.equal(db.posted.length, 0)
+  })
+
+  test("a block is shown, off the cap, remembered and costs no picture", async () => {
+    calendar()
+    db.desk = {
+      verdict: "block",
+      rule: "hate",
+      part: "post",
+      why: "It's hate.",
+    }
+    const draft = await fired(
+      machine({ style: "deadpan", image: true }, { publish_mode: "auto" }),
+      filing("Revenue grew 40%.")
+    )
+    assert.equal(draft.status, "blocked")
+    assert.equal(draft.block_rule, "hate")
+    assert.equal(draft.held, "It's hate.")
+    assert.equal(draft.image_url, null)
+    assert.equal(runs().at(-1)!.decision, "blocked")
+    assert.deepEqual(
+      (await import("./gate")).PUBLISHED_TRACK.includes("blocked" as never),
+      false
+    )
+  })
+
+  test("a slur stops the post in code, even in a dropped take", async () => {
+    calendar()
+    const draft = await fired(
+      lineMachine(),
+      filing("Revenue grew 40%.", "Those globalists again, up 77%.")
+    )
+    assert.equal(draft.status, "blocked")
+    assert.equal(db.deskRequests.length, 0)
+  })
+
+  test("funny machines get the same desk, without a calendar", async () => {
+    const draft = await fired(
+      machine({ style: "deadpan" }),
+      filing("Revenue grew 40%.", "A quiet year.")
+    )
+    assert.equal(db.deskRequests.length, 1)
+    assert.equal(draft.text, "Revenue grew 40%. A quiet year.")
+    assert.equal(draft.status, "published")
+  })
+
+  test("a funny machine fails closed too", async () => {
+    db.desk = "down"
+    const draft = await fired(
+      machine({ style: "wry" }),
+      filing("Revenue grew 40%.")
+    )
+    assert.equal(draft.status, "new")
+    assert.equal(draft.desk, "unread")
+  })
+})
+
+describe("retracting", () => {
+  const published = (receipts: Row[]) => {
+    db.tables.comic_machine_drafts = [
+      { id: "d1", machine_id: MACHINE, status: "published", receipts },
+    ]
+  }
+  const sent = (platform: string, postId: string) => ({
+    accountId: platform,
+    platform,
+    username: "u",
+    url: "https://x.test/p",
+    postId,
+    error: null,
+  })
+
+  test("takes a post down where it can and says where it can't", async () => {
+    published([sent("bluesky", "b1"), sent("instagram", "i1")])
+    const result = await retractDraft("d1", machine(), "error")
+    const [draft] = drafts()
+    assert.equal(draft!.status, "retracted")
+    assert.equal(draft!.retract_reason, "error")
+    assert.deepEqual(db.unpublished, ["b1"])
+    assert.deepEqual(
+      (draft!.receipts as { retraction: string }[]).map((r) => r.retraction),
+      ["removed", "manual"]
+    )
+    assert.equal(result?.manual.length, 1)
+  })
+
+  test("a failed takedown is left for a person, not hidden", async () => {
+    db.unpublishError = true
+    published([sent("twitter", "t1")])
+    const result = await retractDraft("d1", machine(), "source")
+    assert.equal(result?.manual.length, 1)
+    assert.equal(drafts()[0]!.status, "retracted")
+  })
+
+  test("works during a halt, and only on a published post", async () => {
+    db.tables.comic_machines_control = [{ id: true, halted: true }]
+    published([])
+    assert.notEqual(await retractDraft("d1", machine(), "owner"), null)
+    assert.equal(await retractDraft("d1", machine(), "owner"), null)
+  })
+})
+
+describe("approving", () => {
+  const draft = (desk: "pass" | "hold" | "block" | "unread" | null) => ({
+    text: "Revenue grew 40%.",
+    scene: "",
+    alt: "",
+    evidence: "Revenue grew 40% in 2026.",
+    sources: [{ title: "x", url: "https://x.test", source: "x" }],
+    signal: null,
+    desk,
+  })
+  const check = (text: string, d: ReturnType<typeof draft>, desk = true) =>
+    approvalCheck(text, d, "en", desk, AbortSignal.timeout(1000))
+  const SAME = "Revenue grew 40%."
+
+  test("the same words the desk passed need no second read", async () => {
+    assert.deepEqual(await check(SAME, draft("pass")), {
+      held: null,
+      desk: "pass",
+    })
+    assert.equal(db.deskRequests.length, 0)
+  })
+
+  test("a person can overrule a hold with the same words", async () => {
+    assert.equal((await check(SAME, draft("hold"))).held, null)
+  })
+
+  test("a person can't overrule a block, however they ask", async () => {
+    assert.notEqual((await check(SAME, draft("block"))).held, null)
+  })
+
+  test("changed words are read again", async () => {
+    db.desk = { verdict: "block", rule: "hate", part: "post", why: "Stop." }
+    const r = await check("Revenue grew 40% again.", draft("pass"))
+    assert.deepEqual(r, { held: "Stop.", desk: "block" })
+    assert.equal(db.deskRequests.length, 1)
+  })
+
+  test("a slur written by the person stops in code", async () => {
+    const r = await check(
+      "Revenue grew 40%, thanks to globalists.",
+      draft("pass")
+    )
+    assert.equal(r.desk, "block")
+    assert.equal(db.deskRequests.length, 0)
+  })
+
+  test("words the desk never read are read now, and fail closed", async () => {
+    db.desk = "down"
+    const r = await check(SAME, draft("unread"))
+    assert.equal(r.desk, "unread")
+    assert.notEqual(r.held, null)
+    assert.equal((await check(SAME, draft(null))).desk, "unread")
+  })
+
+  test("an edit the gate holds can't keep the old pass", async () => {
+    const r = await check("Revenue grew 90%.", draft("pass"))
+    assert.notEqual(r.held, null)
+    assert.equal(r.desk, "unread")
+  })
+
+  test("a plain machine only meets the gate", async () => {
+    const r = await check("Revenue grew 40% again.", draft(null), false)
+    assert.deepEqual(r, { held: null, desk: null })
+    assert.equal(db.deskRequests.length, 0)
   })
 })

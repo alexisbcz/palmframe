@@ -73,6 +73,8 @@ const config = (o: Partial<MachineConfig> = {}): MachineConfig => ({
   everyMinutes: 60,
   image: false,
   media: NO_MEDIA,
+  line: null,
+  style: "plain",
   ...o,
 })
 const edit = (at: number, subject = "Eclipse"): Reading => ({
@@ -683,10 +685,17 @@ describe("memory", () => {
       sources: [{ title: `About ${text}`, url: "https://x.test", source: "x" }],
       signal: null,
       dismiss_reason: null,
+      block_rule: null,
       ...o,
     }) as Pick<
       MachineDraftRow,
-      "text" | "status" | "receipts" | "sources" | "signal" | "dismiss_reason"
+      | "text"
+      | "status"
+      | "receipts"
+      | "sources"
+      | "signal"
+      | "dismiss_reason"
+      | "block_rule"
     >
 
   test("only what reached someone counts as the outlet's voice", () => {

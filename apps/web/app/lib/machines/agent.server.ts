@@ -4,67 +4,30 @@ import {
   type OpenRouterConnection,
   completeJson,
 } from "@/lib/openrouter.server"
-import { MACHINE_EDITOR, promptId } from "@/lib/prompts.server"
 
 import {
   type AgentResult,
   type Input,
   type Memory,
+  FILE_FIELDS,
+  editorFor,
   fromTool,
   inboxBrief,
   passed,
+  toolsFor,
 } from "./agent.logic"
 import { readArticle } from "./feeds.server"
 import type { Item, MachineConfig } from "./model"
+import { usesDesk } from "./stance"
 
 const MODEL = "claude-sonnet-5-5"
 const MAX_TURNS = 5
 const MAX_READS = 2
 const MAX_INBOX = 30
 
-const FILE_FIELDS = {
-  text: { type: "string" },
-  scene: { type: "string" },
-  alt: { type: "string" },
-  item_ids: {
-    type: "array",
-    items: { type: "integer" },
-    description: "The inbox ids this post is built on. The first is linked.",
-  },
-}
-
-const TOOLS: Anthropic.Tool[] = [
-  {
-    name: "read_item",
-    description: "Read the page behind an inbox item.",
-    input_schema: {
-      type: "object",
-      properties: { item_id: { type: "integer" } },
-      required: ["item_id"],
-    },
-  },
-  {
-    name: "file_post",
-    description: "File the one post for this run. Ends the run.",
-    input_schema: {
-      type: "object",
-      properties: FILE_FIELDS,
-      required: ["text", "item_ids"],
-    },
-  },
-  {
-    name: "pass",
-    description: "Post nothing this run. Ends the run.",
-    input_schema: {
-      type: "object",
-      properties: { reason: { type: "string" } },
-      required: ["reason"],
-    },
-  },
-]
-
 async function withClaude(
   system: string,
+  tools: Anthropic.Tool[],
   items: Item[],
   memory: Memory,
   prompt: string,
@@ -82,7 +45,7 @@ async function withClaude(
         model: MODEL,
         max_tokens: 1_500,
         system,
-        tools: TOOLS,
+        tools,
         messages,
       },
       { signal: abort }
@@ -171,17 +134,13 @@ export async function runAgent(
   connection: OpenRouterConnection | null,
   abort: AbortSignal
 ): Promise<AgentResult> {
-  const { config } = machine
   const items = inbox.slice(0, MAX_INBOX)
-  const system = MACHINE_EDITOR.render({
-    name: machine.name,
-    mission: config.mission,
-    voice: [config.voice, brandVoice].filter(Boolean).join("\n"),
-    language: config.language,
-    image: config.image,
-  })
-  const prompt = promptId(MACHINE_EDITOR)
+  const { system, prompt } = editorFor(machine, brandVoice)
+  const desk = usesDesk(machine.config)
+  // The desk runs on our key, so these machines never run on OpenRouter. The
+  // runner stops them first; this is the backstop.
+  if (connection && desk) throw new Error("This machine needs Claude.")
   return connection
     ? withOpenRouter(connection, system, items, memory, prompt, abort)
-    : withClaude(system, items, memory, prompt, abort)
+    : withClaude(system, toolsFor(desk), items, memory, prompt, abort)
 }

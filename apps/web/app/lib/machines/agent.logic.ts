@@ -1,9 +1,70 @@
-import type { MachineDraftRow } from "@/lib/database"
+import type Anthropic from "@anthropic-ai/sdk"
 
-import type { DismissReason, Item, RunDecision } from "./model"
+import type { MachineDraftRow } from "@/lib/database"
+import {
+  type MachineEditorInput,
+  MACHINE_EDITOR,
+  MACHINE_EDITOR_LINE,
+  promptId,
+} from "@/lib/prompts.server"
+
+import type { DismissReason, Item, MachineConfig, RunDecision } from "./model"
+import { renderLine, renderStyle, usesDesk } from "./stance"
+
+export const FILE_FIELDS = {
+  text: { type: "string" },
+  scene: { type: "string" },
+  alt: { type: "string" },
+  item_ids: {
+    type: "array",
+    items: { type: "integer" },
+    description: "The inbox ids this post is built on. The first is linked.",
+  },
+}
+
+const TAKE = {
+  take: {
+    type: "string",
+    description:
+      "Optional. One line apart from the post. If it can't go out, the post goes without it.",
+  },
+}
+
+export const toolsFor = (takes: boolean): Anthropic.Tool[] => [
+  {
+    name: "read_item",
+    description: "Read the page behind an inbox item.",
+    input_schema: {
+      type: "object",
+      properties: { item_id: { type: "integer" } },
+      required: ["item_id"],
+    },
+  },
+  {
+    name: "file_post",
+    description: "File the one post for this run. Ends the run.",
+    input_schema: {
+      type: "object",
+      properties: takes ? { ...FILE_FIELDS, ...TAKE } : FILE_FIELDS,
+      required: ["text", "item_ids"],
+    },
+  },
+  {
+    name: "pass",
+    description: "Post nothing this run. Ends the run.",
+    input_schema: {
+      type: "object",
+      properties: { reason: { type: "string" } },
+      required: ["reason"],
+    },
+  },
+]
 
 export interface Filed {
   text: string
+  // A line of opinion or a dry joke, apart from the fact it sits on. Only
+  // machines with a stance or a funny style are offered this field.
+  take: string
   scene: string
   alt: string
   // Only ever items from the inbox, however the agent cites them.
@@ -33,18 +94,32 @@ export interface Memory {
   delivered: string[]
   inReview: string[]
   dismissed: { story: string; reason: DismissReason | null }[]
+  // Stopped by the standards desk, and why, so it isn't filed again.
+  blocked: { story: string; rule: string }[]
 }
 
-export const NO_MEMORY: Memory = { delivered: [], inReview: [], dismissed: [] }
+export const NO_MEMORY: Memory = {
+  delivered: [],
+  inReview: [],
+  dismissed: [],
+  blocked: [],
+}
 
 const MAX_DELIVERED = 15
 const MAX_IN_REVIEW = 15
 const MAX_DISMISSED = 10
+const MAX_BLOCKED = 10
 const MAX_STORY = 120
 
 type MemoryRow = Pick<
   MachineDraftRow,
-  "text" | "status" | "receipts" | "sources" | "signal" | "dismiss_reason"
+  | "text"
+  | "status"
+  | "receipts"
+  | "sources"
+  | "signal"
+  | "dismiss_reason"
+  | "block_rule"
 >
 
 // The story a draft was about, in its sources' words. Held and unreviewed text
@@ -65,16 +140,53 @@ export function splitMemory(rows: MemoryRow[]): Memory {
       return s ? [s] : []
     })
   const dismissed = rows.filter((d) => d.status === "dismissed")
+  const blocked = rows.filter((d) => d.status === "blocked")
   const delivered = rows.filter(wasDelivered)
   return {
     delivered: delivered.slice(0, MAX_DELIVERED).map((d) => d.text),
     inReview: story(
-      rows.filter((d) => d.status !== "dismissed" && !wasDelivered(d))
+      rows.filter(
+        (d) =>
+          d.status !== "dismissed" && d.status !== "blocked" && !wasDelivered(d)
+      )
     ).slice(0, MAX_IN_REVIEW),
     dismissed: dismissed.slice(0, MAX_DISMISSED).flatMap((d) => {
       const s = storyOf(d)
       return s ? [{ story: s, reason: d.dismiss_reason }] : []
     }),
+    blocked: blocked.slice(0, MAX_BLOCKED).flatMap((d) => {
+      const s = storyOf(d)
+      return s ? [{ story: s, rule: d.block_rule ?? "" }] : []
+    }),
+  }
+}
+
+// The agent's brief for one machine. Without a stance or a funny style this is
+// the first template, untouched: `stance.test.ts` holds it to a stored copy.
+export function editorFor(
+  machine: { name: string; config: MachineConfig },
+  brandVoice: string
+) {
+  const { config } = machine
+  const input: MachineEditorInput = {
+    name: machine.name,
+    mission: config.mission,
+    voice: [config.voice, brandVoice].filter(Boolean).join("\n"),
+    language: config.language,
+    image: config.image,
+  }
+  if (!usesDesk(config))
+    return {
+      system: MACHINE_EDITOR.render(input),
+      prompt: promptId(MACHINE_EDITOR),
+    }
+  return {
+    system: MACHINE_EDITOR_LINE.render({
+      ...input,
+      line: config.line ? renderLine(config.line) : "",
+      style: renderStyle(config.style),
+    }),
+    prompt: promptId(MACHINE_EDITOR_LINE),
   }
 }
 
@@ -95,11 +207,15 @@ export function inboxBrief(items: Item[], memory: Memory = NO_MEMORY) {
     ...(memory.dismissed.length && {
       rejected_by_the_owner_do_not_repeat: memory.dismissed,
     }),
+    ...(memory.blocked.length && {
+      stopped_by_standards_do_not_repeat: memory.blocked,
+    }),
   })
 }
 
 export interface Input {
   text?: unknown
+  take?: unknown
   scene?: unknown
   alt?: unknown
   item_ids?: unknown
@@ -122,6 +238,7 @@ export function toFiled(
     typeof v === "string" ? v.trim().slice(0, max) : ""
   return {
     text: text.slice(0, 500),
+    take: str(input.take, 280),
     scene: str(input.scene, 1000),
     alt: str(input.alt, 500),
     sources,
