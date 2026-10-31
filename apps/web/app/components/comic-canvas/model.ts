@@ -32,6 +32,10 @@ export interface Look {
   // A catalog style's direction on top of `style`: Anima reads `tags`, Klein
   // reads `prose`. Choosing another style clears it.
   recipe?: { name: string; tags: string; prose: string; negative: string }
+  // A style learned from an uploaded comic. Only its id lives in the project:
+  // the pages are private, and the server signs them render by render.
+  // `recipe` carries the written analysis alongside it.
+  styleRef?: { id: string; pages: number }
 }
 
 export const DEFAULT_LOOK: Look = {
@@ -173,9 +177,9 @@ export interface PanelVersion {
   seed?: number
 }
 
-// A bubble's lettering in another language. The artwork and the original
-// text stay as they are; the bubble is refitted when a language is rendered.
-export interface BubbleTranslation {
+// A line of lettering in another language. The artwork and the original text
+// stay as they are; the layer is refitted when a language is rendered.
+export interface LetteringTranslation {
   text: string
   // The original it translates: when `text` moves on, this line is out of date.
   source: string
@@ -198,7 +202,7 @@ export interface BubbleLayer extends BaseLayer {
   // Tail tip, relative to the bubble centre, in unrotated layer space.
   tailX: number
   tailY: number
-  translations?: Partial<Record<Locale, BubbleTranslation>>
+  translations?: Partial<Record<Locale, LetteringTranslation>>
 }
 
 export interface TextLayer extends BaseLayer {
@@ -211,9 +215,11 @@ export interface TextLayer extends BaseLayer {
   color: string
   strokeColor: string
   strokeWidth: number
+  translations?: Partial<Record<Locale, LetteringTranslation>>
 }
 
-export type Layer = PanelLayer | BubbleLayer | TextLayer
+export type LetteringLayer = BubbleLayer | TextLayer
+export type Layer = PanelLayer | LetteringLayer
 export type LayerType = Layer["type"]
 
 export interface ComicDoc {
@@ -518,9 +524,74 @@ export interface ComicProject {
   rtl?: boolean
   // What the last carousel run was told, so a rerun can plan what's left.
   story?: string
+  // Page layouts the user saved from the panel splitter.
+  layouts?: SavedLayout[]
+}
+
+// A page layout of the user's: cells as in LAYOUTS, stored left to right.
+export interface SavedLayout {
+  id: string
+  name: string
+  cells: Rect[]
+}
+
+export const MAX_SAVED_LAYOUTS = 24
+export const MAX_LAYOUT_CELLS = 24
+export const MAX_LAYOUT_NAME = 60
+
+// Drops what a hand-edited file broke, so a layout always draws.
+function cleanLayouts(value: unknown): SavedLayout[] {
+  if (!Array.isArray(value)) return []
+  const unit = (n: unknown) =>
+    typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 1
+  const isCell = (c: Partial<Rect> | null) =>
+    !!c &&
+    unit(c.x) &&
+    unit(c.y) &&
+    unit(c.width) &&
+    unit(c.height) &&
+    c.width! > 0 &&
+    c.height! > 0
+  return value
+    .filter(
+      (l: Partial<SavedLayout> | null) =>
+        typeof l?.id === "string" &&
+        typeof l.name === "string" &&
+        Array.isArray(l.cells) &&
+        l.cells.length > 0 &&
+        l.cells.length <= MAX_LAYOUT_CELLS &&
+        l.cells.every(isCell)
+    )
+    .slice(0, MAX_SAVED_LAYOUTS)
+    .map((l: SavedLayout) => ({
+      id: l.id,
+      name: l.name.slice(0, MAX_LAYOUT_NAME),
+      cells: l.cells.map(({ x, y, width, height }) => ({
+        x,
+        y,
+        width,
+        height,
+      })),
+    }))
 }
 
 // The single-slide view the renderer and the editor panels work on.
+// Slides in one project. A book-length comic fits; what can be posted is checked
+// where it's posted, as Instagram's limit is much lower.
+export const MAX_SLIDES = 200
+
+// Versions kept on a panel; they ride along in the project.
+export const MAX_VERSIONS = 8
+
+// The panel's versions with its current image among them, before it's replaced.
+export function withCurrentImage(panel: PanelLayer) {
+  const versions = panel.versions ?? []
+  if (!panel.src || versions.some((v) => v.src === panel.src)) return versions
+  const { src, engine, model, seed } = panel
+  const current: PanelVersion = { src, kind: "original", engine, model, seed }
+  return [current, ...versions].slice(0, MAX_VERSIONS)
+}
+
 export function pageDoc(project: ComicProject, index: number): ComicDoc {
   const page = project.pages[Math.min(index, project.pages.length - 1)]
   return {
@@ -616,6 +687,7 @@ export function toProject(value: unknown): ComicProject | null {
     look?: Look
     rtl?: boolean
     story?: string
+    layouts?: unknown
   } | null
   if (!v || typeof v.width !== "number" || typeof v.height !== "number")
     return null
@@ -631,6 +703,7 @@ export function toProject(value: unknown): ComicProject | null {
         )
       : undefined
     const world = Array.isArray(v.world) ? v.world : undefined
+    const layouts = cleanLayouts(v.layouts)
     return {
       version: 2,
       width: v.width,
@@ -642,6 +715,7 @@ export function toProject(value: unknown): ComicProject | null {
       ...(v.look && typeof v.look === "object" && { look: v.look }),
       ...(v.rtl === true && { rtl: true }),
       ...(typeof v.story === "string" && { story: v.story }),
+      ...(layouts.length > 0 && { layouts }),
     }
   }
   if (v.version === 1 && Array.isArray(v.layers)) {

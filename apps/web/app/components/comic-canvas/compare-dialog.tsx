@@ -30,6 +30,7 @@ import {
   otherEngine,
   type Generator,
 } from "./use-generator"
+import { SignInNotice, needsSignIn } from "./sign-in-notice"
 
 interface Candidate {
   src: string
@@ -108,7 +109,8 @@ export function CompareDialog({
   const engine = otherEngine(panel.engine ?? engineOf(panel, project))
   const cost = engineCost(panel, engine, project)
   const short = !openrouter && balance !== null && balance < cost
-  const noSheet = engine === "klein" && !panelRefs(panel, project).refs.length
+  const { refs, styleSlots } = panelRefs(panel, project)
+  const noSheet = engine === "klein" && !refs.length && !styleSlots
 
   const run = async () => {
     const src = await generator.tryEngine(panel.id, engine)
@@ -230,7 +232,13 @@ export function CompareDialog({
         )}
         {error && (
           <p role="alert" className="text-xs break-words text-destructive">
-            {error === INSUFFICIENT_CREDITS ? t("noCredits") : error}
+            {error === INSUFFICIENT_CREDITS ? (
+              t("noCredits")
+            ) : needsSignIn(error) ? (
+              <SignInNotice />
+            ) : (
+              error
+            )}
           </p>
         )}
       </div>

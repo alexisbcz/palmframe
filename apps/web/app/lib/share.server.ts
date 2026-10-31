@@ -90,6 +90,7 @@ export function readerProject(p: ComicProject): ComicProject {
     width: p.width,
     height: p.height,
     background: p.background,
+    ...(p.rtl && { rtl: true }),
     pages: p.pages.map((page, i) => ({
       id: String(i),
       layers: page.layers.filter((l) => !l.hidden).map(readerLayer),

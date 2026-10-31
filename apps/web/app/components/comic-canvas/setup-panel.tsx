@@ -187,8 +187,11 @@ export function SetupPanel({
   onDelete,
   onClose,
   footer,
+  learned,
 }: {
   footer?: React.ReactNode
+  // The carousel's style learned from a comic: it takes a card on the wheel.
+  learned?: { name: string; image?: string }
   setup: Omit<Setup, "id">
   saved: Setup[]
   onStyle: (style: StyleId) => void
@@ -273,12 +276,19 @@ export function SetupPanel({
             <Wheel
               title={t("wheel.style")}
               hint={t("carouselWide")}
-              items={STYLE_CARDS.map((id) => ({
-                id,
-                label: tl(`styles.${id}`),
-                image: `/anima-styles/${id}.webp`,
-                badge: MONO.includes(id) ? t("badge.mono") : t("badge.colour"),
-              }))}
+              items={[
+                ...(learned
+                  ? [{ id: "raw", label: learned.name, image: learned.image }]
+                  : []),
+                ...STYLE_CARDS.map((id) => ({
+                  id,
+                  label: tl(`styles.${id}`),
+                  image: `/anima-styles/${id}.webp`,
+                  badge: MONO.includes(id)
+                    ? t("badge.mono")
+                    : t("badge.colour"),
+                })),
+              ]}
               value={setup.style}
               onChange={(id) => id && onStyle(id as StyleId)}
             />

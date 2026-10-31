@@ -22,7 +22,9 @@ import {
   speakerFaces,
   type PanelDraft,
 } from "./story"
-import { hasPrompt, promptedPanels } from "./use-generator"
+import { hasPrompt, panelsToDraw } from "./use-generator"
+
+export { panelsToDraw }
 
 // What a carousel run still has to do. Nothing here remembers a run: every
 // answer is read off the project, so a rerun, or a reload, finds the work
@@ -53,9 +55,6 @@ export function unplannedPanels(project: ComicProject, page: ComicPage) {
 export const pagesToPlan = (project: ComicProject) =>
   project.pages.filter((p) => unplannedPanels(project, p).length)
 
-export const panelsToDraw = (project: ComicProject) =>
-  promptedPanels(project).filter((p) => !p.src)
-
 function castToDraw(project: ComicProject) {
   const ids = new Set(panelsToDraw(project).flatMap((p) => p.cast ?? []))
   return (project.cast ?? []).filter((c) => ids.has(c.id))
@@ -85,7 +84,8 @@ function artFlagged(panel: PanelLayer, page: ComicPage, cast?: Character[]) {
 }
 
 // Panels a run drew itself that came back flagged, with re-rolls left. A
-// locked seed would only draw the same image again.
+// locked seed would only draw the same image again, and a locked or hidden
+// panel is left as it is.
 export function panelsToReroll(project: ComicProject, limit: number) {
   return project.pages.flatMap((page) =>
     page.layers.filter(
@@ -93,6 +93,8 @@ export function panelsToReroll(project: ComicProject, limit: number) {
         l.type === "panel" &&
         !!l.src &&
         !l.lockSeed &&
+        !l.locked &&
+        !l.hidden &&
         l.rerolls !== undefined &&
         l.rerolls < limit &&
         artFlagged(l, page, project.cast)
@@ -256,6 +258,8 @@ export function quoteRun(
         l.type === "panel" &&
         hasPrompt(l) &&
         !l.lockSeed &&
+        !l.locked &&
+        !l.hidden &&
         (!l.src ||
           (l.rerolls !== undefined &&
             (!l.check || artFlagged(l, page, project.cast))))

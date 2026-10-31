@@ -352,7 +352,7 @@ mock.module("./feeds.server", () => ({
     url: string,
     o: Parameters<typeof realFeeds.sendPublic>[1]
   ) => {
-    if (!url.startsWith("https://discord.com/api/webhooks/123456789012345678"))
+    if (!url.startsWith("https://discord.com/api/webhooks/12345678901234"))
       return realFeeds.sendPublic(url, o)
     db.discord.push({ url, method: o.method, body: o.body })
     if (db.discordDown) throw new Error("socket hang up")
@@ -2354,6 +2354,12 @@ describe("confirmed fixes", () => {
         parseWebhook(OTHER_HOOK)!
       )
       sentDraft()
+      // What the new webhook might say, and must never be asked.
+      db.discordAnswer = {
+        status: 404,
+        retryAfter: null,
+        text: '{"code":10008}',
+      }
       await withdrawDiscord("d1")
       assert.equal(db.discord.length, 0)
       assert.equal(drafts()[0]!.discord_status, "left")

@@ -17,6 +17,7 @@ import {
   SparklesIcon,
   SlidersHorizontalIcon,
   SquareIcon,
+  StopIcon,
   TextIcon,
   Undo02Icon,
 } from "@hugeicons/core-free-icons"
@@ -38,7 +39,11 @@ import { Separator } from "@workspace/ui/components/separator"
 import { Sheet } from "@workspace/ui/components/sheet"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
-import { AccountMenu, useViewer } from "@/components/account/account-menu"
+import {
+  AccountMenu,
+  useOpenRouter,
+  useViewer,
+} from "@/components/account/account-menu"
 import { CloudBar } from "@/components/account/cloud-bar"
 import { GitHubButton } from "@/components/github-button"
 import { LanguageToggle } from "@/components/language-toggle"
@@ -79,7 +84,9 @@ import type { SeriesContext } from "./series"
 import { useSeries } from "./series-dialog"
 import type { CloudProject } from "./use-cloud-sync"
 import { useComicEditor, type ComicEditor } from "./use-editor"
-import { hasPrompt, useGenerator } from "./use-generator"
+import { commandKey } from "./stage-gestures"
+import { renderCost } from "./story"
+import { panelsToDraw, useGenerator } from "./use-generator"
 import { useAssetsFromUrl } from "@/components/catalog/editor-tab"
 import { useMedia } from "./use-media"
 import { useT } from "@/i18n/core"
@@ -222,6 +229,7 @@ export function ComicCanvasEditor({
     requestAnimationFrame(() => composerRef.current?.focus())
   }, [setDocks])
   const images = React.useMemo<ImageCache>(() => new Map(), [])
+  const [title, setTitle] = React.useState(cloud?.title)
   const [view, setView] = React.useState({ zoom: 0.5, fit: true })
   const onZoom = React.useCallback(
     (zoom: number, fit = false) => setView({ zoom, fit }),
@@ -318,9 +326,11 @@ export function ComicCanvasEditor({
     return () => window.removeEventListener("paste", onPaste)
   }, [editor, clipboard])
 
-  const prompted = editor.project.pages
-    .flatMap((p) => p.layers)
-    .filter((l) => l.type === "panel" && hasPrompt(l)).length
+  const openrouter = useOpenRouter()
+  const toDraw = React.useMemo(
+    () => panelsToDraw(editor.project),
+    [editor.project]
+  )
   const busy = Object.keys(generator.jobs).length > 0
 
   return (
@@ -353,6 +363,7 @@ export function ComicCanvasEditor({
                 if (key === "catalog") navigate("/catalog")
                 if (key === "open") openProject()
                 if (key === "generate-all") generator.generateAll()
+                if (key === "stop-all") generator.stopAll()
                 if (key === "restyle-all") setRestyling(true)
                 if (key === "check-all") setChecking({ page: null })
                 if (key === "save") saveProject()
@@ -380,13 +391,27 @@ export function ComicCanvasEditor({
                 {t("menu.saveProject")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                id="generate-all"
-                isDisabled={!prompted || busy}
-              >
-                <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
-                {t("menu.generateAll", { count: prompted })}
-              </DropdownMenuItem>
+              {generator.queue ? (
+                <DropdownMenuItem id="stop-all">
+                  <HugeiconsIcon icon={StopIcon} strokeWidth={2} />
+                  {t("menu.stopAll")}
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem
+                  id="generate-all"
+                  isDisabled={!toDraw.length || busy}
+                >
+                  <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
+                  {t("menu.generateAll", { count: toDraw.length })}
+                  {!openrouter && !!toDraw.length && (
+                    <DropdownMenuShortcut>
+                      {t("menu.cost", {
+                        count: renderCost(toDraw, editor.project),
+                      })}
+                    </DropdownMenuShortcut>
+                  )}
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem id="restyle-all" isDisabled={busy}>
                 <HugeiconsIcon icon={PaintBoardIcon} strokeWidth={2} />
                 {tp("restyle.menu")}
@@ -419,6 +444,7 @@ export function ComicCanvasEditor({
               cloud={cloud}
               images={images}
               series={series}
+              onTitle={setTitle}
             />
           )}
         </div>
@@ -445,7 +471,22 @@ export function ComicCanvasEditor({
             </div>
           )}
           {cloud && <ShareButton projectId={cloud.id} />}
-          <ExportButton editor={editor} images={images} />
+          <ExportButton
+            editor={editor}
+            images={images}
+            series={series.context}
+            details={{
+              title,
+              series: series.context?.title,
+              number: series.context?.episode,
+              // Without a name of their own it's part of their email, which
+              // shouldn't travel inside a shared file.
+              writer:
+                viewer && viewer.name !== viewer.email.split("@")[0]
+                  ? viewer.name
+                  : undefined,
+            }}
+          />
           {instagram && viewer && (
             <PublishButton editor={editor} images={images} />
           )}
@@ -942,7 +983,7 @@ function useShortcuts(
       // A focused list, menu or slider already used the key.
       if (e.defaultPrevented || isTyping(e.target) || inDialog(e.target)) return
       const { editor, zoomBy, fit, clipboard, compose } = ref.current
-      const mod = e.metaKey || e.ctrlKey
+      const mod = commandKey(e)
       const sel = editor.selected
       const key = e.key.toLowerCase()
 
@@ -1000,8 +1041,11 @@ function useShortcuts(
         e.preventDefault()
         editor.duplicate(sel.id)
       } else if (key === "]") {
+        // Cmd+[ and Cmd+] are also the browser's Back and Forward.
+        e.preventDefault()
         editor.move(sel.id, mod ? "top" : "up")
       } else if (key === "[") {
+        e.preventDefault()
         editor.move(sel.id, mod ? "bottom" : "down")
       } else if (key.startsWith("arrow") && !sel.locked) {
         e.preventDefault()

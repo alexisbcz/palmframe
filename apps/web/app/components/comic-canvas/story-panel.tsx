@@ -60,6 +60,7 @@ import { messages } from "./story.messages"
 import { TagField } from "./tag-field"
 import type { ComicEditor } from "./use-editor"
 import { hasPrompt, type Generator } from "./use-generator"
+import { SignInNotice, needsSignIn } from "./sign-in-notice"
 
 // Everything the dialog holds for one slide. Keyed by page id, so a plan or
 // a render that finishes after a slide change lands on its own slide only.
@@ -484,6 +485,8 @@ function StoryDialog({
                   </>
                 ) : state.error === "changed" ? (
                   t("errors.changed")
+                ) : needsSignIn(state.error) ? (
+                  <SignInNotice />
                 ) : (
                   t("errors.failed", { error: state.error })
                 )}

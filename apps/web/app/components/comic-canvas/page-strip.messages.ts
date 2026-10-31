@@ -11,7 +11,7 @@ export const messages = defineMessages({
     moveLeft: "Move left",
     moveRight: "Move right",
     delete: "Delete slide",
-    limit: "Instagram allows {max} slides",
+    limit: "A project holds up to {max} slides",
     addAfter: "Add a slide after this one",
     add: "Slide",
     variety: {
@@ -33,7 +33,7 @@ export const messages = defineMessages({
     moveLeft: "Déplacer à gauche",
     moveRight: "Déplacer à droite",
     delete: "Supprimer la diapo",
-    limit: "Instagram autorise {max} diapos maximum",
+    limit: "Un projet contient {max} diapos maximum",
     addAfter: "Ajouter une diapo après celle-ci",
     add: "Diapo",
     variety: {
@@ -55,7 +55,7 @@ export const messages = defineMessages({
     moveLeft: "Mover a la izquierda",
     moveRight: "Mover a la derecha",
     delete: "Eliminar diapositiva",
-    limit: "Instagram admite un máximo de {max} diapositivas",
+    limit: "Un proyecto admite hasta {max} diapositivas",
     addAfter: "Añadir una diapositiva después de esta",
     add: "Diapositiva",
     variety: {
@@ -77,7 +77,7 @@ export const messages = defineMessages({
     moveLeft: "Nach links",
     moveRight: "Nach rechts",
     delete: "Slide löschen",
-    limit: "Instagram erlaubt maximal {max} Slides",
+    limit: "Ein Projekt fasst bis zu {max} Slides",
     addAfter: "Slide danach einfügen",
     add: "Slide",
     variety: {
@@ -99,7 +99,7 @@ export const messages = defineMessages({
     moveLeft: "Sposta a sinistra",
     moveRight: "Sposta a destra",
     delete: "Elimina slide",
-    limit: "Instagram consente al massimo {max} slide",
+    limit: "Un progetto contiene fino a {max} slide",
     addAfter: "Aggiungi una slide dopo questa",
     add: "Slide",
     variety: {
@@ -121,7 +121,7 @@ export const messages = defineMessages({
     moveLeft: "左へ移動",
     moveRight: "右へ移動",
     delete: "スライドを削除",
-    limit: "Instagramのスライドは最大{max}枚です",
+    limit: "1つのプロジェクトのスライドは最大{max}枚です",
     addAfter: "この後にスライドを追加",
     add: "スライド",
     variety: {

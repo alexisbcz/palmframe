@@ -141,6 +141,101 @@ export function placePreset(
       ? { ...prev, ...rect, rotation: 0, name }
       : { ...createPanel(rect), name }
   })
+  // A locked panel the preset has no cell for stays where it is.
+  const kept = old.slice(rects.length).filter((l) => l.locked)
   // An inset sits on top of the frame it overlaps, so keep cell order.
-  return [...panels, ...doc.layers.filter((l) => l.type !== "panel")]
+  return [...panels, ...kept, ...doc.layers.filter((l) => l.type !== "panel")]
+}
+
+// Closer than this, two cells' edges are one edge. Fractions of the page.
+const GUTTER_REACH = 0.06
+const EDGE_SNAP = 0.012
+const PAGE_SNAP = 0.02
+
+// Pulls edges within `reach` of each other to their mean.
+function snapValues(values: number[], reach: number) {
+  const sorted = values.map((v, i) => ({ v, i })).sort((a, b) => a.v - b.v)
+  const out = [...values]
+  for (let a = 0; a < sorted.length;) {
+    let b = a + 1
+    while (b < sorted.length && sorted[b]!.v - sorted[b - 1]!.v <= reach) b++
+    const group = sorted.slice(a, b)
+    const mean = group.reduce((sum, g) => sum + g.v, 0) / group.length
+    for (const g of group) out[g.i] = mean
+    a = b
+  }
+  return out
+}
+
+// Cells for one axis: [start, end] pairs of every frame, gutters closed.
+function closeAxis(
+  frames: { from: number; to: number; acrossFrom: number; acrossTo: number }[]
+) {
+  const pairs = frames.map((f) => [f.from, f.to] as [number, number])
+  frames.forEach((a, i) => {
+    frames.forEach((b, j) => {
+      const gap = b.from - a.to
+      const faces = a.acrossFrom < b.acrossTo && b.acrossFrom < a.acrossTo
+      if (i === j || !faces || gap < -PAGE_SNAP || gap > GUTTER_REACH) return
+      const middle = (a.to + b.from) / 2
+      pairs[i]![1] = middle
+      pairs[j]![0] = middle
+    })
+  })
+  const flat = snapValues(pairs.flat(), EDGE_SNAP).map((v) => {
+    const unit = Math.min(1, Math.max(0, v))
+    if (unit <= PAGE_SNAP) return 0
+    return unit >= 1 - PAGE_SNAP ? 1 : unit
+  })
+  return pairs.map((_, i) => [flat[i * 2]!, flat[i * 2 + 1]!] as const)
+}
+
+const fourPlaces = (v: number) => Math.round(v * 10000) / 10000
+
+// Preset cells from frames found on a page. `layoutRects` adds the margin
+// and gutters itself, so the frames' own are taken out: their outline
+// becomes the unit page and facing edges meet. Cells are stored left to
+// right, which `presetRects` mirrors back when the project reads the other way.
+export function cellsFromFrames(frames: Rect[], rtl = false): Rect[] {
+  if (!frames.length) return []
+  const left = Math.min(...frames.map((f) => f.x))
+  const top = Math.min(...frames.map((f) => f.y))
+  const across = Math.max(...frames.map((f) => f.x + f.width)) - left
+  const down = Math.max(...frames.map((f) => f.y + f.height)) - top
+  const unit = frames.map((f) => ({
+    x0: (f.x - left) / across,
+    y0: (f.y - top) / down,
+    x1: (f.x + f.width - left) / across,
+    y1: (f.y + f.height - top) / down,
+  }))
+  const xs = closeAxis(
+    unit.map((u) => ({
+      from: u.x0,
+      to: u.x1,
+      acrossFrom: u.y0,
+      acrossTo: u.y1,
+    }))
+  )
+  const ys = closeAxis(
+    unit.map((u) => ({
+      from: u.y0,
+      to: u.y1,
+      acrossFrom: u.x0,
+      acrossTo: u.x1,
+    }))
+  )
+  const cells = unit.map((u, i) => {
+    // Snapping must never close a thin cell up: it would draw inside out.
+    const [ax0, ax1] = xs[i]!
+    const [ay0, ay1] = ys[i]!
+    const [x0, x1] = ax1 > ax0 ? [ax0, ax1] : [u.x0, u.x1]
+    const [y0, y1] = ay1 > ay0 ? [ay0, ay1] : [u.y0, u.y1]
+    return {
+      x: fourPlaces(x0),
+      y: fourPlaces(y0),
+      width: fourPlaces(x1 - x0),
+      height: fourPlaces(y1 - y0),
+    }
+  })
+  return rtl ? mirror(cells).map((c) => ({ ...c, x: fourPlaces(c.x) })) : cells
 }

@@ -1,5 +1,6 @@
 import { MAX_REFS } from "@/components/comic-canvas/model"
 
+import { MAX_STYLE_SLOTS } from "./comic-import/limits"
 import { type Operation } from "./credits"
 import { IMAGE_MODELS } from "./image-models"
 import { kleinAvailable, renderKlein } from "./klein.server"
@@ -23,6 +24,14 @@ export interface GenerateRequest {
   refs: string[]
   // A Klein render of a coverage sheet, which has its own price.
   coverage?: boolean
+  // A learned style: the server adds `slots` of its pages after `refs`.
+  style?: { id: string; slots: number }
+  // The same panel for Anima, drawn from the style's written analysis where
+  // no model here can see reference images.
+  fallback?: Pick<
+    GenerateRequest,
+    "prompt" | "negative" | "width" | "height" | "steps"
+  >
 }
 
 function workflow(r: GenerateRequest) {
@@ -82,6 +91,20 @@ function workflow(r: GenerateRequest) {
   }
 }
 
+function parseStyle(b: Partial<GenerateRequest>, refs: number) {
+  const { id, slots } = b.style ?? {}
+  if (
+    b.engine !== "klein" ||
+    typeof id !== "string" ||
+    !/^[0-9a-f-]{36}$/i.test(id) ||
+    typeof slots !== "number"
+  )
+    return undefined
+  const room = Math.min(MAX_STYLE_SLOTS, MAX_REFS - refs)
+  const allowed = Math.min(Math.trunc(slots), room)
+  return allowed > 0 ? { id, slots: allowed } : undefined
+}
+
 export function parse(body: unknown): GenerateRequest | null {
   const b = body as Partial<GenerateRequest>
   const int = (v: unknown, min: number, max: number) =>
@@ -102,6 +125,14 @@ export function parse(body: unknown): GenerateRequest | null {
   ) {
     return null
   }
+  const refs = Array.isArray(b.refs)
+    ? b.refs
+        .filter((x): x is string => typeof x === "string")
+        .slice(0, MAX_REFS)
+    : []
+  const style = parseStyle(b, refs.length)
+  const fallback =
+    style && b.fallback ? parse({ ...b.fallback, seed: b.seed }) : null
   return {
     prompt: b.prompt,
     negative: typeof b.negative === "string" ? b.negative : "",
@@ -111,13 +142,31 @@ export function parse(body: unknown): GenerateRequest | null {
     seed,
     steps,
     engine: b.engine === "klein" ? "klein" : "anima",
-    refs: Array.isArray(b.refs)
-      ? b.refs
-          .filter((x): x is string => typeof x === "string")
-          .slice(0, MAX_REFS)
-      : [],
+    refs,
     coverage: b.engine === "klein" && b.coverage === true,
+    ...(style && { style }),
+    ...(fallback && {
+      fallback: {
+        prompt: fallback.prompt,
+        negative: fallback.negative,
+        width: fallback.width,
+        height: fallback.height,
+        steps: fallback.steps,
+      },
+    }),
   }
+}
+
+// Anima through ComfyUI only exists where one was set up; on Vercel the
+// default localhost address leads nowhere.
+export const comfyAvailable = () =>
+  !!process.env.COMFY_URL?.trim() || !process.env.VERCEL
+
+// Where a styled panel can go once no model here can see its references.
+export function withoutReferences(r: GenerateRequest): GenerateRequest | null {
+  if (!r.fallback || !comfyAvailable()) return null
+  const { fallback, style: _, coverage: __, ...rest } = r
+  return { ...rest, ...fallback, engine: "anima", refs: [] }
 }
 
 export const error = (message: string, status: number) =>
@@ -150,6 +199,7 @@ export async function render(
           "x-render-ms": String(Math.round(performance.now() - t0)),
           "x-seed": String(r.seed),
           "x-model": IMAGE_MODELS.klein,
+          "x-engine": "klein",
           "cache-control": "no-store",
         },
       })
@@ -211,6 +261,7 @@ export async function render(
         "x-render-ms": String(Math.round(performance.now() - t0)),
         "x-seed": String(r.seed),
         "x-model": IMAGE_MODELS.anima,
+        "x-engine": "anima",
         "cache-control": "no-store",
       },
     })

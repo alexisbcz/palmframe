@@ -61,12 +61,9 @@ import { panelCost, requestPlan } from "./story"
 import type { SeriesContext } from "./series"
 import { useStoryInfo } from "./story-panel"
 import type { ComicEditor } from "./use-editor"
-import {
-  randomSeed,
-  renderSheet,
-  withCurrentImage,
-  type Generator,
-} from "./use-generator"
+import { randomSeed, renderSheet, type Generator } from "./use-generator"
+import { withCurrentImage } from "./model"
+import { SignInNotice, needsSignIn } from "./sign-in-notice"
 
 type PauseAfter = "plan" | "panels" | "letter"
 
@@ -621,7 +618,11 @@ function RunDialog({
                 : t("done", { count: flagged, n: flagged }))}
             {state.phase === "failed" && (
               <span className="text-destructive">
-                {t("failed", { error: state.error })}
+                {needsSignIn(state.error) ? (
+                  <SignInNotice />
+                ) : (
+                  t("failed", { error: state.error })
+                )}
               </span>
             )}
             {state.phase === "short" && (
@@ -817,7 +818,13 @@ function SheetReview({
       ))}
       {error && (
         <p role="alert" className="text-xs text-destructive">
-          {error === INSUFFICIENT_CREDITS ? t("short") : t("failed", { error })}
+          {error === INSUFFICIENT_CREDITS ? (
+            t("short")
+          ) : needsSignIn(error) ? (
+            <SignInNotice />
+          ) : (
+            t("failed", { error })
+          )}
         </p>
       )}
     </div>

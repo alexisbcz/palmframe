@@ -5,8 +5,10 @@ import { COVERAGE_CELLS } from "./coverage"
 import {
   DEFAULT_LOOK,
   MAX_REFS,
+  MAX_VERSIONS,
   createPanel,
   sheetReady,
+  withCurrentImage,
   type Character,
   type ComicProject,
   type Engine,
@@ -14,12 +16,13 @@ import {
   type Outfit,
   type PaletteId,
   type PanelLayer,
-  type PanelVersion,
   type StyleId,
   type WorldItem,
 } from "./model"
+import { isStyleErrorCode, styleSlots } from "@/lib/comic-import/style"
 import { COSTS } from "@/lib/credits"
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
+import { styleErrorText } from "./style-import.messages"
 
 import { readImageFile } from "./render"
 import { setDimension } from "./setups"
@@ -124,6 +127,7 @@ export function lookOf(panel: PanelLayer, look: Look = DEFAULT_LOOK): Look {
     saturation: look.saturation,
     // A panel on its own style has left the carousel's recipe behind.
     ...(look.recipe && style === look.style && { recipe: look.recipe }),
+    ...(look.styleRef && style === look.style && { styleRef: look.styleRef }),
   }
 }
 
@@ -200,7 +204,7 @@ export function panelMembers(panel: PanelLayer, cast: Character[] = []) {
     .filter((c): c is Character => !!c)
 }
 
-type RefSources = Pick<ComicProject, "cast" | "world">
+type RefSources = Pick<ComicProject, "cast" | "world" | "look">
 
 // The panel's location first, then its props, whatever order they were added.
 function panelWorld(panel: PanelLayer, world: WorldItem[] = []) {
@@ -227,9 +231,11 @@ export type PanelRef =
 // Whatever doesn't fit is dropped here, never by the server, so the prompt's
 // numbers stay right and the left-out are described in words instead. The
 // guide always keeps a slot: the last reference gives way, never the guide.
+// A learned style's pages come last, added by the server: `styleSlots` is how
+// many, and they push out references the same way.
 export function panelRefs(
   panel: PanelLayer,
-  { cast, world }: Pick<ComicProject, "cast" | "world">
+  { cast, world, look }: RefSources
 ) {
   const wanted: NamedRef[] = [
     ...panelMembers(panel, cast)
@@ -244,14 +250,21 @@ export function panelRefs(
       .filter((item) => item.image)
       .map((item) => ({ src: item.image!, item })),
   ]
-  const room = MAX_REFS - (panel.guide ? 1 : 0)
+  const pages = look ? lookOf(panel, look).styleRef?.pages : 0
+  const slots = pages ? styleSlots(wanted.length, !!panel.guide, pages) : 0
+  const room = MAX_REFS - (panel.guide ? 1 : 0) - slots
   const refs: PanelRef[] = wanted.slice(0, room)
   if (panel.guide) refs.push({ src: panel.guide.src })
-  return { refs, dropped: wanted.slice(room) }
+  return { refs, dropped: wanted.slice(room), styleSlots: slots }
+}
+
+const refCount = (panel: PanelLayer, project: RefSources) => {
+  const { refs, styleSlots: slots } = panelRefs(panel, project)
+  return refs.length + slots
 }
 
 export const usesKlein = (panel: PanelLayer, project: RefSources) =>
-  panelRefs(panel, project).refs.length > 0
+  refCount(panel, project) > 0
 
 // Up front, because the written description otherwise out-votes a sketch
 // the model only skims. The wording follows OpenManga's POSE / LAYOUT section.
@@ -262,6 +275,18 @@ function guideProse(panel: PanelLayer, image: string) {
       ? "Copy the pose of every figure, where each figure stands in the frame, and the framing from the sketch. Where the description disagrees with the sketch on pose, figure placement or framing, the sketch wins. Identity, outfits and the art style still come from the character references and the description, never from the sketch."
       : "Start from the sketch for the poses, where the figures stand and the framing; the description may adjust it."
   return `${image} is a rough layout sketch. ${rule} Ignore its drawing style, line quality and any text in it.`
+}
+
+// Pages of someone else's comic: the model gets told what they are for and,
+// as firmly, what they are not.
+function styleProse(first: number, count: number, total: number) {
+  const which =
+    count > 1
+      ? `Reference images ${first + 1} and ${first + 2} are pages`
+      : total > 1
+        ? `Reference image ${first + 1} is a page`
+        : "The reference image is a page"
+  return `${which} from another comic, shown only for how the art is drawn. Match the line work, inking, shading, color palette, texture and panel rhythm. Take the style only: never copy the characters, faces, costumes, scenes, logos, lettering or text.`
 }
 
 // For Klein: the shot in sentences, each reference image named for what it
@@ -277,10 +302,11 @@ function kleinPrompt(
   close: string
 ) {
   const effective = lookOf(panel, look)
-  const { refs } = panelRefs(panel, { cast, world })
+  const { refs, styleSlots: slots } = panelRefs(panel, { cast, world, look })
+  const total = refs.length + slots
   const tags = (panel.tags ?? []).filter((t) => !COUNT_TAGS.has(t))
   const image = (i: number) =>
-    refs.length > 1 ? `reference image ${i + 1}` : "the reference image"
+    total > 1 ? `reference image ${i + 1}` : "the reference image"
   const name = (c: Character) => c.name.trim() || KIND[c.kind]
   const drawn = refs.map((r, i) => {
     if (r.item) {
@@ -304,7 +330,7 @@ function kleinPrompt(
       return `${name(c)}: ${[KIND[c.kind], ...c.tags, ...(worn ? [words(worn)] : [])].join(", ")}.`
     })
   const guide =
-    refs.length > 1 ? `Reference image ${refs.length}` : "The reference image"
+    total > 1 ? `Reference image ${refs.length}` : "The reference image"
   const unseen = panelWorld(panel, world)
     .filter((w) => !refs.some((r) => r.item?.id === w.id))
     .map((w) => `Also in the shot: ${words(w)}.`)
@@ -316,7 +342,8 @@ function kleinPrompt(
     ...drawn,
     ...others,
     ...unseen,
-    refs.some((r) => r.character)
+    slots ? styleProse(refs.length, slots, total) : "",
+    !slots && refs.some((r) => r.character)
       ? "Keep the art style of the character reference images."
       : "",
     lookProse(panel, effective),
@@ -399,7 +426,8 @@ export function buildPrompt(
   }: Pick<ComicProject, "cast" | "world" | "look"> = {}
 ) {
   const effective = lookOf(panel, look)
-  const raw = effective.style === "raw"
+  // Raw means no direction at all, which a recipe is.
+  const raw = effective.style === "raw" && !effective.recipe
   const styled = lookTags(panel, effective)
   const members = panelMembers(panel, cast)
   const kinds = (k: Character["kind"]) =>
@@ -451,6 +479,14 @@ export async function render(
     engine?: Engine
     refs?: string[]
     coverage?: boolean
+    style?: { id: string; slots: number }
+    fallback?: {
+      prompt: string
+      negative: string
+      width: number
+      height: number
+      steps: number
+    }
   },
   signal?: AbortSignal
 ) {
@@ -466,6 +502,8 @@ export async function render(
     const json = await res.json().catch(() => null)
     if (json?.code === INSUFFICIENT_CREDITS)
       throw new Error(INSUFFICIENT_CREDITS)
+    if (isStyleErrorCode(json?.code))
+      throw new Error(styleErrorText(json.code, document.documentElement.lang))
     throw new Error(json?.error ?? `HTTP ${res.status}`)
   }
   const blob = await res.blob()
@@ -480,7 +518,9 @@ export async function render(
     engine:
       res.headers.get("x-billed") === "openrouter"
         ? undefined
-        : (body.engine ?? "anima"),
+        : ((res.headers.get("x-engine") as Engine | null) ??
+          body.engine ??
+          "anima"),
   }
 }
 
@@ -620,7 +660,7 @@ export function kleinSize(width: number, height: number, area = KLEIN_AREA) {
 
 // Panels with reference images are drawn from them, with Klein.
 export const engineOf = (panel: PanelLayer, project: RefSources): Engine =>
-  panelRefs(panel, project).refs.length ? "klein" : "anima"
+  refCount(panel, project) ? "klein" : "anima"
 
 export const otherEngine = (engine: Engine): Engine =>
   engine === "klein" ? "anima" : "klein"
@@ -633,7 +673,23 @@ export function engineCost(
   project: RefSources
 ) {
   if (engine === "anima") return COSTS.panel
-  return panelRefs(panel, project).refs.length ? COSTS.panel_ref : COSTS.sheet
+  return refCount(panel, project) ? COSTS.panel_ref : COSTS.sheet
+}
+
+// The request's share of a learned style: which one and how many pages, plus
+// the same panel for Anima in case no model at the other end sees images.
+function styleBody(panel: PanelLayer, project: ComicEditor["project"]) {
+  const id = lookOf(panel, project.look).styleRef?.id
+  const { styleSlots: slots } = panelRefs(panel, project)
+  if (!id || !slots) return {}
+  return {
+    style: { id, slots },
+    fallback: {
+      ...buildPrompt(panel, project),
+      ...renderSize(panel.width, panel.height),
+      steps: panel.steps ?? DEFAULT_STEPS,
+    },
+  }
 }
 
 function renderBody(
@@ -657,6 +713,7 @@ function renderBody(
     steps: 4,
     engine,
     refs: panelRefs(panel, project).refs.map((r) => r.src),
+    ...styleBody(panel, project),
   }
 }
 
@@ -674,36 +731,39 @@ export interface Job {
   of: number
 }
 
-// Versions kept on a panel, as in edit-tools.
-const MAX_VERSIONS = 8
-
 export const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
 
-// The panel's versions with its current image among them, before it's replaced.
-export function withCurrentImage(panel: PanelLayer) {
-  const versions = panel.versions ?? []
-  if (!panel.src || versions.some((v) => v.src === panel.src)) return versions
-  const { src, engine, model, seed } = panel
-  const current: PanelVersion = { src, kind: "original", engine, model, seed }
-  return [current, ...versions].slice(0, MAX_VERSIONS)
-}
+const drawable = (l: PanelLayer) =>
+  hasPrompt(l) && !l.src && !l.locked && !l.hidden
 
-// Every panel with something to draw, slide by slide, in the order they draw.
-export const promptedPanels = (project: ComicProject) =>
+// Every panel waiting for art, slide by slide, in the order they draw. Art
+// already there is never paid for twice, and a lock or a hidden layer means
+// leave it alone.
+export const panelsToDraw = (project: ComicProject) =>
   project.pages.flatMap((page) =>
     page.layers
-      .filter((l): l is PanelLayer => l.type === "panel" && hasPrompt(l))
+      .filter((l): l is PanelLayer => l.type === "panel" && drawable(l))
       .sort((a, b) => a.y - b.y || a.x - b.x)
   )
 
+// Where a failed fill reports, as no one panel may be selected to show it.
+export const ALL_PANELS = "all-panels"
+
 // A coverage sheet is a job of its own: the panel can render meanwhile.
 export const coverageJob = (panelId: string) => `coverage:${panelId}`
+
+type Fill = { stopped: boolean; panelId?: string }
 
 export function useGenerator(editor: ComicEditor) {
   const [jobs, setJobs] = React.useState<Record<string, Job>>({})
   const [takes, setTakes] = React.useState<Record<string, Take[]>>({})
   const [errors, setErrors] = React.useState<Record<string, string>>({})
   const controllers = React.useRef(new Map<string, AbortController>())
+  // The fill in progress: how far along, and the handle that stops it.
+  const [queue, setQueue] = React.useState<{ done: number; of: number } | null>(
+    null
+  )
+  const fill = React.useRef<Fill | null>(null)
 
   // `count` takes in a row, each on a new seed unless the seed is locked.
   // Every take lands in the panel as it finishes; pick another from Takes.
@@ -717,12 +777,13 @@ export function useGenerator(editor: ComicEditor) {
       if (controllers.current.has(panelId)) return null
       const controller = new AbortController()
       controllers.current.set(panelId, controller)
-      setErrors(({ [panelId]: _, ...rest }) => rest)
+      setErrors(({ [panelId]: _, [ALL_PANELS]: __, ...rest }) => rest)
       const startedAt = Date.now()
       try {
         for (let take = 1; take <= count; take++) {
           const panel = editor.findLayer(panelId)?.layer
-          if (panel?.type !== "panel" || !hasPrompt(panel)) return null
+          if (panel?.type !== "panel" || !hasPrompt(panel) || panel.locked)
+            return null
           const seed =
             panel.lockSeed && panel.seed !== undefined
               ? panel.seed + take - 1
@@ -823,15 +884,45 @@ export function useGenerator(editor: ComicEditor) {
     [editor]
   )
 
-  // One at a time, slide by slide: ComfyUI renders serially anyway,
-  // and this fills the carousel in reading order.
+  // One at a time, slide by slide: ComfyUI renders serially anyway, and this
+  // fills the carousel in reading order. Each panel is looked at again when its
+  // turn comes, and the first failure ends the fill: with no credits left, every
+  // panel after it would only fail the same way.
   const generateAll = React.useCallback(async () => {
-    const panels = promptedPanels(editor.projectRef.current)
-    for (const { id } of panels) await generate(id)
+    if (fill.current) return
+    const panels = panelsToDraw(editor.projectRef.current)
+    if (!panels.length) return
+    const run: Fill = { stopped: false }
+    fill.current = run
+    try {
+      for (const [done, { id }] of panels.entries()) {
+        if (run.stopped) break
+        setQueue({ done, of: panels.length })
+        const panel = editor.findLayer(id)?.layer
+        if (panel?.type !== "panel" || !drawable(panel)) continue
+        run.panelId = id
+        const failed = await generate(id)
+        if (failed) {
+          setErrors((err) => ({ ...err, [ALL_PANELS]: failed }))
+          break
+        }
+      }
+    } finally {
+      fill.current = null
+      setQueue(null)
+    }
   }, [editor, generate])
 
   const cancel = React.useCallback((panelId: string) => {
     controllers.current.get(panelId)?.abort()
+  }, [])
+
+  // Stops the panel being drawn, which gets refunded, and the ones after it.
+  const stopAll = React.useCallback(() => {
+    const run = fill.current
+    if (!run) return
+    run.stopped = true
+    if (run.panelId) controllers.current.get(run.panelId)?.abort()
   }, [])
 
   // Draws the panel's coverage sheet. Nothing on the panel changes but the
@@ -864,6 +955,7 @@ export function useGenerator(editor: ComicEditor) {
               (r) => r.src
             ),
             coverage: true,
+            ...styleBody({ ...panel, guide: undefined }, project),
           },
           controller.signal
         )
@@ -890,6 +982,8 @@ export function useGenerator(editor: ComicEditor) {
     generate,
     tryEngine,
     generateAll,
+    stopAll,
+    queue,
     cancel,
     drawCoverage,
   }

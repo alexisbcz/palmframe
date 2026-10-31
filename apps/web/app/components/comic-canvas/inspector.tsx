@@ -72,6 +72,7 @@ import { messages } from "./inspector.messages"
 import { DrawnWith } from "./panel-tools"
 import { EditSection } from "./edit-section"
 import { GuideSection } from "./guide-section"
+import { KnifeSection } from "./knife-section"
 import { PostprocessSection } from "./postprocess-tools"
 
 type Setter<L extends Layer> = <K extends keyof L>(key: K, value: L[K]) => void
@@ -298,11 +299,12 @@ function LayerInspector({
             icon={Copy01Icon}
             onPress={() => editor.duplicate(layer.id)}
           />
-          <TooltipTrigger>
+          <TooltipTrigger isDisabled={layer.locked}>
             <Button
               variant="destructive"
               size="icon"
               aria-label={t("aria.delete")}
+              isDisabled={layer.locked}
               onPress={() => editor.remove(layer.id)}
             >
               <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
@@ -494,6 +496,8 @@ function PanelSections({
           </>
         )}
       </Section>
+
+      <KnifeSection panel={layer} editor={editor} />
 
       <GuideSection panel={layer} editor={editor} generator={generator} />
 

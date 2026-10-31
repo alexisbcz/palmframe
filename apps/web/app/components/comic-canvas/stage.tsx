@@ -4,21 +4,29 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { insertImageFile } from "./actions"
 import type { CanvasMenuRequest } from "./canvas-menu"
-import { PAGE_MARGIN, type ComicDoc, type Layer } from "./model"
+import type { Layer } from "./model"
 import {
   drawDoc,
+  docText,
   fontsReady,
   hitTest,
   loadImages,
   toLocal,
   type ImageCache,
 } from "./render"
+import {
+  dragSlop,
+  gesturePatch,
+  resize,
+  snapMove,
+  snapResize,
+  type Guides,
+} from "./stage-gestures"
 import type { ComicEditor } from "./use-editor"
 import { useT } from "@/i18n/core"
 import { messages } from "./stage.messages"
 import { EditOverlay } from "./mask-overlay"
 
-const MIN_SIZE = 24
 const HANDLES = [
   [-1, -1],
   [0, -1],
@@ -45,116 +53,11 @@ type Drag =
   | { kind: "rotate"; start: Layer; key: string }
   | { kind: "tail"; start: Layer; key: string }
 
-type Guides = { x: number[]; y: number[] }
-
 // Cursor for a handle, accounting for the layer's rotation.
 function handleCursor(hx: number, hy: number, rotation: number) {
   const angle = (Math.atan2(hy, hx) * 180) / Math.PI + rotation
   const index = Math.round((((angle % 180) + 180) % 180) / 45) % 4
   return `${RESIZE_CURSORS[[3, 0, 1, 2][index]!]}-resize`
-}
-
-function snapMove(
-  doc: ComicDoc,
-  layer: Layer,
-  x: number,
-  y: number,
-  threshold: number
-) {
-  const targetsX = [
-    0,
-    doc.width / 2,
-    doc.width,
-    PAGE_MARGIN,
-    doc.width - PAGE_MARGIN,
-  ]
-  const targetsY = [
-    0,
-    doc.height / 2,
-    doc.height,
-    PAGE_MARGIN,
-    doc.height - PAGE_MARGIN,
-  ]
-  for (const l of doc.layers) {
-    if (l.id === layer.id || l.hidden) continue
-    targetsX.push(l.x, l.x + l.width / 2, l.x + l.width)
-    targetsY.push(l.y, l.y + l.height / 2, l.y + l.height)
-  }
-  const snap = (pos: number, size: number, targets: number[]) => {
-    let best: { delta: number; at: number } | null = null
-    for (const edge of [pos, pos + size / 2, pos + size]) {
-      for (const t of targets) {
-        const delta = t - edge
-        if (
-          Math.abs(delta) <= threshold &&
-          (!best || Math.abs(delta) < Math.abs(best.delta))
-        ) {
-          best = { delta, at: t }
-        }
-      }
-    }
-    return best
-  }
-  const sx = snap(x, layer.width, targetsX)
-  const sy = snap(y, layer.height, targetsY)
-  return {
-    x: x + (sx?.delta ?? 0),
-    y: y + (sy?.delta ?? 0),
-    guides: { x: sx ? [sx.at] : [], y: sy ? [sy.at] : [] },
-  }
-}
-
-function resize(
-  start: Layer,
-  hx: number,
-  hy: number,
-  dx: number,
-  dy: number,
-  e: PointerEvent
-): Partial<Layer> {
-  const a = (start.rotation * Math.PI) / 180
-  const lx = dx * Math.cos(-a) - dy * Math.sin(-a)
-  const ly = dx * Math.sin(-a) + dy * Math.cos(-a)
-  const fromCenter = e.altKey
-  const k = fromCenter ? 2 : 1
-  let w = start.width + lx * hx * k
-  let h = start.height + ly * hy * k
-  const corner = hx !== 0 && hy !== 0
-  // Text scales with its box from the corners, like a placed graphic.
-  const keepRatio = corner && (e.shiftKey || start.type === "text")
-  if (keepRatio) {
-    const s = Math.max(w / start.width, h / start.height)
-    w = start.width * s
-    h = start.height * s
-  }
-  w = Math.max(MIN_SIZE, w)
-  h = Math.max(MIN_SIZE, h)
-  const dw = w - start.width
-  const dh = h - start.height
-  const cxl = fromCenter ? 0 : (hx * dw) / 2
-  const cyl = fromCenter ? 0 : (hy * dh) / 2
-  const cx = start.x + start.width / 2 + cxl * Math.cos(a) - cyl * Math.sin(a)
-  const cy = start.y + start.height / 2 + cxl * Math.sin(a) + cyl * Math.cos(a)
-  const patch: Partial<Layer> = {
-    x: Math.round(cx - w / 2),
-    y: Math.round(cy - h / 2),
-    width: Math.round(w),
-    height: Math.round(h),
-  }
-  if (start.type === "bubble") {
-    Object.assign(patch, {
-      tailX: Math.round(start.tailX * (w / start.width)),
-      tailY: Math.round(start.tailY * (h / start.height)),
-    })
-  }
-  if (start.type === "text" && keepRatio) {
-    const s = w / start.width
-    Object.assign(patch, {
-      fontSize: Math.max(8, Math.round(start.fontSize * s)),
-      strokeWidth: Math.round(start.strokeWidth * s * 10) / 10,
-    })
-  }
-  return patch
 }
 
 export function Stage({
@@ -190,8 +93,12 @@ export function Stage({
   const [redraw, setRedraw] = React.useState(0)
   const bump = React.useCallback(() => setRedraw((n) => n + 1), [])
 
+  const lettering = docText(doc)
   React.useEffect(() => {
-    fontsReady().then(bump)
+    fontsReady(lettering).then(bump)
+  }, [lettering, bump])
+
+  React.useEffect(() => {
     document.fonts.addEventListener("loadingdone", bump)
     return () => document.fonts.removeEventListener("loadingdone", bump)
   }, [bump])
@@ -359,12 +266,22 @@ export function Stage({
     }
   }
 
-  const startDrag = (drag: Drag) => {
+  const startDrag = (drag: Drag, press: React.PointerEvent) => {
     dragRef.current = drag
-    setDragging(true)
+    const before = editor.projectRef.current
+    const { clientX, clientY, pointerType } = press
+    // Nothing moves until the pointer leaves the dead zone, so a click on a
+    // layer can't nudge it.
+    let live = false
     const onMove = (e: PointerEvent) => {
       const d = dragRef.current
       if (!d) return
+      if (!live) {
+        const moved = Math.hypot(e.clientX - clientX, e.clientY - clientY)
+        if (moved < dragSlop(pointerType)) return
+        live = true
+        setDragging(true)
+      }
       const p = toPagePoint(e)
       const s = d.start
       if (d.kind === "move") {
@@ -380,11 +297,17 @@ export function Stage({
           d.key
         )
       } else if (d.kind === "resize") {
-        editor.update(
-          s.id,
+        const snapped = snapResize(
+          editor.docRef.current,
+          s,
           resize(s, d.hx, d.hy, p.x - d.px, p.y - d.py, e),
-          d.key
+          d.hx,
+          d.hy,
+          e,
+          6 / zoomRef.current
         )
+        setGuides(snapped.guides)
+        editor.update(s.id, snapped.patch, d.key)
       } else if (d.kind === "rotate") {
         const cx = s.x + s.width / 2
         const cy = s.y + s.height / 2
@@ -410,10 +333,23 @@ export function Stage({
       window.removeEventListener("pointermove", onMove)
       window.removeEventListener("pointerup", onUp)
       window.removeEventListener("pointercancel", onUp)
+      window.removeEventListener("keydown", onKey, true)
+    }
+    // Capture, so the same Escape doesn't also clear the selection.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || dragRef.current !== drag) return
+      e.preventDefault()
+      e.stopPropagation()
+      if (live) {
+        editor.update(drag.start.id, gesturePatch(drag.start), drag.key)
+        editor.rollback(drag.key, before)
+      }
+      onUp()
     }
     window.addEventListener("pointermove", onMove)
     window.addEventListener("pointerup", onUp)
     window.addEventListener("pointercancel", onUp)
+    window.addEventListener("keydown", onKey, true)
   }
 
   // Clicking inside the current selection keeps it, even under other layers.
@@ -439,13 +375,16 @@ export function Stage({
     const target = pickTarget(p)
     editor.select(target?.id ?? null)
     if (target && !target.locked) {
-      startDrag({
-        kind: "move",
-        start: target,
-        px: p.x,
-        py: p.y,
-        key: `move-${Date.now()}`,
-      })
+      startDrag(
+        {
+          kind: "move",
+          start: target,
+          px: p.x,
+          py: p.y,
+          key: `move-${Date.now()}`,
+        },
+        e
+      )
     }
   }
 
@@ -600,17 +539,20 @@ export function Stage({
                 const p = toPagePoint(e)
                 const key = `${drag.kind}-${Date.now()}`
                 if (drag.kind === "resize") {
-                  startDrag({
-                    kind: "resize",
-                    start: selected,
-                    hx: drag.hx,
-                    hy: drag.hy,
-                    px: p.x,
-                    py: p.y,
-                    key,
-                  })
+                  startDrag(
+                    {
+                      kind: "resize",
+                      start: selected,
+                      hx: drag.hx,
+                      hy: drag.hy,
+                      px: p.x,
+                      py: p.y,
+                      key,
+                    },
+                    e
+                  )
                 } else {
-                  startDrag({ kind: drag.kind, start: selected, key })
+                  startDrag({ kind: drag.kind, start: selected, key }, e)
                 }
               }}
             />
