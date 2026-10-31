@@ -14,6 +14,9 @@ function TooltipTrigger({
 }: React.ComponentProps<typeof TooltipTriggerPrimitive>) {
   const [trigger, tooltip] = React.Children.toArray(children)
 
+  // Disabled buttons can't take focus, which Focusable requires of its child.
+  if (props.isDisabled) return trigger
+
   return (
     <TooltipTriggerPrimitive
       data-slot="tooltip-trigger"

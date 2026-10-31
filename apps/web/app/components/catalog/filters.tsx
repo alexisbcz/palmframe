@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Tick02Icon } from "@hugeicons/core-free-icons"
 
 import { Switch } from "@workspace/ui/components/switch"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { useViewer } from "@/components/account/account-menu"
 import { useT } from "@/i18n/core"
@@ -175,24 +176,25 @@ export function FilterRail({ result }: { result: CatalogResult }) {
           {COLORS.map((c) => {
             const on = f.color === c.id
             return (
-              <button
-                key={c.id}
-                type="button"
-                aria-pressed={on}
-                aria-label={t(`colors.${c.id}`)}
-                title={t(`colors.${c.id}`)}
-                className="relative flex size-6 cursor-pointer items-center justify-center rounded-full ring-1 ring-foreground/15 transition-transform outline-none after:absolute after:-inset-1 hover:scale-110 focus-visible:ring-3 focus-visible:ring-ring/60 motion-reduce:hover:scale-100 pointer-fine:after:hidden"
-                style={{ backgroundColor: c.swatch }}
-                onClick={() => set({ color: on ? null : c.id })}
-              >
-                {on && (
-                  <HugeiconsIcon
-                    icon={Tick02Icon}
-                    strokeWidth={3}
-                    className="size-3.5 text-white drop-shadow-sm"
-                  />
-                )}
-              </button>
+              <TooltipTrigger key={c.id}>
+                <button
+                  type="button"
+                  aria-pressed={on}
+                  aria-label={t(`colors.${c.id}`)}
+                  className="relative flex size-6 cursor-pointer items-center justify-center rounded-full ring-1 ring-foreground/15 transition-transform outline-none after:absolute after:-inset-1 hover:scale-110 focus-visible:ring-3 focus-visible:ring-ring/60 motion-reduce:hover:scale-100 pointer-fine:after:hidden"
+                  style={{ backgroundColor: c.swatch }}
+                  onClick={() => set({ color: on ? null : c.id })}
+                >
+                  {on && (
+                    <HugeiconsIcon
+                      icon={Tick02Icon}
+                      strokeWidth={3}
+                      className="size-3.5 text-white drop-shadow-sm"
+                    />
+                  )}
+                </button>
+                <Tooltip>{t(`colors.${c.id}`)}</Tooltip>
+              </TooltipTrigger>
             )
           })}
         </div>

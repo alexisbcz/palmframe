@@ -1,4 +1,5 @@
 import { LinkButton } from "@workspace/ui/components/button"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { useT } from "@/i18n/core"
 import { messages } from "./toggles.messages"
@@ -17,15 +18,18 @@ export function GitHubIcon(props: React.ComponentProps<"svg">) {
 export function GitHubButton() {
   const t = useT(messages)
   return (
-    <LinkButton
-      variant="outline"
-      size="icon"
-      href={REPO}
-      target="_blank"
-      rel="noreferrer"
-      aria-label={t("github")}
-    >
-      <GitHubIcon />
-    </LinkButton>
+    <TooltipTrigger>
+      <LinkButton
+        variant="outline"
+        size="icon"
+        href={REPO}
+        target="_blank"
+        rel="noreferrer"
+        aria-label={t("github")}
+      >
+        <GitHubIcon />
+      </LinkButton>
+      <Tooltip>{t("github")}</Tooltip>
+    </TooltipTrigger>
   )
 }

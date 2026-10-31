@@ -8,6 +8,7 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { useT } from "@/i18n/core"
@@ -248,15 +249,18 @@ export function SetupPanel({
             )}
           </button>
         ))}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="ms-auto"
-          aria-label={t("close")}
-          onPress={onClose}
-        >
-          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-        </Button>
+        <TooltipTrigger>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="ms-auto"
+            aria-label={t("close")}
+            onPress={onClose}
+          >
+            <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+          </Button>
+          <Tooltip>{t("close")}</Tooltip>
+        </TooltipTrigger>
       </div>
 
       {tab === "custom" && (
@@ -399,18 +403,21 @@ function SetupCard({
         </span>
       </button>
       {onDelete && (
-        <button
-          type="button"
-          aria-label={deleteLabel}
-          onClick={onDelete}
-          className="absolute end-1.5 top-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background/80 text-muted-foreground opacity-0 backdrop-blur transition group-hover/setup:opacity-100 after:absolute after:-inset-2 hover:text-destructive focus-visible:opacity-100 pointer-coarse:opacity-100 pointer-fine:after:hidden"
-        >
-          <HugeiconsIcon
-            icon={Delete02Icon}
-            strokeWidth={2}
-            className="size-3.5"
-          />
-        </button>
+        <TooltipTrigger>
+          <button
+            type="button"
+            aria-label={deleteLabel}
+            onClick={onDelete}
+            className="absolute end-1.5 top-1.5 flex size-6 cursor-pointer items-center justify-center rounded-full bg-background/80 text-muted-foreground opacity-0 backdrop-blur transition group-hover/setup:opacity-100 after:absolute after:-inset-2 hover:text-destructive focus-visible:opacity-100 pointer-coarse:opacity-100 pointer-fine:after:hidden"
+          >
+            <HugeiconsIcon
+              icon={Delete02Icon}
+              strokeWidth={2}
+              className="size-3.5"
+            />
+          </button>
+          <Tooltip>{deleteLabel}</Tooltip>
+        </TooltipTrigger>
       )}
     </div>
   )

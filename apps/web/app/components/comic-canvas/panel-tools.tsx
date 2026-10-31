@@ -21,6 +21,7 @@ import {
   NativeSelectOption,
 } from "@workspace/ui/components/native-select"
 import { Toggle } from "@workspace/ui/components/toggle"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { ModelLabel } from "@/components/model-label"
@@ -275,29 +276,37 @@ export function AdvancedFields({
               )
             }
           />
-          <Toggle
-            variant="outline"
-            aria-label={panel.lockSeed ? t("seedLocked") : t("seedPerTake")}
-            isSelected={!!panel.lockSeed}
-            onChange={(v) => set("lockSeed", v)}
-          >
-            <HugeiconsIcon
-              icon={panel.lockSeed ? LockIcon : SquareUnlock02Icon}
-              strokeWidth={2}
-            />
-          </Toggle>
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={t("randomSeed")}
-            onPress={() =>
-              editor.update(panel.id, {
-                seed: Math.floor(Math.random() * 2 ** 32),
-              })
-            }
-          >
-            <HugeiconsIcon icon={DiceIcon} strokeWidth={2} />
-          </Button>
+          <TooltipTrigger>
+            <Toggle
+              variant="outline"
+              aria-label={panel.lockSeed ? t("seedLocked") : t("seedPerTake")}
+              isSelected={!!panel.lockSeed}
+              onChange={(v) => set("lockSeed", v)}
+            >
+              <HugeiconsIcon
+                icon={panel.lockSeed ? LockIcon : SquareUnlock02Icon}
+                strokeWidth={2}
+              />
+            </Toggle>
+            <Tooltip>
+              {panel.lockSeed ? t("seedLocked") : t("seedPerTake")}
+            </Tooltip>
+          </TooltipTrigger>
+          <TooltipTrigger>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={t("randomSeed")}
+              onPress={() =>
+                editor.update(panel.id, {
+                  seed: Math.floor(Math.random() * 2 ** 32),
+                })
+              }
+            >
+              <HugeiconsIcon icon={DiceIcon} strokeWidth={2} />
+            </Button>
+            <Tooltip>{t("randomSeed")}</Tooltip>
+          </TooltipTrigger>
         </Row>
         <Row label={t("avoid")}>
           <Input

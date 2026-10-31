@@ -34,6 +34,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { useLocale, useT, type Translate } from "@/i18n/core"
@@ -877,22 +878,25 @@ function AccountPicker({
                   </span>
                 </span>
               </button>
-              <Button
-                size={confirming === a.id ? "xs" : "icon-xs"}
-                variant={confirming === a.id ? "destructive" : "ghost"}
-                aria-label={t("disconnect", { name: `@${a.username}` })}
-                isDisabled={isDisabled || removing === a.id}
-                onPress={() => remove(a.id)}
-                onBlur={() => setConfirming((c) => (c === a.id ? null : c))}
-              >
-                {removing === a.id ? (
-                  <Spinner />
-                ) : confirming === a.id ? (
-                  t("confirmDisconnect")
-                ) : (
-                  <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
-                )}
-              </Button>
+              <TooltipTrigger isDisabled={isDisabled || removing === a.id}>
+                <Button
+                  size={confirming === a.id ? "xs" : "icon-xs"}
+                  variant={confirming === a.id ? "destructive" : "ghost"}
+                  aria-label={t("disconnect", { name: `@${a.username}` })}
+                  isDisabled={isDisabled || removing === a.id}
+                  onPress={() => remove(a.id)}
+                  onBlur={() => setConfirming((c) => (c === a.id ? null : c))}
+                >
+                  {removing === a.id ? (
+                    <Spinner />
+                  ) : confirming === a.id ? (
+                    t("confirmDisconnect")
+                  ) : (
+                    <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+                  )}
+                </Button>
+                <Tooltip>{t("disconnect", { name: `@${a.username}` })}</Tooltip>
+              </TooltipTrigger>
             </div>
           )
         })}

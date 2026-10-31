@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { SlideCheckBadge } from "./check-tools"
@@ -119,24 +120,30 @@ export function PageStrip({
           {pageIndex + 1} / {count}
         </span>
         <div className="flex">
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t("previous")}
-            isDisabled={pageIndex === 0}
-            onPress={() => editor.goToPage(pageIndex - 1)}
-          >
-            <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t("next")}
-            isDisabled={pageIndex === count - 1}
-            onPress={() => editor.goToPage(pageIndex + 1)}
-          >
-            <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
-          </Button>
+          <TooltipTrigger isDisabled={pageIndex === 0}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("previous")}
+              isDisabled={pageIndex === 0}
+              onPress={() => editor.goToPage(pageIndex - 1)}
+            >
+              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+            </Button>
+            <Tooltip>{t("previous")}</Tooltip>
+          </TooltipTrigger>
+          <TooltipTrigger isDisabled={pageIndex === count - 1}>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("next")}
+              isDisabled={pageIndex === count - 1}
+              onPress={() => editor.goToPage(pageIndex + 1)}
+            >
+              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+            </Button>
+            <Tooltip>{t("next")}</Tooltip>
+          </TooltipTrigger>
         </div>
       </div>
 
@@ -231,14 +238,20 @@ export function PageStrip({
               </span>
               <div className="absolute end-1 top-1 opacity-0 transition-opacity group-focus-within/slide:opacity-100 group-hover/slide:opacity-100 pointer-coarse:opacity-100">
                 <DropdownMenuTrigger>
-                  <Button
-                    variant="secondary"
-                    size="icon-xs"
-                    aria-label={t("actions", { n: i + 1 })}
-                    className="shadow-sm"
-                  >
-                    <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
-                  </Button>
+                  <TooltipTrigger>
+                    <Button
+                      variant="secondary"
+                      size="icon-xs"
+                      aria-label={t("actions", { n: i + 1 })}
+                      className="shadow-sm"
+                    >
+                      <HugeiconsIcon
+                        icon={MoreHorizontalIcon}
+                        strokeWidth={2}
+                      />
+                    </Button>
+                    <Tooltip>{t("actions", { n: i + 1 })}</Tooltip>
+                  </TooltipTrigger>
                   <DropdownMenu
                     placement="bottom start"
                     className="w-max max-w-[calc(100vw-2rem)] min-w-44"

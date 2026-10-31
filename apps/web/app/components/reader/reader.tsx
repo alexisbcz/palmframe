@@ -5,6 +5,7 @@ import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { pageDoc, type ComicProject } from "@/components/comic-canvas/model"
 import { renderToBlob, type ImageCache } from "@/components/comic-canvas/render"
@@ -150,26 +151,32 @@ export function Reader({
         </div>
         {count > 1 && (
           <>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label={t("previous")}
-              isDisabled={index === 0}
-              onPress={() => goTo(index - 1)}
-              className="absolute start-3 top-1/2 -translate-y-1/2 max-sm:hidden"
-            >
-              <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label={t("next")}
-              isDisabled={index === count - 1}
-              onPress={() => goTo(index + 1)}
-              className="absolute end-3 top-1/2 -translate-y-1/2 max-sm:hidden"
-            >
-              <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
-            </Button>
+            <TooltipTrigger isDisabled={index === 0}>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={t("previous")}
+                isDisabled={index === 0}
+                onPress={() => goTo(index - 1)}
+                className="absolute start-3 top-1/2 -translate-y-1/2 max-sm:hidden"
+              >
+                <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
+              </Button>
+              <Tooltip>{t("previous")}</Tooltip>
+            </TooltipTrigger>
+            <TooltipTrigger isDisabled={index === count - 1}>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={t("next")}
+                isDisabled={index === count - 1}
+                onPress={() => goTo(index + 1)}
+                className="absolute end-3 top-1/2 -translate-y-1/2 max-sm:hidden"
+              >
+                <HugeiconsIcon icon={ArrowRight01Icon} strokeWidth={2} />
+              </Button>
+              <Tooltip>{t("next")}</Tooltip>
+            </TooltipTrigger>
           </>
         )}
       </div>

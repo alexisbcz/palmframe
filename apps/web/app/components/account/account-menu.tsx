@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { useTheme } from "@workspace/ui/components/theme-provider"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { Flag } from "@/components/flag"
 import { GitHubIcon, REPO } from "@/components/github-button"
@@ -174,14 +175,17 @@ export function AccountMenu() {
 
   return (
     <DropdownMenuTrigger>
-      <Button
-        variant="ghost"
-        size="icon"
-        aria-label={`${t("account.label")}: ${viewer.name}`}
-        className="rounded-full p-0"
-      >
-        <Avatar viewer={viewer} className="size-8 text-xs" />
-      </Button>
+      <TooltipTrigger>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`${t("account.label")}: ${viewer.name}`}
+          className="rounded-full p-0"
+        >
+          <Avatar viewer={viewer} className="size-8 text-xs" />
+        </Button>
+        <Tooltip>{t("account.label")}</Tooltip>
+      </TooltipTrigger>
       <DropdownMenu
         placement="bottom end"
         // Roomier rows than the default menu: this one is read, not scanned.

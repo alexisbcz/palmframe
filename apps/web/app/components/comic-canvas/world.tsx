@@ -19,6 +19,7 @@ import {
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { COSTS } from "@/lib/credits"
@@ -191,18 +192,21 @@ export function WorldRow({
                     {t("effect", { credits })}
                   </span>
                 </button>
-                <button
-                  type="button"
-                  aria-label={t("edit", { name: item.name })}
-                  className="absolute -end-1 -top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition group-focus-within/item:opacity-100 group-hover/item:opacity-100 after:absolute after:-inset-2 hover:text-foreground pointer-coarse:opacity-100 pointer-fine:after:hidden"
-                  onClick={() => setEditing(item)}
-                >
-                  <HugeiconsIcon
-                    icon={PencilEdit02Icon}
-                    strokeWidth={2}
-                    className="size-3"
-                  />
-                </button>
+                <TooltipTrigger>
+                  <button
+                    type="button"
+                    aria-label={t("edit", { name: item.name })}
+                    className="absolute -end-1 -top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition group-focus-within/item:opacity-100 group-hover/item:opacity-100 after:absolute after:-inset-2 hover:text-foreground pointer-coarse:opacity-100 pointer-fine:after:hidden"
+                    onClick={() => setEditing(item)}
+                  >
+                    <HugeiconsIcon
+                      icon={PencilEdit02Icon}
+                      strokeWidth={2}
+                      className="size-3"
+                    />
+                  </button>
+                  <Tooltip>{t("edit", { name: item.name })}</Tooltip>
+                </TooltipTrigger>
               </div>
             )
           })}

@@ -20,6 +20,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "cn"
 
 import { useViewer } from "@/components/account/account-menu"
@@ -171,15 +172,18 @@ function Owner({ asset, onGone }: { asset: Asset; onGone: () => void }) {
         >
           {t(isPublic ? "detail.unpublish" : "detail.publish")}
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t("detail.delete")}
-          isDisabled={busy}
-          onPress={() => void run({ intent: "delete" }, onGone)}
-        >
-          <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-        </Button>
+        <TooltipTrigger isDisabled={busy}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t("detail.delete")}
+            isDisabled={busy}
+            onPress={() => void run({ intent: "delete" }, onGone)}
+          >
+            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+          </Button>
+          <Tooltip>{t("detail.delete")}</Tooltip>
+        </TooltipTrigger>
       </div>
       {error && (
         <p role="alert" className="text-xs text-destructive">

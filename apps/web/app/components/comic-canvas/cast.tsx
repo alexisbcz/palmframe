@@ -25,6 +25,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { COSTS } from "@/lib/credits"
@@ -158,18 +159,21 @@ export function CastRow({
                   {c.name}
                 </span>
               </button>
-              <button
-                type="button"
-                aria-label={t("edit", { name: c.name })}
-                className="absolute -end-1 -top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition group-focus-within/cast:opacity-100 group-hover/cast:opacity-100 after:absolute after:-inset-2 hover:text-foreground pointer-coarse:opacity-100 pointer-fine:after:hidden"
-                onClick={() => setEditing(c)}
-              >
-                <HugeiconsIcon
-                  icon={PencilEdit02Icon}
-                  strokeWidth={2}
-                  className="size-3"
-                />
-              </button>
+              <TooltipTrigger>
+                <button
+                  type="button"
+                  aria-label={t("edit", { name: c.name })}
+                  className="absolute -end-1 -top-1 flex size-5 cursor-pointer items-center justify-center rounded-full bg-background text-muted-foreground opacity-0 shadow-sm ring-1 ring-foreground/10 transition group-focus-within/cast:opacity-100 group-hover/cast:opacity-100 after:absolute after:-inset-2 hover:text-foreground pointer-coarse:opacity-100 pointer-fine:after:hidden"
+                  onClick={() => setEditing(c)}
+                >
+                  <HugeiconsIcon
+                    icon={PencilEdit02Icon}
+                    strokeWidth={2}
+                    className="size-3"
+                  />
+                </button>
+                <Tooltip>{t("edit", { name: c.name })}</Tooltip>
+              </TooltipTrigger>
             </div>
           )
         })}
@@ -406,15 +410,18 @@ function CharacterDialog({
               {draft.portrait ? t("dialog.redraw") : t("dialog.portrait")}
             </Button>
             {draft.portrait && (
-              <Button
-                size="icon-sm"
-                variant="outline"
-                aria-label={t("dialog.newSeed")}
-                isDisabled={rendering}
-                onPress={() => portrait(true)}
-              >
-                <HugeiconsIcon icon={DiceIcon} strokeWidth={2} />
-              </Button>
+              <TooltipTrigger isDisabled={rendering}>
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  aria-label={t("dialog.newSeed")}
+                  isDisabled={rendering}
+                  onPress={() => portrait(true)}
+                >
+                  <HugeiconsIcon icon={DiceIcon} strokeWidth={2} />
+                </Button>
+                <Tooltip>{t("dialog.newSeed")}</Tooltip>
+              </TooltipTrigger>
             )}
           </div>
           {error && (
@@ -497,15 +504,18 @@ function CharacterDialog({
               {draft.sheet ? t("dialog.redrawSheet") : t("dialog.drawSheet")}
             </Button>
             {draft.sheet && (
-              <Button
-                size="icon-sm"
-                variant="outline"
-                aria-label={t("dialog.sheetNewSeed")}
-                isDisabled={sheeting || locked}
-                onPress={() => sheet(true)}
-              >
-                <HugeiconsIcon icon={DiceIcon} strokeWidth={2} />
-              </Button>
+              <TooltipTrigger isDisabled={sheeting || locked}>
+                <Button
+                  size="icon-sm"
+                  variant="outline"
+                  aria-label={t("dialog.sheetNewSeed")}
+                  isDisabled={sheeting || locked}
+                  onPress={() => sheet(true)}
+                >
+                  <HugeiconsIcon icon={DiceIcon} strokeWidth={2} />
+                </Button>
+                <Tooltip>{t("dialog.sheetNewSeed")}</Tooltip>
+              </TooltipTrigger>
             )}
           </div>
         </div>
@@ -717,14 +727,19 @@ function OutfitEditor({
             value={outfit.name}
             onChange={(e) => onChange({ name: e.target.value })}
           />
-          <Button
-            size="icon-sm"
-            variant="ghost"
-            aria-label={t("dialog.deleteOutfit", { outfit: outfit.name })}
-            onPress={onDelete}
-          >
-            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-          </Button>
+          <TooltipTrigger>
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label={t("dialog.deleteOutfit", { outfit: outfit.name })}
+              onPress={onDelete}
+            >
+              <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+            </Button>
+            <Tooltip>
+              {t("dialog.deleteOutfit", { outfit: outfit.name })}
+            </Tooltip>
+          </TooltipTrigger>
         </div>
         <TagField
           tags={outfit.tags}

@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { Spinner } from "@workspace/ui/components/spinner"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { AccountMenu } from "@/components/account/account-menu"
 import { messages } from "@/components/account/account.messages"
@@ -400,13 +401,16 @@ function ProjectCard({
       </Link>
       <div className="absolute end-1.5 top-1.5 rounded-md bg-background/90 opacity-0 shadow-sm ring-1 ring-foreground/10 transition-opacity group-hover:opacity-100 focus-within:opacity-100 has-[[aria-expanded=true]]:opacity-100 pointer-coarse:opacity-100">
         <DropdownMenuTrigger>
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            aria-label={t("projects.actions", { title })}
-          >
-            <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
-          </Button>
+          <TooltipTrigger>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              aria-label={t("projects.actions", { title })}
+            >
+              <HugeiconsIcon icon={MoreHorizontalIcon} strokeWidth={2} />
+            </Button>
+            <Tooltip>{t("projects.actions", { title })}</Tooltip>
+          </TooltipTrigger>
           <DropdownMenu
             placement="bottom end"
             className="w-max min-w-40"

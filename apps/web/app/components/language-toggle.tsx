@@ -4,6 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { LOCALES, LOCALE_NAMES, isLocale, useLocale, useT } from "@/i18n/core"
 import { FLAG_CLASS, Flag } from "./flag"
@@ -15,13 +16,16 @@ export function LanguageToggle() {
 
   return (
     <DropdownMenuTrigger>
-      <Button
-        variant="outline"
-        size="icon"
-        aria-label={`${t("language")}: ${LOCALE_NAMES[locale]}`}
-      >
-        <Flag locale={locale} className={FLAG_CLASS} />
-      </Button>
+      <TooltipTrigger>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label={`${t("language")}: ${LOCALE_NAMES[locale]}`}
+        >
+          <Flag locale={locale} className={FLAG_CLASS} />
+        </Button>
+        <Tooltip>{t("language")}</Tooltip>
+      </TooltipTrigger>
       <DropdownMenu
         placement="bottom end"
         className="w-40"

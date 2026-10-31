@@ -29,6 +29,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@workspace/ui/components/tabs"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { CatalogTab } from "@/components/catalog/editor-tab"
 import { useT } from "@/i18n/core"
@@ -281,21 +282,23 @@ function RowToggle({
   onToggle: () => void
 }) {
   return (
-    <button
-      type="button"
-      aria-label={label}
-      title={label}
-      className={cn(
-        "flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover/layer:opacity-100 hover:bg-background hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-input/50 pointer-coarse:opacity-100",
-        active && "opacity-100"
-      )}
-      onClick={(e) => {
-        e.stopPropagation()
-        onToggle()
-      }}
-    >
-      <HugeiconsIcon icon={icon} strokeWidth={2} className="size-3.5" />
-    </button>
+    <TooltipTrigger>
+      <button
+        type="button"
+        aria-label={label}
+        className={cn(
+          "flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity group-hover/layer:opacity-100 hover:bg-background hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none dark:hover:bg-input/50 pointer-coarse:opacity-100",
+          active && "opacity-100"
+        )}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggle()
+        }}
+      >
+        <HugeiconsIcon icon={icon} strokeWidth={2} className="size-3.5" />
+      </button>
+      <Tooltip>{label}</Tooltip>
+    </TooltipTrigger>
   )
 }
 

@@ -190,12 +190,18 @@ export function EditSection({
                 if (next) updateMask({ tool: next, active: true })
               }}
             >
-              <ToggleGroupItem id="brush" aria-label={t("brush")}>
-                <HugeiconsIcon icon={PaintBrush01Icon} strokeWidth={2} />
-              </ToggleGroupItem>
-              <ToggleGroupItem id="rect" aria-label={t("rect")}>
-                <HugeiconsIcon icon={SquareIcon} strokeWidth={2} />
-              </ToggleGroupItem>
+              <TooltipTrigger>
+                <ToggleGroupItem id="brush" aria-label={t("brush")}>
+                  <HugeiconsIcon icon={PaintBrush01Icon} strokeWidth={2} />
+                </ToggleGroupItem>
+                <Tooltip>{t("brush")}</Tooltip>
+              </TooltipTrigger>
+              <TooltipTrigger>
+                <ToggleGroupItem id="rect" aria-label={t("rect")}>
+                  <HugeiconsIcon icon={SquareIcon} strokeWidth={2} />
+                </ToggleGroupItem>
+                <Tooltip>{t("rect")}</Tooltip>
+              </TooltipTrigger>
             </ToggleGroup>
             <div className="flex-1" />
             <TooltipTrigger>

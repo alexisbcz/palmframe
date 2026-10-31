@@ -3,6 +3,7 @@ import { useNavigate } from "react-router"
 import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { FavouriteIcon } from "@hugeicons/core-free-icons"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { useViewer } from "@/components/account/account-menu"
 import { useT } from "@/i18n/core"
@@ -35,22 +36,29 @@ export function SaveButton({
   }
 
   return (
-    <button
-      type="button"
-      data-saved={saved}
-      aria-pressed={saved}
-      aria-label={t(saved ? "card.unsave" : "card.save", { name: asset.name })}
-      className={cn(
-        "flex size-8 cursor-pointer items-center justify-center rounded-lg bg-black/55 text-white backdrop-blur-sm transition-[color,opacity,scale] outline-none hover:bg-black/75 focus-visible:ring-3 focus-visible:ring-ring/60 active:scale-90 motion-reduce:active:scale-100",
-        className
-      )}
-      onClick={toggle}
-    >
-      <HugeiconsIcon
-        icon={FavouriteIcon}
-        strokeWidth={2}
-        className={cn("size-4", saved && "fill-rose-500 text-rose-500")}
-      />
-    </button>
+    <TooltipTrigger>
+      <button
+        type="button"
+        data-saved={saved}
+        aria-pressed={saved}
+        aria-label={t(saved ? "card.unsave" : "card.save", {
+          name: asset.name,
+        })}
+        className={cn(
+          "flex size-8 cursor-pointer items-center justify-center rounded-lg bg-black/55 text-white backdrop-blur-sm transition-[color,opacity,scale] outline-none hover:bg-black/75 focus-visible:ring-3 focus-visible:ring-ring/60 active:scale-90 motion-reduce:active:scale-100",
+          className
+        )}
+        onClick={toggle}
+      >
+        <HugeiconsIcon
+          icon={FavouriteIcon}
+          strokeWidth={2}
+          className={cn("size-4", saved && "fill-rose-500 text-rose-500")}
+        />
+      </button>
+      <Tooltip>
+        {t(saved ? "card.unsave" : "card.save", { name: asset.name })}
+      </Tooltip>
+    </TooltipTrigger>
   )
 }

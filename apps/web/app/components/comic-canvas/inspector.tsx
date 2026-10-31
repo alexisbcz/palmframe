@@ -468,22 +468,28 @@ function PanelSections({
             />
             <Row label={t("rows.flip")}>
               <div className="flex-1" />
-              <Toggle
-                variant="outline"
-                aria-label={t("aria.flipH")}
-                isSelected={layer.flipX}
-                onChange={(v) => set("flipX", v)}
-              >
-                <HugeiconsIcon icon={FlipHorizontalIcon} strokeWidth={2} />
-              </Toggle>
-              <Toggle
-                variant="outline"
-                aria-label={t("aria.flipV")}
-                isSelected={layer.flipY}
-                onChange={(v) => set("flipY", v)}
-              >
-                <HugeiconsIcon icon={FlipVerticalIcon} strokeWidth={2} />
-              </Toggle>
+              <TooltipTrigger>
+                <Toggle
+                  variant="outline"
+                  aria-label={t("aria.flipH")}
+                  isSelected={layer.flipX}
+                  onChange={(v) => set("flipX", v)}
+                >
+                  <HugeiconsIcon icon={FlipHorizontalIcon} strokeWidth={2} />
+                </Toggle>
+                <Tooltip>{t("aria.flipH")}</Tooltip>
+              </TooltipTrigger>
+              <TooltipTrigger>
+                <Toggle
+                  variant="outline"
+                  aria-label={t("aria.flipV")}
+                  isSelected={layer.flipY}
+                  onChange={(v) => set("flipY", v)}
+                >
+                  <HugeiconsIcon icon={FlipVerticalIcon} strokeWidth={2} />
+                </Toggle>
+                <Tooltip>{t("aria.flipV")}</Tooltip>
+              </TooltipTrigger>
             </Row>
           </>
         )}
@@ -648,14 +654,16 @@ function BubbleSections({
           }}
         >
           {SHAPES.map((s) => (
-            <ToggleGroupItem
-              key={s.id}
-              id={s.id}
-              aria-label={t(`shapes.${s.id}`)}
-              className="flex-1"
-            >
-              <HugeiconsIcon icon={s.icon} strokeWidth={2} />
-            </ToggleGroupItem>
+            <TooltipTrigger key={s.id}>
+              <ToggleGroupItem
+                id={s.id}
+                aria-label={t(`shapes.${s.id}`)}
+                className="flex-1"
+              >
+                <HugeiconsIcon icon={s.icon} strokeWidth={2} />
+              </ToggleGroupItem>
+              <Tooltip>{t(`shapes.${s.id}`)}</Tooltip>
+            </TooltipTrigger>
           ))}
         </ToggleGroup>
         {layer.shape !== "caption" && (
@@ -731,15 +739,24 @@ function TextSections({
             if (align) set("align", align)
           }}
         >
-          <ToggleGroupItem id="left" aria-label={t("aria.alignLeft")}>
-            <HugeiconsIcon icon={TextAlignLeftIcon} strokeWidth={2} />
-          </ToggleGroupItem>
-          <ToggleGroupItem id="center" aria-label={t("aria.alignCenter")}>
-            <HugeiconsIcon icon={TextAlignCenterIcon} strokeWidth={2} />
-          </ToggleGroupItem>
-          <ToggleGroupItem id="right" aria-label={t("aria.alignRight")}>
-            <HugeiconsIcon icon={TextAlignRightIcon} strokeWidth={2} />
-          </ToggleGroupItem>
+          <TooltipTrigger>
+            <ToggleGroupItem id="left" aria-label={t("aria.alignLeft")}>
+              <HugeiconsIcon icon={TextAlignLeftIcon} strokeWidth={2} />
+            </ToggleGroupItem>
+            <Tooltip>{t("aria.alignLeft")}</Tooltip>
+          </TooltipTrigger>
+          <TooltipTrigger>
+            <ToggleGroupItem id="center" aria-label={t("aria.alignCenter")}>
+              <HugeiconsIcon icon={TextAlignCenterIcon} strokeWidth={2} />
+            </ToggleGroupItem>
+            <Tooltip>{t("aria.alignCenter")}</Tooltip>
+          </TooltipTrigger>
+          <TooltipTrigger>
+            <ToggleGroupItem id="right" aria-label={t("aria.alignRight")}>
+              <HugeiconsIcon icon={TextAlignRightIcon} strokeWidth={2} />
+            </ToggleGroupItem>
+            <Tooltip>{t("aria.alignRight")}</Tooltip>
+          </TooltipTrigger>
         </ToggleGroup>
       </Row>
       <Row label={t("rows.color")}>

@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
+import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { useT } from "@/i18n/core"
 import { messages } from "./toggles.messages"
@@ -17,23 +18,26 @@ export function ModeToggle() {
 
   return (
     <DropdownMenuTrigger>
-      <Button
-        variant="outline"
-        size="icon"
-        aria-label={t("theme.toggle")}
-        className="relative"
-      >
-        <HugeiconsIcon
-          icon={Sun03Icon}
-          strokeWidth={2}
-          className="scale-100 rotate-0 transition-[scale,rotate] duration-150 ease-out dark:scale-0 dark:-rotate-90"
-        />
-        <HugeiconsIcon
-          icon={Moon02Icon}
-          strokeWidth={2}
-          className="absolute scale-0 rotate-90 transition-[scale,rotate] duration-150 ease-out dark:scale-100 dark:rotate-0"
-        />
-      </Button>
+      <TooltipTrigger>
+        <Button
+          variant="outline"
+          size="icon"
+          aria-label={t("theme.toggle")}
+          className="relative"
+        >
+          <HugeiconsIcon
+            icon={Sun03Icon}
+            strokeWidth={2}
+            className="scale-100 rotate-0 transition-[scale,rotate] duration-150 ease-out dark:scale-0 dark:-rotate-90"
+          />
+          <HugeiconsIcon
+            icon={Moon02Icon}
+            strokeWidth={2}
+            className="absolute scale-0 rotate-90 transition-[scale,rotate] duration-150 ease-out dark:scale-100 dark:rotate-0"
+          />
+        </Button>
+        <Tooltip>{t("theme.toggle")}</Tooltip>
+      </TooltipTrigger>
       <DropdownMenu
         placement="bottom end"
         className="w-36"
