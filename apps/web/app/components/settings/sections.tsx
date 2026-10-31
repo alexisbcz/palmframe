@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { ComputerIcon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import {
   NativeSelect,
@@ -226,7 +227,7 @@ export function ProfileSection({ viewer }: { viewer: Viewer }) {
         }}
       >
         <Field label={t("profile.name")} htmlFor="name">
-          <div className="flex gap-2">
+          <ButtonGroup className="w-full">
             <Input
               id="name"
               value={name}
@@ -236,6 +237,7 @@ export function ProfileSection({ viewer }: { viewer: Viewer }) {
             />
             <Button
               type="submit"
+              className="data-pressed:scale-100!"
               variant="outline"
               isDisabled={
                 busy === "name" || !name.trim() || name.trim() === viewer.name
@@ -244,7 +246,7 @@ export function ProfileSection({ viewer }: { viewer: Viewer }) {
               {busy === "name" && <Spinner />}
               {t("profile.save")}
             </Button>
-          </div>
+          </ButtonGroup>
         </Field>
         {noteAt("name")}
       </form>
@@ -290,7 +292,7 @@ export function AccountSection({ viewer }: { viewer: Viewer }) {
           hint={t("account.passwordHint")}
           htmlFor="password"
         >
-          <div className="flex gap-2">
+          <ButtonGroup className="w-full">
             <Input
               id="password"
               type="password"
@@ -301,13 +303,14 @@ export function AccountSection({ viewer }: { viewer: Viewer }) {
             />
             <Button
               type="submit"
+              className="data-pressed:scale-100!"
               variant="outline"
               isDisabled={busy === "password" || !password}
             >
               {busy === "password" && <Spinner />}
               {t("account.updatePassword")}
             </Button>
-          </div>
+          </ButtonGroup>
         </Field>
         {noteAt("password")}
       </form>

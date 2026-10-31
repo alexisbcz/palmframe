@@ -2,6 +2,7 @@ import * as React from "react"
 import { useRevalidator } from "react-router"
 
 import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Switch } from "@workspace/ui/components/switch"
@@ -107,7 +108,7 @@ export function OpenRouter({ result }: { result?: string | null }) {
             >
               {t("pasteKey")}
             </label>
-            <div className="flex gap-2">
+            <ButtonGroup className="w-full">
               <Input
                 id="openrouter-key"
                 type="password"
@@ -118,13 +119,14 @@ export function OpenRouter({ result }: { result?: string | null }) {
               />
               <Button
                 type="submit"
+                className="data-pressed:scale-100!"
                 variant="outline"
                 isDisabled={!key.trim() || busy === "key"}
               >
                 {busy === "key" && <Spinner />}
                 {t("save")}
               </Button>
-            </div>
+            </ButtonGroup>
           </form>
         </>
       ) : (

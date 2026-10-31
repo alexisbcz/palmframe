@@ -2,6 +2,7 @@ import * as React from "react"
 import { Link } from "react-router"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Switch } from "@workspace/ui/components/switch"
@@ -351,7 +352,7 @@ export function ApiKeys() {
           >
             {t("name")}
           </label>
-          <div className="flex gap-2">
+          <ButtonGroup className="w-full">
             <Input
               id="api-key-name"
               value={name}
@@ -361,13 +362,14 @@ export function ApiKeys() {
             />
             <Button
               type="submit"
+              className="data-pressed:scale-100!"
               variant="outline"
               isDisabled={busy === "create" || !isValid(access)}
             >
               {busy === "create" && <Spinner />}
               {t("create")}
             </Button>
-          </div>
+          </ButtonGroup>
         </div>
         <AccessFields
           id="api-key-new"
