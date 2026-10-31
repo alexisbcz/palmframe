@@ -5,6 +5,7 @@ import * as React from "react"
 import {
   ComputerIcon,
   CreditCardIcon,
+  RadioIcon,
   FolderLibraryIcon,
   GridViewIcon,
   LanguageSkillIcon,
@@ -44,6 +45,8 @@ import { setCredits, useCredits } from "@/lib/credits-store"
 import type { PlanId } from "@/lib/credits"
 import type { Viewer } from "@/lib/database"
 import { CreditsPill } from "./credits-pill"
+import { messages as machineMessages } from "@/routes/machines.messages"
+
 import { messages } from "./account.messages"
 
 const MOD =
@@ -140,6 +143,7 @@ function initials(name: string) {
 export function AccountMenu() {
   const t = useT(messages)
   const tt = useT(toggles)
+  const tm = useT(machineMessages)
   const viewer = useViewer()
   const { theme, setTheme } = useTheme()
   const { locale, setLocale } = useLocale()
@@ -185,6 +189,7 @@ export function AccountMenu() {
         onAction={(key) => {
           if (key === "projects") navigate("/projects")
           if (key === "catalog") navigate("/catalog")
+          if (key === "machines") navigate("/machines")
           if (key === "billing") openSettings("billing")
           if (key === "settings") openSettings()
           if (key === "commands")
@@ -232,6 +237,14 @@ export function AccountMenu() {
             </Tile>
             {t("account.catalog")}
           </DropdownMenuItem>
+          {viewer.labs.machines && (
+            <DropdownMenuItem id="machines" textValue={tm("title")}>
+              <Tile>
+                <HugeiconsIcon icon={RadioIcon} strokeWidth={2} />
+              </Tile>
+              {tm("title")}
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem id="settings" textValue={t("account.settings")}>
             <Tile>
               <HugeiconsIcon icon={Settings01Icon} strokeWidth={2} />

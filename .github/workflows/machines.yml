@@ -1,0 +1,28 @@
+name: Run content machines
+
+# Vercel functions can't hold a socket open, so this wakes the machines up:
+# each tick listens for a short window and catches up on what it missed.
+# Does nothing until both secrets are set.
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Tick
+        env:
+          TICK_URL: ${{ secrets.MACHINES_TICK_URL }}
+          CRON_SECRET: ${{ secrets.MACHINES_CRON_SECRET }}
+        run: |
+          if [ -z "$TICK_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Machines are not set up; skipping."
+            exit 0
+          fi
+          curl --fail-with-body --silent --show-error --max-time 150 \
+            --request POST --header "Authorization: Bearer $CRON_SECRET" "$TICK_URL"

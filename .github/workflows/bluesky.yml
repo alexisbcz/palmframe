@@ -1,8 +1,8 @@
 name: Post to Bluesky
 
+# Pushes to main no longer post; run it by hand from the Actions tab.
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read

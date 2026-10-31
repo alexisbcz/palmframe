@@ -53,6 +53,7 @@ export const COSTS = {
   panel_check: 2, // a vision model reading one finished panel
   continuity_check: 2, // an LLM comparing a carousel with its series' facts
   asset_idea: 2, // an LLM turning a rough idea into a catalog asset
+  machine_draft: 2, // an LLM writing one content machine draft
 } as const
 
 export type Operation = keyof typeof COSTS

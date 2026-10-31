@@ -488,6 +488,7 @@ const KINDS = [
   "panel_check",
   "continuity_check",
   "asset_idea",
+  "machine_draft",
   "edit",
   "vary",
   "inpaint",
