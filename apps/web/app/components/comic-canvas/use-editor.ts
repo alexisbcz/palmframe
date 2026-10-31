@@ -11,6 +11,7 @@ import {
   pageDoc,
   toProject,
   uid,
+  withCurrentImage,
   type Character,
   type WorldItem,
   type ComicDoc,
@@ -38,8 +39,10 @@ type Action =
   | { type: "undo" }
   | { type: "redo" }
   | { type: "load"; project: ComicProject }
+  // Drops a cancelled gesture, if nothing else entered the history since.
+  | { type: "rollback"; key: string; before: ComicProject }
 
-function reducer(state: History, action: Action): History {
+export function reducer(state: History, action: Action): History {
   switch (action.type) {
     case "commit": {
       if (action.project === state.project) return state
@@ -75,17 +78,30 @@ function reducer(state: History, action: Action): History {
     }
     case "load":
       return { project: action.project, past: [], future: [], lastKey: null }
+    case "rollback":
+      if (state.lastKey !== action.key || state.past.at(-1) !== action.before)
+        return state
+      return {
+        ...state,
+        project: action.before,
+        past: state.past.slice(0, -1),
+        lastKey: null,
+      }
   }
 }
 
-// A panel check describes one image, so a new image drops it.
-function patched(layer: Layer, patch: Partial<Layer>) {
+// A panel check describes one image, so a new image drops it. The image it
+// replaces stays among the versions, unless the caller already placed it there.
+export function patched(layer: Layer, patch: Partial<Layer>) {
   const next = { ...layer, ...patch } as Layer
-  return next.type === "panel" &&
-    layer.type === "panel" &&
-    next.src !== layer.src
-    ? { ...next, check: undefined }
-    : next
+  if (next.type !== "panel" || layer.type !== "panel" || next.src === layer.src)
+    return next
+  const keep = layer.src && !("versions" in patch)
+  return {
+    ...next,
+    check: undefined,
+    ...(keep && { versions: withCurrentImage(layer) }),
+  }
 }
 
 // With `initial`, the project comes from the database and saves there
@@ -246,15 +262,17 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     [commit]
   )
 
+  // A locked layer stays, however the request got here.
   const remove = React.useCallback(
     (id: string) => {
+      if (findLayer(id)?.layer.locked) return
       commit((doc) => ({
         ...doc,
         layers: doc.layers.filter((l) => l.id !== id),
       }))
       setSelectedId((s) => (s === id ? null : s))
     },
-    [commit]
+    [commit, findLayer]
   )
 
   const duplicate = React.useCallback(
@@ -325,9 +343,15 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
               : { ...panel, name: `Panel ${i + 1}` }
           }
         )
+        // A locked panel the layout has no cell for stays where it is.
+        const kept = old.slice(panels.length).filter((l) => l.locked)
         return {
           ...doc,
-          layers: [...panels, ...doc.layers.filter((l) => l.type !== "panel")],
+          layers: [
+            ...panels,
+            ...kept,
+            ...doc.layers.filter((l) => l.type !== "panel"),
+          ],
         }
       })
       setSelectedId(null)
@@ -501,6 +525,14 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     [commitProject]
   )
 
+  // Takes a cancelled drag back out of the history, so undo doesn't stop on a
+  // step that changed nothing.
+  const rollback = React.useCallback(
+    (key: string, before: ComicProject) =>
+      dispatch({ type: "rollback", key, before }),
+    []
+  )
+
   // Opening or starting a carousel stays undoable.
   const replaceProject = React.useCallback(
     (project: ComicProject) => {
@@ -546,6 +578,7 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
     saveWorldItem,
     removeWorldItem,
     setLook,
+    rollback,
     undo: React.useCallback(() => dispatch({ type: "undo" }), []),
     redo: React.useCallback(() => dispatch({ type: "redo" }), []),
     canUndo: state.past.length > 0,

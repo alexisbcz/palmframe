@@ -521,6 +521,22 @@ export interface ComicProject {
 }
 
 // The single-slide view the renderer and the editor panels work on.
+// Slides in one project. A book-length comic fits; what can be posted is checked
+// where it's posted, as Instagram's limit is much lower.
+export const MAX_SLIDES = 200
+
+// Versions kept on a panel; they ride along in the project.
+export const MAX_VERSIONS = 8
+
+// The panel's versions with its current image among them, before it's replaced.
+export function withCurrentImage(panel: PanelLayer) {
+  const versions = panel.versions ?? []
+  if (!panel.src || versions.some((v) => v.src === panel.src)) return versions
+  const { src, engine, model, seed } = panel
+  const current: PanelVersion = { src, kind: "original", engine, model, seed }
+  return [current, ...versions].slice(0, MAX_VERSIONS)
+}
+
 export function pageDoc(project: ComicProject, index: number): ComicDoc {
   const page = project.pages[Math.min(index, project.pages.length - 1)]
   return {

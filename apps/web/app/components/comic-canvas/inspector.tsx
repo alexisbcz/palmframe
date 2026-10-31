@@ -298,11 +298,12 @@ function LayerInspector({
             icon={Copy01Icon}
             onPress={() => editor.duplicate(layer.id)}
           />
-          <TooltipTrigger>
+          <TooltipTrigger isDisabled={layer.locked}>
             <Button
               variant="destructive"
               size="icon"
               aria-label={t("aria.delete")}
+              isDisabled={layer.locked}
               onPress={() => editor.remove(layer.id)}
             >
               <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />

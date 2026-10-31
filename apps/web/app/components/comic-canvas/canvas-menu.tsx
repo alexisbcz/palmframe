@@ -38,6 +38,7 @@ import {
 import { download, insertImageFile, pickFile } from "./actions"
 import {
   LAYOUTS,
+  MAX_SLIDES,
   createBubble,
   createPanel,
   createText,
@@ -46,7 +47,6 @@ import {
 } from "./model"
 import type { ComicEditor } from "./use-editor"
 import { hasPrompt, type Generator } from "./use-generator"
-import { MAX_SLIDES } from "./page-strip"
 import { useT } from "@/i18n/core"
 import { messages, type LayoutId } from "./canvas-menu.messages"
 
@@ -237,7 +237,10 @@ async function exportImage(layer: Layer) {
   if (layer.type !== "panel" || !layer.src) return
   const blob = await (await fetch(layer.src)).blob()
   const ext = IMAGE_EXT[blob.type] ?? "png"
-  const name = layer.name.trim().replace(/[^\w-]+/g, "-").toLowerCase()
+  const name = layer.name
+    .trim()
+    .replace(/[^\w-]+/g, "-")
+    .toLowerCase()
   download(blob, `${name || "panel"}.${ext}`)
 }
 
@@ -292,7 +295,7 @@ function LayerItems({
             </ContextMenuItem>
           )}
           {layer.src && (
-            <ContextMenuItem id="remove-image">
+            <ContextMenuItem id="remove-image" isDisabled={layer.locked}>
               <Icon icon={Cancel01Icon} />
               {t("removeImage")}
             </ContextMenuItem>
@@ -345,7 +348,7 @@ function LayerItems({
         </>
       )}
 
-      <ContextMenuItem id="cut">
+      <ContextMenuItem id="cut" isDisabled={layer.locked}>
         <Icon icon={ScissorIcon} />
         {t("cut")}
         <ContextMenuShortcut>⌘X</ContextMenuShortcut>
@@ -428,7 +431,11 @@ function LayerItems({
         {t("hide")}
       </ContextMenuItem>
       <ContextMenuSeparator />
-      <ContextMenuItem id="delete" variant="destructive">
+      <ContextMenuItem
+        id="delete"
+        variant="destructive"
+        isDisabled={layer.locked}
+      >
         <Icon icon={Delete02Icon} />
         {t("delete")}
         <ContextMenuShortcut>⌫</ContextMenuShortcut>

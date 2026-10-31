@@ -17,7 +17,7 @@ import { OFFICIAL, PACKS } from "@/components/catalog/seed"
 import { PALETTES, STYLES } from "@/components/comic-canvas/use-generator"
 
 import type { ComicProject, Layer } from "@/components/comic-canvas/model"
-import { toProject } from "@/components/comic-canvas/model"
+import { MAX_SLIDES, toProject } from "@/components/comic-canvas/model"
 import { carouselText } from "@/components/comic-canvas/story"
 
 import type { ComicAssetRow, Viewer } from "./database"
@@ -448,8 +448,6 @@ export async function reportAsset(viewer: Viewer, id: string, reason: string) {
   if (error) throw new CatalogError(error.message, 500)
 }
 
-const MAX_SLIDES = 20
-
 // What goes public: the comic, not how it was made. Old versions, coverage
 // sheets and notes on a panel stay with the author.
 export function snapshot(project: ComicProject): ComicProject {
@@ -511,6 +509,11 @@ export async function publishComic(
   const name = line(body.name, 80)
   if (!name) throw new CatalogError("Give the comic a name.", 400)
   const description = line(body.description, 400)
+  if (project.pages.length > MAX_SLIDES)
+    throw new CatalogError(
+      `A comic can have ${MAX_SLIDES} slides at most.`,
+      400
+    )
   const pages = texts(body.pages, 500, MAX_SLIDES)
   if (
     !pages.length ||

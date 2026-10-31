@@ -22,6 +22,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { Link } from "react-router"
 
+import { useOpenRouter } from "@/components/account/account-menu"
 import { messages as accountMessages } from "@/components/account/account.messages"
 import { openSettings } from "@/components/settings/settings-dialog"
 import { linkClass } from "@/components/auth/auth-ui"
@@ -36,12 +37,20 @@ import { LookControls } from "./look"
 import { messages as lookMessages } from "./look.messages"
 import { AdvancedFields, TagBrowser, TakesGrid } from "./panel-tools"
 import { DEFAULT_LOOK, type PanelLayer } from "./model"
+import { renderCost } from "./story"
 import { roving } from "./roving"
 import { SetupPanel } from "./setup-panel"
 import { applySetup, readSetup, setDimension, useSavedSetups } from "./setups"
 import { TagField } from "./tag-field"
 import type { ComicEditor } from "./use-editor"
-import { hasPrompt, renderSize, type Generator } from "./use-generator"
+import {
+  ALL_PANELS,
+  hasPrompt,
+  panelsToDraw,
+  renderSize,
+  type Generator,
+} from "./use-generator"
+import { SignInNotice, needsSignIn } from "./sign-in-notice"
 
 const QUALITY = [
   { id: "fast", steps: 6 },
@@ -158,9 +167,14 @@ export function Composer({
 
   const job = panel ? generator.jobs[panel.id] : undefined
   const anyBusy = Object.keys(generator.jobs).length > 0
-  const prompted = editor.project.pages
-    .flatMap((p) => p.layers)
-    .filter((l) => l.type === "panel" && hasPrompt(l)).length
+  const queue = generator.queue
+  const openrouter = useOpenRouter()
+  const toDraw = React.useMemo(
+    () => panelsToDraw(editor.project),
+    [editor.project]
+  )
+  const failure =
+    (panel && generator.errors[panel.id]) || generator.errors[ALL_PANELS]
   const allTakes = Object.values(generator.takes).flat()
   const average = allTakes.length
     ? allTakes.reduce((n, x) => n + x.ms, 0) / allTakes.length / 1000
@@ -181,6 +195,7 @@ export function Composer({
     panel && editor.update(panel.id, patch, key)
 
   const run = () => {
+    if (queue) return generator.stopAll()
     if (job && panel) return generator.cancel(panel.id)
     if (panel) return void generator.generate(panel.id, takes)
     generator.generateAll()
@@ -219,12 +234,12 @@ export function Composer({
         </div>
       )}
 
-      {panel && generator.errors[panel.id] && (
+      {failure && (
         <p
           role="alert"
           className="mx-auto mb-2 max-w-5xl rounded-lg bg-destructive/10 px-3 py-2 text-sm break-words text-destructive"
         >
-          {generator.errors[panel.id] === INSUFFICIENT_CREDITS ? (
+          {failure === INSUFFICIENT_CREDITS ? (
             <>
               {ta("credits.insufficient")}{" "}
               <Link
@@ -238,8 +253,10 @@ export function Composer({
                 {ta("credits.getMore")}
               </Link>
             </>
+          ) : needsSignIn(failure) ? (
+            <SignInNotice />
           ) : (
-            generator.errors[panel.id]
+            failure
           )}
         </p>
       )}
@@ -268,7 +285,7 @@ export function Composer({
             }}
             className="min-h-12 w-full flex-1 resize-none bg-transparent px-2 py-1 text-[15px] outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed max-sm:col-start-1 max-sm:row-start-1"
           />
-          <div className="-m-1 flex min-w-0 items-center gap-1.5 p-1 max-sm:col-span-2 max-sm:row-start-2 max-sm:overflow-x-auto max-sm:[scrollbar-width:none] sm:flex-wrap">
+          <div className="-m-1 flex min-w-0 items-center gap-1.5 p-1 max-sm:col-span-2 max-sm:row-start-2 max-sm:[scrollbar-width:none] max-sm:overflow-x-auto sm:flex-wrap">
             <div className="relative">
               <Chip
                 pressed={open === "cast"}
@@ -449,20 +466,25 @@ export function Composer({
           data-roving
           onClick={run}
           disabled={
-            panel
-              ? !job && (!hasPrompt(panel) || panel.locked)
-              : !prompted || anyBusy
+            !queue &&
+            (panel
+              ? !job && (!hasPrompt(panel) || !!panel.locked)
+              : !toDraw.length || anyBusy)
           }
           className={cn(
             "flex w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-amber-400 px-1 text-center text-amber-950 shadow-[inset_0_-3px_0_rgb(0_0_0/0.15)] transition outline-none hover:bg-amber-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-400 max-sm:col-start-2 max-sm:row-start-1 max-sm:w-24 sm:w-36",
-            job && "bg-amber-300"
+            (job || queue) && "bg-amber-300"
           )}
         >
-          {job ? (
+          {job || queue ? (
             <>
               <span className="flex items-center gap-1.5 text-xs font-bold tracking-wide uppercase sm:text-sm">
                 <Spinner className="size-4" />
-                {job.of > 1 ? t("take", { take: job.take, of: job.of }) : ""}
+                {queue
+                  ? t("take", { take: queue.done + 1, of: queue.of })
+                  : job && job.of > 1
+                    ? t("take", { take: job.take, of: job.of })
+                    : ""}
               </span>
               <span className="flex items-center gap-1 text-xs font-semibold">
                 <HugeiconsIcon
@@ -486,7 +508,9 @@ export function Composer({
                 />
                 {panel
                   ? `×${takes} · ${t("estimate", { seconds: Math.round(average * takes) })}`
-                  : `×${prompted}`}
+                  : openrouter || !toDraw.length
+                    ? `×${toDraw.length}`
+                    : `×${toDraw.length} · ${t("cost", { count: renderCost(toDraw, editor.project) })}`}
               </span>
             </>
           )}

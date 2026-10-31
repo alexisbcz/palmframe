@@ -5,8 +5,10 @@ import { COVERAGE_CELLS } from "./coverage"
 import {
   DEFAULT_LOOK,
   MAX_REFS,
+  MAX_VERSIONS,
   createPanel,
   sheetReady,
+  withCurrentImage,
   type Character,
   type ComicProject,
   type Engine,
@@ -14,7 +16,6 @@ import {
   type Outfit,
   type PaletteId,
   type PanelLayer,
-  type PanelVersion,
   type StyleId,
   type WorldItem,
 } from "./model"
@@ -674,36 +675,39 @@ export interface Job {
   of: number
 }
 
-// Versions kept on a panel, as in edit-tools.
-const MAX_VERSIONS = 8
-
 export const randomSeed = () => Math.floor(Math.random() * 2 ** 32)
 
-// The panel's versions with its current image among them, before it's replaced.
-export function withCurrentImage(panel: PanelLayer) {
-  const versions = panel.versions ?? []
-  if (!panel.src || versions.some((v) => v.src === panel.src)) return versions
-  const { src, engine, model, seed } = panel
-  const current: PanelVersion = { src, kind: "original", engine, model, seed }
-  return [current, ...versions].slice(0, MAX_VERSIONS)
-}
+const drawable = (l: PanelLayer) =>
+  hasPrompt(l) && !l.src && !l.locked && !l.hidden
 
-// Every panel with something to draw, slide by slide, in the order they draw.
-export const promptedPanels = (project: ComicProject) =>
+// Every panel waiting for art, slide by slide, in the order they draw. Art
+// already there is never paid for twice, and a lock or a hidden layer means
+// leave it alone.
+export const panelsToDraw = (project: ComicProject) =>
   project.pages.flatMap((page) =>
     page.layers
-      .filter((l): l is PanelLayer => l.type === "panel" && hasPrompt(l))
+      .filter((l): l is PanelLayer => l.type === "panel" && drawable(l))
       .sort((a, b) => a.y - b.y || a.x - b.x)
   )
 
+// Where a failed fill reports, as no one panel may be selected to show it.
+export const ALL_PANELS = "all-panels"
+
 // A coverage sheet is a job of its own: the panel can render meanwhile.
 export const coverageJob = (panelId: string) => `coverage:${panelId}`
+
+type Fill = { stopped: boolean; panelId?: string }
 
 export function useGenerator(editor: ComicEditor) {
   const [jobs, setJobs] = React.useState<Record<string, Job>>({})
   const [takes, setTakes] = React.useState<Record<string, Take[]>>({})
   const [errors, setErrors] = React.useState<Record<string, string>>({})
   const controllers = React.useRef(new Map<string, AbortController>())
+  // The fill in progress: how far along, and the handle that stops it.
+  const [queue, setQueue] = React.useState<{ done: number; of: number } | null>(
+    null
+  )
+  const fill = React.useRef<Fill | null>(null)
 
   // `count` takes in a row, each on a new seed unless the seed is locked.
   // Every take lands in the panel as it finishes; pick another from Takes.
@@ -717,12 +721,13 @@ export function useGenerator(editor: ComicEditor) {
       if (controllers.current.has(panelId)) return null
       const controller = new AbortController()
       controllers.current.set(panelId, controller)
-      setErrors(({ [panelId]: _, ...rest }) => rest)
+      setErrors(({ [panelId]: _, [ALL_PANELS]: __, ...rest }) => rest)
       const startedAt = Date.now()
       try {
         for (let take = 1; take <= count; take++) {
           const panel = editor.findLayer(panelId)?.layer
-          if (panel?.type !== "panel" || !hasPrompt(panel)) return null
+          if (panel?.type !== "panel" || !hasPrompt(panel) || panel.locked)
+            return null
           const seed =
             panel.lockSeed && panel.seed !== undefined
               ? panel.seed + take - 1
@@ -823,15 +828,45 @@ export function useGenerator(editor: ComicEditor) {
     [editor]
   )
 
-  // One at a time, slide by slide: ComfyUI renders serially anyway,
-  // and this fills the carousel in reading order.
+  // One at a time, slide by slide: ComfyUI renders serially anyway, and this
+  // fills the carousel in reading order. Each panel is looked at again when its
+  // turn comes, and the first failure ends the fill: with no credits left, every
+  // panel after it would only fail the same way.
   const generateAll = React.useCallback(async () => {
-    const panels = promptedPanels(editor.projectRef.current)
-    for (const { id } of panels) await generate(id)
+    if (fill.current) return
+    const panels = panelsToDraw(editor.projectRef.current)
+    if (!panels.length) return
+    const run: Fill = { stopped: false }
+    fill.current = run
+    try {
+      for (const [done, { id }] of panels.entries()) {
+        if (run.stopped) break
+        setQueue({ done, of: panels.length })
+        const panel = editor.findLayer(id)?.layer
+        if (panel?.type !== "panel" || !drawable(panel)) continue
+        run.panelId = id
+        const failed = await generate(id)
+        if (failed) {
+          setErrors((err) => ({ ...err, [ALL_PANELS]: failed }))
+          break
+        }
+      }
+    } finally {
+      fill.current = null
+      setQueue(null)
+    }
   }, [editor, generate])
 
   const cancel = React.useCallback((panelId: string) => {
     controllers.current.get(panelId)?.abort()
+  }, [])
+
+  // Stops the panel being drawn, which gets refunded, and the ones after it.
+  const stopAll = React.useCallback(() => {
+    const run = fill.current
+    if (!run) return
+    run.stopped = true
+    if (run.panelId) controllers.current.get(run.panelId)?.abort()
   }, [])
 
   // Draws the panel's coverage sheet. Nothing on the panel changes but the
@@ -890,6 +925,8 @@ export function useGenerator(editor: ComicEditor) {
     generate,
     tryEngine,
     generateAll,
+    stopAll,
+    queue,
     cancel,
     drawCoverage,
   }

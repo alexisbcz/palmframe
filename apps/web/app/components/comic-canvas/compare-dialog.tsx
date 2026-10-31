@@ -30,6 +30,7 @@ import {
   otherEngine,
   type Generator,
 } from "./use-generator"
+import { SignInNotice, needsSignIn } from "./sign-in-notice"
 
 interface Candidate {
   src: string
@@ -230,7 +231,13 @@ export function CompareDialog({
         )}
         {error && (
           <p role="alert" className="text-xs break-words text-destructive">
-            {error === INSUFFICIENT_CREDITS ? t("noCredits") : error}
+            {error === INSUFFICIENT_CREDITS ? (
+              t("noCredits")
+            ) : needsSignIn(error) ? (
+              <SignInNotice />
+            ) : (
+              error
+            )}
           </p>
         )}
       </div>

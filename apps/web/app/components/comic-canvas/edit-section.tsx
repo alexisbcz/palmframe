@@ -46,6 +46,7 @@ import { messages } from "./edit-tools.messages"
 import type { PanelLayer } from "./model"
 import { roving } from "./roving"
 import type { ComicEditor } from "./use-editor"
+import { SignInNotice, needsSignIn } from "./sign-in-notice"
 
 const TOOLS: { id: EditTool; icon: typeof MagicWand01Icon }[] = [
   { id: "edit", icon: MagicWand01Icon },
@@ -292,13 +293,17 @@ export function EditSection({
 
       {error && (
         <p className="text-xs text-destructive">
-          {error === "mask"
-            ? t("errors.mask")
-            : error === "fits"
-              ? t("errors.fits")
-              : error === INSUFFICIENT_CREDITS
-                ? t("errors.credits")
-                : error}
+          {error === "mask" ? (
+            t("errors.mask")
+          ) : error === "fits" ? (
+            t("errors.fits")
+          ) : error === INSUFFICIENT_CREDITS ? (
+            t("errors.credits")
+          ) : needsSignIn(error) ? (
+            <SignInNotice />
+          ) : (
+            error
+          )}
         </p>
       )}
 

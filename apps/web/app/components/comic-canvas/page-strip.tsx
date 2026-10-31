@@ -23,7 +23,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { SlideCheckBadge } from "./check-tools"
 import { messages as checkMessages } from "./check.messages"
-import { pageDoc, type ComicDoc } from "./model"
+import { MAX_SLIDES, type ComicDoc, type Layer } from "./model"
 import { drawDoc, loadImages, type ImageCache } from "./render"
 import { roving } from "./roving"
 import { projectShots, repeatedShots } from "./shot-variety"
@@ -36,18 +36,34 @@ const THUMB_HEIGHT = 84
 // thumbnails without a jump on hydration.
 const THUMB_SIZE =
   "h-(--thumb-height) w-[calc(var(--thumb-height)*var(--slide-ratio))] [@media(max-height:700px)]:max-md:h-14 [@media(max-height:700px)]:max-md:w-[calc(3.5rem*var(--slide-ratio))]"
-// Instagram caps a carousel at 20 slides.
-export const MAX_SLIDES = 20
 
-function Thumbnail({
-  doc,
+// Drawing a slide is the costly part of a long project, so a slide redraws only
+// when its layers or the project's page do, not on every edit elsewhere.
+const Thumbnail = React.memo(function Thumbnail({
+  layers,
+  pageWidth,
+  pageHeight,
+  background,
   images,
   width,
 }: {
-  doc: ComicDoc
+  layers: Layer[]
+  pageWidth: number
+  pageHeight: number
+  background: string
   images: ImageCache
   width: number
 }) {
+  const doc = React.useMemo<ComicDoc>(
+    () => ({
+      version: 1,
+      width: pageWidth,
+      height: pageHeight,
+      background,
+      layers,
+    }),
+    [layers, pageWidth, pageHeight, background]
+  )
   const ref = React.useRef<HTMLCanvasElement>(null)
   const [loaded, setLoaded] = React.useState(0)
 
@@ -66,7 +82,7 @@ function Thumbnail({
   }, [doc, images, width, loaded])
 
   return <canvas ref={ref} className="size-full" />
-}
+})
 
 export function PageStrip({
   editor,
@@ -222,7 +238,10 @@ export function PageStrip({
                 }}
               >
                 <Thumbnail
-                  doc={pageDoc(project, i)}
+                  layers={page.layers}
+                  pageWidth={project.width}
+                  pageHeight={project.height}
+                  background={project.background}
                   images={images}
                   width={width}
                 />
