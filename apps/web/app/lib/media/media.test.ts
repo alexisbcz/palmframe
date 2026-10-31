@@ -278,7 +278,7 @@ describe("renderAttempt", () => {
 })
 
 describe("the real linter", () => {
-  test("applies a format's rules on top of the shared style", async () => {
+  test("applies a format's rules on top of the shared style", { skip: !process.env.VALE_TS_ENTRY?.trim() }, async () => {
     const rule = `extends: existence\nmessage: "No '%s' here."\nlevel: error\ntokens:\n  - widget\n`
     const shared = await lintArticle("We leverage a widget.\n")
     assert.ok(shared.some((f) => f.rule === "Corporate"))

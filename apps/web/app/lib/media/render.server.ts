@@ -6,8 +6,15 @@ import type { Finding } from "@/lib/deepdive/model"
 import { kickWork } from "@/lib/deepdive/run.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
+import { type AssetSize, renderAsset, validateAsset } from "./assets"
 import { formatDefinition } from "./formats"
-import type { FormatDefinition, FormatId, Rendition, Story } from "./model"
+import type {
+  FormatDefinition,
+  FormatId,
+  Part,
+  Rendition,
+  Story,
+} from "./model"
 import { afterRendition } from "./pipeline.server"
 import {
   ADAPT_SYSTEM,
@@ -94,11 +101,49 @@ export async function renderAttempt(
       .slice(0, 15)
       .map((f) => `Line ${f.line}, ${f.rule}: ${f.message}`),
   ]
+  for (const part of rendition.parts) {
+    if (!part.asset) continue
+    const asset = validateAsset(part.asset, story)
+    if (!asset.ok) problems.push(...asset.problems)
+  }
   if (!problems.length || last) {
     const errors = await deps.check(asArticle(rendition), story.sources, signal)
     problems.push(...errors.map((e) => `${e.claim}: ${e.why}`))
   }
   return { rendition, findings, problems }
+}
+
+const ASSET_SIZE: Partial<Record<FormatId, AssetSize>> = {
+  instagram_carousel: "carousel",
+  youtube: "video",
+}
+
+// Pictures come last, so nothing is drawn for a draft that gets sent back. A
+// picture that fails leaves its part as text, and a person sees it's missing.
+async function drawParts(
+  parts: Part[],
+  format: FormatId,
+  userId: string,
+  renditionId: string,
+  story: Story
+) {
+  const size = ASSET_SIZE[format] ?? "article"
+  return Promise.all(
+    parts.map(async (part, i) => {
+      if (!part.asset || !validateAsset(part.asset, story).ok) return part
+      try {
+        const rendered = await renderAsset(
+          part.asset,
+          size,
+          `${userId}/${renditionId}-${i}`
+        )
+        return { ...part, rendered }
+      } catch (e) {
+        console.error("Asset failed", renditionId, i, e)
+        return part
+      }
+    })
+  )
 }
 
 export const kickRender = (origin: string, id: string) =>
@@ -218,10 +263,19 @@ export async function renderSlice(
   const { rendition, findings, problems } = result
   const finished = !problems.length || last
   const status = problems.length ? "review" : "done"
+  const parts = finished
+    ? await drawParts(
+        rendition.parts,
+        row.format,
+        row.user_id,
+        id,
+        storyOf(dive)
+      )
+    : rendition.parts
   await table()
     .update({
       title: rendition.title.slice(0, 300),
-      parts: rendition.parts,
+      parts,
       meta: rendition.meta,
       findings,
       problems,

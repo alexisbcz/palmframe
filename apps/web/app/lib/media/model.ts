@@ -58,6 +58,8 @@ export interface RenderedAsset {
 export interface Part {
   text: string
   asset?: AssetSpec
+  // The finished picture, once the format has passed its checks.
+  rendered?: RenderedAsset
   // Spoken words and on-screen direction, for video.
   voiceover?: string
 }

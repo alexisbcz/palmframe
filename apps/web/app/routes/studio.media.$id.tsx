@@ -202,7 +202,17 @@ function FormatPanel({
                   {t("render.voiceover")}: {part.voiceover}
                 </p>
               )}
-              {part.asset && (
+              {part.rendered && (
+                <img
+                  src={part.rendered.url}
+                  alt={part.rendered.alt}
+                  width={part.rendered.width}
+                  height={part.rendered.height}
+                  loading="lazy"
+                  className="h-auto w-full max-w-md rounded-lg"
+                />
+              )}
+              {part.asset && !part.rendered && (
                 <p className="text-xs text-muted-foreground">
                   {t(`render.${part.asset.kind}`)}:{" "}
                   {part.asset.kind === "illustration"

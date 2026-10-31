@@ -4,7 +4,6 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, test } from "node:test"
 
-import { Vale } from "vale-ts"
 
 import { VALE_INI, VALE_RULES } from "@/lib/deepdive/vale/rules"
 import { compose, LIMITS } from "@/lib/machines/gate"
@@ -695,7 +694,10 @@ describe("renditionText", () => {
   })
 })
 
-describe("with real Vale", () => {
+// vale-ts is unpublished; set VALE_TS_ENTRY to its built entry to run these.
+const entry = process.env.VALE_TS_ENTRY?.trim()
+
+describe("with real Vale", { skip: !entry }, () => {
   const lint = async (markdown: string) => {
     const styles = mkdtempSync(join(tmpdir(), "formats-vale-"))
     mkdirSync(join(styles, "Hustle"))
@@ -706,12 +708,13 @@ describe("with real Vale", () => {
     }
     for (const [file, rule] of Object.entries(rules))
       writeFileSync(join(styles, "Hustle", file), rule)
+    const { Vale } = await import(/* @vite-ignore */ entry!)
     const vale = await Vale.fromString(VALE_INI(styles))
     return vale
       .lintString(markdown, { path: "rendition.md" })
-      .flatMap((file) => file.sortedAlerts())
-      .filter((alert) => alert.severity === "error")
-      .map((alert) => alert.check)
+      .flatMap((file: any) => file.sortedAlerts())
+      .filter((alert: any) => alert.severity === "error")
+      .map((alert: any) => alert.check)
   }
 
   test("the format rules load and fire", async () => {

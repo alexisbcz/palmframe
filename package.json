@@ -23,16 +23,5 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ],
-  "overrides": {
-    "@vale-ts/check": "file:../vale.ts/.artifacts/vale-ts-check-0.1.0.tgz",
-    "@vale-ts/cli": "file:../vale.ts/.artifacts/vale-ts-cli-0.1.0.tgz",
-    "@vale-ts/core": "file:../vale.ts/.artifacts/vale-ts-core-0.1.0.tgz",
-    "@vale-ts/lint": "file:../vale.ts/.artifacts/vale-ts-lint-0.1.0.tgz",
-    "@vale-ts/models": "file:../vale.ts/.artifacts/vale-ts-models-0.1.0.tgz",
-    "@vale-ts/nlp": "file:../vale.ts/.artifacts/vale-ts-nlp-0.1.0.tgz",
-    "@vale-ts/regex": "file:../vale.ts/.artifacts/vale-ts-regex-0.1.0.tgz",
-    "@vale-ts/spell": "file:../vale.ts/.artifacts/vale-ts-spell-0.1.0.tgz",
-    "@vale-ts/tengo": "file:../vale.ts/.artifacts/vale-ts-tengo-0.1.0.tgz"
-  }
+  ]
 }
