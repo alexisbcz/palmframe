@@ -6,7 +6,7 @@ import type { Route } from "./+types/api.machines.tick"
 
 const digest = (s: string) => createHash("sha256").update(s).digest()
 
-// The scheduled runner's door (.github/workflows/machines.yml). It spends
+// The scheduled runner's door (the machines-tick job in Supabase). It spends
 // people's credits, so without a configured secret it stays shut.
 export async function action({ request }: Route.ActionArgs) {
   const secret = process.env.MACHINES_CRON_SECRET?.trim()

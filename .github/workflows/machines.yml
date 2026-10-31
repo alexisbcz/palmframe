@@ -1,12 +1,10 @@
 name: Run content machines
 
-# Vercel functions can't hold a socket open, so this wakes the machines up:
-# each tick listens for a short window, catches up on what it missed, runs the
+# Runs one tick by hand. The schedule lives in Supabase (the machines-tick job).
+# Each tick listens for a short window, catches up on what it missed, runs the
 # agents that are due and publishes what's approved.
 # Does nothing until both secrets are set.
 on:
-  schedule:
-    - cron: "*/10 * * * *"
   workflow_dispatch:
 
 permissions: {}

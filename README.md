@@ -151,20 +151,23 @@ picture costs 4. Runs are free in credits when the person's OpenRouter account
 pays. Pictures need `PRUNA_API_KEY` on the server or an OpenRouter connection;
 without either, machines post text.
 
-Vercel functions can't hold a socket open, so `.github/workflows/machines.yml`
-calls the tick route every 10 minutes. Each tick replays what Bluesky and
-Wikipedia said since the last one, and compares prices across ticks. To turn
-scheduled runs on, set the same secret on the server and in GitHub Actions:
+Vercel functions can't hold a socket open, so a `pg_cron` job in Supabase calls
+the tick route every 10 minutes. Each tick replays what Bluesky and Wikipedia
+said since the last one, and compares prices across ticks. To turn scheduled
+runs on, set the same secret on the server and in Supabase Vault:
 
 ```bash
 # apps/web/.env, or your host's environment
 MACHINES_CRON_SECRET=...
 SUPABASE_SECRET_KEY=...
-
-# GitHub Actions secrets
-MACHINES_CRON_SECRET=...
-MACHINES_TICK_URL=https://www.palmframe.com/api/machines/tick
 ```
+
+```sql
+select vault.create_secret('...', 'machines_cron_secret');
+```
+
+`.github/workflows/machines.yml` runs a tick by hand. It needs
+`MACHINES_CRON_SECRET` and `MACHINES_TICK_URL` as GitHub Actions secrets.
 
 Run the unit tests with `bun test apps/web/app/lib/machines`.
 
