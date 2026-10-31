@@ -15,6 +15,10 @@
     "rootDirs": [".", "./.react-router/types"],
     "paths": {
       "@/*": ["./app/*"],
+      "@hugeicons/core-free-icons": [
+        "../../packages/ui/src/icons/core-free-icons.ts"
+      ],
+      "@hugeicons/react": ["../../packages/ui/src/icons/react.tsx"],
       "@workspace/ui/*": ["../../packages/ui/src/*"]
     },
     "esModuleInterop": true,

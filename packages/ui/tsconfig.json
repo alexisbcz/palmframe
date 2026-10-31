@@ -9,6 +9,8 @@
     "strict": true,
     "noEmit": true,
     "paths": {
+      "@hugeicons/core-free-icons": ["./src/icons/core-free-icons.ts"],
+      "@hugeicons/react": ["./src/icons/react.tsx"],
       "@workspace/ui/*": ["./src/*"]
     }
   },

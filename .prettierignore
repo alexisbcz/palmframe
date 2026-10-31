@@ -6,3 +6,4 @@ node_modules/
 coverage/
 pnpm-lock.yaml
 .pnpm-store/
+packages/ui/src/icons/core-free-icons.ts
