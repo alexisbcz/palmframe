@@ -331,7 +331,7 @@ export function createBubble(
     type: "bubble",
     shape,
     text: d.text,
-    font: shape === "message" ? "inter" : "comic",
+    font: shape === "message" || shape === "caption" ? "inter" : "comic",
     fontSize: shape === "shout" ? 52 : shape === "message" ? 34 : 40,
     uppercase: shape !== "message",
     textColor: "#111111",
