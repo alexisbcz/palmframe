@@ -746,21 +746,21 @@
 
     "@ungap/structured-clone": ["@ungap/structured-clone@1.4.0", "", {}, "sha512-1mEZtMKPM09vDmQt5y7YvmN2+DFTP7Tg0EWXdic8/C6VRnpb33e4ghisCIE3WZjsE2N8mf+QV1Zqh7ZFYLWInQ=="],
 
-    "@vale-ts/check": ["@vale-ts/check@../vale.ts/.artifacts/vale-ts-check-0.1.0.tgz", { "dependencies": { "@vale-ts/core": "^0.1.0", "@vale-ts/nlp": "^0.1.0", "@vale-ts/regex": "^0.1.0", "@vale-ts/spell": "^0.1.0", "@vale-ts/tengo": "^0.1.0", "css-select": "5.2.2", "yaml": "2.8.1" } }, "sha512-GwkIiMkYxDxq9okk/f74vEWfXPb50xr4epbZzxAH/b+3aTjDqrbFpcdAfZ0gkZNBzL2NH8lE0OVzPefcG8CHCw=="],
+    "@vale-ts/check": ["@vale-ts/check@../vale.ts/.artifacts/vale-ts-check-0.1.0.tgz", { "dependencies": { "@vale-ts/core": "^0.1.0", "@vale-ts/nlp": "^0.1.0", "@vale-ts/regex": "^0.1.0", "@vale-ts/spell": "^0.1.0", "@vale-ts/tengo": "^0.1.0", "css-select": "5.2.2", "yaml": "2.8.1" } }, "sha512-+9u9PZ9fo3dmxqW6aD+hcxX+F5mPsVFqEFSEGSzEdjUVAAlwX8s23oxbb0JEI4fJ7Vq9BrjcCaVAm9JfHzLolw=="],
 
-    "@vale-ts/core": ["@vale-ts/core@../vale.ts/.artifacts/vale-ts-core-0.1.0.tgz", { "dependencies": { "@vale-ts/nlp": "^0.1.0", "@vale-ts/regex": "^0.1.0", "smol-toml": "1.5.0", "yaml": "2.8.1" } }, "sha512-GQ6pP2nZfvslP4ux9/4lR4gnBmWIBQbYomSboYtYicd6vVmPMy7PXRzQ9bTVtdnWRJgyt666qyakovYPdULS8A=="],
+    "@vale-ts/core": ["@vale-ts/core@../vale.ts/.artifacts/vale-ts-core-0.1.0.tgz", { "dependencies": { "@vale-ts/nlp": "^0.1.0", "@vale-ts/regex": "^0.1.0", "smol-toml": "1.5.0", "yaml": "2.8.1" } }, "sha512-p+F6oSzfNy8//dh/qMEFk+Xt8rU2dJaBYFo3H7KOXMzG6a2JpuqDvpJz9WiHGtIV9pL3ppeFTrWZO2//ONPqsw=="],
 
-    "@vale-ts/lint": ["@vale-ts/lint@../vale.ts/.artifacts/vale-ts-lint-0.1.0.tgz", { "dependencies": { "@vale-ts/check": "^0.1.0", "@vale-ts/core": "^0.1.0", "@vale-ts/nlp": "^0.1.0", "@vale-ts/regex": "^0.1.0", "css-select": "5.2.2", "domhandler": "5.0.3", "domutils": "3.2.2", "entities": "6.0.1", "markdown-it": "14.1.0", "markdown-it-footnote": "4.0.0", "markdown-it-task-lists": "2.1.1", "parse5": "7.3.0", "parse5-htmlparser2-tree-adapter": "7.1.0", "tree-sitter-wasms": "0.1.13", "web-tree-sitter": "0.25.10" } }, "sha512-R8p7P5ZRp52fXuiPfeqKs07dKsDZUlgyHdhmK+TrVefHFDHd7N5Xjo+IK8fpSfV69fD5iz5aRegBc707+kbzow=="],
+    "@vale-ts/lint": ["@vale-ts/lint@../vale.ts/.artifacts/vale-ts-lint-0.1.0.tgz", { "dependencies": { "@vale-ts/check": "^0.1.0", "@vale-ts/core": "^0.1.0", "@vale-ts/nlp": "^0.1.0", "@vale-ts/regex": "^0.1.0", "css-select": "5.2.2", "domhandler": "5.0.3", "domutils": "3.2.2", "entities": "6.0.1", "markdown-it": "14.1.0", "markdown-it-footnote": "4.0.0", "markdown-it-task-lists": "2.1.1", "parse5": "7.3.0", "parse5-htmlparser2-tree-adapter": "7.1.0", "tree-sitter-wasms": "0.1.13", "web-tree-sitter": "0.25.10" } }, "sha512-Z4laxdTD8hdIhF4jzo4cG34BNdXVPxxqt18ajFLi6ZzROi9ONUxdpmkuA6konntc29oTxrRb4g57eNAQNabOgQ=="],
 
-    "@vale-ts/models": ["@vale-ts/models@../vale.ts/.artifacts/vale-ts-models-0.1.0.tgz", {}, "sha512-Evjk5bGIDXtwxB1l1ojnzj5++lTTfYmwPq+IJ8MUS/suSvvSmcmbRYUX1B99C+Xp14eyxURDBz8iFQlY2JJUrQ=="],
+    "@vale-ts/models": ["@vale-ts/models@../vale.ts/.artifacts/vale-ts-models-0.1.0.tgz", {}, "sha512-R5ZerHVuX7LY4nNf2Y3UfLm5LKt/Fpjbh5ok8IrzsnymE0Z8CuE1+xsnJe1r+BBnkt9R3KTkqvYrt7/mZDR4IQ=="],
 
-    "@vale-ts/nlp": ["@vale-ts/nlp@../vale.ts/.artifacts/vale-ts-nlp-0.1.0.tgz", { "dependencies": { "@vale-ts/models": "^0.1.0" } }, "sha512-l3Olkl92US9PnFPoYBq9VHKY782W4X8dY9GKaEeGBkPbqBDwbhM3NbSq+tHQNELukv0GaFWdiBeBIbOaqlxlpw=="],
+    "@vale-ts/nlp": ["@vale-ts/nlp@../vale.ts/.artifacts/vale-ts-nlp-0.1.0.tgz", { "dependencies": { "@vale-ts/models": "^0.1.0" } }, "sha512-OwJ9hPohPlqq4paP+lQjA1NPRO9B+KUd6qQXhiEI4riW8wiwNfyJxIRKEFUCB5hldFv4+rOF16dTVlG+3mFaSQ=="],
 
-    "@vale-ts/regex": ["@vale-ts/regex@../vale.ts/.artifacts/vale-ts-regex-0.1.0.tgz", {}, "sha512-FalCRFlTtf3WtH6TBn+/xFrMQN7oJDrMuFMjkJQbRVZ7HP1NFqRZ3IWy3/sFa1qFpqIVkpC7tjGhdJM4jug5dA=="],
+    "@vale-ts/regex": ["@vale-ts/regex@../vale.ts/.artifacts/vale-ts-regex-0.1.0.tgz", {}, "sha512-335xNDQlYYfasfb8JworhMtROlQhU+ntvHq8d4MxfNhelAMeCQHGERc4olrjsOPJlwDzGoYUwmF0dwtmBhp4zw=="],
 
-    "@vale-ts/spell": ["@vale-ts/spell@../vale.ts/.artifacts/vale-ts-spell-0.1.0.tgz", {}, "sha512-8Hwz+jYfCrz4//Vmd/UZZekHdkx59cc9WA0PRcBVYtrJVog+TL8YD8eQV9nHo21S4Ds+L/MLs1S/bKUbK1qbzA=="],
+    "@vale-ts/spell": ["@vale-ts/spell@../vale.ts/.artifacts/vale-ts-spell-0.1.0.tgz", {}, "sha512-m1yVCaHR17oArkDZ6GfgszaGsWTjheMFHD5wnajcRIdbCR5BqcHN40B0/XwoqD47b96DiyI2IxNEefpCNYuMIw=="],
 
-    "@vale-ts/tengo": ["@vale-ts/tengo@../vale.ts/.artifacts/vale-ts-tengo-0.1.0.tgz", { "dependencies": { "@vale-ts/regex": "^0.1.0" } }, "sha512-W//05Gl86nFtHVRnA0ROEsId5vdzlokbvkN3RaMFk6CNkcWC9ZX4QQ0M8ZfXQXM1B4Zed1//TyUbK5XPqHLnyw=="],
+    "@vale-ts/tengo": ["@vale-ts/tengo@../vale.ts/.artifacts/vale-ts-tengo-0.1.0.tgz", { "dependencies": { "@vale-ts/regex": "^0.1.0" } }, "sha512-R4aC1XT5i/JZI6P8sSTuwkL4lEDZ19X0uvF2ggj9SmTB31vJAz7yKz37mL+tYRub0HSSUWoWZP7IAQCM9cIEZg=="],
 
     "@vercel/react-router": ["@vercel/react-router@1.3.7", "", { "dependencies": { "@vercel/static-config": "3.4.4", "ts-morph": "12.0.0" }, "peerDependencies": { "@react-router/dev": "7", "@react-router/node": "7", "isbot": "5", "react": ">=18", "react-dom": ">=18" } }, "sha512-6lR2IymF6VYNBxzxDJ2xU7IdeeTLgDC7Hz3jW3eTwZxECOHRdl9zJ300cEp3QHGrvD7T1Kz3SqOUD06F9Ea2fg=="],
 
@@ -1606,7 +1606,7 @@
 
     "util-deprecate": ["util-deprecate@1.0.2", "", {}, "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw=="],
 
-    "vale-ts": ["vale-ts@../../../vale.ts/.artifacts/vale-ts-0.1.0.tgz", { "dependencies": { "@vale-ts/check": "^0.1.0", "@vale-ts/core": "^0.1.0", "@vale-ts/lint": "^0.1.0", "@vale-ts/spell": "^0.1.0" } }, "sha512-24C1N1jSD7Ba47E4GTllzh87LnqgOaovguwcpMNkVFjtK+MqMBf3TROx/svITJN8fSu2hZR8BHOwzTf1dEH/Yw=="],
+    "vale-ts": ["vale-ts@../../../vale.ts/.artifacts/vale-ts-0.1.0.tgz", { "dependencies": { "@vale-ts/check": "^0.1.0", "@vale-ts/core": "^0.1.0", "@vale-ts/lint": "^0.1.0", "@vale-ts/spell": "^0.1.0" } }, "sha512-KweWiGezaGFVxR8P7dOYcQjuqvHHD2TdexK/aKDrhDEu/3i/Tt/8bj37DLlkeIBKUitFK6o0zQBsl+0U7PSjTA=="],
 
     "valibot": ["valibot@1.5.0", "", { "peerDependencies": { "typescript": ">=5" }, "optionalPeers": ["typescript"] }, "sha512-nil6AkP2TChWL43Z5uJ6GTxX01CUA+g8LWUM+N/rB9NBbkUMaUsi9PUNzlUPgoKASgmx9f7eGOYpJ04/fSa6FQ=="],
 
