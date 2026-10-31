@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { SearchIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 import {
@@ -89,7 +90,8 @@ export default function StudioTrends() {
             </ToggleGroupItem>
           ))}
         </ToggleGroup>
-        <Input
+        <ButtonGroup className="w-full max-w-md">
+<Input
           value={query}
           required={platform === "tiktok"}
           minLength={2}
@@ -98,21 +100,18 @@ export default function StudioTrends() {
             platform === "tiktok" ? t("trends.search") : t("trends.optional")
           }
           onChange={(e) => setQuery(e.target.value)}
-          className="w-80 max-w-full"
+          className="min-w-0 flex-1"
         />
         <Button
           type="submit"
           isDisabled={busy !== null}
           className="bg-white text-black hover:bg-white/90"
         >
-          {busy ? (
-            <Spinner />
-          ) : (
-            <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
-          )}
           {t("trends.find", { cost: COSTS.studio_lookup })}
+          {busy ? (<Spinner />) : (<HugeiconsIcon icon={SearchIcon} strokeWidth={2} data-icon="inline-end" />)}
         </Button>
-      </form>
+</ButtonGroup>
+</form>
       <Failure code={error} />
 
       {videos &&

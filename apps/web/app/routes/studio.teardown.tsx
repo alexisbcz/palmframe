@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { SearchIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 
@@ -58,35 +59,33 @@ export default function StudioTeardown() {
           if (r) setVideo(r.video)
         }}
       >
-        <Input
+        <ButtonGroup className="w-full">
+<Input
           type="url"
           value={url}
           required
           aria-label={t("teardown.url")}
           placeholder={t("teardown.url")}
           onChange={(e) => setUrl(e.target.value)}
-          className="min-w-60 flex-1"
+          className="min-w-0 flex-1"
         />
         <Button
           type="submit"
           isDisabled={busy !== null}
           className="bg-white text-black hover:bg-white/90"
         >
-          {busy ? (
-            <Spinner />
-          ) : (
-            <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
-          )}
           {t("teardown.read", { cost: COSTS.studio_lookup })}
+          {busy ? (<Spinner />) : (<HugeiconsIcon icon={SearchIcon} strokeWidth={2} data-icon="inline-end" />)}
         </Button>
-      </form>
+</ButtonGroup>
+</form>
       <Failure code={error} />
       {video && (
         <article className="flex flex-wrap gap-6 rounded-2xl border p-5">
           <Thumb src={video.thumbnail} className="aspect-[4/5] w-44" />
           <div className="flex min-w-64 flex-1 flex-col gap-4">
             <div>
-              <h2 className="font-semibold">
+              <h2 className="studio-title text-xl">
                 {video.title || `@${video.author}`}
               </h2>
               <p className="text-sm text-muted-foreground">@{video.author}</p>

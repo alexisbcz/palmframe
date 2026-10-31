@@ -145,7 +145,7 @@ function DialogTitle({
       slot="title"
       data-slot="dialog-title"
       className={cn(
-        "font-heading text-base leading-none font-medium",
+        "studio-title text-xl",
         className
       )}
       {...props}

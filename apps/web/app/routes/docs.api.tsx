@@ -82,11 +82,11 @@ export default function ApiDocs({ loaderData }: Route.ComponentProps) {
       </header>
       <main className="mx-auto flex w-full max-w-3xl flex-col gap-8 px-4 py-8">
         <div>
-          <h1 className="text-2xl font-semibold">{t("title")}</h1>
+          <h1 className="studio-title text-4xl">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("intro")}</p>
         </div>
         <section className="flex flex-col gap-3">
-          <h2 className="font-medium">{t("auth.title")}</h2>
+          <h2 className="studio-title text-lg">{t("auth.title")}</h2>
           <p className="text-sm text-muted-foreground">
             {t("auth.body")}{" "}
             <Link
@@ -103,25 +103,25 @@ export default function ApiDocs({ loaderData }: Route.ComponentProps) {
           <Code>{`Authorization: Bearer pf_live_…`}</Code>
         </section>
         <section className="flex flex-col gap-3">
-          <h2 className="font-medium">{t("access.title")}</h2>
+          <h2 className="studio-title text-lg">{t("access.title")}</h2>
           <p className="text-sm text-muted-foreground">{t("access.body")}</p>
         </section>
         <section className="flex flex-col gap-3">
-          <h2 className="font-medium">{t("flow.title")}</h2>
+          <h2 className="studio-title text-lg">{t("flow.title")}</h2>
           <p className="text-sm text-muted-foreground">{t("flow.body")}</p>
           <Code>{flow(o)}</Code>
         </section>
         <section className="flex flex-col gap-3">
-          <h2 className="font-medium">{t("read.title")}</h2>
+          <h2 className="studio-title text-lg">{t("read.title")}</h2>
           <Code>{reads(o)}</Code>
         </section>
         <section className="flex flex-col gap-3">
-          <h2 className="font-medium">{t("mcp.title")}</h2>
+          <h2 className="studio-title text-lg">{t("mcp.title")}</h2>
           <p className="text-sm text-muted-foreground">{t("mcp.body")}</p>
           <Code>{mcp(o)}</Code>
         </section>
         <section className="flex flex-col gap-3">
-          <h2 className="font-medium">{t("limits.title")}</h2>
+          <h2 className="studio-title text-lg">{t("limits.title")}</h2>
           <p className="text-sm text-muted-foreground">{t("limits.body")}</p>
         </section>
       </main>

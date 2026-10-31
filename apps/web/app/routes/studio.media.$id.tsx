@@ -88,7 +88,7 @@ function Panel({
 }) {
   return (
     <section className="rounded-2xl bg-card p-5">
-      <h2 className="mb-3 text-sm font-medium">{title}</h2>
+      <h2 className="studio-title mb-3 text-lg">{title}</h2>
       {children}
     </section>
   )
@@ -124,7 +124,7 @@ function Problems({ items }: { items: string[] }) {
       role="status"
       className="rounded-2xl bg-pink-600/15 p-5 text-sm text-pink-200"
     >
-      <h2 className="mb-2 font-medium">{t("detail.problems")}</h2>
+      <h2 className="studio-title mb-2 text-lg">{t("detail.problems")}</h2>
       <ul className="flex list-disc flex-col gap-1 ps-4">
         {items.map((p, i) => (
           <li key={i}>{p}</li>

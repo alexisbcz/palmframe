@@ -214,7 +214,7 @@ export function ReaderMissing({ missing }: { missing: boolean }) {
   return (
     <main className="flex h-svh flex-col bg-background text-foreground">
       <div className="flex flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-        <h1 className="text-lg font-semibold">
+        <h1 className="studio-title text-2xl">
           {t(missing ? "missing.title" : "failed.title")}
         </h1>
         <p className="max-w-sm text-sm text-muted-foreground">

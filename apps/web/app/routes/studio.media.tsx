@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { SearchIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 
@@ -55,23 +56,21 @@ export default function StudioMedia({ loaderData }: Route.ComponentProps) {
           }
         }}
       >
-        <Input
+        <ButtonGroup className="w-full">
+<Input
           value={lead}
           required
           aria-label={t("form.lead")}
           placeholder={t("form.placeholder")}
           onChange={(e) => setLead(e.target.value)}
-          className="min-w-60 flex-1"
+          className="min-w-0 flex-1"
         />
         <Button type="submit" variant="outline" isDisabled={busy}>
-          {busy ? (
-            <Spinner />
-          ) : (
-            <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
-          )}
           {t("form.run", { cost: COSTS.deep_dive })}
+          {busy ? (<Spinner />) : (<HugeiconsIcon icon={SearchIcon} strokeWidth={2} data-icon="inline-end" />)}
         </Button>
-      </form>
+</ButtonGroup>
+</form>
       {error && (
         <p
           role="alert"
@@ -106,7 +105,7 @@ export default function StudioMedia({ loaderData }: Route.ComponentProps) {
         </ul>
       ) : (
         <div className="rounded-2xl bg-card p-8 text-center">
-          <h2 className="font-medium">{t("empty.title")}</h2>
+          <h2 className="studio-title text-xl">{t("empty.title")}</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {t("empty.text")}
           </p>

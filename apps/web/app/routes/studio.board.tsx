@@ -107,7 +107,7 @@ export default function StudioBoard({ loaderData }: Route.ComponentProps) {
 
       <div className="grid gap-3 lg:grid-cols-2">
         <section className="rounded-2xl border p-4">
-          <h2 className="font-medium">{t("board.why")}</h2>
+          <h2 className="studio-title text-lg">{t("board.why")}</h2>
           <ul className="mt-2 flex list-inside list-disc flex-col gap-1 text-sm text-muted-foreground">
             {board.whyItWorks.map((w) => (
               <li key={w}>{w}</li>
@@ -126,7 +126,7 @@ export default function StudioBoard({ loaderData }: Route.ComponentProps) {
           </div>
         </section>
         <section className="flex flex-col gap-2 rounded-2xl border p-4">
-          <h2 className="font-medium">{t("board.post")}</h2>
+          <h2 className="studio-title text-lg">{t("board.post")}</h2>
           <p className="text-sm whitespace-pre-wrap">{board.postText}</p>
           <Button
             variant="outline"

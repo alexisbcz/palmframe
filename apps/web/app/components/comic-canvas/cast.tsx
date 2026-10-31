@@ -12,6 +12,7 @@ import {
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
   Dialog,
   DialogDescription,
@@ -720,7 +721,7 @@ function OutfitEditor({
         )}
       </div>
       <div className="flex min-w-0 flex-col gap-1.5">
-        <div className="flex gap-1">
+        <ButtonGroup className="w-full">
           <Input
             aria-label={t("dialog.outfitName")}
             placeholder={t("dialog.outfitName")}
@@ -729,8 +730,8 @@ function OutfitEditor({
           />
           <TooltipTrigger>
             <Button
-              size="icon-sm"
-              variant="ghost"
+              size="icon"
+              variant="outline"
               aria-label={t("dialog.deleteOutfit", { outfit: outfit.name })}
               onPress={onDelete}
             >
@@ -740,7 +741,7 @@ function OutfitEditor({
               {t("dialog.deleteOutfit", { outfit: outfit.name })}
             </Tooltip>
           </TooltipTrigger>
-        </div>
+        </ButtonGroup>
         <TagField
           tags={outfit.tags}
           onChange={(tags) => onChange({ tags })}

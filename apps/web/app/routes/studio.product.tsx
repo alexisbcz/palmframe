@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { SearchIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 
@@ -40,35 +41,33 @@ export default function StudioProduct() {
           if (r) setProduct(r.product)
         }}
       >
-        <Input
+        <ButtonGroup className="w-full">
+<Input
           type="url"
           value={url}
           required
           aria-label={t("product.url")}
           placeholder={t("product.url")}
           onChange={(e) => setUrl(e.target.value)}
-          className="min-w-60 flex-1"
+          className="min-w-0 flex-1"
         />
         <Button
           type="submit"
           isDisabled={busy !== null}
           className="bg-white text-black hover:bg-white/90"
         >
-          {busy ? (
-            <Spinner />
-          ) : (
-            <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
-          )}
           {t("product.read", { cost: COSTS.studio_lookup })}
+          {busy ? (<Spinner />) : (<HugeiconsIcon icon={SearchIcon} strokeWidth={2} data-icon="inline-end" />)}
         </Button>
-      </form>
+</ButtonGroup>
+</form>
       <Failure code={error} />
       {product && (
         <article className="flex flex-wrap gap-6 rounded-2xl border p-5">
           <Thumb src={product.image} className="aspect-square w-48 bg-white" />
           <div className="flex min-w-64 flex-1 flex-col gap-3">
             <div>
-              <h2 className="text-lg font-semibold">{product.name}</h2>
+              <h2 className="studio-title text-2xl">{product.name}</h2>
               <p className="text-sm text-muted-foreground">{product.brand}</p>
             </div>
             {product.price !== null && product.currency && (

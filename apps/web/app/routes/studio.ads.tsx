@@ -11,6 +11,7 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 
@@ -162,28 +163,26 @@ export default function StudioAds() {
           if (r) setAdvertisers(r.advertisers)
         }}
       >
-        <Input
+        <ButtonGroup className="w-full">
+<Input
           value={query}
           required
           minLength={2}
           aria-label={t("ads.search")}
           placeholder={t("ads.search")}
           onChange={(e) => setQuery(e.target.value)}
-          className="min-w-48 flex-1"
+          className="min-w-0 flex-1"
         />
         <Button
           type="submit"
           isDisabled={busy !== null}
           className="bg-white text-black hover:bg-white/90"
         >
-          {busy === "advertisers" ? (
-            <Spinner />
-          ) : (
-            <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
-          )}
           {t("ads.find", { cost: COSTS.studio_lookup })}
+          {busy === "advertisers" ? (<Spinner />) : (<HugeiconsIcon icon={SearchIcon} strokeWidth={2} data-icon="inline-end" />)}
         </Button>
-      </form>
+</ButtonGroup>
+</form>
       <Failure code={error} />
 
       {advertisers &&
@@ -219,11 +218,11 @@ export default function StudioAds() {
       {current && (
         <section aria-label={current.name} className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="flex items-center gap-2 font-semibold">
+            <h2 className="studio-title flex items-center gap-2 text-xl">
               <Thumb src={current.image} className="size-7 rounded-full" />
               {current.name}
               {ads && (
-                <span className="text-sm font-normal text-muted-foreground">
+                <span className="font-sans text-sm font-normal tracking-normal normal-case text-muted-foreground">
                   {t("ads.count", { n: ads.length })}
                 </span>
               )}

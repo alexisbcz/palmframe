@@ -122,12 +122,8 @@ function ShareDialog({
               className="min-w-0 flex-1 font-mono text-xs"
             />
             <Button className="data-pressed:scale-100!" onPress={copy}>
-              <HugeiconsIcon
-                icon={copied ? Tick02Icon : Copy01Icon}
-                strokeWidth={2}
-                data-icon="inline-start"
-              />
               {copied ? t("copied") : t("copy")}
+<HugeiconsIcon icon={copied ? Tick02Icon : Copy01Icon} strokeWidth={2} data-icon="inline-end" />
             </Button>
           </ButtonGroup>
           <p className="text-xs text-muted-foreground">{t("hint")}</p>

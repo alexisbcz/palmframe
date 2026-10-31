@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { Delete02Icon, SparklesIcon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Textarea } from "@workspace/ui/components/textarea"
@@ -47,7 +48,7 @@ function Kit({ kit }: { kit: BrandKitRow }) {
     <article className="flex flex-col gap-4 rounded-2xl border p-5">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
+          <h2 className="studio-title flex items-center gap-2 text-2xl">
             {kit.name}
             {kit.active && (
               <Slant className="bg-brand text-brand-foreground">
@@ -182,7 +183,8 @@ export default function StudioBrand({ loaderData }: Route.ComponentProps) {
           }
         }}
       >
-        <Input
+        <ButtonGroup className="w-full">
+<Input
           value={domain}
           required
           inputMode="url"
@@ -190,21 +192,18 @@ export default function StudioBrand({ loaderData }: Route.ComponentProps) {
           aria-label={t("brand.domain")}
           placeholder={t("brand.domainHint")}
           onChange={(e) => setDomain(e.target.value)}
-          className="min-w-48 flex-1"
+          className="min-w-0 flex-1"
         />
         <Button
           type="submit"
           isDisabled={busy !== null}
           className="bg-white text-black hover:bg-white/90"
         >
-          {busy ? (
-            <Spinner />
-          ) : (
-            <HugeiconsIcon icon={SparklesIcon} strokeWidth={2} />
-          )}
           {t("brand.read", { cost: COSTS.brand_kit })}
+          {busy ? (<Spinner />) : (<HugeiconsIcon icon={SparklesIcon} strokeWidth={2} data-icon="inline-end" />)}
         </Button>
-      </form>
+</ButtonGroup>
+</form>
       <Failure code={error} />
       {loaderData.kits.length ? (
         <div className="flex flex-col gap-4">

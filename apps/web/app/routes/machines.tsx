@@ -33,6 +33,7 @@ import {
 } from "@workspace/ui/components/alert-dialog"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
   DropdownMenu,
   DropdownMenuItem,
@@ -668,13 +669,14 @@ function FeedsEditor({
               </option>
             ))}
           </NativeSelect>
-          {feed.kind !== "hackernews" && (
+          <ButtonGroup className="min-w-40 flex-1">
+{feed.kind !== "hackernews" && (
             <Input
               aria-label={
                 feed.kind === "rss" ? t("agent.feedUrl") : t("agent.feedQuery")
               }
               type={feed.kind === "rss" ? "url" : "text"}
-              className="min-w-40 flex-1"
+              className="min-w-0 flex-1"
               placeholder={
                 feed.kind === "rss" ? "https://" : t("agent.feedQuery")
               }
@@ -684,13 +686,14 @@ function FeedsEditor({
             />
           )}
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             aria-label={t("agent.removeFeed")}
             onPress={() => onChange(feeds.filter((_, n) => n !== i))}
           >
             <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
           </Button>
+</ButtonGroup>
         </div>
       ))}
       <div>
@@ -735,34 +738,32 @@ function BlueskyConnect({ onDone }: { onDone: () => void }) {
   }
   return (
     <div className="flex flex-col gap-2 rounded-lg bg-muted/50 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <Input
+      <Input
           aria-label={t("out.blueskyHandle")}
           placeholder={t("out.blueskyHandle")}
           autoComplete="off"
-          className="min-w-40 flex-1"
           value={identifier}
           onChange={(e) => setIdentifier(e.target.value)}
         />
+        <ButtonGroup className="w-full">
         <Input
           aria-label={t("out.blueskyPassword")}
           placeholder={t("out.blueskyPassword")}
           type="password"
           autoComplete="off"
-          className="min-w-40 flex-1"
+          className="min-w-0 flex-1"
           value={appPassword}
           onChange={(e) => setPassword(e.target.value)}
         />
         <Button
           variant="outline"
-          size="sm"
           isDisabled={busy || !identifier || !appPassword}
           onPress={connect}
         >
           {busy && <Spinner />}
           {t("out.connectBluesky")}
         </Button>
-      </div>
+        </ButtonGroup>
       {failed && (
         <p role="alert" className="text-sm text-destructive">
           {t("out.blueskyFailed")}
@@ -1257,7 +1258,7 @@ function Machine({
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-lg font-semibold">{machine.name}</h2>
+          <h2 className="studio-title truncate py-0.5 text-2xl">{machine.name}</h2>
           <p className="text-sm text-muted-foreground">
             {t(machine.publish_mode === "auto" ? "out.auto" : "out.review")}
             {machine.last_run_at &&
