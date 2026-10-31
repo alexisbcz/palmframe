@@ -129,7 +129,6 @@ export function OpenRouter({ result }: { result?: string | null }) {
               <Button
                 type="submit"
                 className="data-pressed:scale-100!"
-                variant="outline"
                 isDisabled={!key.trim() || busy === "key"}
               >
                 {busy === "key" && <Spinner />}

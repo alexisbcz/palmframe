@@ -372,7 +372,6 @@ export function ApiKeys() {
             <Button
               type="submit"
               className="data-pressed:scale-100!"
-              variant="outline"
               isDisabled={busy === "create" || !isValid(access)}
             >
               {busy === "create" && <Spinner />}

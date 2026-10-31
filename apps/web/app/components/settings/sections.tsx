@@ -238,7 +238,6 @@ export function ProfileSection({ viewer }: { viewer: Viewer }) {
             <Button
               type="submit"
               className="data-pressed:scale-100!"
-              variant="outline"
               isDisabled={
                 busy === "name" || !name.trim() || name.trim() === viewer.name
               }
