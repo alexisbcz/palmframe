@@ -18,6 +18,7 @@ import {
   type StyleId,
   type WorldItem,
 } from "./model"
+import { styleSlots } from "@/lib/comic-import/style"
 import { COSTS } from "@/lib/credits"
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
 
@@ -124,6 +125,7 @@ export function lookOf(panel: PanelLayer, look: Look = DEFAULT_LOOK): Look {
     saturation: look.saturation,
     // A panel on its own style has left the carousel's recipe behind.
     ...(look.recipe && style === look.style && { recipe: look.recipe }),
+    ...(look.styleRef && style === look.style && { styleRef: look.styleRef }),
   }
 }
 
@@ -200,7 +202,7 @@ export function panelMembers(panel: PanelLayer, cast: Character[] = []) {
     .filter((c): c is Character => !!c)
 }
 
-type RefSources = Pick<ComicProject, "cast" | "world">
+type RefSources = Pick<ComicProject, "cast" | "world" | "look">
 
 // The panel's location first, then its props, whatever order they were added.
 function panelWorld(panel: PanelLayer, world: WorldItem[] = []) {
@@ -227,9 +229,11 @@ export type PanelRef =
 // Whatever doesn't fit is dropped here, never by the server, so the prompt's
 // numbers stay right and the left-out are described in words instead. The
 // guide always keeps a slot: the last reference gives way, never the guide.
+// A learned style's pages come last, added by the server: `styleSlots` is how
+// many, and they push out references the same way.
 export function panelRefs(
   panel: PanelLayer,
-  { cast, world }: Pick<ComicProject, "cast" | "world">
+  { cast, world, look }: RefSources
 ) {
   const wanted: NamedRef[] = [
     ...panelMembers(panel, cast)
@@ -244,14 +248,21 @@ export function panelRefs(
       .filter((item) => item.image)
       .map((item) => ({ src: item.image!, item })),
   ]
-  const room = MAX_REFS - (panel.guide ? 1 : 0)
+  const pages = look ? lookOf(panel, look).styleRef?.pages : 0
+  const slots = pages ? styleSlots(wanted.length, !!panel.guide, pages) : 0
+  const room = MAX_REFS - (panel.guide ? 1 : 0) - slots
   const refs: PanelRef[] = wanted.slice(0, room)
   if (panel.guide) refs.push({ src: panel.guide.src })
-  return { refs, dropped: wanted.slice(room) }
+  return { refs, dropped: wanted.slice(room), styleSlots: slots }
+}
+
+const refCount = (panel: PanelLayer, project: RefSources) => {
+  const { refs, styleSlots: slots } = panelRefs(panel, project)
+  return refs.length + slots
 }
 
 export const usesKlein = (panel: PanelLayer, project: RefSources) =>
-  panelRefs(panel, project).refs.length > 0
+  refCount(panel, project) > 0
 
 // Up front, because the written description otherwise out-votes a sketch
 // the model only skims. The wording follows OpenManga's POSE / LAYOUT section.
@@ -262,6 +273,18 @@ function guideProse(panel: PanelLayer, image: string) {
       ? "Copy the pose of every figure, where each figure stands in the frame, and the framing from the sketch. Where the description disagrees with the sketch on pose, figure placement or framing, the sketch wins. Identity, outfits and the art style still come from the character references and the description, never from the sketch."
       : "Start from the sketch for the poses, where the figures stand and the framing; the description may adjust it."
   return `${image} is a rough layout sketch. ${rule} Ignore its drawing style, line quality and any text in it.`
+}
+
+// Pages of someone else's comic: the model gets told what they are for and,
+// as firmly, what they are not.
+function styleProse(first: number, count: number, total: number) {
+  const which =
+    count > 1
+      ? `Reference images ${first + 1} and ${first + 2} are pages`
+      : total > 1
+        ? `Reference image ${first + 1} is a page`
+        : "The reference image is a page"
+  return `${which} from another comic, shown only for how the art is drawn. Match the line work, inking, shading, color palette, texture and panel rhythm. Take the style only: never copy the characters, faces, costumes, scenes, logos, lettering or text.`
 }
 
 // For Klein: the shot in sentences, each reference image named for what it
@@ -277,10 +300,11 @@ function kleinPrompt(
   close: string
 ) {
   const effective = lookOf(panel, look)
-  const { refs } = panelRefs(panel, { cast, world })
+  const { refs, styleSlots: slots } = panelRefs(panel, { cast, world, look })
+  const total = refs.length + slots
   const tags = (panel.tags ?? []).filter((t) => !COUNT_TAGS.has(t))
   const image = (i: number) =>
-    refs.length > 1 ? `reference image ${i + 1}` : "the reference image"
+    total > 1 ? `reference image ${i + 1}` : "the reference image"
   const name = (c: Character) => c.name.trim() || KIND[c.kind]
   const drawn = refs.map((r, i) => {
     if (r.item) {
@@ -304,7 +328,7 @@ function kleinPrompt(
       return `${name(c)}: ${[KIND[c.kind], ...c.tags, ...(worn ? [words(worn)] : [])].join(", ")}.`
     })
   const guide =
-    refs.length > 1 ? `Reference image ${refs.length}` : "The reference image"
+    total > 1 ? `Reference image ${refs.length}` : "The reference image"
   const unseen = panelWorld(panel, world)
     .filter((w) => !refs.some((r) => r.item?.id === w.id))
     .map((w) => `Also in the shot: ${words(w)}.`)
@@ -316,7 +340,8 @@ function kleinPrompt(
     ...drawn,
     ...others,
     ...unseen,
-    refs.some((r) => r.character)
+    slots ? styleProse(refs.length, slots, total) : "",
+    !slots && refs.some((r) => r.character)
       ? "Keep the art style of the character reference images."
       : "",
     lookProse(panel, effective),
@@ -399,7 +424,8 @@ export function buildPrompt(
   }: Pick<ComicProject, "cast" | "world" | "look"> = {}
 ) {
   const effective = lookOf(panel, look)
-  const raw = effective.style === "raw"
+  // Raw means no direction at all, which a recipe is.
+  const raw = effective.style === "raw" && !effective.recipe
   const styled = lookTags(panel, effective)
   const members = panelMembers(panel, cast)
   const kinds = (k: Character["kind"]) =>
@@ -451,6 +477,14 @@ export async function render(
     engine?: Engine
     refs?: string[]
     coverage?: boolean
+    style?: { id: string; slots: number }
+    fallback?: {
+      prompt: string
+      negative: string
+      width: number
+      height: number
+      steps: number
+    }
   },
   signal?: AbortSignal
 ) {
@@ -480,7 +514,9 @@ export async function render(
     engine:
       res.headers.get("x-billed") === "openrouter"
         ? undefined
-        : (body.engine ?? "anima"),
+        : ((res.headers.get("x-engine") as Engine | null) ??
+          body.engine ??
+          "anima"),
   }
 }
 
@@ -620,7 +656,7 @@ export function kleinSize(width: number, height: number, area = KLEIN_AREA) {
 
 // Panels with reference images are drawn from them, with Klein.
 export const engineOf = (panel: PanelLayer, project: RefSources): Engine =>
-  panelRefs(panel, project).refs.length ? "klein" : "anima"
+  refCount(panel, project) ? "klein" : "anima"
 
 export const otherEngine = (engine: Engine): Engine =>
   engine === "klein" ? "anima" : "klein"
@@ -633,7 +669,23 @@ export function engineCost(
   project: RefSources
 ) {
   if (engine === "anima") return COSTS.panel
-  return panelRefs(panel, project).refs.length ? COSTS.panel_ref : COSTS.sheet
+  return refCount(panel, project) ? COSTS.panel_ref : COSTS.sheet
+}
+
+// The request's share of a learned style: which one and how many pages, plus
+// the same panel for Anima in case no model at the other end sees images.
+function styleBody(panel: PanelLayer, project: ComicEditor["project"]) {
+  const id = lookOf(panel, project.look).styleRef?.id
+  const { styleSlots: slots } = panelRefs(panel, project)
+  if (!id || !slots) return {}
+  return {
+    style: { id, slots },
+    fallback: {
+      ...buildPrompt(panel, project),
+      ...renderSize(panel.width, panel.height),
+      steps: panel.steps ?? DEFAULT_STEPS,
+    },
+  }
 }
 
 function renderBody(
@@ -657,6 +709,7 @@ function renderBody(
     steps: 4,
     engine,
     refs: panelRefs(panel, project).refs.map((r) => r.src),
+    ...styleBody(panel, project),
   }
 }
 
@@ -864,6 +917,7 @@ export function useGenerator(editor: ComicEditor) {
               (r) => r.src
             ),
             coverage: true,
+            ...styleBody({ ...panel, guide: undefined }, project),
           },
           controller.signal
         )

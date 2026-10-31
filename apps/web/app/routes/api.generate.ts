@@ -1,6 +1,14 @@
 import { COSTS } from "@/lib/credits"
-import { error, operation, parse, render } from "@/lib/generate.server"
+import {
+  error,
+  operation,
+  parse,
+  render,
+  withoutReferences,
+} from "@/lib/generate.server"
+import { kleinAvailable } from "@/lib/klein.server"
 import { imageResponse, payingConnection } from "@/lib/openrouter.server"
+import { styleRefUrls } from "@/lib/styles.server"
 import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/api.generate"
@@ -12,8 +20,8 @@ export type { GenerateRequest } from "@/lib/generate.server"
 // Vercel, for local work.
 export async function action({ request }: Route.ActionArgs) {
   if (request.method !== "POST") return error("Method not allowed", 405)
-  const r = parse(await request.json().catch(() => null))
-  if (!r)
+  const parsed = parse(await request.json().catch(() => null))
+  if (!parsed)
     return error(
       "Invalid request: prompt, width, height, seed and steps are required.",
       400
@@ -21,7 +29,23 @@ export async function action({ request }: Route.ActionArgs) {
   const { supabase, viewer } = await getViewer(request)
   if (!viewer) {
     if (process.env.VERCEL) return error("Sign in to generate.", 401)
-    return render(r, request)
+    return render(parsed, request)
+  }
+
+  // Before anything is charged: a style that can't be drawn costs nothing.
+  let r = parsed
+  if (r.style) {
+    const urls = await styleRefUrls(supabase, r.style.id, r.style.slots, r.seed)
+    if (!urls)
+      return Response.json(
+        {
+          error:
+            "This style is gone, or it belongs to someone else. Pick another one in Look.",
+          code: "style_unavailable",
+        },
+        { status: 404 }
+      )
+    r = { ...r, refs: [...r.refs, ...urls] }
   }
 
   // A connected OpenRouter account pays instead of credits.
@@ -41,6 +65,16 @@ export async function action({ request }: Route.ActionArgs) {
       },
       request.signal
     )
+
+  if (r.style && !kleinAvailable()) {
+    const textOnly = withoutReferences(r)
+    if (!textOnly)
+      return error(
+        "Drawing from reference pages needs a connected OpenRouter account here. Connect one in Settings.",
+        501
+      )
+    r = textOnly
+  }
 
   const job = crypto.randomUUID()
   const op = operation(r)

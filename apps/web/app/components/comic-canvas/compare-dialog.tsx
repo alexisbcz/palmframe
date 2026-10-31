@@ -108,7 +108,8 @@ export function CompareDialog({
   const engine = otherEngine(panel.engine ?? engineOf(panel, project))
   const cost = engineCost(panel, engine, project)
   const short = !openrouter && balance !== null && balance < cost
-  const noSheet = engine === "klein" && !panelRefs(panel, project).refs.length
+  const { refs, styleSlots } = panelRefs(panel, project)
+  const noSheet = engine === "klein" && !refs.length && !styleSlots
 
   const run = async () => {
     const src = await generator.tryEngine(panel.id, engine)

@@ -7,6 +7,7 @@ import type {
 
 import type { AssetPayload } from "@/components/catalog/model"
 
+import type { StyleAnalysis } from "./comic-import/style"
 import type { SubscriptionCache } from "./credits"
 import type {
   DeepDiveStatus,
@@ -190,6 +191,20 @@ export interface Database {
           world?: WorldItem[]
           facts?: string[]
           revision?: number
+        }
+        Relationships: []
+      }
+      comic_styles: {
+        Row: ComicStyleRow
+        Insert: {
+          name: string
+          pages: string[]
+          rights_confirmed_at: string
+        }
+        Update: {
+          name?: string
+          status?: ComicStyleRow["status"]
+          analysis?: StyleAnalysis | null
         }
         Relationships: []
       }
@@ -454,6 +469,18 @@ export type ApiJobRow = {
 }
 
 // What the pages know about the signed-in person.
+export type ComicStyleRow = {
+  id: string
+  user_id: string
+  name: string
+  status: "draft" | "ready"
+  rights_confirmed_at: string
+  pages: string[]
+  analysis: StyleAnalysis | null
+  created_at: string
+  updated_at: string
+}
+
 export type ComicAssetRow = {
   id: string
   user_id: string
@@ -618,6 +645,7 @@ export interface Viewer {
 }
 
 export const COMICS_BUCKET = "comics"
+export const COMIC_STYLES_BUCKET = "comic-style-refs"
 export const MACHINE_IMAGES_BUCKET = "machine-images"
 
 export type OpenRouterConnectionRow = {

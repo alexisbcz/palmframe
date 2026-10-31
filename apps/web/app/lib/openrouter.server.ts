@@ -372,9 +372,16 @@ export async function generateImage(
 // along with the user text; the connected text model has to read images.
 export async function completeJson(
   c: OpenRouterConnection,
-  r: { system: string; user: string; schema: object; image?: string },
+  r: {
+    system: string
+    user: string
+    schema: object
+    image?: string
+    images?: string[]
+  },
   signal?: AbortSignal
 ) {
+  const images = r.images ?? (r.image ? [r.image] : [])
   const res = await fetch(`${API}/chat/completions`, {
     method: "POST",
     headers: headers(c.key),
@@ -385,9 +392,12 @@ export async function completeJson(
         { role: "system", content: r.system },
         {
           role: "user",
-          content: r.image
+          content: images.length
             ? [
-                { type: "image_url", image_url: { url: r.image } },
+                ...images.map((url) => ({
+                  type: "image_url",
+                  image_url: { url },
+                })),
                 { type: "text", text: r.user },
               ]
             : r.user,

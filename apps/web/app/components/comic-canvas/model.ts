@@ -32,6 +32,10 @@ export interface Look {
   // A catalog style's direction on top of `style`: Anima reads `tags`, Klein
   // reads `prose`. Choosing another style clears it.
   recipe?: { name: string; tags: string; prose: string; negative: string }
+  // A style learned from an uploaded comic. Only its id lives in the project:
+  // the pages are private, and the server signs them render by render.
+  // `recipe` carries the written analysis alongside it.
+  styleRef?: { id: string; pages: number }
 }
 
 export const DEFAULT_LOOK: Look = {

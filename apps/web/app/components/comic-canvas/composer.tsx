@@ -33,6 +33,7 @@ import { WorldRow } from "./world"
 import { CompareDialog } from "./compare-dialog"
 import { messages } from "./composer.messages"
 import { LookControls } from "./look"
+import { StyleLibrary } from "./style-library"
 import { messages as lookMessages } from "./look.messages"
 import { AdvancedFields, TagBrowser, TakesGrid } from "./panel-tools"
 import { DEFAULT_LOOK, type PanelLayer } from "./model"
@@ -58,11 +59,15 @@ function useDismiss(
 ) {
   React.useEffect(() => {
     if (!open) return
+    // Dialogs opened from inside render in a portal: they're still inside.
+    const inDialog = (target: EventTarget | null) =>
+      target instanceof Element && !!target.closest('[data-slot^="dialog"]')
     const down = (e: PointerEvent) => {
-      if (!ref.current?.contains(e.target as Node)) onClose()
+      if (!ref.current?.contains(e.target as Node) && !inDialog(e.target))
+        onClose()
     }
     const key = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !inDialog(e.target)) {
         e.stopPropagation()
         onClose()
       }
@@ -152,6 +157,7 @@ export function Composer({
     focus: () => textareaRef.current?.focus(),
   }))
   const close = React.useCallback(() => setOpen(null), [])
+  const [styleCover, setStyleCover] = React.useState<string>()
   const rootRef = React.useRef<HTMLDivElement>(null)
   useDismiss(rootRef, open !== null, close)
   const saved = useSavedSetups()
@@ -214,7 +220,17 @@ export function Composer({
             onSave={() => saved.save(setup)}
             onDelete={saved.remove}
             onClose={close}
-            footer={panel && <LookControls editor={editor} panel={panel} />}
+            learned={
+              look.styleRef && look.recipe
+                ? { name: look.recipe.name, image: styleCover }
+                : undefined
+            }
+            footer={
+              <>
+                <StyleLibrary editor={editor} onCover={setStyleCover} />
+                {panel && <LookControls editor={editor} panel={panel} />}
+              </>
+            }
           />
         </div>
       )}

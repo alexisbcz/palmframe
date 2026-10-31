@@ -493,10 +493,22 @@ export function useComicEditor({ initial }: { initial?: ComicProject } = {}) {
   const setLook = React.useCallback(
     (patch: Partial<Look>, key?: string) =>
       commitProject((p) => {
-        const { recipe, ...look } = { ...(p.look ?? DEFAULT_LOOK), ...patch }
+        const { recipe, styleRef, ...look } = {
+          ...(p.look ?? DEFAULT_LOOK),
+          ...patch,
+        }
         const kept =
           !patch.style || patch.style === p.look?.style || patch.recipe
-        return { ...p, look: kept && recipe ? { ...look, recipe } : look }
+        // A learned style's pages go with its recipe, unless this sets both.
+        const refKept = patch.styleRef || (kept && !patch.recipe)
+        return {
+          ...p,
+          look: {
+            ...look,
+            ...(kept && recipe && { recipe }),
+            ...(refKept && styleRef && { styleRef }),
+          },
+        }
       }, key),
     [commitProject]
   )

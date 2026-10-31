@@ -486,6 +486,7 @@ const KINDS = [
   "story_plan",
   "translate",
   "panel_check",
+  "style_analysis",
   "continuity_check",
   "asset_idea",
   "machine_draft",
