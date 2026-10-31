@@ -36,8 +36,6 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { Switch } from "@workspace/ui/components/switch"
 import { Textarea } from "@workspace/ui/components/textarea"
 
-import { AccountMenu } from "@/components/account/account-menu"
-import { Logo } from "@/components/auth/auth-ui"
 import { Field } from "@/components/settings/sections"
 import {
   DEFAULT_LOCALE,
@@ -798,93 +796,87 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
   }
 
   return (
-    <div className="flex min-h-svh flex-col bg-background text-foreground">
-      <header className="flex h-12 items-center justify-between gap-2 border-b px-2.5">
-        <Logo />
-        <AccountMenu />
-      </header>
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
-        <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-          <div className="max-w-2xl">
-            <h1 className="text-2xl font-semibold">{t("title")}</h1>
-            <p className="text-sm text-muted-foreground">{t("intro")}</p>
-          </div>
-          <DropdownMenuTrigger>
-            <Button variant="outline" isDisabled={full}>
-              <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
-              {t("create")}
-            </Button>
-            <DropdownMenu
-              placement="bottom end"
-              onAction={(key) => {
-                const preset = PRESETS.find((p) => p.id === key)
-                if (preset) void create(preset)
-              }}
-            >
-              {PRESETS.map((p) => (
-                <DropdownMenuItem
-                  key={p.id}
-                  id={p.id}
-                  textValue={t(`presets.${p.id}`)}
-                >
-                  {t(`presets.${p.id}`)}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenu>
-          </DropdownMenuTrigger>
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="max-w-2xl">
+          <h1 className="studio-title text-4xl">{t("title")}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">{t("intro")}</p>
         </div>
-        {full && (
-          <p className="text-sm text-muted-foreground">
-            {t("limit", { n: MAX_MACHINES })}
-          </p>
-        )}
-        {error && (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        )}
+        <DropdownMenuTrigger>
+          <Button variant="outline" isDisabled={full}>
+            <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+            {t("create")}
+          </Button>
+          <DropdownMenu
+            placement="bottom end"
+            onAction={(key) => {
+              const preset = PRESETS.find((p) => p.id === key)
+              if (preset) void create(preset)
+            }}
+          >
+            {PRESETS.map((p) => (
+              <DropdownMenuItem
+                key={p.id}
+                id={p.id}
+                textValue={t(`presets.${p.id}`)}
+              >
+                {t(`presets.${p.id}`)}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenu>
+        </DropdownMenuTrigger>
+      </div>
+      {full && (
+        <p className="text-sm text-muted-foreground">
+          {t("limit", { n: MAX_MACHINES })}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
 
-        {current ? (
-          <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
-            <nav aria-label={t("title")} className="flex flex-col gap-1">
-              {machines.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  aria-current={m.id === current.id ? "page" : undefined}
-                  onClick={() => setSelected(m.id)}
+      {current ? (
+        <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
+          <nav aria-label={t("title")} className="flex flex-col gap-1">
+            {machines.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                aria-current={m.id === current.id ? "page" : undefined}
+                onClick={() => setSelected(m.id)}
+                className={cn(
+                  "flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                  m.id === current.id
+                    ? "bg-foreground/10 font-medium"
+                    : "text-muted-foreground hover:bg-foreground/5"
+                )}
+              >
+                <span
+                  aria-hidden
                   className={cn(
-                    "flex min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                    m.id === current.id
-                      ? "bg-foreground/10 font-medium"
-                      : "text-muted-foreground hover:bg-foreground/5"
+                    "size-2 shrink-0 rounded-full",
+                    m.enabled ? "bg-emerald-500" : "bg-muted-foreground/40"
                   )}
-                >
-                  <span
-                    aria-hidden
-                    className={cn(
-                      "size-2 shrink-0 rounded-full",
-                      m.enabled ? "bg-emerald-500" : "bg-muted-foreground/40"
-                    )}
-                  />
-                  <span className="truncate">{m.name}</span>
-                </button>
-              ))}
-            </nav>
-            <Machine
-              key={current.id}
-              machine={current}
-              drafts={drafts.filter((d) => d.machine_id === current.id)}
-              scheduled={scheduled}
-            />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center gap-1 rounded-xl border border-dashed py-16 text-center">
-            <p className="font-medium">{t("empty.title")}</p>
-            <p className="text-sm text-muted-foreground">{t("empty.text")}</p>
-          </div>
-        )}
-      </main>
+                />
+                <span className="truncate">{m.name}</span>
+              </button>
+            ))}
+          </nav>
+          <Machine
+            key={current.id}
+            machine={current}
+            drafts={drafts.filter((d) => d.machine_id === current.id)}
+            scheduled={scheduled}
+          />
+        </div>
+      ) : (
+        <div className="flex flex-col items-center gap-1 rounded-xl border border-dashed py-16 text-center">
+          <p className="font-medium">{t("empty.title")}</p>
+          <p className="text-sm text-muted-foreground">{t("empty.text")}</p>
+        </div>
+      )}
     </div>
   )
 }

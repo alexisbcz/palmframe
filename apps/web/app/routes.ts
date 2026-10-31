@@ -1,4 +1,9 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes"
+import {
+  type RouteConfig,
+  index,
+  layout,
+  route,
+} from "@react-router/dev/routes"
 
 export default [
   index("routes/home.tsx"),
@@ -41,7 +46,17 @@ export default [
   route("api/instagram/callback", "routes/api.instagram.callback.ts"),
   route("api/instagram/publish", "routes/api.instagram.publish.ts"),
   route("api/instagram/posts/:id", "routes/api.instagram.posts.$id.ts"),
-  route("machines", "routes/machines.tsx"),
+  layout("routes/studio.tsx", [
+    route("studio", "routes/studio.home.tsx"),
+    route("studio/brand", "routes/studio.brand.tsx"),
+    route("studio/ads", "routes/studio.ads.tsx"),
+    route("studio/trends", "routes/studio.trends.tsx"),
+    route("studio/teardown", "routes/studio.teardown.tsx"),
+    route("studio/product", "routes/studio.product.tsx"),
+    route("studio/boards/:id", "routes/studio.board.tsx"),
+    route("machines", "routes/machines.tsx"),
+  ]),
+  route("api/studio", "routes/api.studio.ts"),
   route("api/machines", "routes/api.machines.ts"),
   route("api/machines/tick", "routes/api.machines.tick.ts"),
   route("api/keys", "routes/api.keys.ts"),

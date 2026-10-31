@@ -54,6 +54,9 @@ export const COSTS = {
   continuity_check: 2, // an LLM comparing a carousel with its series' facts
   asset_idea: 2, // an LLM turning a rough idea into a catalog asset
   machine_draft: 2, // an LLM writing one content machine draft
+  brand_kit: 5, // reading a brand's logos, colours and fonts from its site
+  studio_lookup: 1, // one search of ads or videos, or reading one link
+  studio_board: 4, // an LLM planning a comic from a source
 } as const
 
 export type Operation = keyof typeof COSTS
