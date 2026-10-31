@@ -11,6 +11,10 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Lossless" },
       webp: { name: "WebP", hint: "Smaller files" },
       pdf: { name: "PDF", hint: "One document" },
+      cbz: {
+        name: "CBZ (comic archive)",
+        hint: "Comic readers open it the same as CBR",
+      },
       psd: { name: "PSD", hint: "Layered, for Photoshop" },
     },
     size: "Size",
@@ -30,11 +34,17 @@ export const messages = defineMessages({
       one: "Export PDF, {count} page",
       other: "Export PDF, {count} pages",
     },
+    exportCbz: {
+      one: "Export CBZ, {count} page",
+      other: "Export CBZ, {count} pages",
+    },
     rendering: "Rendering {done} of {total}…",
     packing: "Packing…",
     done: "Downloaded {file} · {size}",
     failed: "Export failed: {error}",
     unsupported: "This browser can't save {format}.",
+    tooLarge:
+      "This comic is too large for one CBZ. Export fewer pages or a smaller size.",
     noSlides: "Pick at least one slide.",
   },
   fr: {
@@ -47,6 +57,10 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Sans perte" },
       webp: { name: "WebP", hint: "Fichiers plus légers" },
       pdf: { name: "PDF", hint: "Un seul document" },
+      cbz: {
+        name: "CBZ (archive BD)",
+        hint: "Les lecteurs de BD l’ouvrent comme un CBR",
+      },
       psd: { name: "PSD", hint: "Calques, pour Photoshop" },
     },
     size: "Taille",
@@ -66,11 +80,17 @@ export const messages = defineMessages({
       one: "Exporter le PDF, {count} page",
       other: "Exporter le PDF, {count} pages",
     },
+    exportCbz: {
+      one: "Exporter le CBZ, {count} page",
+      other: "Exporter le CBZ, {count} pages",
+    },
     rendering: "Rendu {done} sur {total}…",
     packing: "Assemblage…",
     done: "Téléchargé : {file} · {size}",
     failed: "Échec de l’export : {error}",
     unsupported: "Ce navigateur ne sait pas enregistrer en {format}.",
+    tooLarge:
+      "Cette BD est trop lourde pour un seul CBZ. Exportez moins de pages ou une taille plus petite.",
     noSlides: "Choisissez au moins une diapo.",
   },
   es: {
@@ -83,6 +103,10 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Sin pérdida" },
       webp: { name: "WebP", hint: "Archivos más ligeros" },
       pdf: { name: "PDF", hint: "Un solo documento" },
+      cbz: {
+        name: "CBZ (archivo de cómic)",
+        hint: "Los lectores de cómics lo abren igual que un CBR",
+      },
       psd: { name: "PSD", hint: "Por capas, para Photoshop" },
     },
     size: "Tamaño",
@@ -102,11 +126,17 @@ export const messages = defineMessages({
       one: "Exportar PDF, {count} página",
       other: "Exportar PDF, {count} páginas",
     },
+    exportCbz: {
+      one: "Exportar CBZ, {count} página",
+      other: "Exportar CBZ, {count} páginas",
+    },
     rendering: "Renderizando {done} de {total}…",
     packing: "Empaquetando…",
     done: "Descargado: {file} · {size}",
     failed: "Error al exportar: {error}",
     unsupported: "Este navegador no puede guardar {format}.",
+    tooLarge:
+      "Este cómic es demasiado grande para un solo CBZ. Exporta menos páginas o un tamaño menor.",
     noSlides: "Elige al menos una diapositiva.",
   },
   de: {
@@ -119,6 +149,10 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Verlustfrei" },
       webp: { name: "WebP", hint: "Kleinere Dateien" },
       pdf: { name: "PDF", hint: "Ein Dokument" },
+      cbz: {
+        name: "CBZ (Comic-Archiv)",
+        hint: "Comic-Reader öffnen es genau wie CBR",
+      },
       psd: { name: "PSD", hint: "Mit Ebenen, für Photoshop" },
     },
     size: "Größe",
@@ -138,11 +172,17 @@ export const messages = defineMessages({
       one: "PDF exportieren, {count} Seite",
       other: "PDF exportieren, {count} Seiten",
     },
+    exportCbz: {
+      one: "CBZ exportieren, {count} Seite",
+      other: "CBZ exportieren, {count} Seiten",
+    },
     rendering: "Rendere {done} von {total}…",
     packing: "Wird gepackt…",
     done: "Heruntergeladen: {file} · {size}",
     failed: "Export fehlgeschlagen: {error}",
     unsupported: "Dieser Browser kann kein {format} speichern.",
+    tooLarge:
+      "Dieser Comic ist zu groß für eine CBZ-Datei. Exportiere weniger Seiten oder eine kleinere Größe.",
     noSlides: "Wähle mindestens eine Slide.",
   },
   it: {
@@ -155,6 +195,10 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Senza perdita" },
       webp: { name: "WebP", hint: "File più leggeri" },
       pdf: { name: "PDF", hint: "Un solo documento" },
+      cbz: {
+        name: "CBZ (archivio fumetti)",
+        hint: "I lettori di fumetti lo aprono come un CBR",
+      },
       psd: { name: "PSD", hint: "A livelli, per Photoshop" },
     },
     size: "Dimensioni",
@@ -174,11 +218,17 @@ export const messages = defineMessages({
       one: "Esporta PDF, {count} pagina",
       other: "Esporta PDF, {count} pagine",
     },
+    exportCbz: {
+      one: "Esporta CBZ, {count} pagina",
+      other: "Esporta CBZ, {count} pagine",
+    },
     rendering: "Rendering {done} di {total}…",
     packing: "Creazione dell’archivio…",
     done: "Scaricato: {file} · {size}",
     failed: "Esportazione non riuscita: {error}",
     unsupported: "Questo browser non può salvare in {format}.",
+    tooLarge:
+      "Questo fumetto è troppo grande per un solo CBZ. Esporta meno pagine o una dimensione più piccola.",
     noSlides: "Scegli almeno una slide.",
   },
   ja: {
@@ -191,6 +241,10 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "劣化なし" },
       webp: { name: "WebP", hint: "軽いファイル" },
       pdf: { name: "PDF", hint: "1つの文書" },
+      cbz: {
+        name: "CBZ（コミックアーカイブ）",
+        hint: "コミックリーダーでCBRと同じように開けます",
+      },
       psd: { name: "PSD", hint: "レイヤー付き、Photoshop用" },
     },
     size: "サイズ",
@@ -208,11 +262,16 @@ export const messages = defineMessages({
     exportPdf: {
       other: "PDFを書き出し（{count}ページ）",
     },
+    exportCbz: {
+      other: "CBZを書き出し（{count}ページ）",
+    },
     rendering: "レンダリング中 {done}/{total}…",
     packing: "まとめています…",
     done: "{file}をダウンロードしました · {size}",
     failed: "書き出しに失敗しました: {error}",
     unsupported: "このブラウザは{format}で保存できません。",
+    tooLarge:
+      "このコミックは1つのCBZには大きすぎます。ページ数を減らすか、サイズを小さくしてください。",
     noSlides: "スライドを1枚以上選んでください。",
   },
 })

@@ -1,3 +1,5 @@
+import * as React from "react"
+
 import { PublishComicButton } from "@/components/catalog/publish-comic"
 import type { ImageCache } from "@/components/comic-canvas/render"
 import {
@@ -19,14 +21,17 @@ export function CloudBar({
   cloud,
   images,
   series,
+  onTitle,
 }: {
   editor: ComicEditor
   cloud: CloudProject
   images: ImageCache
   series: SeriesState
+  onTitle: (title: string) => void
 }) {
   const t = useT(messages)
   const sync = useCloudSync(editor, cloud, images, series.push)
+  React.useEffect(() => onTitle(sync.title), [sync.title, onTitle])
   return (
     <div className="flex min-w-0 items-center gap-1 sm:gap-2">
       <input

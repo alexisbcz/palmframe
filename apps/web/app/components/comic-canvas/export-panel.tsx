@@ -20,6 +20,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useLocale, useT, type Locale } from "@/i18n/core"
 
 import { download, pdf, withDpi, zip } from "./actions"
+import { ArchiveTooLargeError, writeCbz } from "./comic-archive"
 import { SliderInput } from "./controls"
 import { messages } from "./export.messages"
 import { translatedPage } from "./lettering"
@@ -30,7 +31,7 @@ import { roving } from "./roving"
 import type { ComicEditor } from "./use-editor"
 
 type Scope = "all" | "current"
-type Format = "jpeg" | "png" | "webp" | "pdf" | "psd"
+type Format = "jpeg" | "png" | "webp" | "pdf" | "cbz" | "psd"
 type Size = "1" | "2" | "3" | "300" | "600"
 interface Settings {
   scope: Scope
@@ -51,8 +52,8 @@ const DEFAULTS: Settings = {
   name: "palmframe-carousel",
 }
 const STORAGE_KEY = "palmframe:export"
-const FORMATS = ["jpeg", "png", "webp", "pdf", "psd"] as const
-// The icon set has no WebP or PSD file, so these redraw the PNG's label.
+const FORMATS = ["jpeg", "png", "webp", "pdf", "cbz", "psd"] as const
+// The icon set has no WebP, CBZ or PSD file, so these redraw the PNG's label.
 const fileIcon = (label: string): IconSvgElement => [
   Png01Icon[0],
   [
@@ -74,6 +75,9 @@ const FORMAT_ICON = {
     "M1.75 16L3 22L4.25 18L5.5 22L6.75 16M11 16H8.75V22H11M8.75 19H10.5M13 19V16H14.5C15.3284 16 16 16.6716 16 17.5C16 18.3284 15.3284 19 14.5 19M13 19H14.75C15.5784 19 16.25 19.6716 16.25 20.5C16.25 21.3284 15.5784 22 14.75 22H13V19ZM18.5 22V19M18.5 19V16H20.5C21.3284 16 22 16.6716 22 17.5C22 18.3284 21.3284 19 20.5 19H18.5Z"
   ),
   pdf: Pdf01Icon,
+  cbz: fileIcon(
+    "M7 17C7 16.4477 6.55228 16 6 16H5C3.89543 16 3 16.8954 3 18V20C3 21.1046 3.89543 22 5 22H6C6.55228 22 7 21.5523 7 21M10 19V16H11.5C12.3284 16 13 16.6716 13 17.5C13 18.3284 12.3284 19 11.5 19M10 19H11.75C12.5784 19 13.25 19.6716 13.25 20.5C13.25 21.3284 12.5784 22 11.75 22H10V19ZM16 16H21L16 22H21"
+  ),
   psd: fileIcon(
     "M4 22V19M4 19V16H6C6.82843 16 7.5 16.6716 7.5 17.5C7.5 18.3284 6.82843 19 6 19H4ZM14 17C14 16.4477 13.5523 16 13 16H11C10.4477 16 10 16.4477 10 17V18C10 18.5523 10.4477 19 11 19H13C13.5523 19 14 19.4477 14 20V21C14 21.5523 13.5523 22 13 22H11C10.4477 22 10 21.5523 10 21M16.25 16H17.75C18.8546 16 19.75 16.8954 19.75 18V20C19.75 21.1046 18.8546 22 17.75 22H16.25V16Z"
   ),
@@ -118,6 +122,14 @@ function formatBytes(n: number, locale: string) {
   return `${n.toLocaleString(locale, { maximumFractionDigits: i ? 1 : 0 })} ${units[i]}`
 }
 
+// What the editor knows of the comic, for the archive's ComicInfo.xml.
+export interface ComicDetails {
+  title?: string
+  series?: string
+  number?: number
+  writer?: string
+}
+
 type Status =
   | { step: "idle" }
   | { step: "rendering"; done: number; total: number }
@@ -130,9 +142,11 @@ type Status =
 export function ExportButton({
   editor,
   images,
+  details,
 }: {
   editor: ComicEditor
   images: ImageCache
+  details: ComicDetails
 }) {
   const t = useT(messages)
   const [open, setOpen] = React.useState(false)
@@ -186,7 +200,9 @@ export function ExportButton({
           )}
         />
       </Button>
-      {open && <ExportPanel editor={editor} images={images} />}
+      {open && (
+        <ExportPanel editor={editor} images={images} details={details} />
+      )}
     </div>
   )
 }
@@ -254,9 +270,11 @@ function Label({
 function ExportPanel({
   editor,
   images,
+  details,
 }: {
   editor: ComicEditor
   images: ImageCache
+  details: ComicDetails
 }) {
   const t = useT(messages)
   const { locale } = useLocale()
@@ -283,7 +301,7 @@ function ExportPanel({
       ? [editor.pageIndex]
       : project.pages.flatMap((p, i) => (excluded.has(p.id) ? [] : [i]))
   const busy = status.step === "rendering" || status.step === "packing"
-  const lossy = ["jpeg", "webp", "pdf"].includes(settings.format)
+  const lossy = ["jpeg", "webp", "pdf", "cbz"].includes(settings.format)
   const scale = settings.dpi ? settings.dpi / CSS_DPI : settings.scale
   const pixelWidth = Math.round(project.width * scale)
   const pixelHeight = Math.round(project.height * scale)
@@ -291,10 +309,11 @@ function ExportPanel({
   const stem = slug(settings.name)
   // One name per language, so exporting several overwrites nothing.
   const name = language ? `${stem}-${language}` : stem
-  // Several images travel as one .zip; a PDF or a single image downloads as is.
+  // Several images travel as one .zip; a PDF, an archive or a single image
+  // downloads as is.
   const outName =
-    settings.format === "pdf"
-      ? `${name}.pdf`
+    settings.format === "pdf" || settings.format === "cbz"
+      ? `${name}.${settings.format}`
       : pages.length > 1
         ? `${name}.zip`
         : `${name}-${String(pages[0]! + 1).padStart(2, "0")}.${ext}`
@@ -325,27 +344,51 @@ function ExportPanel({
     if (!pages.length) return
     const { format, dpi } = settings
     const type =
-      format === "pdf" || format === "psd" ? "image/jpeg" : MIME[format]
+      format === "pdf" || format === "psd" || format === "cbz"
+        ? "image/jpeg"
+        : MIME[format]
     const quality = settings.quality / 100
+    const renderPage = async (n: number) => {
+      setStatus({ step: "rendering", done: n, total: pages.length })
+      const doc = await translatedPage(project, pages[n]!, language)
+      let blob =
+        format === "psd"
+          ? await renderPsd(doc, images, scale, dpi || 72)
+          : await renderToBlob(doc, images, type, scale, quality)
+      if (!blob) throw new Error("canvas")
+      // Browsers that can't encode a type quietly fall back to PNG.
+      if (format !== "psd" && blob.type !== type)
+        throw new Error(t("unsupported", { format: formatName }))
+      if (dpi && format !== "pdf") blob = await withDpi(blob, dpi)
+      return blob
+    }
     try {
-      const blobs: Blob[] = []
-      for (const [n, i] of pages.entries()) {
-        setStatus({ step: "rendering", done: n, total: pages.length })
-        const doc = await translatedPage(project, i, language)
-        let blob =
-          format === "psd"
-            ? await renderPsd(doc, images, scale, dpi || 72)
-            : await renderToBlob(doc, images, type, scale, quality)
-        if (!blob) throw new Error("canvas")
-        // Browsers that can't encode a type quietly fall back to PNG.
-        if (format !== "psd" && blob.type !== type)
-          throw new Error(t("unsupported", { format: formatName }))
-        if (dpi && format !== "pdf") blob = await withDpi(blob, dpi)
-        blobs.push(blob)
+      if (format === "cbz") {
+        // Written page by page, so a long comic stays out of memory.
+        const out = await writeCbz({
+          info: {
+            ...details,
+            // The default file name is a placeholder, not a title.
+            title:
+              details.title ||
+              (settings.name === DEFAULTS.name ? undefined : settings.name),
+            pageCount: pages.length,
+            // The original lettering's language isn't recorded anywhere.
+            language: language ?? undefined,
+            rtl: project.rtl,
+          },
+          ext: "jpg",
+          readPage: renderPage,
+        })
+        download(out, outName)
+        setStatus({ step: "done", file: outName, size: out.size })
+        return
       }
+      const blobs: Blob[] = []
+      for (const n of pages.keys()) blobs.push(await renderPage(n))
       setStatus({ step: "packing" })
       let out: Blob
-      if (settings.format === "pdf") {
+      if (format === "pdf") {
         out = await pdf(
           blobs.map((jpeg) => ({
             jpeg,
@@ -367,7 +410,13 @@ function ExportPanel({
       download(out, outName)
       setStatus({ step: "done", file: outName, size: out.size })
     } catch (e) {
-      setStatus({ step: "error", message: (e as Error).message })
+      setStatus({
+        step: "error",
+        message:
+          e instanceof ArchiveTooLargeError
+            ? t("tooLarge")
+            : (e as Error).message,
+      })
     }
   }
 
@@ -383,7 +432,9 @@ function ExportPanel({
   const primary =
     settings.format === "pdf"
       ? t("exportPdf", { count: pages.length })
-      : t("exportFiles", { count: pages.length, format: formatName })
+      : settings.format === "cbz"
+        ? t("exportCbz", { count: pages.length })
+        : t("exportFiles", { count: pages.length, format: formatName })
 
   return (
     <div
