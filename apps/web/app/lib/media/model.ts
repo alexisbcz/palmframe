@@ -84,6 +84,8 @@ export interface FormatDefinition {
   id: FormatId
   // Rules for the model that adapts the Story to this format.
   brief: string
+  // Fixes what code can work out better than a model, such as timings.
+  normalize?: (r: Rendition) => Rendition
   // Shape and limits, checked in plain code. Claims are checked separately
   // against the Story, by the shared fact-checker.
   check: (r: Rendition) => FormatCheck

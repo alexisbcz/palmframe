@@ -34,7 +34,10 @@ export async function kickWork(origin: string, path: string, id: string) {
 export const kick = (origin: string, id: string) =>
   kickWork(origin, "/api/deep-dives/work", id)
 
-export async function fail(row: { id: string; user_id: string; job: string }, why: string) {
+export async function fail(
+  row: { id: string; user_id: string; job: string },
+  why: string
+) {
   await table()
     .update({ status: "failed", problems: [why], leased_until: null })
     .eq("id", row.id)
@@ -70,7 +73,9 @@ export async function runSlice(id: string, origin: string) {
     findings: row.findings,
     problems: row.problems,
     submits: row.submits,
-    article: row.body ? { title: row.title, dek: row.dek, body: row.body } : null,
+    article: row.body
+      ? { title: row.title, dek: row.dek, body: row.body }
+      : null,
     done: false,
   }
   const save = (messages?: AgentMessage[]) =>
@@ -95,7 +100,11 @@ export async function runSlice(id: string, origin: string) {
   try {
     messages = await workOn(row.lead, row.messages, run, SLICE_MS, {
       log(tool, label) {
-        const line: LogLine = { at: Date.now(), tool, label: label.slice(0, 200) }
+        const line: LogLine = {
+          at: Date.now(),
+          tool,
+          label: label.slice(0, 200),
+        }
         run.log.push(line)
       },
       async checkpoint(m) {

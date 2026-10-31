@@ -68,7 +68,9 @@ export function checkArticle(
   const said = normal(evidence)
   for (const q of quotations(article.body))
     if (!said.includes(normal(q)))
-      problems.push(`This quotation isn't in anything you read: "${q.slice(0, 80)}"`)
+      problems.push(
+        `This quotation isn't in anything you read: "${q.slice(0, 80)}"`
+      )
   for (const f of findings.filter((x) => x.level === "error").slice(0, 15))
     problems.push(`Line ${f.line}, ${f.rule}: ${f.message}`)
   return problems

@@ -149,7 +149,7 @@ export default function Studio({ loaderData }: Route.ComponentProps) {
     <div className="dark studio flex min-h-svh flex-col gap-2 p-2 md:h-svh md:flex-row">
       <aside className="flex min-w-0 shrink-0 flex-col gap-3 rounded-2xl bg-card p-3 md:w-64">
         <div className="flex items-center justify-between gap-2 px-1">
-          <Link to="/studio" className="studio-title text-xl">
+          <Link to="/studio" className="studio-title -my-2 py-2 text-xl">
             {t("brandName")}
           </Link>
           <AccountMenu />
@@ -183,7 +183,7 @@ export default function Studio({ loaderData }: Route.ComponentProps) {
         <GetStarted progress={loaderData.progress} />
         <Link
           to="/projects"
-          className="flex items-center gap-2 px-1.5 text-sm text-muted-foreground hover:text-foreground max-md:hidden"
+          className="flex items-center gap-2 px-1.5 py-2 text-sm text-muted-foreground hover:text-foreground max-md:hidden"
         >
           <HugeiconsIcon
             icon={ArrowLeft01Icon}

@@ -1,5 +1,6 @@
 import type { AssetSpec, Story } from "@/lib/media/model"
 
+import { waterfallSteps } from "./format"
 import { clean, unsupportedChars } from "./text"
 
 export interface AssetCheck {
@@ -307,6 +308,20 @@ export function validateAsset(spec: AssetSpec, story: Story): AssetCheck {
       if (!total && !traced(d.value, spec.unit, d.label, all))
         problems.push(
           `${d.label} = ${d.value} can't be traced to the Story's facts or sources. Use a sourced value or mark it as an estimate.`
+        )
+    }
+    // Estimates skip the check above, so a discounted total entered as a
+    // change would sum to nonsense unseen. The total of such a chart is what a
+    // reader takes away, so it needs a source or a recorded fact of its own.
+    if (
+      spec.chart === "waterfall" &&
+      spec.series.length > 1 &&
+      spec.series.some((d) => d.estimate)
+    ) {
+      const run = waterfallSteps(spec.series).at(-1)!.value
+      if (!traced(run, spec.unit, "", all))
+        problems.push(
+          `The waterfall adds up to ${run}, which the Story never states. Entries are changes: make a discount negative, and record the total as a fact.`
         )
     }
     checkTitleNumbers(

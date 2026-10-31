@@ -37,7 +37,8 @@ const text = (t: string) => ({
 
 function remember(run: Run, url: string, title: string, body: string) {
   const existing = run.sources.find((s) => s.url === url)
-  if (existing) existing.text = `${existing.text}\n${body}`.slice(0, MAX_TEXT * 2)
+  if (existing)
+    existing.text = `${existing.text}\n${body}`.slice(0, MAX_TEXT * 2)
   else if (run.sources.length < MAX_SOURCES)
     run.sources.push({ url, title, text: body.slice(0, MAX_TEXT * 2) })
 }
@@ -71,7 +72,11 @@ async function webSearch(query: string, signal?: AbortSignal) {
       model: SEARCH_MODEL,
       max_tokens: 1_500,
       tools: [
-        { type: "web_search_20250305", name: "web_search", max_uses: 3 } as never,
+        {
+          type: "web_search_20250305",
+          name: "web_search",
+          max_uses: 3,
+        } as never,
       ],
       messages: [
         {
@@ -103,7 +108,9 @@ export function researchTools(
       try {
         return await fn(params as P, signal)
       } catch (e) {
-        return text(`That failed: ${e instanceof Error ? e.message : "unknown"}`)
+        return text(
+          `That failed: ${e instanceof Error ? e.message : "unknown"}`
+        )
       }
     }
   return [
@@ -114,7 +121,10 @@ export function researchTools(
       parameters: Type.Object({ url: Type.String() }),
       execute: guarded(async ({ url }: { url: string }, signal) => {
         logged("post", url)
-        const d = await scrape(`/v1/twitter/tweet?url=${encodeURIComponent(url)}`, signal)
+        const d = await scrape(
+          `/v1/twitter/tweet?url=${encodeURIComponent(url)}`,
+          signal
+        )
         const line = tweetLine(d)
         remember(run, url, "Post on X", line)
         return text(line)
@@ -167,7 +177,8 @@ export function researchTools(
     {
       name: "read_video",
       label: "Read video",
-      description: "Read a TikTok, Instagram or YouTube video and its transcript.",
+      description:
+        "Read a TikTok, Instagram or YouTube video and its transcript.",
       parameters: Type.Object({ url: Type.String() }),
       execute: guarded(async ({ url }: { url: string }, signal) => {
         logged("video", url)
@@ -187,17 +198,19 @@ export function researchTools(
         url: Type.String(),
         quote: Type.Optional(Type.String()),
       }),
-      execute: guarded(async (p: { claim: string; url: string; quote?: string }) => {
-        if (!isRecordable(p.url, run.sources))
-          return text("Rejected: you haven't read that URL in this run.")
-        run.facts.push({
-          claim: p.claim.slice(0, 500),
-          url: p.url,
-          quote: (p.quote ?? "").slice(0, 400),
-        })
-        logged("fact", p.claim.slice(0, 120))
-        return text(`Recorded. ${run.facts.length} facts so far.`)
-      }),
+      execute: guarded(
+        async (p: { claim: string; url: string; quote?: string }) => {
+          if (!isRecordable(p.url, run.sources))
+            return text("Rejected: you haven't read that URL in this run.")
+          run.facts.push({
+            claim: p.claim.slice(0, 500),
+            url: p.url,
+            quote: (p.quote ?? "").slice(0, 400),
+          })
+          logged("fact", p.claim.slice(0, 120))
+          return text(`Recorded. ${run.facts.length} facts so far.`)
+        }
+      ),
     },
     {
       name: "submit_article",
@@ -221,7 +234,10 @@ export function researchTools(
           const errors = await factCheck(article, run.sources, signal)
           run.problems = errors.map((e) => `Fact check: "${e.claim}": ${e.why}`)
         }
-        logged("check", run.problems.length ? `${run.problems.length} to fix` : "passed")
+        logged(
+          "check",
+          run.problems.length ? `${run.problems.length} to fix` : "passed"
+        )
         if (!run.problems.length || run.submits >= MAX_SUBMITS) {
           run.done = true
           return { ...text("Filed."), terminate: true }

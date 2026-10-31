@@ -291,7 +291,7 @@ export default function StudioMediaStory({ loaderData }: Route.ComponentProps) {
     <>
       <Link
         to="/studio/media"
-        className="flex w-fit items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        className="-my-2 flex inline-block w-fit items-center gap-2 py-2 text-sm text-muted-foreground hover:text-foreground"
       >
         <HugeiconsIcon
           icon={ArrowLeft01Icon}

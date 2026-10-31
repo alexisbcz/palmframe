@@ -502,3 +502,24 @@ describe("renderAsset", () => {
     expect(calls[0]!.size).toBeGreaterThan(1000)
   })
 })
+
+describe("waterfall totals", () => {
+  const spec = (values: number[]): AssetSpec => ({
+    kind: "figure",
+    chart: "waterfall",
+    title: "Napkin math",
+    unit: "$",
+    series: values.map((value, i) => ({
+      label: `Step ${i}`,
+      value,
+      estimate: true,
+    })),
+    sourceUrl: story.sources[0]!.url,
+  })
+
+  test("refuses a total the Story never states, even as an estimate", () => {
+    const r = validateAsset(spec([19_500, 16_575]), story)
+    expect(r.ok).toBe(false)
+    expect(r.problems.join(" ")).toContain("36075")
+  })
+})

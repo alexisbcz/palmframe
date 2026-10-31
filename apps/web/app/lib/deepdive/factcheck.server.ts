@@ -68,9 +68,17 @@ export async function factCheck(
   )
   // No verdict is not a pass: the draft goes to a person with this attached.
   if (response.stop_reason !== "end_turn")
-    return [{ claim: "Whole article", why: `The fact-checker stopped early (${response.stop_reason}).` }]
+    return [
+      {
+        claim: "Whole article",
+        why: `The fact-checker stopped early (${response.stop_reason}).`,
+      },
+    ]
   const text = response.content
     .map((b) => (b.type === "text" ? b.text : ""))
     .join("")
-  return ((JSON.parse(text) as { errors?: CheckError[] }).errors ?? []).slice(0, 12)
+  return ((JSON.parse(text) as { errors?: CheckError[] }).errors ?? []).slice(
+    0,
+    12
+  )
 }

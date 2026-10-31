@@ -474,7 +474,9 @@ function Draft({
           onChange={(e) => setText(e.target.value)}
         />
       ) : (
-        <p className="text-sm whitespace-pre-wrap">{draft.text}</p>
+        <p className="text-sm [overflow-wrap:anywhere] whitespace-pre-wrap">
+          {draft.text}
+        </p>
       )}
       {draft.scene && !draft.image_url && (
         <p className="text-sm text-muted-foreground">{draft.scene}</p>
@@ -1438,7 +1440,7 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
       )}
 
       {current ? (
-        <div className="grid gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
+        <div className="grid grid-cols-[minmax(0,1fr)] gap-6 md:grid-cols-[14rem_minmax(0,1fr)]">
           <nav aria-label={t("title")} className="flex flex-col gap-1">
             {machines.map((m) => (
               <button

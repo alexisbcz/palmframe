@@ -37,7 +37,10 @@ const fontGroup = (group: keyof typeof loaders) => {
 let ready: Promise<void> | undefined
 const wasm = () =>
   (ready ??= import("./data/resvg.gen").then((m) =>
-    initWasm(unpack(m.default))
+    // The wasm outlives this module when the dev server reloads it.
+    initWasm(unpack(m.default)).catch((e: Error) => {
+      if (!e.message.includes("Already initialized")) throw e
+    })
   ))
 
 export async function svgToPng(svg: string) {

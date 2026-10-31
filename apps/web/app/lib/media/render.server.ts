@@ -6,6 +6,8 @@ import type { Finding } from "@/lib/deepdive/model"
 import { kickWork } from "@/lib/deepdive/run.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
+import { imageAvailable } from "@/lib/machines/image.server"
+
 import { type AssetSize, renderAsset, validateAsset } from "./assets"
 import { formatDefinition } from "./formats"
 import type {
@@ -53,7 +55,7 @@ async function writeDraft(
         effort: "medium",
         format: { type: "json_schema", schema: DRAFT_SCHEMA },
       },
-      system: ADAPT_SYSTEM,
+      system: `${ADAPT_SYSTEM}\n\n${imageAvailable(null) ? "" : "Illustration assets aren't available: use figures and maps only."}`,
       messages: [{ role: "user", content: adaptPrompt(story, def, retry) }],
     },
     { signal }
@@ -89,7 +91,8 @@ export async function renderAttempt(
   signal: AbortSignal,
   deps: RenderDeps = providers
 ) {
-  const rendition = await deps.write(story, def, retry, signal)
+  const drafted = await deps.write(story, def, retry, signal)
+  const rendition = def.normalize?.(drafted) ?? drafted
   const format = def.check(rendition)
   const lint = await deps.lint(renditionMarkdown(rendition), def.valeRules)
   const findings: Finding[] = [...format.findings, ...lint]
@@ -105,6 +108,10 @@ export async function renderAttempt(
     if (!part.asset) continue
     const asset = validateAsset(part.asset, story)
     if (!asset.ok) problems.push(...asset.problems)
+    if (part.asset.kind === "illustration" && !imageAvailable(null))
+      problems.push(
+        "Illustrations aren't available. Use a figure, or no asset."
+      )
   }
   if (!problems.length || last) {
     const errors = await deps.check(asArticle(rendition), story.sources, signal)

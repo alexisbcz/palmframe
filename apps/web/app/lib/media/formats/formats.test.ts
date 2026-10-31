@@ -4,7 +4,6 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { describe, test } from "node:test"
 
-
 import { VALE_INI, VALE_RULES } from "@/lib/deepdive/vale/rules"
 import { compose, LIMITS } from "@/lib/machines/gate"
 

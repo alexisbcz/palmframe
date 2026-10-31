@@ -257,7 +257,33 @@ function check(r: Rendition) {
   return { findings, problems }
 }
 
-export const youtube: FormatDefinition = { id: "youtube", brief, check }
+// The model can't time its own scenes, so its chapters snap to the real ones.
+export function snapChapters(r: Rendition): Rendition {
+  if (r.meta.kind === "short") return r
+  const starts = sceneStarts(r)
+  const chapters = parseChapters(r.meta.chapters)
+  if (!starts.length || !chapters.length) return r
+  let description = r.meta.description ?? ""
+  const lines = chapters.map((c) => {
+    const nearest = starts.reduce((a, b) =>
+      Math.abs(b - c.seconds) < Math.abs(a - c.seconds) ? b : a
+    )
+    const stamp = formatStamp(c.seconds === 0 ? 0 : nearest)
+    description = description.replace(
+      `${c.stamp} ${c.label}`,
+      `${stamp} ${c.label}`
+    )
+    return `${stamp} ${c.label}`
+  })
+  return { ...r, meta: { ...r.meta, chapters: lines.join("\n"), description } }
+}
+
+export const youtube: FormatDefinition = {
+  normalize: snapChapters,
+  id: "youtube",
+  brief,
+  check,
+}
 
 // What .github/scripts/render-video.mjs reads.
 export interface VideoManifest {

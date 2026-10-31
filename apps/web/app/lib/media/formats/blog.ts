@@ -201,6 +201,8 @@ The search fields are the shortest text on this page, so caveats die there first
 
 ${VOICE}
 
-${FIDELITY}`,
+${FIDELITY}
+
+Pictures: attach a figure asset to the part it belongs with wherever the numbers earn it, usually one to three in a piece: a waterfall for napkin math, a bar or comparison for prices and revenue claims, a stat for one striking number. Mark every estimated value as an estimate. When geography matters to the story, add a map of the places it names.`,
   check,
 }

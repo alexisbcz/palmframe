@@ -107,6 +107,22 @@ Lookups cost credits and refund on failure. Storyboards cost nothing in credits
 when the person's OpenRouter account pays. Run the unit tests with
 `bun test apps/web/app/lib/studio`.
 
+### Media
+
+Studio's **Media** section turns a link or a topic into one researched Story,
+then renders it as a blog post, a Substack edition, a LinkedIn post, an X thread,
+an Instagram carousel or a YouTube package, with charts and maps.
+
+Research runs on a pi agent in `apps/web/app/lib/deepdive`. It saves every fact
+with its source, and a run spans several function calls by saving its
+conversation. A draft passes plain-code checks, Vale and a second model that
+fact-checks it. Formats live in `apps/web/app/lib/media/formats`, and code draws
+figures and maps in `apps/web/app/lib/media/assets`, so their numbers are exact.
+`.github/workflows/render-video.yml` renders video with ffmpeg.
+
+Vale runs only where `VALE_TS_ENTRY` points at a built `vale-ts`, because that
+package isn't published. Without it, a run skips the style rules and says so.
+
 ### Content machines
 
 Content machines are a Labs feature, off until someone turns them on under

@@ -65,7 +65,9 @@ export default function MachinePublic({ loaderData }: Route.ComponentProps) {
                     className="h-auto w-full rounded-lg"
                   />
                 )}
-                <p className="whitespace-pre-wrap">{p.text}</p>
+                <p className="[overflow-wrap:anywhere] whitespace-pre-wrap">
+                  {p.text}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   <time dateTime={p.published_at ?? undefined}>
                     {new Date(p.published_at!).toLocaleString(locale, {

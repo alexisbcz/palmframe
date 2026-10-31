@@ -17,3 +17,6 @@ Threads
 Zernio
 Teardown
 Lookups
+Substack
+ffmpeg
+pi

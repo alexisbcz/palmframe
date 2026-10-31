@@ -35,7 +35,10 @@ async function loadVale() {
 
 // A format's rules sit on top of the shared style; the same file name replaces
 // a shared rule.
-function vale(Vale: { fromString(ini: string): Promise<Linter> }, extra: Record<string, string>) {
+function vale(
+  Vale: { fromString(ini: string): Promise<Linter> },
+  extra: Record<string, string>
+) {
   const key = JSON.stringify(extra)
   let linter = cached.get(key)
   if (!linter) {
@@ -60,7 +63,8 @@ export async function lintArticle(
         line: 1,
         rule: "ValeSkipped",
         level: "warning",
-        message: "Vale isn't installed on this server, so style rules were skipped.",
+        message:
+          "Vale isn't installed on this server, so style rules were skipped.",
       },
     ]
   const files = (await vale(Vale, rules)).lintString(markdown, {
