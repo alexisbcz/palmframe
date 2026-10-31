@@ -29,7 +29,8 @@ const factOf = (text: string, take: string) =>
 export default function MachinePublic({ loaderData }: Route.ComponentProps) {
   const t = useT(messages)
   const { locale } = useLocale()
-  const { name, mission, slug, posts, masthead } = loaderData
+  const { name, mission, slug, posts, masthead, credits, sameOwner } =
+    loaderData
   const when = (at: string) =>
     new Date(at).toLocaleDateString(locale, {
       dateStyle: "medium",
@@ -57,6 +58,24 @@ export default function MachinePublic({ loaderData }: Route.ComponentProps) {
               {t("page.rss")}
             </a>
           </div>
+          {sameOwner.length > 0 && (
+            <p className="rounded-xl border p-4 text-sm">
+              <span className="text-muted-foreground">
+                {t("page.sameOwner")}:
+              </span>{" "}
+              {sameOwner.map((o, i) => (
+                <span key={o.slug}>
+                  {i > 0 && ", "}
+                  <a
+                    href={`/m/${o.slug}`}
+                    className="underline underline-offset-2"
+                  >
+                    {o.name}
+                  </a>
+                </span>
+              ))}
+            </p>
+          )}
           {masthead && (
             <div className="flex flex-col gap-2 rounded-xl border p-4 text-sm">
               <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1">
@@ -172,6 +191,37 @@ export default function MachinePublic({ loaderData }: Route.ComponentProps) {
           </ol>
         ) : (
           <p className="text-sm text-muted-foreground">{t("page.empty")}</p>
+        )}
+        {credits.length > 0 && (
+          <footer className="flex flex-col gap-1 border-t pt-4 text-xs text-muted-foreground">
+            <h2 className="font-medium text-foreground">{t("page.sources")}</h2>
+            <ul className="flex flex-col gap-1">
+              {credits.map((c) => (
+                <li key={c.id}>
+                  <a
+                    href={c.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    {c.source}
+                  </a>
+                  {" · "}
+                  {c.statement}{" "}
+                  <a
+                    href={c.licenceUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline underline-offset-2"
+                  >
+                    {c.licence}
+                  </a>
+                  {c.updated &&
+                    ` · ${t("page.updated", { date: when(c.updated) })}`}
+                </li>
+              ))}
+            </ul>
+          </footer>
         )}
       </main>
     </div>

@@ -160,10 +160,26 @@ export interface Database {
         Update: never
         Relationships: []
       }
+      comic_machine_feed_state: {
+        Row: MachineFeedStateRow
+        Insert: Pick<
+          MachineFeedStateRow,
+          "machine_id" | "user_id" | "feed_key"
+        > &
+          Partial<Omit<MachineFeedStateRow, "updated_at">>
+        Update: Partial<
+          Omit<MachineFeedStateRow, "machine_id" | "user_id" | "feed_key">
+        >
+        Relationships: []
+      }
       comic_machine_items: {
         Row: MachineItemRow
-        Insert: Omit<MachineItemRow, "id" | "status" | "created_at"> & {
+        Insert: Omit<
+          MachineItemRow,
+          "id" | "status" | "role" | "created_at"
+        > & {
           status?: MachineItemRow["status"]
+          role?: MachineItemRow["role"]
         }
         Update: { status?: MachineItemRow["status"] }
         Relationships: []
@@ -614,7 +630,22 @@ export type MachineItemRow = {
   url: string
   published_at: string
   status: "new" | "used" | "skipped"
+  role: "fact" | "foil"
   created_at: string
+}
+
+export type MachineFeedStateRow = {
+  machine_id: string
+  user_id: string
+  feed_key: string
+  seen: string[]
+  outcome: "ok" | "busy" | "unreadable" | "failed"
+  failures: number
+  last_read_at: string | null
+  last_ok_at: string | null
+  last_item_at: string | null
+  last_item_title: string | null
+  updated_at: string
 }
 
 export type MachineDraftRow = {

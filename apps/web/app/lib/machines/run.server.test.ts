@@ -6,7 +6,8 @@ import { mock } from "bun:test"
 import type { MachineRow } from "@/lib/database"
 
 import type { AgentResult, Memory } from "./agent.logic"
-import { DEFAULT_CREDITS_PER_DAY, type MachineConfig } from "./model"
+import { DATASETS, selectable } from "./datasets"
+import { DEFAULT_CREDITS_PER_DAY, type Item, type MachineConfig } from "./model"
 import type { Line } from "./stance"
 
 // The real runner, publisher, ledger and limits over an in-memory database.
@@ -24,6 +25,10 @@ const db = {
   spent: [] as { kind: string; job: string }[],
   refunded: [] as string[],
   controlBroken: false,
+  feedStateBroken: false,
+  dataset: [] as Item[],
+  fetched: [] as string[],
+  inboxes: [] as Item[][],
   agentCalls: [] as Memory[],
   agent: (() => passedResult("Nothing new")) as () => AgentResult,
   posted: [] as { text: string }[],
@@ -45,7 +50,9 @@ const passedResult = (reason: string): AgentResult => ({
 })
 
 class Query {
-  private op: "select" | "insert" | "update" | "delete" = "select"
+  private op: "select" | "insert" | "update" | "delete" | "upsert" = "select"
+  private conflict: string[] = []
+  private ignore = false
   private filters: Filter[] = []
   private value: Row | Row[] = {}
   private one = false
@@ -63,6 +70,16 @@ class Query {
     this.value = value
     return this
   }
+  upsert(
+    value: Row | Row[],
+    options: { onConflict: string; ignoreDuplicates?: boolean }
+  ) {
+    this.op = "upsert"
+    this.value = value
+    this.conflict = options.onConflict.split(",")
+    this.ignore = !!options.ignoreDuplicates
+    return this
+  }
   update(value: Row) {
     this.op = "update"
     this.value = value
@@ -74,6 +91,10 @@ class Query {
   }
   eq(column: string, value: unknown) {
     this.filters.push((r) => r[column] === value)
+    return this
+  }
+  neq(column: string, value: unknown) {
+    this.filters.push((r) => r[column] !== value)
     return this
   }
   in(column: string, values: readonly unknown[]) {
@@ -115,7 +136,25 @@ class Query {
   private run() {
     if (this.table === "comic_machines_control" && db.controlBroken)
       return { data: null, error: { message: "unreachable" } }
+    if (this.table === "comic_machine_feed_state" && db.feedStateBroken)
+      return { data: null, error: { message: "unreachable" } }
     const rows = (db.tables[this.table] ??= [])
+    if (this.op === "upsert") {
+      for (const row of [this.value].flat()) {
+        const same = rows.find((r) =>
+          this.conflict.every((c) => r[c] === row[c])
+        )
+        if (same && !this.ignore) Object.assign(same, row)
+        if (!same)
+          rows.push({
+            id: `row-${++db.id}`,
+            created_at: new Date().toISOString(),
+            status: "new",
+            ...row,
+          })
+      }
+      return { data: null, error: null }
+    }
     const hits = rows.filter((r) => this.filters.every((f) => f(r)))
     if (this.op === "insert") {
       const added = [this.value].flat().map((r) => ({
@@ -187,10 +226,11 @@ mock.module("./agent.server", () => ({
   runAgent: async (
     _machine: unknown,
     _voice: string,
-    _inbox: unknown,
+    inbox: Item[],
     memory: Memory
   ) => {
     db.agentCalls.push(memory)
+    db.inboxes.push(inbox)
     return db.agent()
   },
 }))
@@ -230,9 +270,28 @@ mock.module("@/lib/instagram.server", () => ({
   },
 }))
 
+// A copy, because the module namespace turns into the mock.
+const realFeeds = { ...(await import("./feeds.server")) }
+mock.module("./feeds.server", () => ({
+  ...realFeeds,
+  // No network: an open dataset's rows come from `db.dataset`. Everything else
+  // takes the real path, whose refusals come before any request.
+  readFeed: async (
+    feed: Parameters<typeof realFeeds.readFeed>[0],
+    now: number,
+    signal?: AbortSignal
+  ) => {
+    if (feed.kind !== "dataset" || !selectable(DATASETS[feed.preset]))
+      return realFeeds.readFeed(feed, now, signal)
+    db.fetched.push(feed.preset)
+    return db.dataset
+  },
+}))
+
 const { runMachines } = await import("./run.server")
 const { publishDraft, retractDraft } = await import("./publish.server")
 const { approvalCheck } = await import("./standards.server")
+const { publicMachine } = await import("./feed-page.server")
 
 const config = (o: Partial<MachineConfig> = {}): MachineConfig => ({
   keywords: [],
@@ -354,6 +413,10 @@ beforeEach(() => {
     spent: [],
     refunded: [],
     controlBroken: false,
+    feedStateBroken: false,
+    dataset: [],
+    fetched: [],
+    inboxes: [],
     agentCalls: [],
     agent: () => passedResult("Nothing new"),
     posted: [],
@@ -1178,5 +1241,284 @@ describe("approving", () => {
     const r = await check("Revenue grew 40% again.", draft(null), false)
     assert.deepEqual(r, { held: null, desk: null })
     assert.equal(db.deskRequests.length, 0)
+  })
+})
+
+describe("dataset feeds", () => {
+  const feeds: MachineConfig["feeds"] = [
+    { kind: "dataset", preset: "rejectedBin" },
+  ]
+  const row = (id: number): Item => ({
+    key: `dataset:rejectedBin:${id}@irrelevant`,
+    source: "UK Parliament",
+    title: `Petition ${id}`,
+    summary: "A petition to the UK Parliament.",
+    url: `https://petition.parliament.uk/petitions/${id}`,
+    at: Date.now(),
+  })
+  const items = () => db.tables.comic_machine_items ?? []
+  const state = () => db.tables.comic_machine_feed_state ?? []
+  const again = () => {
+    db.tables.comic_machines![0]!.next_run_at = null
+    return runMachines("https://palmframe.test")
+  }
+
+  test("a first read is remembered as history and pays for nothing", async () => {
+    db.dataset = [row(1), row(2)]
+    seed(machine({ feeds }))
+    await runMachines("https://palmframe.test")
+    assert.equal(items().length, 0)
+    assert.equal(db.spent.length, 0)
+    assert.deepEqual(state()[0]!.seen, [row(1).key, row(2).key])
+    assert.equal(state()[0]!.outcome, "ok")
+  })
+
+  test("after that only new rows reach the inbox", async () => {
+    db.dataset = [row(1)]
+    seed(machine({ feeds }))
+    await runMachines("https://palmframe.test")
+    db.dataset = [row(2), row(1)]
+    await again()
+    assert.deepEqual(
+      items().map((i) => i.key),
+      [row(2).key]
+    )
+    assert.equal(db.inboxes[0]!.length, 1)
+  })
+
+  test("a row isn't news again once the inbox has been pruned", async () => {
+    db.dataset = [row(1)]
+    seed(machine({ feeds }))
+    await runMachines("https://palmframe.test")
+    db.dataset = [row(2), row(1)]
+    await again()
+    db.tables.comic_machine_items = []
+    await again()
+    assert.equal(items().length, 0)
+  })
+
+  test("a save doesn't make it read its backlog as news", async () => {
+    db.dataset = [row(1)]
+    seed(machine({ feeds }))
+    await runMachines("https://palmframe.test")
+    // What the route does to a machine on every save.
+    db.tables.comic_machines![0]!.state = {}
+    await again()
+    assert.equal(items().length, 0)
+  })
+
+  test("a row in a new state counts as new", async () => {
+    db.dataset = [row(1)]
+    seed(machine({ feeds }))
+    await runMachines("https://palmframe.test")
+    db.dataset = [{ ...row(1), key: "dataset:rejectedBin:1@duplicate" }]
+    await again()
+    assert.equal(items().length, 1)
+  })
+
+  test("without its state it reads nothing, so nothing old comes back", async () => {
+    db.dataset = [row(1)]
+    db.feedStateBroken = true
+    seed(machine({ feeds }))
+    await runMachines("https://palmframe.test")
+    assert.equal(items().length, 0)
+    assert.deepEqual(db.fetched, [])
+  })
+
+  test("a closed dataset is refused before any request, and says so", async () => {
+    seed(machine({ feeds: [{ kind: "dataset", preset: "sweetOdor" }] }))
+    await runMachines("https://palmframe.test")
+    const stored = db.tables.comic_machines![0]!
+    assert.equal(stored.last_error, "refused:sweetOdor")
+    assert.equal(stored.enabled, true)
+    assert.equal(stored.failures, 0)
+    assert.equal(state()[0]!.outcome, "unreadable")
+  })
+
+  test("a profile feed already on a machine is refused the same way", async () => {
+    const url = "https://bsky.app/profile/someone.bsky.social/rss"
+    seed(machine({ feeds: [{ kind: "rss", url }] }))
+    await runMachines("https://palmframe.test")
+    assert.equal(db.tables.comic_machines![0]!.last_error, `refused:${url}`)
+  })
+
+  test("the public page credits it, with the date a licence asks for", async () => {
+    db.dataset = [row(1)]
+    seed(machine({ feeds: [{ kind: "dataset", preset: "rappelConso" }] }))
+    await runMachines("https://palmframe.test")
+    const page = await publicMachine("desk")
+    assert.equal(page?.credits[0]?.source, "RappelConso")
+    assert.equal(page?.credits[0]?.updated, state()[0]!.last_ok_at)
+  })
+
+  test("a post ends with its source's credit, and the room is taken first", async () => {
+    db.dataset = [row(1)]
+    seed(machine({ feeds }, { publish_mode: "auto", outputs: [ACCOUNT] }))
+    await runMachines("https://palmframe.test")
+    db.dataset = [row(2), row(1)]
+    db.agent = () => {
+      const result = filing("Petition 2 was rejected.")
+      assert.equal(result.decision, "filed")
+      if (result.decision === "filed")
+        result.filed.sources = [{ ...row(2), key: "item-1" }]
+      return result
+    }
+    await again()
+    assert.match(db.posted[0]!.text, /AI-written · UK Parliament/)
+  })
+})
+
+describe("rival outlets", () => {
+  const RIVAL = "00000000-0000-4000-8000-000000000002"
+  const deadpan = { style: "deadpan" as const }
+  const rivalRow = (o: Partial<Row> = {}) =>
+    ({
+      id: RIVAL,
+      user_id: USER,
+      name: "The Other Desk",
+      slug: "other-desk",
+      public: true,
+      enabled: false,
+      config: {},
+      ...o,
+    }) as Row
+  const post = (o: Partial<Row> = {}) => ({
+    id: "post-1",
+    machine_id: RIVAL,
+    text: "Rival claims 90 sightings.",
+    status: "published",
+    sources: [],
+    published_at: new Date().toISOString(),
+    ...o,
+  })
+  const feud = (m: MachineRow) => {
+    db.tables.comic_machines = [m as unknown as Row, rivalRow()]
+  }
+  const feeds: MachineConfig["feeds"] = [{ kind: "rival", machine: RIVAL }]
+  const inboxKeys = () =>
+    (db.tables.comic_machine_items ?? []).map((i) => i.key)
+
+  test("a rival's post arrives as a foil", async () => {
+    db.tables.comic_machine_drafts = [post()]
+    feud(machine({ feeds, ...deadpan }))
+    await runMachines("https://palmframe.test")
+    const item = db.tables.comic_machine_items![0]!
+    assert.equal(item.role, "foil")
+    assert.equal(item.url, "https://palmframe.test/m/other-desk")
+    assert.equal(db.inboxes[0]![0]!.role, "foil")
+  })
+
+  test("nothing is read from a rival without a public page", async () => {
+    db.tables.comic_machine_drafts = [post()]
+    db.tables.comic_machines = [
+      machine({ feeds, ...deadpan }) as unknown as Row,
+      rivalRow({ public: false }),
+    ]
+    await runMachines("https://palmframe.test")
+    assert.deepEqual(inboxKeys(), [])
+    assert.match(String(db.tables.comic_machines![0]!.last_error), /^refused:/)
+  })
+
+  test("nothing is read while this machine has no public page", async () => {
+    db.tables.comic_machine_drafts = [post()]
+    feud(machine({ feeds, ...deadpan }, { public: false }))
+    await runMachines("https://palmframe.test")
+    assert.deepEqual(inboxKeys(), [])
+  })
+
+  test("another owner's machine can't be read", async () => {
+    db.tables.comic_machine_drafts = [post()]
+    db.tables.comic_machines = [
+      machine({ feeds, ...deadpan }) as unknown as Row,
+      rivalRow({ user_id: "someone-else" }),
+    ]
+    await runMachines("https://palmframe.test")
+    assert.deepEqual(inboxKeys(), [])
+  })
+
+  test("a post that answered a rival isn't read in turn", async () => {
+    db.tables.comic_machine_drafts = [
+      post({
+        sources: [
+          { title: "x", url: "https://e.com", source: "y", role: "foil" },
+        ],
+      }),
+    ]
+    feud(machine({ feeds, ...deadpan }))
+    await runMachines("https://palmframe.test")
+    assert.deepEqual(inboxKeys(), [])
+  })
+
+  test("both public pages say they have the same owner", async () => {
+    db.tables.comic_machines = [
+      machine({ feeds, ...deadpan }) as unknown as Row,
+      rivalRow(),
+    ]
+    assert.deepEqual((await publicMachine("desk"))?.sameOwner, [
+      { name: "The Other Desk", slug: "other-desk" },
+    ])
+    assert.deepEqual((await publicMachine("other-desk"))?.sameOwner, [
+      { name: "Desk", slug: "desk" },
+    ])
+  })
+
+  test("an unrelated outlet of the same owner isn't named", async () => {
+    db.tables.comic_machines = [
+      machine({ ...deadpan }) as unknown as Row,
+      rivalRow(),
+    ]
+    assert.deepEqual((await publicMachine("desk"))?.sameOwner, [])
+  })
+
+  test("a number from a foil isn't evidence, so the post is held", async () => {
+    const foil: Item = {
+      key: "rival:x:1",
+      source: "The Other Desk",
+      title: "Rival claims 90 sightings.",
+      summary: "",
+      url: "https://palmframe.test/m/other-desk",
+      at: Date.now(),
+      role: "foil",
+    }
+    inbox()
+    feud(machine({ ...deadpan }, { publish_mode: "auto", outputs: [ACCOUNT] }))
+    db.agent = () => {
+      const result = filing("There were 90 sightings in 2026.")
+      if (result.decision === "filed") result.filed.sources.push(foil)
+      return result
+    }
+    await runMachines("https://palmframe.test")
+    const draft = drafts()[0]!
+    assert.notEqual(draft.held, null)
+    assert.equal(draft.status, "new")
+    assert.deepEqual(
+      (draft.sources as { role?: string }[]).map((s) => s.role),
+      [undefined, "foil"]
+    )
+  })
+
+  test("a post standing on foils alone is held", async () => {
+    const foil: Item = {
+      key: "rival:x:1",
+      source: "The Other Desk",
+      title: "Rival claims 90 sightings.",
+      summary: "",
+      url: "https://palmframe.test/m/other-desk",
+      at: Date.now(),
+      role: "foil",
+    }
+    inbox()
+    feud(machine({ ...deadpan }, { publish_mode: "auto", outputs: [ACCOUNT] }))
+    db.agent = () => {
+      const result = filing("Nothing to see.")
+      if (result.decision === "filed") {
+        result.filed.sources = [foil]
+        result.filed.link = null
+      }
+      return result
+    }
+    await runMachines("https://palmframe.test")
+    assert.notEqual(drafts()[0]!.held, null)
+    assert.equal(db.posted.length, 0)
   })
 })

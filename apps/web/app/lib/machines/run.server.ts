@@ -8,7 +8,14 @@ import { splitMemory, tally } from "./agent.logic"
 import { runAgent } from "./agent.server"
 import { lineStopFor, machinesHalted } from "./control.server"
 import { type Detector, createDetector } from "./detect"
-import { FeedBusy, FeedUnreadable, NotModified, readFeed } from "./feeds.server"
+import {
+  FeedBusy,
+  FeedRefused,
+  FeedUnreadable,
+  NotModified,
+  readFeed,
+} from "./feeds.server"
+import { readRival } from "./feud.server"
 import {
   HOLD_MS,
   MAX_FAILURES,
@@ -28,9 +35,12 @@ import {
   type Signal,
   type SourceId,
   SOURCES,
+  isFoil,
   machineConfig,
 } from "./model"
 import { publishDraft } from "./publish.server"
+import { type FeedOutcome, afterRead, feedKey, unseen } from "./source-state"
+import { loadFeedStates, saveFeedState } from "./source-state.server"
 import { openSource } from "./sources"
 import { isFar, usesDesk } from "./stance"
 import { judgePost } from "./standards.server"
@@ -161,6 +171,7 @@ async function stored(rows: Item[], machine: MachineRow) {
         summary: i.summary,
         url: i.url,
         published_at: new Date(i.at).toISOString(),
+        role: i.role ?? ("fact" as const),
       })),
       { onConflict: "machine_id,key", ignoreDuplicates: true }
     )
@@ -170,33 +181,78 @@ async function stored(rows: Item[], machine: MachineRow) {
 // Hears the polled sources. One broken feed doesn't stop the others, and a
 // busy one simply gets asked again next time.
 async function gather(
+  machine: MachineRow,
   config: Listener["config"],
   now: number,
-  abort: AbortSignal
+  abort: AbortSignal,
+  origin: string
 ) {
   const problems: string[] = []
   const unreadable: string[] = []
+  const refused: string[] = []
+  const states = await loadFeedStates(machine.id)
+  const save = (
+    feed: Feed,
+    outcome: FeedOutcome,
+    fresh: Item[],
+    seen: string[] | null
+  ) => {
+    const key = feedKey(feed)
+    return saveFeedState(
+      machine,
+      key,
+      afterRead(states?.get(key) ?? null, outcome, fresh, seen, now)
+    )
+  }
   const results = await Promise.all(
-    config.feeds.map((feed) =>
-      readFeed(feed, now, abort).catch((e) => {
+    config.feeds.map(async (feed) => {
+      // Without its state a dataset would take its backlog for news.
+      if (feed.kind === "dataset" && !states) return []
+      try {
+        const read =
+          feed.kind === "rival"
+            ? await readRival(machine, feed.machine, origin)
+            : await readFeed(feed, now, abort)
+        const { fresh, seen } =
+          feed.kind === "dataset"
+            ? unseen(read, states?.get(feedKey(feed)) ?? null)
+            : { fresh: read, seen: null }
+        await save(feed, "ok", fresh, seen)
+        return fresh
+      } catch (e) {
         // Reported, but not a failure: a machine shouldn't be switched off
         // over a feed that used to look fine and has only now been noticed.
-        if (e instanceof FeedUnreadable) unreadable.push(e.message)
+        if (e instanceof FeedRefused) refused.push(e.message)
+        else if (e instanceof FeedUnreadable) unreadable.push(e.message)
         else if (!(e instanceof FeedBusy || e instanceof NotModified)) {
           console.error("Machine feed failed", feed.kind, e)
           problems.push(feed.kind === "rss" ? feed.url : feed.kind)
         }
+        await save(
+          feed,
+          e instanceof NotModified
+            ? "ok"
+            : e instanceof FeedBusy
+              ? "busy"
+              : e instanceof FeedUnreadable || e instanceof FeedRefused
+                ? "unreadable"
+                : "failed",
+          [],
+          null
+        )
         return [] as Item[]
-      })
-    )
+      }
+    })
   )
   return {
     items: results.flat(),
     error: problems.length
       ? `Couldn't read ${problems.join(", ").slice(0, 200)}.`
-      : unreadable.length
-        ? `unreadable:${unreadable.join(", ").slice(0, 200)}`
-        : null,
+      : refused.length
+        ? `refused:${refused.join(", ").slice(0, 200)}`
+        : unreadable.length
+          ? `unreadable:${unreadable.join(", ").slice(0, 200)}`
+          : null,
     allFailed: !!config.feeds.length && problems.length === config.feeds.length,
   }
 }
@@ -224,11 +280,13 @@ async function edition(
   // left to a prompt or a word list.
   const lineStop = await lineStopFor(machine, config, now)
   const heard = await gather(
+    machine,
     stop || lineStop
       ? { ...config, feeds: config.feeds.filter(isFree) }
       : config,
     now,
-    abort
+    abort,
+    origin
   )
   await stored(heard.items, machine)
   l.error = heard.error
@@ -259,6 +317,7 @@ async function edition(
       summary: r.summary,
       url: r.url,
       at: Date.parse(r.published_at),
+      role: r.role,
     })),
     now
   )
@@ -354,11 +413,14 @@ async function edition(
     return quiet
   }
   const { filed } = result
-  const evidence = `${evidenceOf(filed.sources)}\n${filed.read}`
+  // A foil is what the post answers. It's no support for anything the post states,
+  // and a post standing on foils alone cites nothing the gate can accept.
+  const facts = filed.sources.filter((i) => !isFoil(i))
+  const evidence = `${evidenceOf(facts)}\n${filed.read}`
   const judged = await judgePost(
     filed,
     evidence,
-    filed.sources,
+    facts,
     filed.link,
     config,
     machine.outputs,
@@ -429,6 +491,7 @@ async function edition(
         title: i.title,
         url: i.url,
         source: i.source,
+        ...(isFoil(i) && { role: "foil" as const }),
       })),
       link: filed.link,
       image_url: imageUrl,

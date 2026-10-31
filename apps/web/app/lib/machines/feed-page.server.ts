@@ -1,6 +1,8 @@
 import type { MachineDraftRow } from "@/lib/database"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
+import { attributionsFor } from "./datasets"
+import { sameOwnerOutlets } from "./feud.server"
 import type { RetractReason } from "./model"
 import { lineOf } from "./stance"
 
@@ -20,7 +22,7 @@ export async function publicMachine(slug: string) {
   const admin = supabaseAdmin()
   const { data: machine } = await admin
     .from("comic_machines")
-    .select("id, name, config, slug")
+    .select("id, user_id, name, config, slug")
     .eq("slug", slug)
     .eq("public", true)
     .maybeSingle()
@@ -44,11 +46,30 @@ export async function publicMachine(slug: string) {
         .order("created_at", { ascending: false })
         .limit(20)
     : { data: null }
+  const credits = attributionsFor(machine.config.feeds)
+  const [sameOwner, updates] = await Promise.all([
+    sameOwnerOutlets(machine),
+    credits.some((c) => c.dated)
+      ? admin
+          .from("comic_machine_feed_state")
+          .select("feed_key, last_ok_at")
+          .eq("machine_id", machine.id)
+      : { data: null },
+  ])
   return {
     name: machine.name,
     mission: machine.config.mission,
     language: machine.config.language,
     slug,
+    sameOwner,
+    // The licence's date is the last time the data was read here.
+    credits: credits.map((c) => ({
+      ...c,
+      updated: c.dated
+        ? (updates.data?.find((u) => u.feed_key === `dataset:${c.id}`)
+            ?.last_ok_at ?? null)
+        : null,
+    })),
     masthead: line && {
       stance: line.stance,
       arena: line.arena,

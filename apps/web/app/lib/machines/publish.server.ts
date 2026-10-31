@@ -12,7 +12,7 @@ import { lineStopFor, machinesHalted } from "./control.server"
 import { HOLD_MS, NEEDS_IMAGE, compose, publishOutcome } from "./gate"
 import type { MachineOutput, PublishReceipt, RetractReason } from "./model"
 import { RETRACTABLE, machineConfig } from "./model"
-import { signatureFor } from "./signature"
+import { signOff } from "./signature"
 import { type LineStop, usesDesk } from "./stance"
 
 const receipt = (
@@ -130,7 +130,10 @@ export async function publishDraft(
       console.error("Machine profile lookup failed", e)
     }
   }
-  const signature = signatureFor(config.success ? config.data.language : "en")
+  const signature = signOff(
+    config.success ? config.data.language : "en",
+    draft.sources
+  )
   const sent: PublishReceipt[] = []
   for (const output of pending)
     sent.push(await sendOne(draft, output, profileId, signature))

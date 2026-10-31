@@ -18,6 +18,9 @@ export const messages = defineMessages({
       wikipedia: "Breaking on Wikipedia",
       bluesky: "Comics talk on Bluesky",
       crypto: "Crypto price swings",
+      rejectedBin: "The Rejected Bin",
+      foreignObject: "Foreign Object",
+      rappelConso: "Foreign Object, France",
     },
     presetHints: {
       newsroom: "Fresh AI news, posted as it breaks",
@@ -25,6 +28,9 @@ export const messages = defineMessages({
       wikipedia: "Pages rewritten fast, often breaking news",
       bluesky: "Spikes in webtoon, manga and comic talk",
       crypto: "BTC, ETH and SOL moving 2% in an hour",
+      rejectedBin: "Petitions the UK Parliament refused as irrelevant",
+      foreignObject: "What got into the food: US recalls",
+      rappelConso: "What got into the food: French recalls",
     },
     sources: {
       bluesky: "Bluesky posts",
@@ -111,6 +117,16 @@ export const messages = defineMessages({
       minutes: "{n} minutes",
       hours: "{n} h",
       listen: "Also listen to {stream}",
+      datasets: "Public datasets",
+      datasetsHint:
+        "Official data with a checked licence. Its first read is kept as history, then only new rows reach the inbox.",
+      datasetsClosed: "Not open yet",
+      datasetsClosedHint:
+        "Nobody has read these terms yet, so they can't be picked.",
+      termsUnread: "Terms unread",
+      rivals: "Answer your other outlets",
+      rivalsHint:
+        "Its posts can be answered in a take and never count as facts. Both public pages say they have the same owner.",
     },
     out: {
       title: "Where it publishes",
@@ -154,6 +170,9 @@ export const messages = defineMessages({
       byline: "Written and published by an AI agent.",
       rss: "RSS",
       empty: "Nothing published yet.",
+      sources: "Sources",
+      updated: "Updated {date}",
+      sameOwner: "Same owner as",
     },
     drafts: {
       title: "Drafts",
@@ -288,6 +307,7 @@ export const messages = defineMessages({
       budget:
         "This machine reached its daily credit limit. It's still listening, and picks up again tomorrow (UTC).",
       unreadable: "These feeds answered, but no entry could be used: {feeds}",
+      refused: "A machine can't read these sources: {feeds}",
     },
     dismissReasons: {
       none: "No particular reason",
@@ -295,6 +315,30 @@ export const messages = defineMessages({
       dull: "It's not interesting",
       repeat: "We already covered it",
       tone: "Wrong tone",
+    },
+    datasets: {
+      rejectedBin: "Rejected UK petitions",
+      foreignObject: "US food recalls (openFDA)",
+      rappelConso: "French food recalls (RappelConso)",
+      sweetOdor: "NYC 311 complaints",
+      yardSale: "US government surplus auctions",
+      auroraTonight: "Space weather alerts",
+      mpInterests: "UK MPs' financial interests",
+      federalRegister: "US Federal Register filings",
+      secFilings: "US SEC filings",
+      treasuryDebt: "US Treasury debt",
+      wikipediaReverts: "Wikipedia edit wars",
+      blsCalendar: "US labor statistics releases",
+      dojNews: "US Justice Department news",
+      ftcNews: "US Federal Trade Commission news",
+    },
+    health: {
+      title: "Source health",
+      waiting: "Not read yet",
+      ok: "Reading",
+      quiet: "Nothing new for a while, so it may have stopped updating",
+      failing: "Failing",
+      lastItem: "last new item {when}",
     },
     errors: {
       one_stance:
@@ -310,6 +354,12 @@ export const messages = defineMessages({
         "A machine with a stance or a funny style only writes on its schedule.",
       generic: "Something went wrong. Try again.",
       credits: "You don't have enough credits for this draft.",
+      social_feed:
+        "Bluesky, Mastodon and Telegram profiles can't be sources, because they're people's own posts.",
+      dataset_blocked:
+        "One of these datasets isn't open yet. Remove it to save.",
+      rival_rules:
+        "To answer another outlet, both need a public page, and this machine needs a stance or a funny style.",
     },
   },
   fr: {
@@ -329,6 +379,9 @@ export const messages = defineMessages({
       wikipedia: "L’actu sur Wikipédia",
       bluesky: "La BD sur Bluesky",
       crypto: "Variations des cryptos",
+      rejectedBin: "La corbeille des pétitions",
+      foreignObject: "Corps étranger (États-Unis)",
+      rappelConso: "Corps étranger",
     },
     presetHints: {
       newsroom: "L’actu IA fraîche, dès qu’elle tombe",
@@ -336,6 +389,11 @@ export const messages = defineMessages({
       wikipedia: "Les pages réécrites à toute vitesse",
       bluesky: "Pics sur le webtoon, le manga et la BD",
       crypto: "BTC, ETH et SOL : 2 % en 1 h",
+      rejectedBin:
+        "Les pétitions que le Parlement britannique a jugées hors sujet",
+      foreignObject:
+        "Ce qui s'est glissé dans les aliments : rappels américains",
+      rappelConso: "Ce qui s'est glissé dans les aliments : rappels français",
     },
     sources: {
       bluesky: "Publications Bluesky",
@@ -424,6 +482,16 @@ export const messages = defineMessages({
       minutes: "{n} minutes",
       hours: "{n} h",
       listen: "Écouter aussi {stream}",
+      datasets: "Données publiques",
+      datasetsHint:
+        "Des données officielles à la licence vérifiée. La première lecture sert d'historique, puis seules les nouvelles lignes arrivent dans la boîte.",
+      datasetsClosed: "Pas encore ouvertes",
+      datasetsClosedHint:
+        "Personne n'a encore lu ces conditions, elles ne peuvent donc pas être choisies.",
+      termsUnread: "Conditions non lues",
+      rivals: "Répondre à vos autres médias",
+      rivalsHint:
+        "Ses posts peuvent recevoir une réponse dans un commentaire et ne comptent jamais comme des faits. Les deux pages publiques indiquent qu'elles ont le même propriétaire.",
     },
     out: {
       title: "Où elle publie",
@@ -469,6 +537,9 @@ export const messages = defineMessages({
       byline: "Écrit et publié par un agent IA.",
       rss: "RSS",
       empty: "Rien de publié pour l’instant.",
+      sources: "Sources",
+      updated: "Mis à jour le {date}",
+      sameOwner: "Même propriétaire que",
     },
     drafts: {
       title: "Brouillons",
@@ -606,6 +677,7 @@ export const messages = defineMessages({
         "Cette machine a atteint sa limite de crédits du jour. Elle écoute toujours et reprend demain (UTC).",
       unreadable:
         "Ces flux ont répondu, mais aucune entrée n'est exploitable : {feeds}",
+      refused: "Une machine ne peut pas lire ces sources : {feeds}",
     },
     dismissReasons: {
       none: "Sans raison particulière",
@@ -613,6 +685,31 @@ export const messages = defineMessages({
       dull: "Sans intérêt",
       repeat: "Déjà traité",
       tone: "Mauvais ton",
+    },
+    datasets: {
+      rejectedBin: "Pétitions britanniques rejetées",
+      foreignObject: "Rappels alimentaires américains (openFDA)",
+      rappelConso: "Rappels alimentaires français (RappelConso)",
+      sweetOdor: "Plaintes du 311 de New York",
+      yardSale: "Ventes de surplus de l'État américain",
+      auroraTonight: "Alertes de météo spatiale",
+      mpInterests: "Intérêts financiers des députés britanniques",
+      federalRegister: "Dépôts au Federal Register américain",
+      secFilings: "Déclarations à la SEC américaine",
+      treasuryDebt: "Dette du Trésor américain",
+      wikipediaReverts: "Guerres d'édition sur Wikipédia",
+      blsCalendar: "Publications de statistiques du travail américaines",
+      dojNews: "Actualités du ministère américain de la Justice",
+      ftcNews: "Actualités de la Federal Trade Commission américaine",
+    },
+    health: {
+      title: "État des sources",
+      waiting: "Pas encore lue",
+      ok: "Lecture en cours",
+      quiet:
+        "Rien de nouveau depuis un moment, elle n'est peut-être plus mise à jour",
+      failing: "En échec",
+      lastItem: "dernier élément nouveau {when}",
     },
     errors: {
       one_stance:
@@ -628,6 +725,12 @@ export const messages = defineMessages({
         "Une machine avec une position ou un style drôle n’écrit que selon son planning.",
       generic: "Une erreur est survenue. Réessayez.",
       credits: "Vous n’avez pas assez de crédits pour ce brouillon.",
+      social_feed:
+        "Les profils Bluesky, Mastodon et Telegram ne peuvent pas servir de sources : ce sont les posts de particuliers.",
+      dataset_blocked:
+        "L'un de ces jeux de données n'est pas encore ouvert. Retirez-le pour enregistrer.",
+      rival_rules:
+        "Pour répondre à un autre média, les deux doivent avoir une page publique, et cette machine a besoin d'une ligne ou d'un style humoristique.",
     },
   },
   es: {
@@ -647,6 +750,9 @@ export const messages = defineMessages({
       wikipedia: "Última hora en Wikipedia",
       bluesky: "Cómics en Bluesky",
       crypto: "Saltos de precio cripto",
+      rejectedBin: "La papelera de peticiones",
+      foreignObject: "Cuerpo extraño (EE. UU.)",
+      rappelConso: "Cuerpo extraño (Francia)",
     },
     presetHints: {
       newsroom: "Noticias de IA en cuanto salen",
@@ -654,6 +760,10 @@ export const messages = defineMessages({
       wikipedia: "Páginas que se reescriben a toda prisa",
       bluesky: "Picos sobre webtoon, manga y cómic",
       crypto: "BTC, ETH y SOL: 2 % en 1 h",
+      rejectedBin:
+        "Peticiones que el Parlamento británico rechazó por irrelevantes",
+      foreignObject: "Lo que acabó en la comida: retiradas en EE. UU.",
+      rappelConso: "Lo que acabó en la comida: retiradas en Francia",
     },
     sources: {
       bluesky: "Publicaciones de Bluesky",
@@ -741,6 +851,16 @@ export const messages = defineMessages({
       minutes: "{n} minutos",
       hours: "{n} h",
       listen: "Escuchar también {stream}",
+      datasets: "Datos públicos",
+      datasetsHint:
+        "Datos oficiales con licencia comprobada. La primera lectura queda como historial y después solo llegan al buzón las filas nuevas.",
+      datasetsClosed: "Aún no disponibles",
+      datasetsClosedHint:
+        "Nadie ha leído todavía estas condiciones, así que no se pueden elegir.",
+      termsUnread: "Condiciones sin leer",
+      rivals: "Responder a tus otros medios",
+      rivalsHint:
+        "Sus publicaciones pueden responderse en un comentario y nunca cuentan como hechos. Las dos páginas públicas indican que tienen el mismo propietario.",
     },
     out: {
       title: "Dónde publica",
@@ -786,6 +906,9 @@ export const messages = defineMessages({
       byline: "Escrito y publicado por un agente de IA.",
       rss: "RSS",
       empty: "Aún no hay nada publicado.",
+      sources: "Fuentes",
+      updated: "Actualizado el {date}",
+      sameOwner: "Mismo propietario que",
     },
     drafts: {
       title: "Borradores",
@@ -922,6 +1045,7 @@ export const messages = defineMessages({
         "Esta máquina ha alcanzado su límite diario de créditos. Sigue escuchando y volverá mañana (UTC).",
       unreadable:
         "Estos feeds respondieron, pero ninguna entrada se pudo usar: {feeds}",
+      refused: "Una máquina no puede leer estas fuentes: {feeds}",
     },
     dismissReasons: {
       none: "Sin motivo concreto",
@@ -929,6 +1053,30 @@ export const messages = defineMessages({
       dull: "No es interesante",
       repeat: "Ya lo cubrimos",
       tone: "Tono equivocado",
+    },
+    datasets: {
+      rejectedBin: "Peticiones británicas rechazadas",
+      foreignObject: "Retiradas de alimentos en EE. UU. (openFDA)",
+      rappelConso: "Retiradas de alimentos en Francia (RappelConso)",
+      sweetOdor: "Quejas al 311 de Nueva York",
+      yardSale: "Subastas de excedentes del Gobierno de EE. UU.",
+      auroraTonight: "Alertas de clima espacial",
+      mpInterests: "Intereses económicos de los diputados británicos",
+      federalRegister: "Registros en el Federal Register de EE. UU.",
+      secFilings: "Informes ante la SEC de EE. UU.",
+      treasuryDebt: "Deuda del Tesoro de EE. UU.",
+      wikipediaReverts: "Guerras de ediciones en Wikipedia",
+      blsCalendar: "Publicaciones de estadísticas laborales de EE. UU.",
+      dojNews: "Noticias del Departamento de Justicia de EE. UU.",
+      ftcNews: "Noticias de la Comisión Federal de Comercio de EE. UU.",
+    },
+    health: {
+      title: "Estado de las fuentes",
+      waiting: "Sin leer todavía",
+      ok: "Leyendo",
+      quiet: "Nada nuevo desde hace tiempo; puede que ya no se actualice",
+      failing: "Con fallos",
+      lastItem: "último elemento nuevo {when}",
     },
     errors: {
       one_stance:
@@ -944,6 +1092,12 @@ export const messages = defineMessages({
         "Una máquina con postura o estilo de humor solo escribe según su horario.",
       generic: "Algo ha fallado. Inténtalo de nuevo.",
       credits: "No tienes créditos suficientes para este borrador.",
+      social_feed:
+        "Los perfiles de Bluesky, Mastodon y Telegram no pueden ser fuentes, porque son publicaciones de particulares.",
+      dataset_blocked:
+        "Uno de estos conjuntos de datos aún no está disponible. Quítalo para guardar.",
+      rival_rules:
+        "Para responder a otro medio, ambos necesitan una página pública, y esta máquina necesita una línea o un estilo humorístico.",
     },
   },
   de: {
@@ -963,6 +1117,9 @@ export const messages = defineMessages({
       wikipedia: "Eilmeldungen auf Wikipedia",
       bluesky: "Comics auf Bluesky",
       crypto: "Krypto-Kurssprünge",
+      rejectedBin: "Der Petitions-Papierkorb",
+      foreignObject: "Fremdkörper (USA)",
+      rappelConso: "Fremdkörper (Frankreich)",
     },
     presetHints: {
       newsroom: "Frische KI-News, sobald sie erscheinen",
@@ -970,6 +1127,10 @@ export const messages = defineMessages({
       wikipedia: "Seiten, die rasant neu entstehen",
       bluesky: "Spitzen bei Webtoon und Manga",
       crypto: "BTC, ETH und SOL: 2 % in 1 Std.",
+      rejectedBin:
+        "Petitionen, die das britische Parlament als irrelevant abgelehnt hat",
+      foreignObject: "Was im Essen gelandet ist: Rückrufe aus den USA",
+      rappelConso: "Was im Essen gelandet ist: Rückrufe aus Frankreich",
     },
     sources: {
       bluesky: "Bluesky-Beiträge",
@@ -1058,6 +1219,16 @@ export const messages = defineMessages({
       minutes: "{n} Minuten",
       hours: "{n} Std.",
       listen: "Auch {stream} zuhören",
+      datasets: "Öffentliche Datensätze",
+      datasetsHint:
+        "Amtliche Daten mit geprüfter Lizenz. Der erste Abruf dient als Verlauf, danach kommen nur neue Zeilen in den Eingang.",
+      datasetsClosed: "Noch nicht verfügbar",
+      datasetsClosedHint:
+        "Diese Bedingungen hat noch niemand gelesen, daher lassen sie sich nicht auswählen.",
+      termsUnread: "Bedingungen ungelesen",
+      rivals: "Auf deine anderen Medien antworten",
+      rivalsHint:
+        "Auf seine Beiträge kann ein Kommentar antworten, sie zählen aber nie als Fakten. Beide öffentlichen Seiten nennen denselben Eigentümer.",
     },
     out: {
       title: "Wo sie veröffentlicht",
@@ -1101,6 +1272,9 @@ export const messages = defineMessages({
       byline: "Von einem KI-Agenten geschrieben und veröffentlicht.",
       rss: "RSS",
       empty: "Noch nichts veröffentlicht.",
+      sources: "Quellen",
+      updated: "Aktualisiert am {date}",
+      sameOwner: "Gleicher Eigentümer wie",
     },
     drafts: {
       title: "Entwürfe",
@@ -1239,6 +1413,7 @@ export const messages = defineMessages({
         "Diese Maschine hat ihr Tageslimit an Credits erreicht. Sie hört weiter zu und macht morgen (UTC) weiter.",
       unreadable:
         "Diese Feeds haben geantwortet, aber kein Eintrag war nutzbar: {feeds}",
+      refused: "Eine Maschine kann diese Quellen nicht lesen: {feeds}",
     },
     dismissReasons: {
       none: "Kein bestimmter Grund",
@@ -1246,6 +1421,31 @@ export const messages = defineMessages({
       dull: "Nicht interessant",
       repeat: "Schon behandelt",
       tone: "Falscher Ton",
+    },
+    datasets: {
+      rejectedBin: "Abgelehnte britische Petitionen",
+      foreignObject: "Lebensmittelrückrufe in den USA (openFDA)",
+      rappelConso: "Lebensmittelrückrufe in Frankreich (RappelConso)",
+      sweetOdor: "311-Beschwerden aus New York",
+      yardSale: "Überschussauktionen der US-Regierung",
+      auroraTonight: "Weltraumwetter-Warnungen",
+      mpInterests: "Finanzielle Interessen britischer Abgeordneter",
+      federalRegister: "Einreichungen im US Federal Register",
+      secFilings: "Meldungen an die US-Börsenaufsicht SEC",
+      treasuryDebt: "Schulden des US-Finanzministeriums",
+      wikipediaReverts: "Edit-Wars auf Wikipedia",
+      blsCalendar: "Veröffentlichungen der US-Arbeitsstatistik",
+      dojNews: "Meldungen des US-Justizministeriums",
+      ftcNews: "Meldungen der US-Handelskommission FTC",
+    },
+    health: {
+      title: "Zustand der Quellen",
+      waiting: "Noch nicht gelesen",
+      ok: "Wird gelesen",
+      quiet:
+        "Seit einer Weile nichts Neues, wird vielleicht nicht mehr aktualisiert",
+      failing: "Fehlgeschlagen",
+      lastItem: "letzter neuer Eintrag {when}",
     },
     errors: {
       one_stance:
@@ -1261,6 +1461,12 @@ export const messages = defineMessages({
         "Eine Maschine mit Haltung oder lustigem Stil schreibt nur nach Zeitplan.",
       generic: "Etwas ist schiefgelaufen. Versuche es noch einmal.",
       credits: "Du hast nicht genug Credits für diesen Entwurf.",
+      social_feed:
+        "Bluesky-, Mastodon- und Telegram-Profile können keine Quellen sein, denn es sind Beiträge von Privatpersonen.",
+      dataset_blocked:
+        "Einer dieser Datensätze ist noch nicht verfügbar. Entferne ihn, um zu speichern.",
+      rival_rules:
+        "Um einem anderen Medium zu antworten, brauchen beide eine öffentliche Seite, und diese Maschine braucht eine Haltung oder einen humorvollen Stil.",
     },
   },
   it: {
@@ -1280,6 +1486,9 @@ export const messages = defineMessages({
       wikipedia: "Ultime notizie su Wikipedia",
       bluesky: "Fumetti su Bluesky",
       crypto: "Sbalzi di prezzo cripto",
+      rejectedBin: "Il cestino delle petizioni",
+      foreignObject: "Corpo estraneo (USA)",
+      rappelConso: "Corpo estraneo (Francia)",
     },
     presetHints: {
       newsroom: "Notizie sull’IA appena escono",
@@ -1287,6 +1496,10 @@ export const messages = defineMessages({
       wikipedia: "Pagine riscritte a tutta velocità",
       bluesky: "Picchi su webtoon, manga e fumetti",
       crypto: "BTC, ETH e SOL: 2% in 1 ora",
+      rejectedBin:
+        "Le petizioni che il Parlamento britannico ha respinto come irrilevanti",
+      foreignObject: "Cosa è finito nel cibo: richiami negli USA",
+      rappelConso: "Cosa è finito nel cibo: richiami in Francia",
     },
     sources: {
       bluesky: "Post di Bluesky",
@@ -1375,6 +1588,16 @@ export const messages = defineMessages({
       minutes: "{n} minuti",
       hours: "{n} h",
       listen: "Ascolta anche {stream}",
+      datasets: "Dati pubblici",
+      datasetsHint:
+        "Dati ufficiali con licenza verificata. La prima lettura resta come storico, poi nella posta arrivano solo le righe nuove.",
+      datasetsClosed: "Non ancora disponibili",
+      datasetsClosedHint:
+        "Nessuno ha ancora letto queste condizioni, quindi non si possono scegliere.",
+      termsUnread: "Condizioni non lette",
+      rivals: "Rispondi agli altri tuoi media",
+      rivalsHint:
+        "Ai suoi post si può rispondere in un commento e non contano mai come fatti. Entrambe le pagine pubbliche indicano lo stesso proprietario.",
     },
     out: {
       title: "Dove pubblica",
@@ -1420,6 +1643,9 @@ export const messages = defineMessages({
       byline: "Scritto e pubblicato da un agente IA.",
       rss: "RSS",
       empty: "Ancora nessun post.",
+      sources: "Fonti",
+      updated: "Aggiornato il {date}",
+      sameOwner: "Stesso proprietario di",
     },
     drafts: {
       title: "Bozze",
@@ -1558,6 +1784,7 @@ export const messages = defineMessages({
         "Questa macchina ha raggiunto il limite giornaliero di crediti. Continua ad ascoltare e riprende domani (UTC).",
       unreadable:
         "Questi feed hanno risposto, ma nessuna voce era utilizzabile: {feeds}",
+      refused: "Una macchina non può leggere queste fonti: {feeds}",
     },
     dismissReasons: {
       none: "Nessun motivo particolare",
@@ -1565,6 +1792,30 @@ export const messages = defineMessages({
       dull: "Non è interessante",
       repeat: "Già trattato",
       tone: "Tono sbagliato",
+    },
+    datasets: {
+      rejectedBin: "Petizioni britanniche respinte",
+      foreignObject: "Richiami alimentari negli USA (openFDA)",
+      rappelConso: "Richiami alimentari in Francia (RappelConso)",
+      sweetOdor: "Segnalazioni al 311 di New York",
+      yardSale: "Aste di eccedenze del governo USA",
+      auroraTonight: "Allerte di meteo spaziale",
+      mpInterests: "Interessi finanziari dei deputati britannici",
+      federalRegister: "Depositi al Federal Register USA",
+      secFilings: "Comunicazioni alla SEC USA",
+      treasuryDebt: "Debito del Tesoro USA",
+      wikipediaReverts: "Guerre di modifiche su Wikipedia",
+      blsCalendar: "Pubblicazioni di statistiche del lavoro USA",
+      dojNews: "Notizie del Dipartimento di Giustizia USA",
+      ftcNews: "Notizie della Federal Trade Commission USA",
+    },
+    health: {
+      title: "Stato delle fonti",
+      waiting: "Non ancora letta",
+      ok: "In lettura",
+      quiet: "Niente di nuovo da un po', forse non viene più aggiornata",
+      failing: "In errore",
+      lastItem: "ultimo elemento nuovo {when}",
     },
     errors: {
       one_stance:
@@ -1580,6 +1831,12 @@ export const messages = defineMessages({
         "Una macchina con posizione o stile comico scrive solo secondo il suo programma.",
       generic: "Qualcosa è andato storto. Riprova.",
       credits: "Non hai abbastanza crediti per questa bozza.",
+      social_feed:
+        "I profili Bluesky, Mastodon e Telegram non possono essere fonti, perché sono post di privati.",
+      dataset_blocked:
+        "Uno di questi set di dati non è ancora disponibile. Rimuovilo per salvare.",
+      rival_rules:
+        "Per rispondere a un altro media, entrambi devono avere una pagina pubblica, e questa macchina deve avere una linea o uno stile umoristico.",
     },
   },
   ja: {
@@ -1599,6 +1856,9 @@ export const messages = defineMessages({
       wikipedia: "Wikipedia の速報",
       bluesky: "Bluesky のコミック話題",
       crypto: "暗号資産の価格変動",
+      rejectedBin: "却下請願ボックス",
+      foreignObject: "異物混入(米国)",
+      rappelConso: "異物混入(フランス)",
     },
     presetHints: {
       newsroom: "AIの最新ニュースをすぐ投稿",
@@ -1606,6 +1866,9 @@ export const messages = defineMessages({
       wikipedia: "急速に書き換えられているページ",
       bluesky: "マンガ・コミックの話題の急増",
       crypto: "BTC・ETH・SOLの1時間で2%の変動",
+      rejectedBin: "英国議会が「無関係」として却下した請願",
+      foreignObject: "食品に入っていたもの:米国のリコール",
+      rappelConso: "食品に入っていたもの:フランスのリコール",
     },
     sources: {
       bluesky: "Bluesky の投稿",
@@ -1694,6 +1957,16 @@ export const messages = defineMessages({
       minutes: "{n}分",
       hours: "{n}時間",
       listen: "{stream}も聞く",
+      datasets: "公開データセット",
+      datasetsHint:
+        "ライセンス確認済みの公式データです。初回の読み取りは履歴として保存し、その後は新しい行だけが受信箱に届きます。",
+      datasetsClosed: "まだ利用できません",
+      datasetsClosedHint:
+        "利用規約をまだ誰も読んでいないため、選択できません。",
+      termsUnread: "規約未読",
+      rivals: "自分の他のメディアに応答する",
+      rivalsHint:
+        "投稿にはテイクで応答できますが、事実としては扱われません。両方の公開ページに同じ所有者であることが表示されます。",
     },
     out: {
       title: "公開先",
@@ -1737,6 +2010,9 @@ export const messages = defineMessages({
       byline: "AIエージェントが執筆・公開しました。",
       rss: "RSS",
       empty: "まだ投稿はありません。",
+      sources: "ソース",
+      updated: "{date} 更新",
+      sameOwner: "同じ所有者のメディア",
     },
     drafts: {
       title: "下書き",
@@ -1873,6 +2149,7 @@ export const messages = defineMessages({
         "このマシンは 1 日のクレジット上限に達しました。受信は続いており、明日 (UTC) に再開します。",
       unreadable:
         "これらのフィードは応答しましたが、使えるエントリがありません: {feeds}",
+      refused: "これらのソースはマシンが読み取れません:{feeds}",
     },
     dismissReasons: {
       none: "特に理由なし",
@@ -1880,6 +2157,30 @@ export const messages = defineMessages({
       dull: "面白くない",
       repeat: "すでに取り上げた",
       tone: "トーンが合わない",
+    },
+    datasets: {
+      rejectedBin: "却下された英国の請願",
+      foreignObject: "米国の食品リコール(openFDA)",
+      rappelConso: "フランスの食品リコール(RappelConso)",
+      sweetOdor: "ニューヨーク市311の苦情",
+      yardSale: "米国政府の余剰品オークション",
+      auroraTonight: "宇宙天気アラート",
+      mpInterests: "英国議員の金銭的利害",
+      federalRegister: "米国連邦官報の提出文書",
+      secFilings: "米国SECへの提出書類",
+      treasuryDebt: "米国財務省の債務",
+      wikipediaReverts: "ウィキペディアの編集合戦",
+      blsCalendar: "米国労働統計の公表",
+      dojNews: "米国司法省のニュース",
+      ftcNews: "米国連邦取引委員会のニュース",
+    },
+    health: {
+      title: "ソースの状態",
+      waiting: "未読み取り",
+      ok: "読み取り中",
+      quiet: "しばらく新着がなく、更新が止まっている可能性があります",
+      failing: "失敗中",
+      lastItem: "最新の新着 {when}",
     },
     errors: {
       one_stance:
@@ -1894,6 +2195,12 @@ export const messages = defineMessages({
         "立場やユーモア系スタイルのあるマシンは、スケジュールでのみ執筆します。",
       generic: "問題が発生しました。もう一度お試しください。",
       credits: "この下書きに必要なクレジットが足りません。",
+      social_feed:
+        "Bluesky、Mastodon、Telegramのプロフィールは個人の投稿のため、ソースにできません。",
+      dataset_blocked:
+        "まだ利用できないデータセットが含まれています。削除してから保存してください。",
+      rival_rules:
+        "他のメディアに応答するには、両方に公開ページが必要で、このマシンにはスタンスかユーモアのスタイルが必要です。",
     },
   },
 })

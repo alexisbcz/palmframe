@@ -8,7 +8,14 @@ import {
   promptId,
 } from "@/lib/prompts.server"
 
-import type { DismissReason, Item, MachineConfig, RunDecision } from "./model"
+import {
+  type DismissReason,
+  type Item,
+  type MachineConfig,
+  type RunDecision,
+  isFoil,
+  rivalsOf,
+} from "./model"
 import { renderLine, renderStyle, usesDesk } from "./stance"
 
 export const FILE_FIELDS = {
@@ -185,6 +192,7 @@ export function editorFor(
       ...input,
       line: config.line ? renderLine(config.line) : "",
       style: renderStyle(config.style),
+      rivals: rivalsOf(config).length > 0,
     }),
     prompt: promptId(MACHINE_EDITOR_LINE),
   }
@@ -199,6 +207,7 @@ export function inboxBrief(items: Item[], memory: Memory = NO_MEMORY) {
       title: i.title,
       summary: i.summary,
       at: new Date(i.at).toISOString(),
+      ...(isFoil(i) && { role: "foil" }),
     })),
     recent_posts: memory.delivered,
     ...(memory.inReview.length && {
@@ -242,7 +251,8 @@ export function toFiled(
     scene: str(input.scene, 1000),
     alt: str(input.alt, 500),
     sources,
-    link: sources[0]?.url ?? null,
+    // A foil is never where a post comes from.
+    link: sources.find((s) => !isFoil(s))?.url ?? null,
     read,
     prompt,
   }

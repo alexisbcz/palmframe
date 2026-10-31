@@ -10,7 +10,7 @@ import {
   takeRoom,
 } from "./gate"
 import type { MachineConfig, OutputPlatform } from "./model"
-import { signatureFor } from "./signature"
+import { signOff } from "./signature"
 import { usesDesk } from "./stance"
 import {
   type DeskAnswer,
@@ -84,7 +84,7 @@ export interface Judged extends SettledPost {
 export async function judgePost(
   filed: PostParts,
   evidence: string,
-  sources: readonly unknown[],
+  sources: readonly { source: string }[],
   link: string | null,
   config: MachineConfig,
   outputs: readonly { platform: OutputPlatform }[],
@@ -112,7 +112,7 @@ export async function judgePost(
   const breach = codeBreach(filed, evidence, language)
   if (breach) return blocked(breach.rule, breach.why)
 
-  const room = takeRoom(outputs, link, signatureFor(language))
+  const room = takeRoom(outputs, link, signOff(language, sources))
   const settled = settleTake(filed, evidence, sources, language, room)
   const answer = await askDesk(
     { ...filed, take: settled.take },

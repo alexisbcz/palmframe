@@ -6,6 +6,7 @@ import { createGunzip } from "node:zlib"
 
 import { searchVideos } from "@/lib/studio/scrapecreators.server"
 
+import { DATASETS, isSocialProfile, parseDataset, selectable } from "./datasets"
 import {
   decodeBody,
   entryCount,
@@ -25,12 +26,15 @@ const MAX_ARTICLE = 6_000
 const GDELT_GAP_MS = 5_500
 const FEED_TYPES = /xml|rss|atom|text\/(?:plain|html)/i
 const PAGE_TYPES = /html|xml|text\/plain/i
+const JSON_TYPES = /json/i
 
 export class FeedBusy extends Error {}
 // The page hasn't changed since the validators this was asked with.
 export class NotModified extends Error {}
 // It answered with entries, and none of them could be used.
 export class FeedUnreadable extends Error {}
+// It isn't one a machine may read, whatever its stored config says.
+export class FeedRefused extends Error {}
 
 interface FetchOptions {
   signal?: AbortSignal
@@ -40,6 +44,8 @@ interface FetchOptions {
   accept?: RegExp
   etag?: string
   lastModified?: string
+  // The only hosts this may reach, redirects included.
+  hosts?: readonly string[]
 }
 
 async function publicAddresses(url: URL) {
@@ -119,7 +125,14 @@ async function readBody(res: IncomingMessage, truncate: boolean) {
 // For URLs from owners and from feeds. Every hop is checked, because a public
 // page can redirect to an internal one.
 export async function fetchPublic(raw: string, options: FetchOptions = {}) {
-  const { signal, truncate = false, accept, etag, lastModified } = options
+  const {
+    signal,
+    truncate = false,
+    accept,
+    etag,
+    lastModified,
+    hosts,
+  } = options
   let url = new URL(raw)
   const abort = AbortSignal.any([
     AbortSignal.timeout(TIMEOUT_MS),
@@ -132,6 +145,8 @@ export async function fetchPublic(raw: string, options: FetchOptions = {}) {
     ...(lastModified && { "if-modified-since": lastModified }),
   }
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    if (hosts && !hosts.includes(url.hostname))
+      throw new Error(`${url.hostname} isn't an allowed host.`)
     const res = await open(url, await publicAddresses(url), headers, abort)
     const status = res.statusCode ?? 0
     if (status === 304) {
@@ -199,6 +214,7 @@ export async function readFeed(
 ): Promise<Item[]> {
   switch (feed.kind) {
     case "rss": {
+      if (isSocialProfile(feed.url)) throw new FeedRefused(feed.url)
       const xml = await fetchPublic(feed.url, {
         signal,
         truncate: true,
@@ -210,6 +226,21 @@ export async function readFeed(
     }
     case "news":
       return gdelt(feed.query, now, signal)
+    case "dataset": {
+      const dataset = DATASETS[feed.preset]
+      if (!selectable(dataset)) throw new FeedRefused(feed.preset)
+      const text = await fetchPublic(dataset.url, {
+        signal,
+        accept: JSON_TYPES,
+        hosts: dataset.hosts,
+      })
+      const items = parseDataset(feed.preset, JSON.parse(text), now)
+      if (!items) throw new FeedUnreadable(feed.preset)
+      return items
+    }
+    // These need the database, so the runner reads them itself.
+    case "rival":
+      return []
     case "hackernews": {
       const text = await fetchPublic(
         "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=25&attributesToRetrieve=title,url,objectID,points,num_comments,created_at_i&attributesToHighlight=",

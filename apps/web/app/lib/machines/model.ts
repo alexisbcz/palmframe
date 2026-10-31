@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import { FORMATS } from "@/lib/media/model"
 
+import { DATASET_IDS, isDatasetKey } from "./datasets"
 import { type Line, STYLES, isFar, lineSchema } from "./stance"
 
 // Content machines: small media outlets. Each one hears its sources, an agent
@@ -32,7 +33,9 @@ export const SOURCE_INFO: Record<SourceId, SourceInfo> = {
 
 const word = z.string().trim().min(1).max(60)
 
-// Sources polled on the machine's schedule, next to its live stream.
+// Sources polled on the machine's schedule, next to its live stream. These are
+// the ones an owner types. A dataset is picked from a list, and a rival is another
+// of their machines: see the two last entries of `feedSchema`.
 export const FEED_KINDS = [
   "rss",
   "news",
@@ -51,8 +54,20 @@ export const feedSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("hackernews") }),
   z.object({ kind: z.literal("tiktok"), query: word }),
   z.object({ kind: z.literal("youtube"), query: word }),
+  // Every known id parses, so a dataset closed later doesn't break the machines
+  // holding it. Whether one may be read is `selectable`, checked by the save
+  // and again by the reader.
+  z.object({ kind: z.literal("dataset"), preset: z.enum(DATASET_IDS) }),
+  z.object({ kind: z.literal("rival"), machine: z.uuid() }),
 ])
 export type Feed = z.infer<typeof feedSchema>
+export type TypedFeed = Extract<Feed, { kind: (typeof FEED_KINDS)[number] }>
+
+// Machines this one reads as rivals, from a config that may predate the field.
+export const rivalsOf = (config: unknown) => {
+  const feeds = (config as { feeds?: Feed[] } | null)?.feeds ?? []
+  return feeds.flatMap((f) => (f.kind === "rival" ? [f.machine] : []))
+}
 
 export const OUTPUT_PLATFORMS = [
   "bluesky",
@@ -242,13 +257,24 @@ export interface Item {
   summary: string
   url: string
   at: number
+  // A foil is there to be answered, and is never evidence. Anything else is a fact.
+  role?: "fact" | "foil"
 }
+
+export const isFoil = (item: Pick<Item, "role">) => item.role === "foil"
+
+// Pages the agent may not open: a dataset's page holds the fields its allowlist
+// drops, and what it reads counts as evidence, which a foil must never become.
+export const isReadable = (item: Pick<Item, "key" | "role">) =>
+  !isDatasetKey(item.key) && !isFoil(item)
 
 // What a post stands on: enough to show its evidence once the inbox is pruned.
 export interface PostSource {
   title: string
   url: string
   source: string
+  // Set on a rival's post it answered, so nothing reads that answer in turn.
+  role?: "foil"
 }
 
 // Why an owner threw a post away. A closed list, because it goes back to the
@@ -291,6 +317,7 @@ export type RunDecision = (typeof RUN_DECISIONS)[number]
 export const NOTICES = [
   "budget",
   "unreadable",
+  "refused",
   "frozen",
   "no_calendar",
   "not_public",
@@ -346,7 +373,15 @@ export const slugify = (name: string) =>
     .replace(/-+$/, "")
 
 export interface MachinePreset {
-  id: "crypto" | "wikipedia" | "bluesky" | "newsroom" | "hackernews"
+  id:
+    | "crypto"
+    | "wikipedia"
+    | "bluesky"
+    | "newsroom"
+    | "hackernews"
+    | "rejectedBin"
+    | "foreignObject"
+    | "rappelConso"
   source: SourceId
   config: MachineConfig
 }
@@ -365,6 +400,21 @@ const base = {
   media: NO_MEDIA,
   line: null,
   style: "plain" as const,
+}
+
+// A dataset desk reads once a day, files at most one post, and starts in review
+// like every machine. The style sends it past the standards desk, and a quiet day
+// is normal: some of these only move a few times a month.
+const desk = {
+  ...base,
+  dailyCap: 1,
+  listen: false,
+  everyMinutes: 1440,
+  style: "deadpan" as const,
+  keywords: [],
+  threshold: 8,
+  windowMinutes: 15,
+  cooldownMinutes: 720,
 }
 
 export const PRESETS: MachinePreset[] = [
@@ -432,6 +482,37 @@ export const PRESETS: MachinePreset[] = [
       threshold: 2,
       windowMinutes: 60,
       cooldownMinutes: 240,
+    },
+  },
+  {
+    id: "rejectedBin",
+    source: "wikipedia",
+    config: {
+      ...desk,
+      mission:
+        "Petitions the UK Parliament refused as irrelevant. State the petition's own wording and its official category, and let them do the work. Laugh at the idea, never at whoever signed it.",
+      feeds: [{ kind: "dataset", preset: "rejectedBin" }],
+    },
+  },
+  {
+    id: "foreignObject",
+    source: "wikipedia",
+    config: {
+      ...desk,
+      mission:
+        "US food recalls for what got into the food. State the object, the product and the firm exactly as the recall does. A recall where nobody was hurt is the only kind this covers.",
+      feeds: [{ kind: "dataset", preset: "foreignObject" }],
+    },
+  },
+  {
+    id: "rappelConso",
+    source: "wikipedia",
+    config: {
+      ...desk,
+      language: "fr",
+      mission:
+        "French food recalls for what got into the food. State the object, the product and the brand exactly as the notice does. A recall where nobody was hurt is the only kind this covers.",
+      feeds: [{ kind: "dataset", preset: "rappelConso" }],
     },
   },
 ]

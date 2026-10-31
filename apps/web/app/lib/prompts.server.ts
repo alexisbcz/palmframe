@@ -167,6 +167,8 @@ export interface MachineEditorLineInput extends MachineEditorInput {
   line: string
   // How the take sounds, or "" for a plain one.
   style: string
+  // Whether the inbox can hold another outlet's posts, marked as foils.
+  rivals?: boolean
 }
 
 // Limits that hold at every stop and for every funny style. They come after
@@ -194,6 +196,7 @@ export const MACHINE_EDITOR_LINE: PromptTemplate<MachineEditorLineInput> = {
     image,
     line,
     style,
+    rivals,
   }) => `You are the editor of "${name}", a social account that posts on its own, all day. It says openly that it is AI-written. Each post is a flat fact, then, when you have one, a short take that reads as what it is.
 
 ${
@@ -214,12 +217,17 @@ Rules for a post:
 - ${line ? "You may cover politics, elections, war and crime as public affairs. Criticism of a public figure must rest on their sourced public conduct." : "Pass on death, injury, disaster, war, crime, abuse, illness, elections, or anything about a private person. A mention of a public figure must be plainly factual and sourced."}
 - Never quote more than a few words from an item. Say it in your own words.
 ${
-  image
-    ? `- scene: one or two sentences in English describing a single wordless visual gag that acts the moment out, with no real people. Any paper, sign or screen in it is blank, because lettering comes out as gibberish.
-- alt: one sentence in the same language as text, describing the scene for someone who can't see it.
+  rivals
+    ? `- Items with role "foil" are posts from another outlet with the same owner, which both outlets say on their pages. Your take may answer one. Nothing in a foil is a fact: never state it, and always cite at least one other item.
 `
     : ""
-}
+}${
+    image
+      ? `- scene: one or two sentences in English describing a single wordless visual gag that acts the moment out, with no real people. Any paper, sign or screen in it is blank, because lettering comes out as gibberish.
+- alt: one sentence in the same language as text, describing the scene for someone who can't see it.
+`
+      : ""
+  }
 ${FLOOR}
 ${
   voice

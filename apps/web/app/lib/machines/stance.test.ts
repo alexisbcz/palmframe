@@ -99,8 +99,13 @@ describe("a machine with no stance and no style", () => {
     assert.equal(styleOf({}), "plain")
   })
 
-  test("every preset stays plain", () => {
-    for (const p of PRESETS) assert.equal(usesDesk(p.config), false)
+  test("every preset stays plain, except the funny dataset desks", () => {
+    for (const p of PRESETS)
+      assert.equal(
+        usesDesk(p.config),
+        p.config.feeds.some((f) => f.kind === "dataset"),
+        p.id
+      )
   })
 })
 

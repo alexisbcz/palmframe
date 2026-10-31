@@ -17,7 +17,7 @@ import {
   toolsFor,
 } from "./agent.logic"
 import { readArticle } from "./feeds.server"
-import type { Item, MachineConfig } from "./model"
+import { type Item, type MachineConfig, isReadable } from "./model"
 import { usesDesk } from "./stance"
 
 const MODEL = "claude-sonnet-5-5"
@@ -72,7 +72,9 @@ async function withClaude(
     for (const call of calls) {
       const item = items[(call.input as { item_id?: number }).item_id ?? -1]
       let content = "That item isn't in the inbox."
-      if (item && reads >= MAX_READS) content = "No more reads this run."
+      if (item && !isReadable(item))
+        content = "This item has no page to read. Its fields are all there is."
+      else if (item && reads >= MAX_READS) content = "No more reads this run."
       else if (item) {
         reads++
         content = await readArticle(item.url, abort).catch(

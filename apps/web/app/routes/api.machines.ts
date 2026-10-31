@@ -16,12 +16,14 @@ import {
   profileFor,
 } from "@/lib/instagram.server"
 import { lineStopFor, machinesHalted } from "@/lib/machines/control.server"
+import { feedRefusal } from "@/lib/machines/datasets"
 import { evidenceLimit } from "@/lib/machines/gate"
 import {
   DISMISS_REASONS,
   RETRACT_REASONS,
   machineConfig,
   machineInput,
+  rivalsOf,
   signalSchema,
   slugify,
 } from "@/lib/machines/model"
@@ -130,6 +132,22 @@ export async function action({ request }: Route.ActionArgs) {
         return fail("Invalid request.", 400)
       if (usesDesk(fields.config) && (await payingConnection(viewer.id)))
         return fail("no_desk", 409)
+      const refusal = feedRefusal(fields.config.feeds, {
+        id: machineId,
+        public: fields.public,
+        usesDesk: usesDesk(fields.config),
+      })
+      if (refusal) return fail(refusal, 409)
+      // A rival has to be yours and public, or neither page can say who owns both.
+      const rivals = [...new Set(rivalsOf(fields.config))]
+      if (rivals.length) {
+        const { data: found } = await supabase
+          .from("comic_machines")
+          .select("id")
+          .in("id", rivals)
+          .eq("public", true)
+        if (found?.length !== rivals.length) return fail("rival_rules", 409)
+      }
       if (fields.public) {
         const { data: own } = machineId
           ? await supabase

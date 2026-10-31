@@ -10,6 +10,7 @@ import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
+  Alert02Icon,
   BitcoinIcon,
   CodeIcon,
   Comment01Icon,
@@ -31,6 +32,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
+import { Badge } from "@workspace/ui/components/badge"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
@@ -60,6 +62,7 @@ import { availableFormats } from "@/lib/media/formats"
 import type { FormatId } from "@/lib/media/model"
 import type {
   MachineDraftRow,
+  MachineFeedStateRow,
   MachineItemRow,
   MachineRow,
 } from "@/lib/database"
@@ -68,6 +71,12 @@ import {
   instagramEnabled,
   listAccounts,
 } from "@/lib/instagram.server"
+import {
+  type DatasetId,
+  CLOSED_DATASETS,
+  DATASETS,
+  OPEN_DATASETS,
+} from "@/lib/machines/datasets"
 import { createDetector } from "@/lib/machines/detect"
 import {
   type DismissReason,
@@ -86,6 +95,7 @@ import {
   OUTPUT_PLATFORMS,
   type OutputPlatform,
   type PublishMode,
+  type TypedFeed,
   RETRACTABLE,
   RETRACT_REASONS,
   type Reading,
@@ -118,6 +128,7 @@ import {
   usesDesk,
 } from "@/lib/machines/stance"
 import { imageAvailable } from "@/lib/machines/image.server"
+import { feedHealth, feedKey } from "@/lib/machines/source-state"
 import { openSource } from "@/lib/machines/sources"
 import { payingConnection } from "@/lib/openrouter.server"
 import { PRIVATE } from "@/lib/seo"
@@ -143,30 +154,37 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!viewer.labs.machines)
     throw redirect("/projects?settings=labs", { headers })
   const posting = instagramEnabled()
-  const [machines, drafts, items, accounts, connection] = await Promise.all([
-    supabase.from("comic_machines").select("*").order("created_at"),
-    supabase
-      .from("comic_machine_drafts")
-      .select("*")
-      .neq("status", "dismissed")
-      .order("created_at", { ascending: false })
-      .limit(100),
-    supabase
-      .from("comic_machine_items")
-      .select("*")
-      .order("published_at", { ascending: false })
-      .limit(100),
-    (async () => {
-      if (!posting) return []
-      const profile = await existingProfile(viewer.id)
-      return profile ? listAccounts(profile) : []
-    })().catch(() => []),
-    payingConnection(viewer.id).catch(() => null),
-  ])
+  const [machines, drafts, items, feedStates, accounts, connection] =
+    await Promise.all([
+      supabase.from("comic_machines").select("*").order("created_at"),
+      supabase
+        .from("comic_machine_drafts")
+        .select("*")
+        .neq("status", "dismissed")
+        .order("created_at", { ascending: false })
+        .limit(100),
+      supabase
+        .from("comic_machine_items")
+        .select("*")
+        .order("published_at", { ascending: false })
+        .limit(100),
+      // Not `seen`: it's long, and the page has no use for it.
+      supabase
+        .from("comic_machine_feed_state")
+        .select("machine_id, feed_key, failures, last_read_at, last_item_at"),
+      (async () => {
+        if (!posting) return []
+        const profile = await existingProfile(viewer.id)
+        return profile ? listAccounts(profile) : []
+      })().catch(() => []),
+      payingConnection(viewer.id).catch(() => null),
+    ])
   return {
     machines: (machines.data ?? []) as MachineRow[],
     drafts: (drafts.data ?? []) as MachineDraftRow[],
     items: (items.data ?? []) as MachineItemRow[],
+    feedStates: (feedStates.data ?? []) as FeedStatus[],
+    readAt: Date.now(),
     accounts: accounts.filter((a) =>
       OUTPUT_PLATFORMS.includes(a.platform as OutputPlatform)
     ),
@@ -176,6 +194,11 @@ export async function loader({ request }: Route.LoaderArgs) {
     scheduled: !!process.env.MACHINES_CRON_SECRET?.trim(),
   }
 }
+
+type FeedStatus = Pick<
+  MachineFeedStateRow,
+  "machine_id" | "feed_key" | "failures" | "last_read_at" | "last_item_at"
+>
 
 async function post(body: unknown) {
   const res = await fetch("/api/machines", {
@@ -204,6 +227,9 @@ const PRESET_ICONS = {
   wikipedia: WikipediaIcon,
   bluesky: Comment01Icon,
   crypto: BitcoinIcon,
+  rejectedBin: Delete02Icon,
+  foreignObject: Alert02Icon,
+  rappelConso: Alert02Icon,
 } satisfies Record<MachinePreset["id"], unknown>
 
 const list = (s: string) =>
@@ -220,6 +246,9 @@ const LINE_ERRORS = [
   "review_first",
   "line_rules",
   "no_desk",
+  "social_feed",
+  "dataset_blocked",
+  "rival_rules",
 ] as const
 
 interface WireLine {
@@ -764,10 +793,10 @@ function Draft({
   )
 }
 
-const feedValue = (f: Feed) =>
+const feedValue = (f: TypedFeed) =>
   f.kind === "rss" ? f.url : f.kind === "hackernews" ? "" : f.query
 
-function makeFeed(kind: Feed["kind"], value: string): Feed {
+function makeFeed(kind: TypedFeed["kind"], value: string): TypedFeed {
   if (kind === "rss") return { kind, url: value.trim() }
   if (kind === "hackernews") return { kind }
   return { kind, query: value.trim() }
@@ -780,6 +809,189 @@ interface LineFields {
   contact: string
   scrutiny: Scrutiny[]
   style: Style
+}
+
+const isTyped = (feed: Feed): feed is TypedFeed =>
+  feed.kind !== "dataset" && feed.kind !== "rival"
+
+const isDataset = (feed: Feed, id: DatasetId) =>
+  feed.kind === "dataset" && feed.preset === id
+
+// Open datasets can be picked. Closed ones are listed, so an owner sees what's
+// coming and why it isn't here yet, and one already on a machine can be taken off.
+function DatasetPicker({
+  feeds,
+  onChange,
+}: {
+  feeds: Feed[]
+  onChange: (feeds: Feed[]) => void
+}) {
+  const t = useT(messages)
+  const full = feeds.length >= MAX_FEEDS
+  const toggle = (id: DatasetId, on: boolean) =>
+    onChange(
+      on
+        ? [...feeds, { kind: "dataset", preset: id }]
+        : feeds.filter((f) => !isDataset(f, id))
+    )
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-sm font-medium">{t("agent.datasets")}</legend>
+      <p className="text-sm text-muted-foreground">{t("agent.datasetsHint")}</p>
+      <ul className="flex flex-col gap-2">
+        {OPEN_DATASETS.map((id) => {
+          const on = feeds.some((f) => isDataset(f, id))
+          const { licence } = DATASETS[id]
+          return (
+            <li
+              key={id}
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"
+            >
+              <Checkbox
+                isSelected={on}
+                isDisabled={!on && full}
+                onChange={(next) => toggle(id, next)}
+              >
+                {t(`datasets.${id}`)}
+              </Checkbox>
+              {licence && (
+                <a
+                  href={licence.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-xs text-muted-foreground underline underline-offset-2"
+                >
+                  {licence.name}
+                </a>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+      <h4 className="text-sm font-medium">{t("agent.datasetsClosed")}</h4>
+      <p className="text-sm text-muted-foreground">
+        {t("agent.datasetsClosedHint")}
+      </p>
+      <ul className="flex flex-col gap-2">
+        {CLOSED_DATASETS.map((id) => {
+          const on = feeds.some((f) => isDataset(f, id))
+          return (
+            <li
+              key={id}
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"
+            >
+              <Checkbox
+                isSelected={on}
+                isDisabled={!on}
+                onChange={(next) => toggle(id, next)}
+              >
+                {t(`datasets.${id}`)}
+              </Checkbox>
+              <Badge variant="outline">{t("agent.termsUnread")}</Badge>
+            </li>
+          )
+        })}
+      </ul>
+    </fieldset>
+  )
+}
+
+// Other public outlets of this owner, to answer. Both pages then say who owns them.
+function RivalPicker({
+  feeds,
+  outlets,
+  onChange,
+}: {
+  feeds: Feed[]
+  outlets: { id: string; name: string }[]
+  onChange: (feeds: Feed[]) => void
+}) {
+  const t = useT(messages)
+  const isRival = (f: Feed, id: string) =>
+    f.kind === "rival" && f.machine === id
+  if (!outlets.length) return null
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="text-sm font-medium">{t("agent.rivals")}</legend>
+      <p className="text-sm text-muted-foreground">{t("agent.rivalsHint")}</p>
+      <div className="flex flex-wrap gap-x-4 gap-y-2">
+        {outlets.map((o) => {
+          const on = feeds.some((f) => isRival(f, o.id))
+          return (
+            <Checkbox
+              key={o.id}
+              isSelected={on}
+              isDisabled={!on && feeds.length >= MAX_FEEDS}
+              onChange={(next) =>
+                onChange(
+                  next
+                    ? [...feeds, { kind: "rival", machine: o.id }]
+                    : feeds.filter((f) => !isRival(f, o.id))
+                )
+              }
+            >
+              {o.name}
+            </Checkbox>
+          )
+        })}
+      </div>
+    </fieldset>
+  )
+}
+
+// One line per source: whether it's being read, and when it last said anything new.
+function FeedHealthList({
+  machine,
+  machines,
+  states,
+  now,
+}: {
+  machine: MachineRow
+  machines: MachineRow[]
+  states: FeedStatus[]
+  now: number
+}) {
+  const t = useT(messages)
+  const { locale } = useLocale()
+  const feeds = machine.config.feeds
+  const label = (feed: Feed) =>
+    feed.kind === "dataset"
+      ? t(`datasets.${feed.preset}`)
+      : feed.kind === "rival"
+        ? (machines.find((m) => m.id === feed.machine)?.name ??
+          t("agent.rivals"))
+        : feed.kind === "rss"
+          ? feed.url
+          : t(`feeds.${feed.kind}`)
+  if (!feeds.length) return null
+  return (
+    <section aria-label={t("health.title")} className="flex flex-col gap-2">
+      <h3 className="font-medium">{t("health.title")}</h3>
+      <ul className="flex flex-col gap-1 text-sm">
+        {feeds.map((feed) => {
+          const key = feedKey(feed)
+          const state = states.find((s) => s.feed_key === key)
+          const quiet =
+            feed.kind === "dataset" ? DATASETS[feed.preset].quietDays : null
+          return (
+            <li key={key} className="flex min-w-0 flex-wrap gap-x-2">
+              <span className="min-w-0 truncate">{label(feed)}</span>
+              <span className="text-muted-foreground">
+                {t(`health.${feedHealth(state, quiet, now)}`)}
+                {state?.last_item_at &&
+                  ` · ${t("health.lastItem", {
+                    when: new Date(state.last_item_at).toLocaleDateString(
+                      locale,
+                      { dateStyle: "short", timeZone: "UTC" }
+                    ),
+                  })}`}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
 }
 
 function FeedsEditor({
@@ -796,50 +1008,55 @@ function FeedsEditor({
     <fieldset className="flex flex-col gap-2">
       <legend className="text-sm font-medium">{t("agent.feeds")}</legend>
       <p className="text-sm text-muted-foreground">{t("agent.feedsHint")}</p>
-      {feeds.map((feed, i) => (
-        <div key={i} className="flex flex-wrap items-center gap-2">
-          <NativeSelect
-            aria-label={t("agent.feedKind")}
-            value={feed.kind}
-            onChange={(e) =>
-              set(i, makeFeed(e.target.value as Feed["kind"], feedValue(feed)))
-            }
-          >
-            {FEED_KINDS.map((k) => (
-              <option key={k} value={k}>
-                {t(`feeds.${k}`)}
-              </option>
-            ))}
-          </NativeSelect>
-          <ButtonGroup className="min-w-40 flex-1">
-            {feed.kind !== "hackernews" && (
-              <Input
-                aria-label={
-                  feed.kind === "rss"
-                    ? t("agent.feedUrl")
-                    : t("agent.feedQuery")
-                }
-                type={feed.kind === "rss" ? "url" : "text"}
-                className="min-w-0 flex-1"
-                placeholder={
-                  feed.kind === "rss" ? "https://" : t("agent.feedQuery")
-                }
-                value={feedValue(feed)}
-                required
-                onChange={(e) => set(i, makeFeed(feed.kind, e.target.value))}
-              />
-            )}
-            <Button
-              variant="outline"
-              size="icon"
-              aria-label={t("agent.removeFeed")}
-              onPress={() => onChange(feeds.filter((_, n) => n !== i))}
+      {feeds.map((feed, i) =>
+        !isTyped(feed) ? null : (
+          <div key={i} className="flex flex-wrap items-center gap-2">
+            <NativeSelect
+              aria-label={t("agent.feedKind")}
+              value={feed.kind}
+              onChange={(e) =>
+                set(
+                  i,
+                  makeFeed(e.target.value as TypedFeed["kind"], feedValue(feed))
+                )
+              }
             >
-              <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-            </Button>
-          </ButtonGroup>
-        </div>
-      ))}
+              {FEED_KINDS.map((k) => (
+                <option key={k} value={k}>
+                  {t(`feeds.${k}`)}
+                </option>
+              ))}
+            </NativeSelect>
+            <ButtonGroup className="min-w-40 flex-1">
+              {feed.kind !== "hackernews" && (
+                <Input
+                  aria-label={
+                    feed.kind === "rss"
+                      ? t("agent.feedUrl")
+                      : t("agent.feedQuery")
+                  }
+                  type={feed.kind === "rss" ? "url" : "text"}
+                  className="min-w-0 flex-1"
+                  placeholder={
+                    feed.kind === "rss" ? "https://" : t("agent.feedQuery")
+                  }
+                  value={feedValue(feed)}
+                  required
+                  onChange={(e) => set(i, makeFeed(feed.kind, e.target.value))}
+                />
+              )}
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={t("agent.removeFeed")}
+                onPress={() => onChange(feeds.filter((_, n) => n !== i))}
+              >
+                <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+              </Button>
+            </ButtonGroup>
+          </div>
+        )
+      )}
       <div>
         <Button
           variant="outline"
@@ -1073,12 +1290,14 @@ function BlueskyConnect({ onDone }: { onDone: () => void }) {
 
 function Filter({
   machine,
+  outlets,
   accounts,
   posting,
   canDraw,
   formats,
 }: {
   machine: MachineRow
+  outlets: { id: string; name: string }[]
   accounts: Connected[]
   posting: boolean
   canDraw: boolean
@@ -1261,6 +1480,10 @@ function Filter({
         onChange={(fields) => setLine((old) => ({ ...old, ...fields }))}
       />
       <FeedsEditor feeds={feeds} onChange={setFeeds} />
+      <DatasetPicker feeds={feeds} onChange={setFeeds} />
+      {isPublic && (onLine || line.style !== "plain") && (
+        <RivalPicker feeds={feeds} outlets={outlets} onChange={setFeeds} />
+      )}
       <Field
         label={t("agent.every")}
         htmlFor="machine-every"
@@ -1590,8 +1813,11 @@ function Filter({
 
 function Machine({
   machine,
+  machines,
   drafts,
   items,
+  feedStates,
+  now,
   accounts,
   posting,
   canDraw,
@@ -1599,8 +1825,11 @@ function Machine({
   scheduled,
 }: {
   machine: MachineRow
+  machines: MachineRow[]
   drafts: MachineDraftRow[]
   items: MachineItemRow[]
+  feedStates: FeedStatus[]
+  now: number
   accounts: Connected[]
   posting: boolean
   canDraw: boolean
@@ -1716,9 +1945,17 @@ function Machine({
         </section>
       )}
 
+      <FeedHealthList
+        machine={machine}
+        machines={machines}
+        states={feedStates}
+        now={now}
+      />
+
       <Filter
         key={`filter-${machine.id}`}
         machine={machine}
+        outlets={machines.filter((m) => m.public && m.id !== machine.id)}
         accounts={accounts}
         posting={posting}
         canDraw={canDraw}
@@ -1754,6 +1991,8 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
     machines,
     drafts,
     items,
+    feedStates,
+    readAt,
     accounts,
     posting,
     canDraw,
@@ -1780,8 +2019,11 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
       })
       if (id) setSelected(id)
       revalidator.revalidate()
-    } catch {
-      setError(t("errors.generic"))
+    } catch (e) {
+      const code = LINE_ERRORS.find(
+        (c) => e instanceof Error && e.message === c
+      )
+      setError(t(code ? `errors.${code}` : "errors.generic"))
     }
   }
 
@@ -1871,8 +2113,11 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
           <Machine
             key={current.id}
             machine={current}
+            machines={machines}
             drafts={drafts.filter((d) => d.machine_id === current.id)}
             items={items.filter((i) => i.machine_id === current.id)}
+            feedStates={feedStates.filter((s) => s.machine_id === current.id)}
+            now={readAt}
             accounts={accounts}
             posting={posting}
             canDraw={canDraw}

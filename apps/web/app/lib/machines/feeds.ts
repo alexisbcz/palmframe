@@ -3,7 +3,7 @@ import { decodeHTMLStrict } from "entities"
 import type { Item } from "./model"
 
 // Parsers for polled sources, kept free of network code so they can be tested.
-const MAX_ITEMS = 25
+export const MAX_ITEMS = 25
 const SUMMARY = 600
 const TITLE_FROM_TEXT = 120
 
@@ -45,7 +45,7 @@ function atomLink(block: string) {
 
 // Sites still write http:// in feeds they serve over https. A link that can't
 // be upgraded is dropped, and the column holding it refuses anything else.
-const https = (url: string) => {
+export const https = (url: string) => {
   const clean = decode(url)
     .trim()
     .replace(/^http:\/\//i, "https://")

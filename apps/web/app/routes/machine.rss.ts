@@ -27,7 +27,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
   ) => translate(messages, locale, path, vars)
   const day = (at: string) => at.slice(0, 10)
   const signature = signatureFor(machine.language)
-  const { masthead } = machine
+  const { masthead, credits, sameOwner } = machine
   const declared = masthead
     ? [
         `${t("page.stance")}: ${t(`stances.${masthead.stance}`)}`,
@@ -44,6 +44,14 @@ export async function loader({ params, request }: Route.LoaderArgs) {
         ),
       ].join(" · ")
     : ""
+  const credit = (c: (typeof credits)[number]) =>
+    [
+      c.statement,
+      c.licenceUrl,
+      c.updated ? t("page.updated", { date: day(c.updated) }) : "",
+    ]
+      .filter(Boolean)
+      .join(" ")
   const items = machine.posts
     .map((p) => {
       if (p.retracted) {
@@ -73,9 +81,19 @@ export async function loader({ params, request }: Route.LoaderArgs) {
 <rss version="2.0"><channel>
 <title>${xml(machine.name)}</title>
 <link>${xml(page)}</link>
-<description>${xml([declared, machine.mission || machine.name].filter(Boolean).join(" — "))}</description>
+<description>${xml(
+      [
+        declared,
+        machine.mission || machine.name,
+        sameOwner.length
+          ? `${t("page.sameOwner")}: ${sameOwner.map((o) => o.name).join(", ")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join(" — ")
+    )}</description>
 <language>${machine.language}</language>
-${masthead ? `<category>${xml(t(`stances.${masthead.stance}`))}</category>\n` : ""}${items}
+${credits.length ? `<copyright>${xml(credits.map(credit).join(" "))}</copyright>\n` : ""}${masthead ? `<category>${xml(t(`stances.${masthead.stance}`))}</category>\n` : ""}${items}
 </channel></rss>`,
     {
       headers: {
