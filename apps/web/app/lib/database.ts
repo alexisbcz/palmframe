@@ -197,6 +197,7 @@ export interface Database {
       comic_styles: {
         Row: ComicStyleRow
         Insert: {
+          user_id: string
           name: string
           pages: string[]
           rights_confirmed_at: string

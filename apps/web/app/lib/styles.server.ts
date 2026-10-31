@@ -1,13 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { sniffKind } from "./comic-import/sniff"
-import { MAX_STYLE_PAGE_BYTES } from "./comic-import/limits"
+import { imageSize, sniffKind } from "./comic-import/sniff"
+import { MAX_STYLE_PAGE_BYTES, STYLE_PAGE_SIDE } from "./comic-import/limits"
 import {
   cleanAnalysis,
   pickPages,
   type ComicStyle,
   type StyleAnalysis,
+  type StyleErrorCode,
 } from "./comic-import/style"
 import { COMIC_STYLES_BUCKET, type Database } from "./database"
 import { completeJson, type OpenRouterConnection } from "./openrouter.server"
@@ -19,15 +20,22 @@ const MODEL = "claude-sonnet-5-5"
 const RENDER_URL_SECONDS = 600
 const COVER_URL_SECONDS = 3_600
 const MAX_STYLES = 50
+// Raised by the `comic_styles_quota` trigger, which closes the gap between
+// the count here and the insert.
+const QUOTA_REACHED = "P0409"
 
+// `code` is what the client words; the message is for logs and API callers.
 export class StyleError extends Error {
   constructor(
     message: string,
-    readonly status: number
+    readonly status: number,
+    readonly code: StyleErrorCode
   ) {
     super(message)
   }
 }
+
+const failed = (message: string) => new StyleError(message, 500, "failed")
 
 const SYSTEM = `You study pages of a comic and write down how it is drawn, so that an illustrator can draw a different story, with different characters, in the same manner.
 
@@ -58,27 +66,39 @@ export async function listStyles(supabase: Supabase): Promise<ComicStyle[]> {
     .from("comic_styles")
     .select("id, name, status, pages, analysis")
     .order("created_at", { ascending: false })
-  if (error) throw new StyleError(error.message, 500)
-  const covers = data.length
-    ? await supabase.storage.from(COMIC_STYLES_BUCKET).createSignedUrls(
-        data.map((s) => s.pages[0]!),
-        COVER_URL_SECONDS
-      )
+  if (error) throw failed(error.message)
+  // A ready style only needs its cover. A draft gets every page signed, since
+  // a page that can't be signed never finished uploading.
+  const paths = data.flatMap((s) =>
+    s.status === "ready" ? [s.pages[0]!] : s.pages
+  )
+  const signed = paths.length
+    ? await supabase.storage
+        .from(COMIC_STYLES_BUCKET)
+        .createSignedUrls(paths, COVER_URL_SECONDS)
     : null
-  return data.map((s, i) => ({
+  const urls = new Map(signed?.data?.map((d) => [d.path, d.signedUrl]))
+  return data.map((s) => ({
     id: s.id,
     name: s.name,
     status: s.status,
     pages: s.pages.length,
-    cover: covers?.data?.[i]?.signedUrl ?? null,
+    uploaded:
+      s.status === "ready" ||
+      !signed?.data ||
+      s.pages.every((p) => urls.get(p)),
+    cover: urls.get(s.pages[0]!) ?? null,
     analysis: s.analysis,
   }))
 }
 
-// The row and one signed upload URL per page. Pages go straight to storage:
-// they'd fit through a function, but this way nothing has to.
+// The row and one signed upload slot per page, the only way into the bucket:
+// the viewer can't write there, so this check can't be walked around. Pages
+// still go straight to storage, so nothing large crosses a function. A slot
+// creates its page once and can't replace it.
 export async function prepareStyle(
   supabase: Supabase,
+  admin: Supabase,
   userId: string,
   name: string,
   count: number
@@ -86,53 +106,73 @@ export async function prepareStyle(
   const { count: existing, error: counted } = await supabase
     .from("comic_styles")
     .select("id", { count: "exact", head: true })
-  if (counted) throw new StyleError(counted.message, 500)
+  if (counted) throw failed(counted.message)
   if ((existing ?? 0) >= MAX_STYLES)
-    throw new StyleError("You have too many styles. Delete one first.", 409)
+    throw new StyleError(
+      "You have too many styles. Delete one first.",
+      409,
+      "limit_reached"
+    )
 
   const folder = `${userId}/${crypto.randomUUID()}`
   const paths = Array.from({ length: count }, (_, i) => `${folder}/${i}.jpg`)
-  const bucket = supabase.storage.from(COMIC_STYLES_BUCKET)
+  const bucket = admin.storage.from(COMIC_STYLES_BUCKET)
   const uploads = await Promise.all(
     paths.map(async (path) => {
       const { data, error } = await bucket.createSignedUploadUrl(path)
-      if (error) throw new StyleError(error.message, 500)
+      if (error) throw failed(error.message)
       return { path, token: data.token }
     })
   )
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from("comic_styles")
     .insert({
+      user_id: userId,
       name,
       pages: paths,
       rights_confirmed_at: new Date().toISOString(),
     })
     .select("id")
     .single()
-  if (error) throw new StyleError(error.message, 500)
+  if (error?.code === QUOTA_REACHED)
+    throw new StyleError(
+      "You have too many styles. Delete one first.",
+      409,
+      "limit_reached"
+    )
+  if (error) throw failed(error.message)
   return { id: data.id, uploads }
 }
 
-// The style's pages as data URLs. Storage only checks the type an upload
-// claims, so this is where the bytes are looked at.
-async function readPages(supabase: Supabase, id: string) {
+// The style's pages as base64. Storage only checks the type an upload claims,
+// so this is where the bytes are looked at, and where "downscaled" stops being
+// the browser's word for it.
+export async function readPages(supabase: Supabase, id: string) {
   const { data: style, error } = await supabase
     .from("comic_styles")
     .select("pages")
     .eq("id", id)
     .maybeSingle()
-  if (error) throw new StyleError(error.message, 500)
-  if (!style) throw new StyleError("Style not found.", 404)
+  if (error) throw failed(error.message)
+  if (!style) throw new StyleError("Style not found.", 404, "not_found")
   const bucket = supabase.storage.from(COMIC_STYLES_BUCKET)
   return Promise.all(
     style.pages.map(async (path) => {
-      const { data, error: failed } = await bucket.download(path)
-      if (failed) throw new StyleError("A page didn't finish uploading.", 409)
+      const { data, error: missing } = await bucket.download(path)
+      if (missing)
+        throw new StyleError(
+          "A page didn't finish uploading.",
+          409,
+          "page_missing"
+        )
       if (data.size > MAX_STYLE_PAGE_BYTES)
-        throw new StyleError("A page is too large.", 413)
+        throw new StyleError("A page is too large.", 413, "page_too_large")
       const bytes = new Uint8Array(await data.arrayBuffer())
-      if (sniffKind(bytes) !== "jpeg")
-        throw new StyleError("A page isn't a JPEG.", 415)
+      const size = sniffKind(bytes) === "jpeg" ? imageSize(bytes) : null
+      if (!size)
+        throw new StyleError("A page isn't a JPEG.", 415, "page_not_jpeg")
+      if (Math.max(size.width, size.height) > STYLE_PAGE_SIDE)
+        throw new StyleError("A page is too large.", 413, "page_too_large")
       return Buffer.from(bytes).toString("base64")
     })
   )
@@ -170,21 +210,23 @@ async function analyzeWithAnthropic(pages: string[], signal: AbortSignal) {
     { signal }
   )
   if (response.stop_reason === "refusal")
-    throw new StyleError("The analysis declined these pages.", 422)
+    throw new StyleError("The analysis declined these pages.", 422, "declined")
   if (response.stop_reason === "max_tokens")
-    throw new StyleError("The analysis came back cut short; try again.", 502)
+    throw new StyleError(
+      "The analysis came back cut short; try again.",
+      502,
+      "cut_short"
+    )
   return JSON.parse(
     response.content.map((b) => (b.type === "text" ? b.text : "")).join("")
   ) as unknown
 }
 
 export async function analyzeStyle(
-  supabase: Supabase,
-  id: string,
+  pages: string[],
   openrouter: OpenRouterConnection | null,
   signal: AbortSignal
 ): Promise<StyleAnalysis> {
-  const pages = await readPages(supabase, id)
   const parsed = openrouter
     ? await completeJson(
         openrouter,
@@ -199,28 +241,41 @@ export async function analyzeStyle(
     : await analyzeWithAnthropic(pages, signal)
   const analysis = cleanAnalysis(parsed)
   if (!analysis)
-    throw new StyleError("The analysis came back unreadable; try again.", 502)
+    throw new StyleError(
+      "The analysis came back unreadable; try again.",
+      502,
+      "unreadable"
+    )
   return analysis
 }
 
-export async function deleteStyle(supabase: Supabase, id: string) {
+// Read as the viewer, so only their own row is found; deleted as admin, since
+// viewers can't remove pages. Otherwise pages could be swapped after analysis.
+export async function deleteStyle(
+  supabase: Supabase,
+  admin: Supabase,
+  userId: string,
+  id: string
+) {
   const { data: style, error } = await supabase
     .from("comic_styles")
     .select("pages")
     .eq("id", id)
     .maybeSingle()
-  if (error) throw new StyleError(error.message, 500)
+  if (error) throw failed(error.message)
   if (!style) return
   // Pages first: a row left behind can be deleted again, a page can't be found.
-  const removed = await supabase.storage
+  // The folder check keeps the admin client inside this person's own files.
+  const removed = await admin.storage
     .from(COMIC_STYLES_BUCKET)
-    .remove(style.pages)
-  if (removed.error) throw new StyleError(removed.error.message, 500)
-  const { error: failed } = await supabase
+    .remove(style.pages.filter((path) => path.startsWith(`${userId}/`)))
+  if (removed.error) throw failed(removed.error.message)
+  const { error: gone } = await admin
     .from("comic_styles")
     .delete()
     .eq("id", id)
-  if (failed) throw new StyleError(failed.message, 500)
+    .eq("user_id", userId)
+  if (gone) throw failed(gone.message)
 }
 
 // Signed URLs for one render, as the viewer: row-level security means someone

@@ -69,9 +69,13 @@ export async function action({ request }: Route.ActionArgs) {
   if (r.style && !kleinAvailable()) {
     const textOnly = withoutReferences(r)
     if (!textOnly)
-      return error(
-        "Drawing from reference pages needs a connected OpenRouter account here. Connect one in Settings.",
-        501
+      return Response.json(
+        {
+          error:
+            "Drawing from reference pages needs a connected OpenRouter account here. Connect one in Settings.",
+          code: "needs_openrouter",
+        },
+        { status: 501 }
       )
     r = textOnly
   }

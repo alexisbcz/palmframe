@@ -4,12 +4,14 @@ import { describe, expect, test } from "bun:test"
 import { strToU8, zipSync } from "fflate"
 
 import {
-  openRar,
-  openSevenZip,
-  openTar,
-  openZip,
+  bytesSource,
+  openRar as rarBook,
+  openSevenZip as sevenZipBook,
+  openTar as tarBook,
+  openZip as zipBook,
   parseSevenZipList,
   tarEntries,
+  type Wasm,
 } from "./archives"
 import { naturalCompare, pageEntries, safeEntryName } from "./entries"
 import { ImportError } from "./errors"
@@ -22,6 +24,12 @@ import {
 import { assertPage, imageSize, sniffKind } from "./sniff"
 
 const require = createRequire(import.meta.url)
+
+const openZip = (data: Uint8Array) => zipBook(bytesSource(data))
+const openTar = (data: Uint8Array) => tarBook(bytesSource(data))
+const openRar = (data: Uint8Array, wasm?: Wasm) =>
+  rarBook(bytesSource(data), wasm)
+const openSevenZip = (data: Uint8Array) => sevenZipBook(bytesSource(data))
 
 // A real 1x1 PNG; `shade` keeps pages of a fixture apart.
 const png = (shade = 0) => {
@@ -397,11 +405,13 @@ describe("tar and cbt", () => {
 
   test("takes a GNU long name", async () => {
     const long = `${"d/".repeat(60)}p1.png`
-    const entries = tarEntries(
-      tar([
-        { name: "././@LongLink", data: strToU8(`${long}\0`), type: "L" },
-        { name: "truncated", data: png() },
-      ])
+    const entries = await tarEntries(
+      bytesSource(
+        tar([
+          { name: "././@LongLink", data: strToU8(`${long}\0`), type: "L" },
+          { name: "truncated", data: png() },
+        ])
+      )
     )
     expect(entries.map((e) => e.name)).toEqual([long])
   })

@@ -18,9 +18,10 @@ import {
   type StyleId,
   type WorldItem,
 } from "./model"
-import { styleSlots } from "@/lib/comic-import/style"
+import { isStyleErrorCode, styleSlots } from "@/lib/comic-import/style"
 import { COSTS } from "@/lib/credits"
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
+import { styleErrorText } from "./style-import.messages"
 
 import { readImageFile } from "./render"
 import { setDimension } from "./setups"
@@ -500,6 +501,8 @@ export async function render(
     const json = await res.json().catch(() => null)
     if (json?.code === INSUFFICIENT_CREDITS)
       throw new Error(INSUFFICIENT_CREDITS)
+    if (isStyleErrorCode(json?.code))
+      throw new Error(styleErrorText(json.code, document.documentElement.lang))
     throw new Error(json?.error ?? `HTTP ${res.status}`)
   }
   const blob = await res.blob()

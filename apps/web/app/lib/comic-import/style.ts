@@ -16,8 +16,46 @@ export interface ComicStyle {
   name: string
   status: "draft" | "ready"
   pages: number
+  // Every page reached storage. A draft where one didn't can only be deleted.
+  uploaded: boolean
   cover: string | null
   analysis: StyleAnalysis | null
+}
+
+// What the styles routes can say went wrong. The routes send these codes and
+// the client words them, so no reply reaches a visitor in the wrong language.
+export const STYLE_ERROR_CODES = [
+  "invalid",
+  "sign_in",
+  "rights_required",
+  "limit_reached",
+  "not_found",
+  "page_missing",
+  "page_too_large",
+  "page_not_jpeg",
+  "not_set_up",
+  "declined",
+  "cut_short",
+  "unreadable",
+  "analysis_failed",
+  "charge_failed",
+  "openrouter_credits",
+  "style_unavailable",
+  "needs_openrouter",
+  "failed",
+] as const
+
+export type StyleErrorCode = (typeof STYLE_ERROR_CODES)[number]
+
+export const isStyleErrorCode = (code: unknown): code is StyleErrorCode =>
+  STYLE_ERROR_CODES.includes(code as StyleErrorCode)
+
+// A refused request, carrying the route's code.
+export class StyleRequestError extends Error {
+  constructor(readonly code: StyleErrorCode) {
+    super(code)
+    this.name = "StyleRequestError"
+  }
 }
 
 const MAX_PROSE = 1_200

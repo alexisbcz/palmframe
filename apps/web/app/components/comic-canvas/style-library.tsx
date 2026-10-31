@@ -10,10 +10,15 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useViewer } from "@/components/account/account-menu"
 import { useT } from "@/i18n/core"
 import type { ComicStyle, StyleAnalysis } from "@/lib/comic-import/style"
+import { COSTS } from "@/lib/credits"
 
 import { DEFAULT_LOOK } from "./model"
-import { messages } from "./style-import.messages"
-import { StyleImportDialog, analyzeStyle } from "./style-import-dialog"
+import { errorKey, messages } from "./style-import.messages"
+import {
+  StyleImportDialog,
+  analyzeStyle,
+  deleteStyle,
+} from "./style-import-dialog"
 import type { ComicEditor } from "./use-editor"
 
 // A learned style drives the whole carousel: "raw" leaves only its own
@@ -54,7 +59,8 @@ export function StyleLibrary({
   const [importing, setImporting] = React.useState(false)
   const [finishing, setFinishing] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
-  const [confirming, setConfirming] = React.useState(false)
+  // The style one more press deletes.
+  const [confirming, setConfirming] = React.useState<string | null>(null)
 
   const signedIn = !!viewer
   const load = React.useCallback(async () => {
@@ -84,7 +90,7 @@ export function StyleLibrary({
     onCover(selected?.cover ?? undefined)
   }, [selected?.cover, onCover])
 
-  React.useEffect(() => setConfirming(false), [active?.id])
+  React.useEffect(() => setConfirming(null), [active?.id])
 
   const choose = async (style: ComicStyle) => {
     setError(null)
@@ -95,7 +101,7 @@ export function StyleLibrary({
       applyStyle(editor, style, await analyzeStyle(style.id))
       await load()
     } catch (e) {
-      setError(e instanceof Error && e.message ? e.message : t("dialog.failed"))
+      setError(t(errorKey(e)))
     } finally {
       setFinishing(null)
     }
@@ -103,16 +109,21 @@ export function StyleLibrary({
 
   const stop = () => editor.setLook({ style: DEFAULT_LOOK.style })
 
-  const remove = async () => {
-    if (!selected) return
-    stop()
-    await fetch("/api/styles", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ intent: "delete", id: selected.id }),
-    })
-    await load()
+  const remove = async (id: string) => {
+    setError(null)
+    setConfirming(null)
+    try {
+      await deleteStyle(id)
+      if (id === active?.id) stop()
+      await load()
+    } catch (e) {
+      setError(t(errorKey(e)))
+    }
   }
+
+  // Two presses, so a slip can't delete anything.
+  const askRemove = (id: string) =>
+    confirming === id ? void remove(id) : setConfirming(id)
 
   if (!viewer)
     return (
@@ -151,40 +162,68 @@ export function StyleLibrary({
           {styles.map((style) => {
             const on = style.id === active?.id
             const ready = style.status === "ready"
+            const credits = COSTS.style_analysis
             return (
-              <button
-                key={style.id}
-                type="button"
-                aria-pressed={on}
-                disabled={finishing !== null}
-                onClick={() => void choose(style)}
-                className={cn(
-                  "flex w-20 shrink-0 cursor-pointer flex-col gap-1 rounded-lg p-1 text-start text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                  on && "ring-2 ring-foreground"
-                )}
-                aria-label={t(ready ? "library.use" : "library.finish", {
-                  name: style.name,
-                })}
-              >
-                <span className="relative aspect-[2/3] overflow-hidden rounded bg-muted">
-                  {style.cover && (
-                    <img
-                      src={style.cover}
-                      alt=""
-                      className={cn(
-                        "size-full object-cover",
-                        !ready && "opacity-50"
+              <div key={style.id} className="flex w-20 shrink-0 flex-col gap-1">
+                <button
+                  type="button"
+                  aria-pressed={on}
+                  disabled={finishing !== null || !style.uploaded}
+                  onClick={() => void choose(style)}
+                  className={cn(
+                    "flex w-full cursor-pointer flex-col gap-1 rounded-lg p-1 text-start text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed",
+                    on && "ring-2 ring-foreground"
+                  )}
+                  aria-label={
+                    ready
+                      ? t("library.use", { name: style.name })
+                      : t("library.finish", { name: style.name, credits })
+                  }
+                >
+                  <span className="relative aspect-[2/3] overflow-hidden rounded bg-muted">
+                    {style.cover && (
+                      <img
+                        src={style.cover}
+                        alt=""
+                        className={cn(
+                          "size-full object-cover",
+                          !ready && "opacity-50"
+                        )}
+                      />
+                    )}
+                    {finishing === style.id && (
+                      <span className="absolute inset-0 flex items-center justify-center">
+                        <Spinner />
+                      </span>
+                    )}
+                  </span>
+                  <span className="truncate">{style.name}</span>
+                </button>
+                {!ready && (
+                  <>
+                    <p className="px-1 text-xs text-muted-foreground">
+                      {style.uploaded
+                        ? t("library.cost", { credits })
+                        : t("library.incomplete")}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="xs"
+                      className="h-auto min-h-6 whitespace-normal"
+                      aria-label={t("library.deleteNamed", {
+                        name: style.name,
+                      })}
+                      onPress={() => askRemove(style.id)}
+                    >
+                      {t(
+                        confirming === style.id
+                          ? "library.confirmDelete"
+                          : "library.delete"
                       )}
-                    />
-                  )}
-                  {finishing === style.id && (
-                    <span className="absolute inset-0 flex items-center justify-center">
-                      <Spinner />
-                    </span>
-                  )}
-                </span>
-                <span className="truncate">{style.name}</span>
-              </button>
+                    </Button>
+                  </>
+                )}
+              </div>
             )
           })}
         </div>
@@ -213,9 +252,13 @@ export function StyleLibrary({
             <Button
               variant="outline"
               size="sm"
-              onPress={() => (confirming ? void remove() : setConfirming(true))}
+              onPress={() => askRemove(selected.id)}
             >
-              {t(confirming ? "library.confirmDelete" : "library.delete")}
+              {t(
+                confirming === selected.id
+                  ? "library.confirmDelete"
+                  : "library.delete"
+              )}
             </Button>
           )}
         </div>

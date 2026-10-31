@@ -1,5 +1,5 @@
 import { ImportError } from "./errors"
-import { MAX_PIXELS } from "./limits"
+import { MAX_PIXELS, MAX_TIFF_IFDS } from "./limits"
 
 export type ImageKind =
   "jpeg" | "png" | "webp" | "gif" | "tiff" | "bmp" | "avif"
@@ -78,18 +78,28 @@ const SOF = new Set([
   0xc0, 0xc1, 0xc2, 0xc3, 0xc5, 0xc6, 0xc7, 0xc9, 0xca, 0xcb, 0xcd, 0xce, 0xcf,
 ])
 
+const SOS = 0xda
+
+// Walks the segments to the frame header. Decoders skip junk between segments
+// to find the next marker, so this does too: otherwise a stray byte would hide
+// the real size from the check.
 function jpegSize(b: Uint8Array, v: DataView) {
   let i = 2
-  while (i + 9 < b.length) {
-    if (b[i] !== 0xff) return null
-    const marker = b[i + 1]!
-    if (marker === 0xff) {
+  while (i + 8 < b.length) {
+    if (b[i] !== 0xff || b[i + 1] === 0xff || b[i + 1] === 0) {
       i++
       continue
     }
+    const marker = b[i + 1]!
     if (SOF.has(marker))
       return { height: v.getUint16(i + 5), width: v.getUint16(i + 7) }
-    i += 2 + v.getUint16(i + 2)
+    if (marker === SOS) return null
+    // Standalone markers carry no length.
+    if (marker === 0x01 || (marker >= 0xd0 && marker <= 0xd9)) {
+      i += 2
+      continue
+    }
+    i += 2 + Math.max(v.getUint16(i + 2), 2)
   }
   return null
 }
@@ -113,8 +123,82 @@ function webpSize(b: Uint8Array, v: DataView) {
   return null
 }
 
+// Bytes per value of each TIFF field type, by type number.
+const TIFF_UNIT = [0, 1, 1, 2, 4, 8, 1, 1, 2, 4, 8, 4, 8, 4]
+
+// The first image's size, after walking the whole chain of directories. Null
+// for a chain that loops, runs long or points outside the file: the decoder
+// follows those pointers without looking.
+function tiffSize(b: Uint8Array, v: DataView) {
+  if (b.length < 8) return null
+  const little = b[0] === 0x49
+  const seen = new Set<number>()
+  let first: { width: number; height: number } | null = null
+  let offset = v.getUint32(4, little)
+  while (offset) {
+    if (seen.has(offset) || seen.size >= MAX_TIFF_IFDS) return null
+    seen.add(offset)
+    if (offset + 2 > b.length) return null
+    const count = v.getUint16(offset, little)
+    const end = offset + 2 + count * 12
+    if (end > b.length) return null
+    const size = { width: 0, height: 0 }
+    for (let at = offset + 2; at < end; at += 12) {
+      const tag = v.getUint16(at, little)
+      const type = v.getUint16(at + 2, little)
+      const values = v.getUint32(at + 4, little)
+      const bytes = (TIFF_UNIT[type] ?? 0) * values
+      if (bytes > 4 && v.getUint32(at + 8, little) + bytes > b.length)
+        return null
+      if (tag !== 256 && tag !== 257) continue
+      const value =
+        type === 3
+          ? v.getUint16(at + 8, little)
+          : type === 4
+            ? v.getUint32(at + 8, little)
+            : 0
+      size[tag === 256 ? "width" : "height"] = value
+    }
+    first ??= size
+    offset = end + 4 <= b.length ? v.getUint32(end, little) : 0
+  }
+  return first
+}
+
+// AVIF boxes nest: meta > iprp > ipco > ispe. A file can hold several images
+// (a thumbnail, grid tiles), so the largest one counts.
+function avifSize(b: Uint8Array, v: DataView) {
+  let best: { width: number; height: number } | null = null
+  const walk = (start: number, end: number, path: string, depth: number) => {
+    let at = start
+    while (at + 8 <= end) {
+      let size = v.getUint32(at)
+      let body = at + 8
+      if (size === 1) {
+        if (at + 16 > end || v.getUint32(at + 8) !== 0) return
+        size = v.getUint32(at + 12)
+        body = at + 16
+      } else if (size === 0) size = end - at
+      const stop = at + size
+      if (size < body - at || stop > end) return
+      const type = String.fromCharCode(...b.subarray(at + 4, at + 8))
+      if (path === "ipco" && type === "ispe" && body + 12 <= stop) {
+        const width = v.getUint32(body + 4)
+        const height = v.getUint32(body + 8)
+        if (!best || width * height > best.width * best.height)
+          best = { width, height }
+      } else if (depth < 3 && ["meta", "iprp", "ipco"].includes(type))
+        // `meta` is a full box: four bytes of version and flags come first.
+        walk(type === "meta" ? body + 4 : body, stop, type, depth + 1)
+      at = stop
+    }
+  }
+  walk(0, b.length, "", 0)
+  return best as { width: number; height: number } | null
+}
+
 // Dimensions from the header alone, to refuse a decompression bomb before the
-// browser decodes it. Null when the format doesn't say up front.
+// browser decodes it. Null when they can't be read, which counts as a refusal.
 export function imageSize(b: Uint8Array) {
   const kind = sniffKind(b)
   const v = new DataView(b.buffer, b.byteOffset, b.byteLength)
@@ -124,6 +208,8 @@ export function imageSize(b: Uint8Array) {
     return { width: v.getUint16(6, true), height: v.getUint16(8, true) }
   if (kind === "jpeg") return jpegSize(b, v)
   if (kind === "webp") return webpSize(b, v)
+  if (kind === "tiff") return tiffSize(b, v)
+  if (kind === "avif") return avifSize(b, v)
   if (kind === "bmp" && b.length >= 26)
     return {
       width: Math.abs(v.getInt32(18, true)),
@@ -133,7 +219,7 @@ export function imageSize(b: Uint8Array) {
 }
 
 export function assertPixels(width: number, height: number) {
-  if (!width || !height || width * height > MAX_PIXELS)
+  if (!(width > 0) || !(height > 0) || width * height > MAX_PIXELS)
     throw new ImportError("page_too_large")
 }
 
@@ -143,6 +229,7 @@ export function assertPage(b: Uint8Array): ImageKind {
   const kind = sniffKind(b)
   if (!isImageKind(kind)) throw new ImportError("unsupported")
   const size = imageSize(b)
-  if (size) assertPixels(size.width, size.height)
+  if (!size) throw new ImportError("corrupt")
+  assertPixels(size.width, size.height)
   return kind
 }

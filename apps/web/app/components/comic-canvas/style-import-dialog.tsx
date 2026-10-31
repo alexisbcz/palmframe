@@ -18,20 +18,30 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useT } from "@/i18n/core"
 import {
   FILE_ACCEPT,
-  openComic,
+  comicOpener,
   pageJpeg,
   type ImportPage,
   type OpenedComic,
 } from "@/lib/comic-import/client"
 import { ImportError } from "@/lib/comic-import/errors"
 import { MAX_STYLE_NAME, MAX_STYLE_PAGES } from "@/lib/comic-import/limits"
-import type { StyleAnalysis } from "@/lib/comic-import/style"
+import {
+  StyleRequestError,
+  isStyleErrorCode,
+  type StyleAnalysis,
+} from "@/lib/comic-import/style"
+import {
+  alreadyStored,
+  sendPages,
+  uploadFinished,
+  type PreparedUpload,
+} from "@/lib/comic-import/upload"
 import { COSTS } from "@/lib/credits"
 import { INSUFFICIENT_CREDITS, setCredits } from "@/lib/credits-store"
 import { COMIC_STYLES_BUCKET } from "@/lib/database"
 import { useSupabase } from "@/lib/supabase.browser"
 
-import { messages } from "./style-import.messages"
+import { errorKey, messages } from "./style-import.messages"
 
 const THUMB_SIDE = 280
 
@@ -141,13 +151,19 @@ async function post(body: object) {
   if (!res.ok) {
     if (json?.code === INSUFFICIENT_CREDITS)
       throw new Error(INSUFFICIENT_CREDITS)
-    throw new Error(json?.error ?? "")
+    throw new StyleRequestError(
+      isStyleErrorCode(json?.code) ? json.code : "failed"
+    )
   }
   return json
 }
 
 export const analyzeStyle = async (id: string) =>
   (await post({ intent: "analyze", id })).analysis as StyleAnalysis
+
+export const deleteStyle = async (id: string) => {
+  await post({ intent: "delete", id })
+}
 
 type Step =
   | { name: "preparing" }
@@ -177,32 +193,48 @@ export function StyleImportDialog({
   const rightsLabel = React.useId()
   const [step, setStep] = React.useState<Step | null>(null)
   const [error, setError] = React.useState<string | null>(null)
-  // A style whose pages are up, so a retry only repeats the analysis.
-  const [draftId, setDraftId] = React.useState<string | null>(null)
+  // The row and slots of a style being saved, so a retry carries on from the
+  // page that failed and only repeats what didn't work.
+  const prepared = React.useRef<PreparedUpload | null>(null)
+  const [locked, setLocked] = React.useState(false)
   const [dragging, setDragging] = React.useState(false)
 
-  const current = React.useRef<OpenedComic | null>(null)
-  React.useEffect(() => () => current.current?.close(), [])
+  const [opener] = React.useState(() => comicOpener())
+  React.useEffect(() => () => opener.close(), [opener])
 
   const open = async (files: File[]) => {
-    if (!files.length) return
-    current.current?.close()
-    current.current = null
+    if (!files.length || opener.busy) return
     setComic(null)
     setPicked([])
     setRefused([])
     setError(null)
     setOpening(true)
     try {
-      const opened = await openComic(files)
-      current.current = opened
+      const opened = await opener.open(files)
+      if (!opened) return
       setRefused(opened.failures)
       if (opened.pages.length) setComic(opened)
     } catch (e) {
       setRefused([{ code: e instanceof ImportError ? e.code : "corrupt" }])
     } finally {
-      setOpening(false)
+      if (!opener.busy) setOpening(false)
     }
+  }
+
+  const cancelOpen = () => {
+    opener.cancel()
+    setOpening(false)
+  }
+
+  // A draft that never got all its pages can't become anything, so it doesn't
+  // stay behind to fill the library.
+  const dismiss = () => {
+    const upload = prepared.current
+    if (upload && !uploadFinished(upload))
+      void deleteStyle(upload.id)
+        .catch(() => {})
+        .finally(onSaved)
+    onClose()
   }
 
   const toggle = (id: string) =>
@@ -214,28 +246,20 @@ export function StyleImportDialog({
           : p
     )
 
-  const upload = async (pages: ImportPage[]) => {
+  const prepare = async (pages: ImportPage[]) => {
     setStep({ name: "preparing" })
-    const blobs = await Promise.all(pages.map(pageJpeg))
+    // One at a time: eight full pages decoded at once is a lot for a phone.
+    const blobs: Blob[] = []
+    for (const page of pages) blobs.push(await pageJpeg(page))
     const { id, uploads } = (await post({
       intent: "prepare",
       name: name.trim(),
       pages: pages.length,
       rights,
     })) as { id: string; uploads: { path: string; token: string }[] }
-    const bucket = supabase.storage.from(COMIC_STYLES_BUCKET)
-    for (const [i, target] of uploads.entries()) {
-      setStep({ name: "uploading", count: i + 1, total: uploads.length })
-      const { error: failed } = await bucket.uploadToSignedUrl(
-        target.path,
-        target.token,
-        blobs[i]!,
-        { contentType: "image/jpeg" }
-      )
-      if (failed) throw failed
-    }
-    setDraftId(id)
-    return id
+    prepared.current = { id, targets: uploads, blobs, sent: 0 }
+    setLocked(true)
+    return prepared.current
   }
 
   const save = async () => {
@@ -243,20 +267,29 @@ export function StyleImportDialog({
     setError(null)
     try {
       const pages = comic.pages.filter((p) => picked.includes(p.id))
-      const id = draftId ?? (await upload(pages))
+      const upload = prepared.current ?? (await prepare(pages))
+      const bucket = supabase.storage.from(COMIC_STYLES_BUCKET)
+      await sendPages(
+        upload,
+        async ({ path, token }, blob) => {
+          const { error: failed } = await bucket.uploadToSignedUrl(
+            path,
+            token,
+            blob,
+            { contentType: "image/jpeg" }
+          )
+          if (failed && !alreadyStored(failed)) throw failed
+        },
+        (count, total) => setStep({ name: "uploading", count, total })
+      )
       setStep({ name: "analyzing" })
-      await analyzeStyle(id)
+      await analyzeStyle(upload.id)
       onSaved()
       onClose()
     } catch (e) {
-      // A style left as a draft shows in the library, so nothing here is lost.
-      if (draftId === null) onSaved()
-      const message = e instanceof Error ? e.message : ""
-      setError(
-        message === INSUFFICIENT_CREDITS
-          ? t("dialog.noCredits")
-          : message || t("dialog.failed")
-      )
+      // With its pages up, a style stays as a draft in the library.
+      if (prepared.current && uploadFinished(prepared.current)) onSaved()
+      setError(t(errorKey(e)))
     } finally {
       setStep(null)
     }
@@ -269,7 +302,7 @@ export function StyleImportDialog({
     <Dialog
       isOpen
       isDismissable={!busy}
-      onOpenChange={(o) => !o && !busy && onClose()}
+      onOpenChange={(o) => !o && !busy && dismiss()}
       className="sm:max-w-2xl"
     >
       <DialogHeader>
@@ -312,6 +345,9 @@ export function StyleImportDialog({
             <>
               <Spinner />
               <p className="text-muted-foreground">{t("dialog.opening")}</p>
+              <Button variant="outline" className="mt-2" onPress={cancelOpen}>
+                {t("dialog.cancel")}
+              </Button>
             </>
           ) : (
             <>
@@ -367,7 +403,7 @@ export function StyleImportDialog({
                 page={page}
                 selected={picked.includes(page.id)}
                 disabled={busy || picked.length >= MAX_STYLE_PAGES}
-                onToggle={() => !busy && !draftId && toggle(page.id)}
+                onToggle={() => !busy && !locked && toggle(page.id)}
               />
             ))}
           </div>
@@ -388,14 +424,14 @@ export function StyleImportDialog({
               <Checkbox
                 aria-labelledby={rightsLabel}
                 isSelected={rights}
-                isDisabled={busy || !!draftId}
+                isDisabled={busy || locked}
                 onChange={setRights}
               />
             </span>
             <span
               id={rightsLabel}
               className="cursor-pointer text-start"
-              onClick={() => !busy && !draftId && setRights((r) => !r)}
+              onClick={() => !busy && !locked && setRights((r) => !r)}
             >
               {t("dialog.rights")}
             </span>
@@ -428,7 +464,7 @@ export function StyleImportDialog({
           )}
           <Button
             variant="outline"
-            isDisabled={busy || !!draftId}
+            isDisabled={busy || locked}
             onPress={() => input.current?.click()}
           >
             {t("dialog.another")}

@@ -26,28 +26,35 @@ create trigger comic_styles_touch
 
 alter table public.comic_styles enable row level security;
 
+-- Hard limit per person, drafts included. `prepareStyle` checks first; this
+-- settles two requests racing past that check.
+create function public.comic_styles_quota()
+returns trigger
+language plpgsql
+as $$
+begin
+  perform pg_advisory_xact_lock(hashtextextended('comic_styles:' || new.user_id::text, 0));
+  if (select count(*) from public.comic_styles where user_id = new.user_id) >= 50 then
+    raise exception 'style limit reached' using errcode = 'P0409';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger comic_styles_quota
+  before insert on public.comic_styles
+  for each row execute function public.comic_styles_quota();
+
+alter table public.comic_styles enable row level security;
+
+-- Owners read. Every write comes from the server with the admin client, after
+-- its checks: a row with a borrowed `pages` path, a deleted row that strands
+-- its pages, or a style turned ready by hand are all out of reach.
 revoke all on public.comic_styles from anon, authenticated;
-grant select, delete on public.comic_styles to authenticated;
--- The rest of a row is the server's to set: a style only turns ready after
--- its pages were checked and read.
-grant insert (name, rights_confirmed_at, pages) on public.comic_styles to authenticated;
-grant update (name) on public.comic_styles to authenticated;
+grant select on public.comic_styles to authenticated;
 
 create policy "Owners read their styles"
   on public.comic_styles for select to authenticated
-  using (user_id = (select auth.uid()));
-
-create policy "Owners create their styles"
-  on public.comic_styles for insert to authenticated
-  with check (user_id = (select auth.uid()));
-
-create policy "Owners update their styles"
-  on public.comic_styles for update to authenticated
-  using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
-
-create policy "Owners delete their styles"
-  on public.comic_styles for delete to authenticated
   using (user_id = (select auth.uid()));
 
 -- Private, unlike `comics`: these are pages of someone else's work, so they
@@ -62,14 +69,9 @@ values (
 )
 on conflict (id) do nothing;
 
+-- Read only, on purpose. Uploads arrive on one-time signed slots issued after
+-- the quota check, and without insert, update or delete here a page can't be
+-- swapped once it has been analyzed: renders sign whatever sits at the path.
 create policy "Owners read their style pages"
   on storage.objects for select to authenticated
-  using (bucket_id = 'comic-style-refs' and (storage.foldername(name))[1] = (select auth.uid())::text);
-
-create policy "Owners upload style pages"
-  on storage.objects for insert to authenticated
-  with check (bucket_id = 'comic-style-refs' and (storage.foldername(name))[1] = (select auth.uid())::text);
-
-create policy "Owners delete their style pages"
-  on storage.objects for delete to authenticated
   using (bucket_id = 'comic-style-refs' and (storage.foldername(name))[1] = (select auth.uid())::text);
