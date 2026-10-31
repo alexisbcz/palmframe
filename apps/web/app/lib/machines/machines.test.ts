@@ -618,9 +618,10 @@ describe("a machine's day", () => {
     assert.equal(budgetStop(day(5, 5, 0), limits, 1), "capped")
   })
 
-  test("passes can't run forever: the ceiling is twice the cap", () => {
-    assert.equal(attemptCeiling(5), 10)
-    assert.equal(budgetStop(day(0, 10, 0), limits, 1), "ceiling")
+  test("passes can't run forever, and an hourly machine still gets its day", () => {
+    assert.equal(attemptCeiling(5), 25)
+    assert.equal(budgetStop(day(0, 24, 0), limits, 1), null)
+    assert.equal(budgetStop(day(0, 25, 0), limits, 1), "ceiling")
   })
 
   test("the breaker goes first, so its notice shows", () => {

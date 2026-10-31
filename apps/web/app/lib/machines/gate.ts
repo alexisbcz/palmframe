@@ -39,7 +39,9 @@ export const FRESH_MS = 48 * 3_600_000
 // A held post nobody looked at is old news by then.
 export const HOLD_MS = 48 * 3_600_000
 // Passes are billed and file nothing, so the cap alone doesn't bound a day.
-export const ATTEMPTS_PER_CAP = 2
+// An hourly machine at the default cap of 5 needs 24 attempts; maxCreditsPerDay
+// is the spending limit.
+export const ATTEMPTS_PER_CAP = 5
 // What the shared key pays Zernio for one X post with a link, $0.20, in
 // credits at an assumed 1 cent each. Nobody is charged this: it only moves the
 // breaker, until the X link decision is made.

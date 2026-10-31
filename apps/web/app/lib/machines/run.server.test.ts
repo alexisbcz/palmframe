@@ -703,7 +703,13 @@ describe("an edition", () => {
   test("a killed run still counts as an attempt", async () => {
     seed(machine({ dailyCap: 1 }))
     inbox()
-    earlierRuns([{ decision: "running" }, { decision: "passed" }])
+    earlierRuns([
+      { decision: "running" },
+      { decision: "passed" },
+      { decision: "passed" },
+      { decision: "passed" },
+      { decision: "passed" },
+    ])
     await runMachines("https://x.test")
     assert.equal(db.agentCalls.length, 0)
     assert.equal(runs().at(-1)!.decision, "ceiling")
@@ -741,7 +747,13 @@ describe("the day's limits", () => {
   test("the attempts ceiling stops paid runs and paid searches", async () => {
     seed(machine({ dailyCap: 1, feeds: [paidFeed] }))
     inbox()
-    earlierRuns([{ decision: "passed" }, { decision: "passed" }])
+    earlierRuns([
+      { decision: "passed" },
+      { decision: "passed" },
+      { decision: "passed" },
+      { decision: "passed" },
+      { decision: "passed" },
+    ])
     await runMachines("https://x.test")
     assert.equal(db.agentCalls.length, 0)
     assert.equal(db.spent.length, 0)
