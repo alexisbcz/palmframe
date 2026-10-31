@@ -11,10 +11,7 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Lossless" },
       webp: { name: "WebP", hint: "Smaller files" },
       pdf: { name: "PDF", hint: "One document" },
-      cbz: {
-        name: "CBZ (comic archive)",
-        hint: "Comic readers open it the same as CBR",
-      },
+      cbz: { name: "CBZ", hint: "For comic readers" },
       psd: { name: "PSD", hint: "Layered, for Photoshop" },
     },
     size: "Size",
@@ -46,6 +43,11 @@ export const messages = defineMessages({
     tooLarge:
       "This comic is too large for one CBZ. Export fewer pages or a smaller size.",
     noSlides: "Pick at least one slide.",
+    cbrNote: "CBR archives can't be created, so comic readers get CBZ.",
+    writer: "Writer",
+    writerNone: "Not included",
+    writerHint: "Saved in the file, for anyone who opens it.",
+    clearWriter: "Clear writer",
   },
   fr: {
     button: "Exporter",
@@ -57,10 +59,7 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Sans perte" },
       webp: { name: "WebP", hint: "Fichiers plus légers" },
       pdf: { name: "PDF", hint: "Un seul document" },
-      cbz: {
-        name: "CBZ (archive BD)",
-        hint: "Les lecteurs de BD l’ouvrent comme un CBR",
-      },
+      cbz: { name: "CBZ", hint: "Liseuses de BD" },
       psd: { name: "PSD", hint: "Calques, pour Photoshop" },
     },
     size: "Taille",
@@ -92,6 +91,12 @@ export const messages = defineMessages({
     tooLarge:
       "Cette BD est trop lourde pour un seul CBZ. Exportez moins de pages ou une taille plus petite.",
     noSlides: "Choisissez au moins une diapo.",
+    cbrNote:
+      "Impossible de créer des archives CBR : les liseuses de BD reçoivent donc un CBZ.",
+    writer: "Scénariste",
+    writerNone: "Non inclus",
+    writerHint: "Enregistré dans le fichier, visible par quiconque l’ouvre.",
+    clearWriter: "Effacer le scénariste",
   },
   es: {
     button: "Exportar",
@@ -103,10 +108,7 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Sin pérdida" },
       webp: { name: "WebP", hint: "Archivos más ligeros" },
       pdf: { name: "PDF", hint: "Un solo documento" },
-      cbz: {
-        name: "CBZ (archivo de cómic)",
-        hint: "Los lectores de cómics lo abren igual que un CBR",
-      },
+      cbz: { name: "CBZ", hint: "Lectores de cómics" },
       psd: { name: "PSD", hint: "Por capas, para Photoshop" },
     },
     size: "Tamaño",
@@ -138,6 +140,12 @@ export const messages = defineMessages({
     tooLarge:
       "Este cómic es demasiado grande para un solo CBZ. Exporta menos páginas o un tamaño menor.",
     noSlides: "Elige al menos una diapositiva.",
+    cbrNote:
+      "No se pueden crear archivos CBR, así que los lectores de cómics reciben CBZ.",
+    writer: "Guionista",
+    writerNone: "No incluido",
+    writerHint: "Se guarda en el archivo, visible para quien lo abra.",
+    clearWriter: "Borrar guionista",
   },
   de: {
     button: "Exportieren",
@@ -149,10 +157,7 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Verlustfrei" },
       webp: { name: "WebP", hint: "Kleinere Dateien" },
       pdf: { name: "PDF", hint: "Ein Dokument" },
-      cbz: {
-        name: "CBZ (Comic-Archiv)",
-        hint: "Comic-Reader öffnen es genau wie CBR",
-      },
+      cbz: { name: "CBZ", hint: "Für Comic-Reader" },
       psd: { name: "PSD", hint: "Mit Ebenen, für Photoshop" },
     },
     size: "Größe",
@@ -184,6 +189,12 @@ export const messages = defineMessages({
     tooLarge:
       "Dieser Comic ist zu groß für eine CBZ-Datei. Exportiere weniger Seiten oder eine kleinere Größe.",
     noSlides: "Wähle mindestens eine Slide.",
+    cbrNote:
+      "CBR-Archive lassen sich nicht erstellen, daher bekommen Comic-Reader CBZ.",
+    writer: "Autor",
+    writerNone: "Nicht enthalten",
+    writerHint: "Steht in der Datei, sichtbar für alle, die sie öffnen.",
+    clearWriter: "Autor entfernen",
   },
   it: {
     button: "Esporta",
@@ -195,10 +206,7 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "Senza perdita" },
       webp: { name: "WebP", hint: "File più leggeri" },
       pdf: { name: "PDF", hint: "Un solo documento" },
-      cbz: {
-        name: "CBZ (archivio fumetti)",
-        hint: "I lettori di fumetti lo aprono come un CBR",
-      },
+      cbz: { name: "CBZ", hint: "Lettori di fumetti" },
       psd: { name: "PSD", hint: "A livelli, per Photoshop" },
     },
     size: "Dimensioni",
@@ -230,6 +238,12 @@ export const messages = defineMessages({
     tooLarge:
       "Questo fumetto è troppo grande per un solo CBZ. Esporta meno pagine o una dimensione più piccola.",
     noSlides: "Scegli almeno una slide.",
+    cbrNote:
+      "Non è possibile creare archivi CBR, quindi i lettori di fumetti ricevono un CBZ.",
+    writer: "Autore",
+    writerNone: "Non incluso",
+    writerHint: "Salvato nel file, visibile a chiunque lo apra.",
+    clearWriter: "Cancella autore",
   },
   ja: {
     button: "書き出し",
@@ -241,10 +255,7 @@ export const messages = defineMessages({
       png: { name: "PNG", hint: "劣化なし" },
       webp: { name: "WebP", hint: "軽いファイル" },
       pdf: { name: "PDF", hint: "1つの文書" },
-      cbz: {
-        name: "CBZ（コミックアーカイブ）",
-        hint: "コミックリーダーでCBRと同じように開けます",
-      },
+      cbz: { name: "CBZ", hint: "コミック用" },
       psd: { name: "PSD", hint: "レイヤー付き、Photoshop用" },
     },
     size: "サイズ",
@@ -273,5 +284,11 @@ export const messages = defineMessages({
     tooLarge:
       "このコミックは1つのCBZには大きすぎます。ページ数を減らすか、サイズを小さくしてください。",
     noSlides: "スライドを1枚以上選んでください。",
+    cbrNote:
+      "CBRアーカイブは作成できないため、コミックリーダー向けにはCBZで書き出します。",
+    writer: "作者",
+    writerNone: "含めません",
+    writerHint: "ファイルに保存され、開いた人全員に表示されます。",
+    clearWriter: "作者を消去",
   },
 })

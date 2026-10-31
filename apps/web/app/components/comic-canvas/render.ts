@@ -518,9 +518,12 @@ export async function renderToBlob(
   canvas.width = Math.round(doc.width * scale)
   canvas.height = Math.round(doc.height * scale)
   drawDoc(canvas.getContext("2d")!, doc, { scale, images: cache })
-  return new Promise<Blob | null>((resolve) =>
+  const blob = await new Promise<Blob | null>((resolve) =>
     canvas.toBlob(resolve, type, quality)
   )
+  // Hands the pixels back now rather than whenever the canvas is collected.
+  canvas.width = canvas.height = 0
+  return blob
 }
 
 // Uploads are downscaled so autosave and project files stay small.

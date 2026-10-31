@@ -6,6 +6,8 @@ import { strFromU8, unzipSync } from "fflate"
 import {
   ArchiveTooLargeError,
   CBZ_MIME,
+  buildComicInfo,
+  cbzFileName,
   comicInfoXml,
   escapeXml,
   pageFileName,
@@ -32,6 +34,65 @@ async function unpack(blob: Blob) {
   const bytes = new Uint8Array(await blob.arrayBuffer())
   return { bytes, files: unzipSync(bytes) }
 }
+
+describe("ComicInfo from the editor's details", () => {
+  const page = { pageCount: 3 }
+
+  test("an untitled comic has no Title", () => {
+    for (const title of [undefined, "", "   "]) {
+      const xml = comicInfoXml(buildComicInfo({ title }, page))
+      assert.doesNotMatch(xml, /<Title>/)
+    }
+  })
+
+  test("carries the project's details and the page's", () => {
+    const info = buildComicInfo(
+      { title: "Tides", series: "Sea", number: 2, writer: "Ada" },
+      { pageCount: 3, language: "de", rtl: true }
+    )
+    assert.deepEqual(info, {
+      title: "Tides",
+      series: "Sea",
+      number: 2,
+      writer: "Ada",
+      pageCount: 3,
+      language: "de",
+      rtl: true,
+    })
+  })
+
+  test("uses the account's name until the writer is edited", () => {
+    const info = buildComicInfo({ writer: "Ada" }, page)
+    assert.match(comicInfoXml(info), /<Writer>Ada<\/Writer>/)
+  })
+
+  test("an edited writer replaces the account's name", () => {
+    const info = buildComicInfo({ writer: "Ada" }, { ...page, writer: "Grace" })
+    assert.match(comicInfoXml(info), /<Writer>Grace<\/Writer>/)
+  })
+
+  test("a cleared writer is left out", () => {
+    const info = buildComicInfo({ writer: "Ada" }, { ...page, writer: "" })
+    assert.doesNotMatch(comicInfoXml(info), /Writer|Ada/)
+  })
+})
+
+describe("file name", () => {
+  test("follows the project's title", () => {
+    assert.equal(cbzFileName("Tides", "old-comic", false), "Tides")
+  })
+
+  test("keeps the remembered name for an untitled comic", () => {
+    assert.equal(cbzFileName("", "old-comic", false), "old-comic")
+    assert.equal(cbzFileName(undefined, "old-comic", false), "old-comic")
+    assert.equal(cbzFileName("   ", "old-comic", false), "old-comic")
+  })
+
+  test("a typed name wins, even an empty one", () => {
+    assert.equal(cbzFileName("Tides", "mine", true), "mine")
+    assert.equal(cbzFileName("Tides", "", true), "")
+  })
+})
 
 describe("page names", () => {
   test("are zero padded and sort in reading order", () => {

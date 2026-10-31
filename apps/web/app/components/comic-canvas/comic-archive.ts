@@ -12,6 +12,15 @@ const MAX_ENTRIES = 0xffff
 
 export class ArchiveTooLargeError extends Error {}
 
+// What the editor knows of the comic. A title comes from the project alone:
+// the remembered file name may belong to another comic.
+export interface ComicDetails {
+  title?: string
+  series?: string
+  number?: number
+  writer?: string
+}
+
 export interface ComicInfo {
   title?: string
   series?: string
@@ -22,6 +31,32 @@ export interface ComicInfo {
   // ISO language code of the lettering. Omitted when it isn't known.
   language?: string
   rtl?: boolean
+}
+
+// `writer` is what the export panel holds: undefined leaves the account's name
+// in place, and an empty string leaves the Writer out.
+export function buildComicInfo(
+  details: ComicDetails,
+  {
+    writer,
+    ...page
+  }: {
+    pageCount: number
+    language?: string
+    rtl?: boolean
+    writer?: string
+  }
+): ComicInfo {
+  return { ...details, ...page, writer: writer ?? details.writer }
+}
+
+// The file takes the comic's title until someone types a name for it.
+export function cbzFileName(
+  title: string | undefined,
+  name: string,
+  edited: boolean
+) {
+  return (!edited && title?.trim()) || name
 }
 
 // XML 1.0 can't carry these at all, even escaped.
@@ -69,9 +104,10 @@ export function pageFileName(position: number, total: number, ext: string) {
   return `${String(position + 1).padStart(width, "0")}.${ext}`
 }
 
-// Asks for one page at a time and hands its bytes to a Blob straight away,
-// which browsers can keep on disk: a long comic holds about one page in the
-// heap, however many it has.
+// Asks for one page at a time and hands its encoded bytes to a Blob straight
+// away, so finished pages don't pile up in the heap. That covers the output
+// only: the source images stay in the editor's cache, and peak memory hasn't
+// been measured.
 export async function writeCbz({
   info,
   ext,

@@ -2,6 +2,7 @@ import * as React from "react"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
 import {
   ArrowDown01Icon,
+  Cancel01Icon,
   CheckmarkCircle02Icon,
   Copy01Icon,
   Download01Icon,
@@ -20,7 +21,13 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useLocale, useT, type Locale } from "@/i18n/core"
 
 import { download, pdf, withDpi, zip } from "./actions"
-import { ArchiveTooLargeError, writeCbz } from "./comic-archive"
+import {
+  ArchiveTooLargeError,
+  buildComicInfo,
+  cbzFileName,
+  writeCbz,
+  type ComicDetails,
+} from "./comic-archive"
 import { SliderInput } from "./controls"
 import { messages } from "./export.messages"
 import { translatedPage } from "./lettering"
@@ -41,6 +48,8 @@ interface Settings {
   dpi: 0 | 300 | 600
   quality: number
   name: string
+  // Unset until edited, which leaves the account's name. Empty means none.
+  writer?: string
 }
 
 const DEFAULTS: Settings = {
@@ -122,14 +131,6 @@ function formatBytes(n: number, locale: string) {
   return `${n.toLocaleString(locale, { maximumFractionDigits: i ? 1 : 0 })} ${units[i]}`
 }
 
-// What the editor knows of the comic, for the archive's ComicInfo.xml.
-export interface ComicDetails {
-  title?: string
-  series?: string
-  number?: number
-  writer?: string
-}
-
 type Status =
   | { step: "idle" }
   | { step: "rendering"; done: number; total: number }
@@ -151,6 +152,9 @@ export function ExportButton({
   const t = useT(messages)
   const [open, setOpen] = React.useState(false)
   const rootRef = React.useRef<HTMLDivElement>(null)
+  // Up here because an export outlives its panel: closing and reopening it
+  // must not start a second one.
+  const running = React.useRef(false)
 
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -201,7 +205,12 @@ export function ExportButton({
         />
       </Button>
       {open && (
-        <ExportPanel editor={editor} images={images} details={details} />
+        <ExportPanel
+          editor={editor}
+          images={images}
+          details={details}
+          running={running}
+        />
       )}
     </div>
   )
@@ -271,10 +280,12 @@ function ExportPanel({
   editor,
   images,
   details,
+  running,
 }: {
   editor: ComicEditor
   images: ImageCache
   details: ComicDetails
+  running: React.RefObject<boolean>
 }) {
   const t = useT(messages)
   const { locale } = useLocale()
@@ -294,6 +305,7 @@ function ExportPanel({
   const [thumbs, setThumbs] = React.useState<string[]>([])
   const [status, setStatus] = React.useState<Status>({ step: "idle" })
   const [copied, setCopied] = React.useState(false)
+  const [nameEdited, setNameEdited] = React.useState(false)
 
   const count = project.pages.length
   const pages =
@@ -306,7 +318,12 @@ function ExportPanel({
   const pixelWidth = Math.round(project.width * scale)
   const pixelHeight = Math.round(project.height * scale)
   const ext = settings.format === "jpeg" ? "jpg" : settings.format
-  const stem = slug(settings.name)
+  const fileName =
+    settings.format === "cbz"
+      ? cbzFileName(details.title, settings.name, nameEdited)
+      : settings.name
+  const stem = slug(fileName)
+  const writer = settings.writer ?? details.writer ?? ""
   // One name per language, so exporting several overwrites nothing.
   const name = language ? `${stem}-${language}` : stem
   // Several images travel as one .zip; a PDF, an archive or a single image
@@ -323,6 +340,10 @@ function ExportPanel({
     const urls: string[] = []
     ;(async () => {
       for (const i of project.pages.keys()) {
+        // Thumbnails can wait; an export needs the memory more.
+        while (live && running.current)
+          await new Promise((resolve) => setTimeout(resolve, 250))
+        if (!live) return
         const doc = await translatedPage(project, i, language)
         const blob = await renderToBlob(doc, images, "image/jpeg", 0.12, 0.7)
         if (!live || !blob) return
@@ -334,14 +355,15 @@ function ExportPanel({
       live = false
       urls.forEach(URL.revokeObjectURL)
     }
-  }, [project, images, language])
+  }, [project, images, language, running])
 
   const formatName = t(`formats.${settings.format}.name`)
   const inches = (px: number) =>
     (px / CSS_DPI).toLocaleString(locale, { maximumFractionDigits: 2 })
 
   const run = async () => {
-    if (!pages.length) return
+    if (running.current || !pages.length) return
+    running.current = true
     const { format, dpi } = settings
     const type =
       format === "pdf" || format === "psd" || format === "cbz"
@@ -364,19 +386,15 @@ function ExportPanel({
     }
     try {
       if (format === "cbz") {
-        // Written page by page, so a long comic stays out of memory.
+        // Written page by page, so finished pages leave the heap for a Blob.
         const out = await writeCbz({
-          info: {
-            ...details,
-            // The default file name is a placeholder, not a title.
-            title:
-              details.title ||
-              (settings.name === DEFAULTS.name ? undefined : settings.name),
+          info: buildComicInfo(details, {
             pageCount: pages.length,
             // The original lettering's language isn't recorded anywhere.
             language: language ?? undefined,
             rtl: project.rtl,
-          },
+            writer: settings.writer,
+          }),
           ext: "jpg",
           readPage: renderPage,
         })
@@ -417,6 +435,8 @@ function ExportPanel({
             ? t("tooLarge")
             : (e as Error).message,
       })
+    } finally {
+      running.current = false
     }
   }
 
@@ -519,6 +539,9 @@ function ExportPanel({
             )
           })}
         </div>
+        {settings.format === "cbz" && (
+          <p className="text-xs text-muted-foreground">{t("cbrNote")}</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -630,14 +653,51 @@ function ExportPanel({
         </div>
       )}
 
+      {settings.format === "cbz" && (
+        <div className="flex flex-col gap-2">
+          <label
+            htmlFor="export-writer"
+            className="text-sm text-muted-foreground"
+          >
+            {t("writer")}
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="export-writer"
+              className="h-8 min-w-0 flex-1 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 dark:bg-input/30"
+              value={writer}
+              placeholder={t("writerNone")}
+              spellCheck={false}
+              onChange={(e) => set({ writer: e.target.value })}
+            />
+            <TooltipTrigger>
+              <Button
+                variant="outline"
+                size="icon"
+                aria-label={t("clearWriter")}
+                isDisabled={!writer}
+                onPress={() => set({ writer: "" })}
+              >
+                <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+              </Button>
+              <Tooltip>{t("clearWriter")}</Tooltip>
+            </TooltipTrigger>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("writerHint")}</p>
+        </div>
+      )}
+
       <label className="flex flex-col gap-2">
         <span className="text-sm text-muted-foreground">{t("fileName")}</span>
         <span className="flex h-8 items-center rounded-lg border border-input text-sm focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
           <input
             className="min-w-0 flex-1 bg-transparent px-2.5 outline-none"
-            value={settings.name}
+            value={fileName}
             spellCheck={false}
-            onChange={(e) => set({ name: e.target.value })}
+            onChange={(e) => {
+              setNameEdited(true)
+              set({ name: e.target.value })
+            }}
           />
           <span className="pe-2.5 text-muted-foreground">
             {outName.slice(stem.length)}
