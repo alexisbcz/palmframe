@@ -2,15 +2,21 @@ import * as React from "react"
 import { useRevalidator } from "react-router"
 import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ComputerIcon, Moon02Icon, Sun03Icon } from "@hugeicons/core-free-icons"
+import {
+  ArrowDown01Icon,
+  ComputerIcon,
+  Moon02Icon,
+  Sun03Icon,
+} from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
-import { Input } from "@workspace/ui/components/input"
 import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@workspace/ui/components/native-select"
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
+import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { useTheme } from "@workspace/ui/components/theme-provider"
 import {
@@ -19,6 +25,7 @@ import {
 } from "@workspace/ui/components/toggle-group"
 
 import { Avatar } from "@/components/account/account-menu"
+import { FLAG_CLASS, Flag } from "@/components/flag"
 import { messages as toggles } from "@/components/toggles.messages"
 import { LOCALES, LOCALE_NAMES, isLocale, useLocale, useT } from "@/i18n/core"
 import type { Viewer } from "@/lib/database"
@@ -351,20 +358,36 @@ export function PreferencesSection() {
         </ToggleGroup>
       </Field>
       <Field label={t("prefs.language")} htmlFor="language">
-        <NativeSelect
-          id="language"
-          value={locale}
-          onChange={(e) =>
-            isLocale(e.target.value) && setLocale(e.target.value)
-          }
-          className="w-56"
-        >
-          {LOCALES.map((l) => (
-            <NativeSelectOption key={l} value={l}>
-              {LOCALE_NAMES[l]}
-            </NativeSelectOption>
-          ))}
-        </NativeSelect>
+        <DropdownMenuTrigger>
+          <Button
+            id="language"
+            variant="outline"
+            className="w-56 justify-start"
+            aria-label={`${t("prefs.language")}: ${LOCALE_NAMES[locale]}`}
+          >
+            <Flag locale={locale} className={FLAG_CLASS} />
+            <span lang={locale}>{LOCALE_NAMES[locale]}</span>
+            <HugeiconsIcon
+              icon={ArrowDown01Icon}
+              strokeWidth={2}
+              data-icon="inline-end"
+              className="ms-auto"
+            />
+          </Button>
+          <DropdownMenu
+            className="w-(--trigger-width)"
+            selectionMode="single"
+            selectedKeys={[locale]}
+            onAction={(key) => isLocale(key) && setLocale(key)}
+          >
+            {LOCALES.map((l) => (
+              <DropdownMenuItem key={l} id={l} textValue={LOCALE_NAMES[l]}>
+                <Flag locale={l} className={FLAG_CLASS} />
+                <span lang={l}>{LOCALE_NAMES[l]}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenu>
+        </DropdownMenuTrigger>
       </Field>
     </div>
   )
