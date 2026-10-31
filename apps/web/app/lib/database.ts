@@ -8,7 +8,16 @@ import type { AssetPayload } from "@/components/catalog/model"
 
 import type { SubscriptionCache } from "./credits"
 import type { DetectorState } from "./machines/detect"
-import type { MachineConfig, Signal, SourceId } from "./machines/model"
+import type {
+  Item,
+  MachineConfig,
+  MachineOutput,
+  PostSource,
+  PublishMode,
+  PublishReceipt,
+  Signal,
+  SourceId,
+} from "./machines/model"
 import type {
   Board,
   BrandColor,
@@ -51,6 +60,11 @@ export interface Database {
           name: string
           source: SourceId
           config: MachineConfig
+          publish_mode?: PublishMode
+          outputs?: MachineOutput[]
+          public?: boolean
+          slug?: string | null
+          next_run_at?: string | null
         }
         Update: {
           name?: string
@@ -60,6 +74,12 @@ export interface Database {
           state?: DetectorState
           last_run_at?: string | null
           last_error?: string | null
+          next_run_at?: string | null
+          publish_mode?: PublishMode
+          outputs?: MachineOutput[]
+          public?: boolean
+          slug?: string | null
+          failures?: number
         }
         Relationships: []
       }
@@ -69,16 +89,33 @@ export interface Database {
           machine_id: string
           user_id?: string
           signal_id: string
-          signal: Signal
+          signal?: Signal | null
           text: string
           scene?: string
           alt?: string
           prompt?: string | null
+          sources?: PostSource[]
+          link?: string | null
+          image_url?: string | null
+          held?: string | null
+          status?: MachineDraftRow["status"]
         }
         Update: {
           status?: MachineDraftRow["status"]
           project_id?: string | null
+          text?: string
+          held?: string | null
+          receipts?: PublishReceipt[]
+          published_at?: string | null
         }
+        Relationships: []
+      }
+      comic_machine_items: {
+        Row: MachineItemRow
+        Insert: Omit<MachineItemRow, "id" | "status" | "created_at"> & {
+          status?: MachineItemRow["status"]
+        }
+        Update: { status?: MachineItemRow["status"] }
         Relationships: []
       }
       comic_brand_kits: {
@@ -429,8 +466,28 @@ export type MachineRow = {
   state: DetectorState
   last_run_at: string | null
   last_error: string | null
+  next_run_at: string | null
+  publish_mode: PublishMode
+  outputs: MachineOutput[]
+  failures: number
+  slug: string | null
+  public: boolean
   created_at: string
   updated_at: string
+}
+
+export type MachineItemRow = {
+  id: string
+  machine_id: string
+  user_id: string
+  key: Item["key"]
+  source: string
+  title: string
+  summary: string
+  url: string
+  published_at: string
+  status: "new" | "used" | "skipped"
+  created_at: string
 }
 
 export type MachineDraftRow = {
@@ -438,13 +495,26 @@ export type MachineDraftRow = {
   machine_id: string
   user_id: string
   signal_id: string
-  signal: Signal
+  signal: Signal | null
   text: string
   scene: string
   alt: string
-  status: "new" | "used" | "dismissed"
+  status:
+    | "new"
+    | "used"
+    | "dismissed"
+    | "approved"
+    | "publishing"
+    | "published"
+    | "failed"
   project_id: string | null
   prompt: string | null
+  sources: PostSource[]
+  link: string | null
+  image_url: string | null
+  held: string | null
+  receipts: PublishReceipt[]
+  published_at: string | null
   created_at: string
 }
 
@@ -459,6 +529,7 @@ export interface Viewer {
 }
 
 export const COMICS_BUCKET = "comics"
+export const MACHINE_IMAGES_BUCKET = "machine-images"
 
 export type OpenRouterConnectionRow = {
   user_id: string

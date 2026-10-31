@@ -1,7 +1,8 @@
 name: Run content machines
 
 # Vercel functions can't hold a socket open, so this wakes the machines up:
-# each tick listens for a short window and catches up on what it missed.
+# each tick listens for a short window, catches up on what it missed, runs the
+# agents that are due and publishes what's approved.
 # Does nothing until both secrets are set.
 on:
   schedule:
