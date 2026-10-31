@@ -3,10 +3,17 @@ import { defineMessages } from "@/i18n/core"
 export const messages = defineMessages({
   en: {
     picker: {
-      search: "Search models",
+      search: "Search models or providers",
+      all: "All",
+      current: "Selected",
+      providers: "Filter by provider",
+      clear: "Clear filters",
       empty: "No model matches.",
       custom: "Use “{id}”",
-      refs: "Up to {n} reference images",
+      refs: {
+        one: "1 reference image",
+        other: "Up to {count} reference images",
+      },
       context: "{n} context",
       price: "{input} in · {output} out per 1M tokens",
       free: "Free",
@@ -39,10 +46,17 @@ export const messages = defineMessages({
   },
   fr: {
     picker: {
-      search: "Rechercher un modèle",
+      search: "Rechercher un modèle ou un fournisseur",
+      all: "Tous",
+      current: "Sélectionné",
+      providers: "Filtrer par fournisseur",
+      clear: "Effacer les filtres",
       empty: "Aucun modèle ne correspond.",
       custom: "Utiliser « {id} »",
-      refs: "Jusqu’à {n} images de référence",
+      refs: {
+        one: "1 image de référence",
+        other: "Jusqu’à {count} images de référence",
+      },
       context: "Contexte de {n}",
       price: "{input} en entrée · {output} en sortie par million de tokens",
       free: "Gratuit",
@@ -77,10 +91,17 @@ export const messages = defineMessages({
   },
   es: {
     picker: {
-      search: "Buscar modelos",
+      search: "Buscar modelos o proveedores",
+      all: "Todos",
+      current: "Seleccionado",
+      providers: "Filtrar por proveedor",
+      clear: "Borrar filtros",
       empty: "Ningún modelo coincide.",
       custom: "Usar «{id}»",
-      refs: "Hasta {n} imágenes de referencia",
+      refs: {
+        one: "1 imagen de referencia",
+        other: "Hasta {count} imágenes de referencia",
+      },
       context: "Contexto de {n}",
       price: "{input} entrada · {output} salida por millón de tokens",
       free: "Gratis",
@@ -114,10 +135,14 @@ export const messages = defineMessages({
   },
   de: {
     picker: {
-      search: "Modelle durchsuchen",
+      search: "Modelle oder Anbieter suchen",
+      all: "Alle",
+      current: "Ausgewählt",
+      providers: "Nach Anbieter filtern",
+      clear: "Filter löschen",
       empty: "Kein Modell passt.",
       custom: "„{id}“ verwenden",
-      refs: "Bis zu {n} Referenzbilder",
+      refs: { one: "1 Referenzbild", other: "Bis zu {count} Referenzbilder" },
       context: "{n} Kontext",
       price: "{input} Eingabe · {output} Ausgabe pro 1 Mio. Tokens",
       free: "Kostenlos",
@@ -153,10 +178,17 @@ export const messages = defineMessages({
   },
   it: {
     picker: {
-      search: "Cerca modelli",
+      search: "Cerca modelli o fornitori",
+      all: "Tutti",
+      current: "Selezionato",
+      providers: "Filtra per fornitore",
+      clear: "Cancella filtri",
       empty: "Nessun modello corrisponde.",
       custom: "Usa «{id}»",
-      refs: "Fino a {n} immagini di riferimento",
+      refs: {
+        one: "1 immagine di riferimento",
+        other: "Fino a {count} immagini di riferimento",
+      },
       context: "Contesto di {n}",
       price: "{input} input · {output} output per milione di token",
       free: "Gratis",
@@ -190,10 +222,14 @@ export const messages = defineMessages({
   },
   ja: {
     picker: {
-      search: "モデルを検索",
+      search: "モデルやプロバイダーを検索",
+      all: "すべて",
+      current: "選択中",
+      providers: "プロバイダーで絞り込む",
+      clear: "絞り込みを解除",
       empty: "一致するモデルがありません。",
       custom: "「{id}」を使う",
-      refs: "参照画像は最大 {n} 枚",
+      refs: { one: "参照画像 1 枚", other: "参照画像は最大 {count} 枚" },
       context: "コンテキスト {n}",
       price: "100万トークンあたり 入力 {input} · 出力 {output}",
       free: "無料",
