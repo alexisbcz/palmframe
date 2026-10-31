@@ -7,8 +7,11 @@ import {
 } from "@/lib/instagram.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
-import { compose, NEEDS_IMAGE } from "./gate"
+import { machinesHalted } from "./control.server"
+import { NEEDS_IMAGE, compose, publishOutcome } from "./gate"
 import type { MachineOutput, PublishReceipt } from "./model"
+import { machineConfig } from "./model"
+import { signatureFor } from "./signature"
 
 const receipt = (
   o: MachineOutput,
@@ -26,7 +29,8 @@ const receipt = (
 async function sendOne(
   draft: MachineDraftRow,
   output: MachineOutput,
-  profileId: string | null
+  profileId: string | null,
+  signature: string
 ) {
   if (NEEDS_IMAGE.includes(output.platform) && !draft.image_url)
     return receipt(output, { error: "This platform needs a picture." })
@@ -37,7 +41,7 @@ async function sendOne(
       profileId,
       platform: output.platform,
       accountId: output.accountId,
-      text: compose(draft.text, draft.link, output.platform),
+      text: compose(draft.text, draft.link, output.platform, signature),
       imageUrl: draft.image_url,
       alt: draft.alt,
       // A retry of the same post to the same account can't post it twice.
@@ -56,8 +60,12 @@ async function sendOne(
   }
 }
 
-// Claims the draft first, so two overlapping runs can't both send it.
+// Claims the draft first, so two overlapping runs can't both send it. The halt
+// is read on every call, so it also stops a queue that's already draining. A
+// halted draft stays approved and goes out once the halt is lifted.
 export async function publishDraft(id: string, machine: MachineRow) {
+  if (await machinesHalted())
+    return { published: false, halted: true, errors: [] as PublishReceipt[] }
   const admin = supabaseAdmin()
   const { data: draft } = await admin
     .from("comic_machine_drafts")
@@ -84,23 +92,24 @@ export async function publishDraft(id: string, machine: MachineRow) {
       console.error("Machine profile lookup failed", e)
     }
   }
+  const config = machineConfig.safeParse(machine.config)
+  const signature = signatureFor(config.success ? config.data.language : "en")
   const sent: PublishReceipt[] = []
   for (const output of pending)
-    sent.push(await sendOne(draft, output, profileId))
+    sent.push(await sendOne(draft, output, profileId, signature))
   const receipts = [...done, ...sent]
-  // The public page counts as an output, so a post can succeed with no account.
-  const landed = machine.public || receipts.some((r) => r.postId && !r.error)
-  const failed = receipts.some((r) => r.error) && !landed
+  const landed = publishOutcome(machine.public, receipts.length, receipts)
   await admin
     .from("comic_machine_drafts")
     .update({
-      status: failed || !landed ? "failed" : "published",
+      status: landed ? "published" : "failed",
       receipts,
       published_at: landed ? new Date().toISOString() : null,
     })
     .eq("id", draft.id)
   return {
-    published: landed && !failed,
+    published: landed,
+    halted: false,
     errors: receipts.filter((r) => r.error),
   }
 }

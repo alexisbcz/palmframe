@@ -70,13 +70,17 @@ import {
 } from "@/lib/instagram.server"
 import { createDetector } from "@/lib/machines/detect"
 import {
+  type DismissReason,
   type Feed,
   type MachineConfig,
   type MachineOutput,
   type MachinePreset,
+  DISMISS_REASONS,
   EVERY_MINUTES,
   FEED_KINDS,
+  MAX_CREDITS_PER_DAY,
   MAX_FEEDS,
+  MIN_CREDITS_PER_DAY,
   OUTPUT_PLATFORMS,
   type OutputPlatform,
   type PublishMode,
@@ -89,6 +93,8 @@ import {
   SOURCES,
   SOURCE_INFO,
   type SourceId,
+  DEFAULT_CREDITS_PER_DAY,
+  noticeOf,
 } from "@/lib/machines/model"
 import { imageAvailable } from "@/lib/machines/image.server"
 import { openSource } from "@/lib/machines/sources"
@@ -162,6 +168,7 @@ async function post(body: unknown) {
     project?: string
     passed?: boolean
     ok?: boolean
+    halted?: boolean
     errors?: string[]
   }
   if (!res.ok) throw new Error(json.error ?? "failed")
@@ -422,6 +429,7 @@ function Status({ draft }: { draft: MachineDraftRow }) {
     publishing: t("posts.publishing"),
     failed: t("posts.failed"),
     published: t("posts.published"),
+    expired: t("posts.expired"),
   }
   const label = labels[draft.status]
   if (!label) return null
@@ -467,6 +475,11 @@ function Draft({
       setBusy(false)
     }
   }
+  const dismiss = (reason?: DismissReason) =>
+    act(async () => {
+      await post({ intent: "dismiss", id: draft.id, reason })
+      revalidator.revalidate()
+    })
 
   return (
     <li className="flex flex-col gap-2 rounded-xl border p-4">
@@ -559,7 +572,8 @@ function Draft({
             onPress={() =>
               act(async () => {
                 const r = await post({ intent: "approve", id: draft.id, text })
-                if (r.errors?.length) setFailed(r.errors[0]!)
+                if (r.halted) setFailed(t("posts.halted"))
+                else if (r.errors?.length) setFailed(r.errors[0]!)
                 revalidator.revalidate()
               })
             }
@@ -612,19 +626,27 @@ function Draft({
           )
         )}
         {(editable || draft.status === "used") && (
-          <Button
-            variant="ghost"
-            size="sm"
-            isDisabled={busy}
-            onPress={() =>
-              act(async () => {
-                await post({ intent: "dismiss", id: draft.id })
-                revalidator.revalidate()
-              })
-            }
-          >
-            {t("drafts.dismiss")}
-          </Button>
+          <DropdownMenuTrigger>
+            <Button variant="ghost" size="sm" isDisabled={busy}>
+              {t("drafts.dismiss")}
+            </Button>
+            <DropdownMenu
+              aria-label={t("drafts.dismiss")}
+              className="min-w-48"
+              onAction={(key) =>
+                dismiss(DISMISS_REASONS.find((reason) => reason === key))
+              }
+            >
+              <DropdownMenuItem id="none">
+                {t("dismissReasons.none")}
+              </DropdownMenuItem>
+              {DISMISS_REASONS.map((reason) => (
+                <DropdownMenuItem key={reason} id={reason}>
+                  {t(`dismissReasons.${reason}`)}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenu>
+          </DropdownMenuTrigger>
         )}
       </div>
     </li>
@@ -670,30 +692,32 @@ function FeedsEditor({
             ))}
           </NativeSelect>
           <ButtonGroup className="min-w-40 flex-1">
-{feed.kind !== "hackernews" && (
-            <Input
-              aria-label={
-                feed.kind === "rss" ? t("agent.feedUrl") : t("agent.feedQuery")
-              }
-              type={feed.kind === "rss" ? "url" : "text"}
-              className="min-w-0 flex-1"
-              placeholder={
-                feed.kind === "rss" ? "https://" : t("agent.feedQuery")
-              }
-              value={feedValue(feed)}
-              required
-              onChange={(e) => set(i, makeFeed(feed.kind, e.target.value))}
-            />
-          )}
-          <Button
-            variant="outline"
-            size="icon"
-            aria-label={t("agent.removeFeed")}
-            onPress={() => onChange(feeds.filter((_, n) => n !== i))}
-          >
-            <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
-          </Button>
-</ButtonGroup>
+            {feed.kind !== "hackernews" && (
+              <Input
+                aria-label={
+                  feed.kind === "rss"
+                    ? t("agent.feedUrl")
+                    : t("agent.feedQuery")
+                }
+                type={feed.kind === "rss" ? "url" : "text"}
+                className="min-w-0 flex-1"
+                placeholder={
+                  feed.kind === "rss" ? "https://" : t("agent.feedQuery")
+                }
+                value={feedValue(feed)}
+                required
+                onChange={(e) => set(i, makeFeed(feed.kind, e.target.value))}
+              />
+            )}
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label={t("agent.removeFeed")}
+              onPress={() => onChange(feeds.filter((_, n) => n !== i))}
+            >
+              <HugeiconsIcon icon={Delete02Icon} strokeWidth={2} />
+            </Button>
+          </ButtonGroup>
         </div>
       ))}
       <div>
@@ -739,13 +763,13 @@ function BlueskyConnect({ onDone }: { onDone: () => void }) {
   return (
     <div className="flex flex-col gap-2 rounded-lg bg-muted/50 p-3">
       <Input
-          aria-label={t("out.blueskyHandle")}
-          placeholder={t("out.blueskyHandle")}
-          autoComplete="off"
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
-        />
-        <ButtonGroup className="w-full">
+        aria-label={t("out.blueskyHandle")}
+        placeholder={t("out.blueskyHandle")}
+        autoComplete="off"
+        value={identifier}
+        onChange={(e) => setIdentifier(e.target.value)}
+      />
+      <ButtonGroup className="w-full">
         <Input
           aria-label={t("out.blueskyPassword")}
           placeholder={t("out.blueskyPassword")}
@@ -763,7 +787,7 @@ function BlueskyConnect({ onDone }: { onDone: () => void }) {
           {busy && <Spinner />}
           {t("out.connectBluesky")}
         </Button>
-        </ButtonGroup>
+      </ButtonGroup>
       {failed && (
         <p role="alert" className="text-sm text-destructive">
           {t("out.blueskyFailed")}
@@ -797,6 +821,10 @@ function Filter({
   const [windowMinutes, setWindow] = React.useState(String(c.windowMinutes))
   const [cooldown, setCooldown] = React.useState(String(c.cooldownMinutes))
   const [cap, setCap] = React.useState(String(c.dailyCap))
+  // The stored config, so machines saved before this limit don't have one.
+  const [maxCredits, setMaxCredits] = React.useState(
+    String(c.maxCreditsPerDay ?? DEFAULT_CREDITS_PER_DAY)
+  )
   const [voice, setVoice] = React.useState(c.voice)
   const [language, setLanguage] = React.useState(c.language)
   const [mission, setMission] = React.useState(c.mission)
@@ -858,6 +886,7 @@ function Filter({
             windowMinutes: Number(windowMinutes),
             cooldownMinutes: Number(cooldown),
             dailyCap: Number(cap),
+            maxCreditsPerDay: Number(maxCredits),
             voice,
             language,
             mission,
@@ -1155,6 +1184,22 @@ function Filter({
           onChange={(e) => setCap(e.target.value)}
         />
       </Field>
+      <Field
+        label={t("form.maxCredits")}
+        htmlFor="machine-max-credits"
+        hint={t("form.maxCreditsHint")}
+      >
+        <Input
+          id="machine-max-credits"
+          type="number"
+          min={MIN_CREDITS_PER_DAY}
+          max={MAX_CREDITS_PER_DAY}
+          value={maxCredits}
+          required
+          className="w-28"
+          onChange={(e) => setMaxCredits(e.target.value)}
+        />
+      </Field>
       <Field label={t("form.language")} htmlFor="machine-language">
         <NativeSelect
           id="machine-language"
@@ -1243,6 +1288,7 @@ function Machine({
   const revalidator = useRevalidator()
   const [busy, setBusy] = React.useState(false)
   const [confirming, setConfirming] = React.useState(false)
+  const notice = machine.last_error ? noticeOf(machine.last_error) : null
 
   const act = async (body: unknown) => {
     setBusy(true)
@@ -1258,7 +1304,9 @@ function Machine({
     <div className="flex min-w-0 flex-col gap-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="studio-title truncate py-0.5 text-2xl">{machine.name}</h2>
+          <h2 className="studio-title truncate py-0.5 text-2xl">
+            {machine.name}
+          </h2>
           <p className="text-sm text-muted-foreground">
             {t(machine.publish_mode === "auto" ? "out.auto" : "out.review")}
             {machine.last_run_at &&
@@ -1298,7 +1346,9 @@ function Machine({
       )}
       {machine.last_error && (
         <p role="alert" className="text-sm text-destructive">
-          {machine.last_error}
+          {notice
+            ? t(`notices.${notice.notice}`, { feeds: notice.detail })
+            : machine.last_error}
         </p>
       )}
 

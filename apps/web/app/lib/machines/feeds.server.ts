@@ -1,8 +1,14 @@
+import type { LookupAddress } from "node:dns"
 import { lookup } from "node:dns/promises"
+import type { IncomingMessage } from "node:http"
+import { request } from "node:https"
+import { createGunzip } from "node:zlib"
 
 import { searchVideos } from "@/lib/studio/scrapecreators.server"
 
 import {
+  decodeBody,
+  entryCount,
   isPrivateAddress,
   parseFeed,
   parseGdelt,
@@ -17,67 +23,151 @@ const MAX_REDIRECTS = 3
 const MAX_ARTICLE = 6_000
 // GDELT allows one request every five seconds, for this whole server.
 const GDELT_GAP_MS = 5_500
+const FEED_TYPES = /xml|rss|atom|text\/(?:plain|html)/i
+const PAGE_TYPES = /html|xml|text\/plain/i
 
 export class FeedBusy extends Error {}
+// The page hasn't changed since the validators this was asked with.
+export class NotModified extends Error {}
+// It answered with entries, and none of them could be used.
+export class FeedUnreadable extends Error {}
 
-async function assertPublic(url: URL) {
+interface FetchOptions {
+  signal?: AbortSignal
+  // Keep the start of a page over the size limit instead of failing.
+  truncate?: boolean
+  // Content types worth reading. A missing header gets the benefit of the doubt.
+  accept?: RegExp
+  etag?: string
+  lastModified?: string
+}
+
+async function publicAddresses(url: URL) {
   if (url.protocol !== "https:") throw new Error("Only https is fetched.")
   if (url.port && url.port !== "443") throw new Error("Unusual port.")
+  if (url.username || url.password) throw new Error("No credentials in URLs.")
   const addresses = await lookup(url.hostname, { all: true })
   if (!addresses.length || addresses.some((a) => isPrivateAddress(a.address)))
     throw new Error("That address isn't public.")
+  return addresses
+}
+
+type LookupCallback = (
+  error: Error | null,
+  address: string | LookupAddress[],
+  family?: number
+) => void
+
+// Answers the connection's own DNS question with the addresses already checked.
+// Otherwise a host could pass the check and then resolve somewhere private.
+export const pinnedLookup =
+  (addresses: LookupAddress[]) =>
+  (_: string, options: { all?: boolean }, callback: LookupCallback) => {
+    if (options.all) callback(null, addresses)
+    else callback(null, addresses[0]!.address, addresses[0]!.family)
+  }
+
+const open = (
+  url: URL,
+  addresses: LookupAddress[],
+  headers: Record<string, string>,
+  signal: AbortSignal
+) =>
+  new Promise<IncomingMessage>((resolve, reject) => {
+    request(
+      url,
+      { headers, signal, lookup: pinnedLookup(addresses) as never },
+      resolve
+    )
+      .on("error", reject)
+      .end()
+  })
+
+function unpacked(res: IncomingMessage) {
+  const encoding = res.headers["content-encoding"]
+  if (!encoding || encoding === "identity") return res
+  if (encoding !== "gzip") throw new Error("Unknown content encoding.")
+  const gunzip = createGunzip()
+  res.on("error", (e) => gunzip.destroy(e))
+  return res.pipe(gunzip)
+}
+
+// Counts bytes as they come, after decompression, so a small gzip can't unpack
+// into something huge. The declared length is only a shortcut.
+async function readBody(res: IncomingMessage, truncate: boolean) {
+  if (!truncate && Number(res.headers["content-length"] ?? 0) > MAX_BYTES) {
+    res.destroy()
+    throw new Error("Too large.")
+  }
+  const chunks: Buffer[] = []
+  let size = 0
+  for await (const chunk of unpacked(res) as AsyncIterable<Buffer>) {
+    const room = MAX_BYTES - size
+    size += chunk.length
+    if (size <= MAX_BYTES) {
+      chunks.push(chunk)
+      continue
+    }
+    res.destroy()
+    if (!truncate) throw new Error("Too large.")
+    chunks.push(chunk.subarray(0, room))
+    break
+  }
+  return Buffer.concat(chunks)
 }
 
 // For URLs from owners and from feeds. Every hop is checked, because a public
 // page can redirect to an internal one.
-export async function fetchPublic(raw: string, signal?: AbortSignal) {
+export async function fetchPublic(raw: string, options: FetchOptions = {}) {
+  const { signal, truncate = false, accept, etag, lastModified } = options
   let url = new URL(raw)
   const abort = AbortSignal.any([
     AbortSignal.timeout(TIMEOUT_MS),
     ...(signal ? [signal] : []),
   ])
+  const headers = {
+    "user-agent": "PalmframeMachines/1.0 (+https://www.palmframe.com)",
+    "accept-encoding": "gzip",
+    ...(etag && { "if-none-match": etag }),
+    ...(lastModified && { "if-modified-since": lastModified }),
+  }
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-    await assertPublic(url)
-    const res = await fetch(url, {
-      redirect: "manual",
-      signal: abort,
-      headers: {
-        "user-agent": "PalmframeMachines/1.0 (+https://www.palmframe.com)",
-      },
-    })
-    if (res.status >= 300 && res.status < 400) {
-      const next = res.headers.get("location")
-      await res.body?.cancel()
+    const res = await open(url, await publicAddresses(url), headers, abort)
+    const status = res.statusCode ?? 0
+    if (status === 304) {
+      res.destroy()
+      throw new NotModified(url.hostname)
+    }
+    if (status >= 300 && status < 400) {
+      const next = res.headers.location
+      res.destroy()
       if (!next) throw new Error("Redirect without a target.")
       url = new URL(next, url)
       continue
     }
-    if (res.status === 429 || res.status >= 500)
-      throw new FeedBusy(`${url.hostname} ${res.status}`)
-    if (!res.ok) throw new Error(`${url.hostname} ${res.status}`)
-    const declared = Number(res.headers.get("content-length") ?? 0)
-    if (declared > MAX_BYTES) throw new Error("Too large.")
-    const reader = res.body?.getReader()
-    if (!reader) return ""
-    const chunks: Uint8Array[] = []
-    let size = 0
-    for (;;) {
-      const { done, value } = await reader.read()
-      if (done) break
-      size += value.length
-      if (size > MAX_BYTES) {
-        await reader.cancel()
-        throw new Error("Too large.")
-      }
-      chunks.push(value)
+    if (status < 200 || status >= 300) {
+      res.destroy()
+      if (status === 429 || status >= 500)
+        throw new FeedBusy(`${url.hostname} ${status}`)
+      throw new Error(`${url.hostname} ${status}`)
     }
-    return Buffer.concat(chunks).toString("utf8")
+    const type = res.headers["content-type"] ?? null
+    if (accept && type && !accept.test(type)) {
+      res.destroy()
+      throw new Error(`${url.hostname} sent ${type.slice(0, 60)}.`)
+    }
+    return decodeBody(await readBody(res, truncate), type)
   }
   throw new Error("Too many redirects.")
 }
 
 export async function readArticle(url: string, signal?: AbortSignal) {
-  return stripHtml(await fetchPublic(url, signal)).slice(0, MAX_ARTICLE)
+  const page = await fetchPublic(url, {
+    signal,
+    truncate: true,
+    accept: PAGE_TYPES,
+  })
+  return stripHtml(page).slice(0, MAX_ARTICLE)
 }
 
 let gdeltNext = 0
@@ -95,7 +185,7 @@ async function gdelt(query: string, now: number, signal?: AbortSignal) {
   })
   const text = await fetchPublic(
     `https://api.gdeltproject.org/api/v2/doc/doc?${params}`,
-    signal
+    { signal }
   )
   // Rate limits arrive as a sentence with a 200 status.
   if (!text.startsWith("{")) throw new FeedBusy("GDELT is rate limiting.")
@@ -108,18 +198,22 @@ export async function readFeed(
   signal?: AbortSignal
 ): Promise<Item[]> {
   switch (feed.kind) {
-    case "rss":
-      return parseFeed(
-        await fetchPublic(feed.url, signal),
-        new URL(feed.url).hostname,
-        now
-      )
+    case "rss": {
+      const xml = await fetchPublic(feed.url, {
+        signal,
+        truncate: true,
+        accept: FEED_TYPES,
+      })
+      const items = parseFeed(xml, new URL(feed.url).hostname, now)
+      if (!items.length && entryCount(xml)) throw new FeedUnreadable(feed.url)
+      return items
+    }
     case "news":
       return gdelt(feed.query, now, signal)
     case "hackernews": {
       const text = await fetchPublic(
         "https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=25&attributesToRetrieve=title,url,objectID,points,num_comments,created_at_i&attributesToHighlight=",
-        signal
+        { signal }
       )
       return parseHackerNews(JSON.parse(text), now)
     }

@@ -15,7 +15,10 @@ import {
   instagramEnabled,
   profileFor,
 } from "@/lib/instagram.server"
+import { machinesHalted } from "@/lib/machines/control.server"
+import { evidenceLimit, reviewHold } from "@/lib/machines/gate"
 import {
+  DISMISS_REASONS,
   machineConfig,
   machineInput,
   signalSchema,
@@ -35,7 +38,11 @@ const body = z.discriminatedUnion("intent", [
   z.object({ intent: z.literal("remove"), id }),
   z.object({ intent: z.literal("run"), id, on: z.boolean() }),
   z.object({ intent: z.literal("draft"), id, signal: signalSchema }),
-  z.object({ intent: z.literal("dismiss"), id }),
+  z.object({
+    intent: z.literal("dismiss"),
+    id,
+    reason: z.enum(DISMISS_REASONS).optional(),
+  }),
   z.object({ intent: z.literal("comic"), id }),
   z.object({
     intent: z.literal("approve"),
@@ -198,6 +205,9 @@ export async function action({ request }: Route.ActionArgs) {
               user_id: viewer.id,
               signal_id: r.signal.id,
               signal: r.signal,
+              evidence: evidenceLimit(
+                [r.signal.facts, ...r.signal.samples].join("\n")
+              ),
               ...draft,
             },
             { onConflict: "machine_id,signal_id", ignoreDuplicates: true }
@@ -217,16 +227,19 @@ export async function action({ request }: Route.ActionArgs) {
       if (!owned) return fail("Not found", 404)
       const { error } = await supabaseAdmin()
         .from("comic_machine_drafts")
-        .update({ status: "dismissed" })
+        .update({ status: "dismissed", dismiss_reason: r.reason ?? null })
         .eq("id", r.id)
         .in("status", ["new", "failed", "used"])
       return error ? fail(error.message, 500) : Response.json({ ok: true })
     }
     // A person read it: it may go out, in their words if they changed it.
+    // Changed words are checked like the agent's, and a hold shows them why.
+    // Approving those same words again means they've seen that and still want
+    // it, so the text matches and this passes.
     case "approve": {
       const { data: draft } = await supabase
         .from("comic_machine_drafts")
-        .select("id, machine_id")
+        .select("id, machine_id, text, evidence, sources, signal")
         .eq("id", r.id)
         .maybeSingle()
       if (!draft) return fail("Not found", 404)
@@ -236,16 +249,30 @@ export async function action({ request }: Route.ActionArgs) {
         .eq("id", draft.machine_id)
         .maybeSingle()
       if (!machine) return fail("Not found", 404)
+      if (await machinesHalted())
+        return Response.json({ ok: false, halted: true, errors: [] })
+      const config = machineConfig.safeParse(machine.config)
+      const held = reviewHold(
+        r.text,
+        draft,
+        config.success ? config.data.language : "en"
+      )
       const { data: approved } = await supabaseAdmin()
         .from("comic_machine_drafts")
-        .update({ status: "approved", text: r.text, held: null })
+        .update(
+          held
+            ? { text: r.text, held }
+            : { status: "approved", text: r.text, held: null }
+        )
         .eq("id", r.id)
         .in("status", ["new", "failed"])
         .select("id")
       if (!approved?.length) return fail("Not found", 404)
+      if (held) return Response.json({ ok: false, held, errors: [] })
       const result = await publishDraft(r.id, machine as MachineRow)
       return Response.json({
         ok: !!result?.published,
+        halted: !!result?.halted,
         errors: result?.errors.map((e) => e.error) ?? [],
       })
     }

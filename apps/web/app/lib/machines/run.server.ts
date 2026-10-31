@@ -4,11 +4,16 @@ import { resumeStalled, startMachineStory } from "@/lib/media/pipeline.server"
 import { OpenRouterError, payingConnection } from "@/lib/openrouter.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
+import { splitMemory, tally } from "./agent.logic"
 import { runAgent } from "./agent.server"
+import { machinesHalted } from "./control.server"
 import { type Detector, createDetector } from "./detect"
-import { FeedBusy, readFeed } from "./feeds.server"
+import { FeedBusy, FeedUnreadable, NotModified, readFeed } from "./feeds.server"
 import {
+  HOLD_MS,
   MAX_FAILURES,
+  budgetStop,
+  evidenceLimit,
   evidenceOf,
   freshItems,
   holdReason,
@@ -16,7 +21,9 @@ import {
   nextRunAt,
 } from "./gate"
 import { drawPost, imageAvailable } from "./image.server"
+import { closeRun, dayUsage, noteRun, openRun } from "./ledger.server"
 import {
+  type Feed,
   type Item,
   type Reading,
   type Signal,
@@ -38,6 +45,9 @@ const MAX_EDITIONS_PER_RUN = 8
 // A new edition takes this long at worst; later machines wait for the next tick.
 const EDITION_MS = 45_000
 const INBOX_DAYS = 14
+const LEDGER_DAYS = 90
+// Enough to fill all three memory lists after the ones that don't count.
+const MEMORY_ROWS = 60
 const REPLAYS: SourceId[] = ["bluesky", "wikipedia"]
 
 interface Listener {
@@ -47,6 +57,8 @@ interface Listener {
   from: number
   signals: Signal[]
   error: string | null
+  // A ledger row already says how this edition ended.
+  recorded: boolean
 }
 
 function listener(machine: MachineRow): Listener | null {
@@ -60,6 +72,7 @@ function listener(machine: MachineRow): Listener | null {
     from: state.cursor ?? 0,
     signals: [],
     error: null,
+    recorded: false,
   }
 }
 
@@ -161,10 +174,14 @@ async function gather(
   abort: AbortSignal
 ) {
   const problems: string[] = []
+  const unreadable: string[] = []
   const results = await Promise.all(
     config.feeds.map((feed) =>
       readFeed(feed, now, abort).catch((e) => {
-        if (!(e instanceof FeedBusy)) {
+        // Reported, but not a failure: a machine shouldn't be switched off
+        // over a feed that used to look fine and has only now been noticed.
+        if (e instanceof FeedUnreadable) unreadable.push(e.message)
+        else if (!(e instanceof FeedBusy || e instanceof NotModified)) {
           console.error("Machine feed failed", feed.kind, e)
           problems.push(feed.kind === "rss" ? feed.url : feed.kind)
         }
@@ -176,16 +193,19 @@ async function gather(
     items: results.flat(),
     error: problems.length
       ? `Couldn't read ${problems.join(", ").slice(0, 200)}.`
-      : null,
+      : unreadable.length
+        ? `unreadable:${unreadable.join(", ").slice(0, 200)}`
+        : null,
     allFailed: !!config.feeds.length && problems.length === config.feeds.length,
   }
 }
 
-const dayStart = (now: number) =>
-  `${new Date(now).toISOString().slice(0, 10)}T00:00:00Z`
+// These two are paid per search, so a machine that can't use today's results
+// doesn't buy them.
+const isFree = (feed: Feed) => feed.kind !== "tiktok" && feed.kind !== "youtube"
 
 // One edition: read the inbox, let the agent pick, then decide in plain code
-// whether the post may go out by itself.
+// whether the post may go out by itself. Every way out leaves a ledger row.
 async function edition(
   l: Listener,
   now: number,
@@ -196,17 +216,22 @@ async function edition(
   const admin = supabaseAdmin()
   const abort = AbortSignal.timeout(Math.max(1_000, deadline - Date.now()))
 
-  const heard = await gather(config, now, abort)
+  // A stopped machine keeps listening, so it has an inbox when it comes back.
+  const usage = await dayUsage(machine, now)
+  const stop = budgetStop(usage, config, COSTS.machine_run)
+  const heard = await gather(
+    stop ? { ...config, feeds: config.feeds.filter(isFree) } : config,
+    now,
+    abort
+  )
   await stored(heard.items, machine)
   l.error = heard.error
-
-  const { count: today } = await admin
-    .from("comic_machine_drafts")
-    .select("id", { count: "exact", head: true })
-    .eq("machine_id", machine.id)
-    .gte("created_at", dayStart(now))
-  if ((today ?? 0) >= config.dailyCap)
-    return { drafts: 0, failed: heard.allFailed }
+  const quiet = { drafts: 0, failed: heard.allFailed }
+  if (stop) {
+    if (stop === "breaker") l.error = "budget"
+    await noteRun(machine, stop)
+    return quiet
+  }
 
   const { data: rows } = await admin
     .from("comic_machine_items")
@@ -226,21 +251,46 @@ async function edition(
     })),
     now
   )
-  if (!inbox.length) return { drafts: 0, failed: heard.allFailed }
+  if (!inbox.length) {
+    await noteRun(machine, "empty")
+    return quiet
+  }
 
   const connection = await payingConnection(machine.user_id)
-  if (!connection && !process.env.ANTHROPIC_API_KEY)
-    return { drafts: 0, failed: heard.allFailed }
+  if (!connection && !process.env.ANTHROPIC_API_KEY) {
+    await noteRun(machine, "no_writer")
+    return quiet
+  }
   const job = `machine:${machine.id}:${Math.floor(now / 60_000)}`
-  if (!connection) await spend(machine.user_id, "machine_run", job)
+  const shown = inbox.slice(0, 30)
+  let credits = connection ? 0 : COSTS.machine_run
+  const run = await openRun(machine, {
+    job,
+    credits,
+    shown: tally(shown),
+  })
+  l.recorded = true
+  const endRun = (
+    decision: Parameters<typeof closeRun>[1],
+    fields: Parameters<typeof closeRun>[2] = {}
+  ) => closeRun(run, decision, { credits, ...fields })
+  const unpaid = async (e: unknown) => {
+    credits = 0
+    await endRun(e instanceof OutOfCredits ? "no_credits" : "failed", {
+      reason: (e instanceof Error ? e.message : String(e)).slice(0, 1000),
+    })
+    throw e
+  }
 
-  const { data: posts } = await admin
+  if (!connection)
+    await spend(machine.user_id, "machine_run", job).catch(unpaid)
+
+  const { data: drafts } = await admin
     .from("comic_machine_drafts")
-    .select("text")
+    .select("text, status, receipts, sources, signal, dismiss_reason")
     .eq("machine_id", machine.id)
-    .neq("status", "dismissed")
     .order("created_at", { ascending: false })
-    .limit(15)
+    .limit(MEMORY_ROWS)
   const { data: brand } = await admin
     .from("comic_brand_kits")
     .select("name, voice")
@@ -248,21 +298,21 @@ async function edition(
     .eq("active", true)
     .maybeSingle()
 
-  let filed
+  let result
   try {
-    filed = await runAgent(
+    result = await runAgent(
       { name: machine.name, config },
       brand?.voice ? `${brand.name}: ${brand.voice}` : "",
       inbox,
-      (posts ?? []).map((p) => p.text),
+      splitMemory(drafts ?? []),
       connection,
       abort
     )
   } catch (e) {
     if (!connection) await refund(machine.user_id, job)
     if (e instanceof OpenRouterError && e.status === 402)
-      throw new OutOfCredits(e.message)
-    throw e
+      return unpaid(new OutOfCredits(e.message))
+    return unpaid(e)
   }
 
   // Everything it was shown has had its chance, so nothing is read twice.
@@ -273,17 +323,37 @@ async function edition(
     .eq("status", "new")
     .in(
       "key",
-      inbox.slice(0, 30).map((i) => i.key)
+      shown.map((i) => i.key)
     )
-  if (!filed) return { drafts: 0, failed: heard.allFailed }
+  if (result.decision !== "filed") {
+    await endRun(result.decision, {
+      reason: result.reason,
+      prompt: result.prompt,
+    })
+    return quiet
+  }
+  const { filed } = result
+  const affordable = (cost: number) =>
+    usage.credits + credits + cost <= config.maxCreditsPerDay
 
   // Names the picture, and makes each post its own row.
   const draftKey = crypto.randomUUID()
   let imageUrl: string | null = null
-  if (config.image && filed.scene && imageAvailable(connection)) {
+  const charged = !connection
+  if (
+    config.image &&
+    filed.scene &&
+    imageAvailable(connection) &&
+    (connection || affordable(COSTS.machine_image))
+  ) {
     const imageJob = `machine-image:${draftKey}`
+    let paid = false
     try {
-      if (!connection) await spend(machine.user_id, "machine_image", imageJob)
+      if (charged) {
+        await spend(machine.user_id, "machine_image", imageJob)
+        paid = true
+        credits += COSTS.machine_image
+      }
       imageUrl = await drawPost(
         machine.user_id,
         draftKey,
@@ -295,36 +365,49 @@ async function edition(
       // A post without its picture beats no post.
       if (!(e instanceof OutOfCredits)) {
         console.error("Machine image failed", machine.id, e)
-        if (!connection) await refund(machine.user_id, imageJob)
+        if (paid) {
+          await refund(machine.user_id, imageJob)
+          credits -= COSTS.machine_image
+        }
       }
     }
   }
 
-  const held = holdReason(
-    filed.text,
-    `${evidenceOf(filed.sources)}\n${filed.read}`,
-    filed.sources
-  )
+  const evidence = `${evidenceOf(filed.sources)}\n${filed.read}`
+  const held = holdReason(filed.text, evidence, filed.sources, config.language)
   const auto = machine.publish_mode === "auto" && !held
-  const { error } = await admin.from("comic_machine_drafts").insert({
-    machine_id: machine.id,
-    user_id: machine.user_id,
-    signal_id: `post:${draftKey}`,
-    text: filed.text,
-    scene: filed.scene,
-    alt: filed.alt,
-    prompt: filed.prompt,
-    sources: filed.sources.map((i) => ({
-      title: i.title,
-      url: i.url,
-      source: i.source,
-    })),
-    link: filed.link,
-    image_url: imageUrl,
-    held: machine.publish_mode === "auto" ? held : null,
-    status: auto ? "approved" : "new",
-  })
-  if (error) throw new Error(error.message)
+  const { data: draft, error } = await admin
+    .from("comic_machine_drafts")
+    .insert({
+      machine_id: machine.id,
+      user_id: machine.user_id,
+      signal_id: `post:${draftKey}`,
+      text: filed.text,
+      scene: filed.scene,
+      alt: filed.alt,
+      prompt: filed.prompt,
+      sources: filed.sources.map((i) => ({
+        title: i.title,
+        url: i.url,
+        source: i.source,
+      })),
+      link: filed.link,
+      image_url: imageUrl,
+      evidence: evidenceLimit(evidence),
+      // Stored in review mode too: the reviewer is who the reason is for.
+      held,
+      status: auto ? "approved" : "new",
+    })
+    .select("id")
+    .single()
+  if (error) {
+    await endRun("failed", {
+      reason: error.message.slice(0, 1000),
+      prompt: filed.prompt,
+      agent_text: filed.text,
+    })
+    throw new Error(error.message)
+  }
   await admin
     .from("comic_machine_items")
     .update({ status: "used" })
@@ -333,14 +416,27 @@ async function edition(
       "key",
       filed.sources.map((i) => i.key)
     )
-  // A Story is an extra. It can't cost the machine the post it just filed.
-  await startMachineStory(
-    machine,
-    config.media,
-    filed.sources[0],
-    draftKey,
-    origin
-  ).catch((e) => console.error("Machine story didn't start", machine.id, e))
+  // A Story is an extra. It can't cost the machine the post it just filed, and
+  // nothing pays for research on a post that may never go out.
+  if (!held && affordable(COSTS.deep_dive)) {
+    const started = await startMachineStory(
+      machine,
+      config.media,
+      filed.sources[0],
+      draftKey,
+      origin
+    ).catch((e) => {
+      console.error("Machine story didn't start", machine.id, e)
+      return false
+    })
+    if (started) credits += COSTS.deep_dive
+  }
+  await endRun("filed", {
+    prompt: filed.prompt,
+    agent_text: filed.text,
+    draft_id: draft.id,
+    cited: tally(filed.sources),
+  })
   return { drafts: 1, failed: false }
 }
 
@@ -359,6 +455,7 @@ async function publishQueue(machines: MachineRow[], deadline: number) {
     const machine = byId.get(row.machine_id)
     if (!machine) continue
     const result = await publishDraft(row.id, machine)
+    if (result?.halted) break
     if (result?.published) published++
     if (result?.errors.length)
       await supabaseAdmin()
@@ -369,10 +466,35 @@ async function publishQueue(machines: MachineRow[], deadline: number) {
   return published
 }
 
+// Held posts nobody got to. They've left the cap already, so this only clears
+// them from the owner's queue.
+async function expireHeld(now: number) {
+  const { error } = await supabaseAdmin()
+    .from("comic_machine_drafts")
+    .update({ status: "expired" })
+    .eq("status", "new")
+    .not("held", "is", null)
+    .lt("created_at", new Date(now - HOLD_MS).toISOString())
+  if (error) console.error("Held posts not expired", error.message)
+}
+
 export async function runMachines(origin: string) {
   const now = Date.now()
   const deadline = now + DEADLINE_MS
   const admin = supabaseAdmin()
+  const summary = {
+    machines: 0,
+    signals: 0,
+    editions: 0,
+    drafts: 0,
+    published: 0,
+    errors: 0,
+    halted: false,
+  }
+  // Before anything that spends or sends, including resuming stalled Stories.
+  if (await machinesHalted()) return { ...summary, halted: true }
+  await expireHeld(now)
+
   const { data, error } = await admin
     .from("comic_machines")
     .select("*")
@@ -409,8 +531,10 @@ export async function runMachines(origin: string) {
     })
   )
 
+  // The wire took up to 30 seconds, so a halt may have come in since.
+  const halted = await machinesHalted()
   const claimed: Listener[] = []
-  for (const l of editions.slice(0, MAX_EDITIONS_PER_RUN)) {
+  for (const l of halted ? [] : editions.slice(0, MAX_EDITIONS_PER_RUN)) {
     // Moving next_run_at first means an overlapping run skips this machine.
     let claim = admin
       .from("comic_machines")
@@ -425,7 +549,10 @@ export async function runMachines(origin: string) {
 
   await Promise.all(
     claimed.map(async (l) => {
-      if (Date.now() + EDITION_MS > deadline) return
+      if (Date.now() + EDITION_MS > deadline) {
+        await noteRun(l.machine, "deadline")
+        return
+      }
       let failures = 0
       try {
         const r = await edition(l, now, deadline, origin)
@@ -439,6 +566,10 @@ export async function runMachines(origin: string) {
             ? "Out of credits, so this machine is paused."
             : "The last run failed. It will try again."
         if (e instanceof OutOfCredits) failures = MAX_FAILURES
+        if (!l.recorded)
+          await noteRun(l.machine, "error", {
+            reason: (e instanceof Error ? e.message : String(e)).slice(0, 1000),
+          })
       }
       const stopped = failures >= MAX_FAILURES
       await admin
@@ -456,15 +587,22 @@ export async function runMachines(origin: string) {
     })
   )
 
-  await resumeStalled(origin).catch((e) =>
-    console.error("Media runs not resumed", e)
-  )
+  if (!halted)
+    await resumeStalled(origin).catch((e) =>
+      console.error("Media runs not resumed", e)
+    )
   const published = await publishQueue(machines, deadline + 20_000)
   await admin
     .from("comic_machine_items")
     .delete()
     .lt("created_at", new Date(now - INBOX_DAYS * 86_400_000).toISOString())
+  await admin
+    .from("comic_machine_runs")
+    .delete()
+    .lt("created_at", new Date(now - LEDGER_DAYS * 86_400_000).toISOString())
   return {
+    ...summary,
+    halted,
     machines: listeners.length,
     signals: listeners.reduce((n, l) => n + l.signals.length, 0),
     editions: claimed.length,

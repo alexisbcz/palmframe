@@ -2,7 +2,14 @@ import { COSTS } from "@/lib/credits"
 import type { MachineRow, MediaRenditionRow } from "@/lib/database"
 import { kick } from "@/lib/deepdive/run.server"
 import { leadSchema } from "@/lib/deepdive/model"
-import { LIMITS, holdReason } from "@/lib/machines/gate"
+import {
+  LIMITS,
+  PUBLISHED_TRACK,
+  evidenceLimit,
+  holdReason,
+} from "@/lib/machines/gate"
+import { machinesHalted } from "@/lib/machines/control.server"
+import { dayStart, dayUsage } from "@/lib/machines/ledger.server"
 import {
   type Item,
   type MediaConfig,
@@ -27,9 +34,6 @@ const MAX_RESUMED = 8
 const DRAFTABLE: Partial<Record<FormatId, OutputPlatform>> = {
   linkedin: "linkedin",
 }
-
-const dayStart = (now: number) =>
-  `${new Date(now).toISOString().slice(0, 10)}T00:00:00Z`
 
 // Runs only pass here once a post has been filed, so a machine with Stories
 // turned on still needs something worth saying first.
@@ -106,9 +110,17 @@ export async function afterStory(
   if (!machine?.enabled) return
   const config = machineConfig.safeParse(machine.config)
   if (!config.success || !config.data.media.enabled) return
+  // A worker can finish a Story after the halt; it just doesn't spend on it.
+  if (await machinesHalted()) return
   const offered = availableFormats()
   const formats = config.data.media.formats.filter((f) => offered.includes(f))
-  for (const format of formats) {
+  const { credits } = await dayUsage(machine, Date.now())
+  // Formats a machine can't afford today are skipped, not owed: the breaker
+  // reopens tomorrow, and a Story is old news by then.
+  const affordable = Math.floor(
+    (config.data.maxCreditsPerDay - credits) / COSTS.media_render
+  )
+  for (const format of formats.slice(0, Math.max(0, affordable))) {
     const job = `machine-render:${storyId}:${format}`
     const spent = await admin.rpc("spend_credits_for", {
       p_user: machine.user_id,
@@ -176,6 +188,8 @@ export async function afterRendition(
     .from("comic_machine_drafts")
     .select("id", { count: "exact", head: true })
     .eq("machine_id", machine.id)
+    .in("status", PUBLISHED_TRACK)
+    .is("held", null)
     .gte("created_at", dayStart(Date.now()))
 
   const text = rendition.parts.map((p) => p.text).join("\n\n")
@@ -188,7 +202,7 @@ export async function afterRendition(
   const held = machineHold({
     status: row.status,
     problems: row.problems,
-    gate: holdReason(text, evidence, items),
+    gate: holdReason(text, evidence, items, config.language),
     length: text.length,
     limit: LIMITS[platform],
     today: today ?? 0,
@@ -207,6 +221,7 @@ export async function afterRendition(
     })),
     link: story.lead.startsWith("https://") ? story.lead : null,
     platform,
+    evidence: evidenceLimit(evidence),
     held: machine.publish_mode === "auto" ? held : null,
     status: auto ? "approved" : "new",
   })

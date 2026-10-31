@@ -87,6 +87,12 @@ export const NO_MEDIA: MediaConfig = {
   storiesPerDay: 1,
 }
 
+// A starting guess, to set again from the run ledger after a week of real
+// machines. It covers ten runs, five pictures and one Story in five formats.
+export const DEFAULT_CREDITS_PER_DAY = 200
+export const MIN_CREDITS_PER_DAY = 10
+export const MAX_CREDITS_PER_DAY = 5000
+
 export const machineConfig = z.object({
   keywords: z.array(word).max(20).default([]),
   exclude: z.array(word).max(20).default([]),
@@ -96,6 +102,14 @@ export const machineConfig = z.object({
   // How long one subject stays quiet after firing.
   cooldownMinutes: z.number().int().min(1).max(10080),
   dailyCap: z.number().int().min(1).max(20),
+  // Everything this machine may spend in a UTC day. Past it, the machine keeps
+  // listening and goes back to work the next day.
+  maxCreditsPerDay: z
+    .number()
+    .int()
+    .min(MIN_CREDITS_PER_DAY)
+    .max(MAX_CREDITS_PER_DAY)
+    .default(DEFAULT_CREDITS_PER_DAY),
   // Who the posts are for, and how they sound.
   voice: z.string().trim().max(600).default(""),
   language: z
@@ -203,6 +217,47 @@ export interface PostSource {
   source: string
 }
 
+// Why an owner threw a post away. A closed list, because it goes back to the
+// agent as memory and shows up in six languages.
+export const DISMISS_REASONS = ["wrong", "dull", "repeat", "tone"] as const
+export type DismissReason = (typeof DISMISS_REASONS)[number]
+
+// How an edition ended, one ledger row each. The first group started the
+// agent, so it counts towards the attempts ceiling; `running` is a row whose
+// run hasn't finished, or never will.
+export const AGENT_DECISIONS = [
+  "running",
+  "filed",
+  "passed",
+  "refused",
+  "exhausted",
+  "invalid",
+  "failed",
+] as const
+export const RUN_DECISIONS = [
+  ...AGENT_DECISIONS,
+  "empty",
+  "capped",
+  "ceiling",
+  "breaker",
+  "no_writer",
+  "no_credits",
+  "deadline",
+  "error",
+] as const
+export type RunDecision = (typeof RUN_DECISIONS)[number]
+
+// A machine's last_error is either a sentence or one of these codes, which the
+// page words in the reader's language.
+export const NOTICES = ["budget", "unreadable"] as const
+export type Notice = (typeof NOTICES)[number]
+
+export function noticeOf(lastError: string) {
+  const [code, ...rest] = lastError.split(":")
+  const notice = NOTICES.find((n) => n === code)
+  return notice ? { notice, detail: rest.join(":") } : null
+}
+
 export interface PublishReceipt {
   accountId: string
   platform: OutputPlatform
@@ -233,6 +288,7 @@ const base = {
   voice: "",
   language: "en",
   dailyCap: 5,
+  maxCreditsPerDay: DEFAULT_CREDITS_PER_DAY,
   mission: "",
   feeds: [],
   listen: true,

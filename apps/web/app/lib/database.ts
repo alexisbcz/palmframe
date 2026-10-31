@@ -18,6 +18,7 @@ import type {
 import type { DetectorState } from "./machines/detect"
 import type {
   Item,
+  DismissReason,
   MachineConfig,
   MachineOutput,
   OutputPlatform,
@@ -26,6 +27,7 @@ import type {
   PublishReceipt,
   Signal,
   SourceId,
+  RunDecision,
 } from "./machines/model"
 import type { FormatId, Part } from "./media/model"
 import type {
@@ -110,6 +112,7 @@ export interface Database {
           held?: string | null
           platform?: OutputPlatform | null
           status?: MachineDraftRow["status"]
+          evidence?: string
         }
         Update: {
           status?: MachineDraftRow["status"]
@@ -118,7 +121,21 @@ export interface Database {
           held?: string | null
           receipts?: PublishReceipt[]
           published_at?: string | null
+          dismiss_reason?: DismissReason | null
         }
+        Relationships: []
+      }
+      comic_machine_runs: {
+        Row: MachineRunRow
+        Insert: Pick<MachineRunRow, "machine_id" | "user_id" | "decision"> &
+          Partial<Omit<MachineRunRow, "id" | "created_at">>
+        Update: Partial<Omit<MachineRunRow, "id" | "machine_id" | "user_id">>
+        Relationships: []
+      }
+      comic_machines_control: {
+        Row: MachineControlRow
+        Insert: Partial<MachineControlRow>
+        Update: Partial<Pick<MachineControlRow, "halted" | "reason">>
         Relationships: []
       }
       comic_machine_items: {
@@ -595,6 +612,7 @@ export type MachineDraftRow = {
     | "publishing"
     | "published"
     | "failed"
+    | "expired"
   project_id: string | null
   prompt: string | null
   sources: PostSource[]
@@ -604,7 +622,33 @@ export type MachineDraftRow = {
   platform: OutputPlatform | null
   receipts: PublishReceipt[]
   published_at: string | null
+  // What the post stood on when it was written, for checking an edit.
+  evidence: string
+  dismiss_reason: DismissReason | null
   created_at: string
+}
+
+export type MachineRunRow = {
+  id: string
+  machine_id: string
+  user_id: string
+  decision: RunDecision
+  reason: string
+  credits: number
+  prompt: string | null
+  job: string | null
+  agent_text: string | null
+  draft_id: string | null
+  shown: Record<string, number>
+  cited: Record<string, number>
+  created_at: string
+}
+
+export type MachineControlRow = {
+  id: boolean
+  halted: boolean
+  reason: string
+  updated_at: string
 }
 
 export interface Viewer {

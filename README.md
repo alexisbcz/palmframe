@@ -143,6 +143,28 @@ A machine starts in review mode, where each post waits for its owner. In auto
 mode, posts go out unattended, except that `lib/machines/gate.ts` holds any post
 that cites nothing or states a number its sources don't. The agent never sees
 links and has no way to publish: it files text, and plain code does the rest.
+Each day, a machine stops starting its agent once it has filed `dailyCap` posts
+or made twice that many attempts, since passes are billed too. Dismissed, held
+and expired posts don't count towards the cap. Held posts expire after 48 hours.
+Past `maxCreditsPerDay` it keeps listening and spends nothing until the next UTC
+day. Every edition leaves a row in `comic_machine_runs`, including passes,
+refusals and runs that never started, and the day's limits are read from there.
+
+Posts end with a signature added in `compose()`, in the machine's language, and
+no length of post can clip it away. A post counts as published only if an account
+took it, or if the machine has no accounts and a public page.
+
+To stop every machine at once, without a deploy, set the one row in
+`comic_machines_control`:
+
+```sql
+update public.comic_machines_control set halted = true, reason = '...';
+```
+
+Nothing runs or publishes while it's set, and nothing runs if the row can't be
+read, so apply the migration before deploying. Approved posts wait in the queue
+and go out once it's lifted.
+
 Three failed runs in a row pause a machine, and running out of credits pauses it
 at once.
 
@@ -169,7 +191,9 @@ select vault.create_secret('...', 'machines_cron_secret');
 `.github/workflows/machines.yml` runs a tick by hand. It needs
 `MACHINES_CRON_SECRET` and `MACHINES_TICK_URL` as GitHub Actions secrets.
 
-Run the unit tests with `bun test apps/web/app/lib/machines`.
+Run the unit tests with `bun test apps/web/app/lib/machines`. They include
+`gate.mutation.test.ts`, which corrupts good posts and scores what the gate
+catches, what it holds by mistake and what it can't see.
 
 ## Adding components
 

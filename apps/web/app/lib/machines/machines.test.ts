@@ -1,9 +1,20 @@
 import assert from "node:assert/strict"
 import { describe, test } from "node:test"
 
-import { toFiled, inboxBrief } from "./agent.logic"
+import {
+  fromTool,
+  inboxBrief,
+  passed,
+  splitMemory,
+  tally,
+  toFiled,
+} from "./agent.logic"
+import type { MachineDraftRow } from "@/lib/database"
+
 import { compileWords, createDetector } from "./detect"
 import {
+  decodeBody,
+  entryCount,
   isPrivateAddress,
   parseFeed,
   parseGdelt,
@@ -11,22 +22,33 @@ import {
   stripHtml,
 } from "./feeds"
 import {
+  LIMITS,
+  PUBLISHED_TRACK,
+  attemptCeiling,
+  budgetStop,
   compose,
   freshItems,
   holdReason,
   isDue,
+  publishOutcome,
+  reviewHold,
   unsupportedNumbers,
 } from "./gate"
 import {
   type Item,
   type MachineConfig,
+  type PublishReceipt,
   type Reading,
+  DEFAULT_CREDITS_PER_DAY,
   NO_MEDIA,
+  OUTPUT_PLATFORMS,
   PRESETS,
   feedSchema,
   machineConfig,
+  noticeOf,
   slugify,
 } from "./model"
+import { signatureFor } from "./signature"
 import {
   coinbaseProducts,
   parseCoinbase,
@@ -42,6 +64,7 @@ const config = (o: Partial<MachineConfig> = {}): MachineConfig => ({
   windowMinutes: 10,
   cooldownMinutes: 60,
   dailyCap: 5,
+  maxCreditsPerDay: DEFAULT_CREDITS_PER_DAY,
   voice: "",
   language: "en",
   mission: "",
@@ -288,16 +311,85 @@ describe("feeds", () => {
     assert.equal(i?.at, Date.UTC(2026, 9, 31, 16))
   })
 
-  test("reads Atom and drops items with no https link", () => {
+  test("reads Atom, upgrades http links and drops any other scheme", () => {
     const items = parseFeed(
       `<feed><entry><title>Ok</title><id>1</id><link rel="alternate" href="https://x.test/ok"/></entry>
-      <entry><title>Plain</title><link href="http://x.test/no"/></entry></feed>`,
+      <entry><title>Plain</title><link href="http://x.test/up"/></entry>
+      <entry><title>Other</title><link href="ftp://x.test/no"/></entry></feed>`,
       "x",
       5
     )
     assert.deepEqual(
       items.map((i) => i.url),
-      ["https://x.test/ok"]
+      ["https://x.test/ok", "https://x.test/up"]
+    )
+  })
+
+  test("posts without a title lead with their own words", () => {
+    const [short, long] = parseFeed(
+      `<rss><channel><item><link>https://bsky.app/profile/a/post/1</link>
+      <description>Hello &amp; welcome</description><guid>1</guid></item>
+      <item><link>https://bsky.app/profile/a/post/2</link><guid>2</guid>
+      <description>${"word ".repeat(60)}</description></item></channel></rss>`,
+      "bsky.app",
+      5
+    )
+    assert.equal(short?.title, "Hello & welcome")
+    assert.equal(short?.summary, "Hello & welcome")
+    assert.ok(long!.title.length <= 121)
+    assert.ok(long!.title.endsWith("word…"))
+  })
+
+  test("an entry with nothing to say is still dropped", () => {
+    const xml = `<rss><item><link>https://x.test/1</link></item></rss>`
+    assert.deepEqual(parseFeed(xml, "x", 5), [])
+    assert.equal(entryCount(xml), 1)
+    assert.equal(entryCount("<html><body>Blocked</body></html>"), 0)
+  })
+
+  test("decodes every entity, and tags that arrive escaped", () => {
+    const [i] = parseFeed(
+      `<rss><item><title>Caf&eacute; &mdash; caf&#233; &#x2019;24</title>
+      <link>https://x.test/?a=1&amp;copy=2</link>
+      <description>&lt;p&gt;caf&amp;eacute; &lt;a href="x"&gt;link&lt;/a&gt;&lt;/p&gt;</description>
+      </item></rss>`,
+      "x",
+      5
+    )
+    assert.equal(i?.title, "Café — café ’24")
+    assert.equal(i?.url, "https://x.test/?a=1&copy=2")
+    assert.equal(i?.summary, "café link")
+  })
+
+  test("reads a YouTube description", () => {
+    const [i] = parseFeed(
+      `<feed><entry><title>Clip</title><link rel="alternate" href="https://youtu.be/a"/>
+      <media:group><media:description>What it is</media:description></media:group></entry></feed>`,
+      "x",
+      5
+    )
+    assert.equal(i?.summary, "What it is")
+  })
+
+  test("reads the charset the page declares", () => {
+    const bytes = (...codes: number[]) => Uint8Array.from(codes)
+    const latin = bytes(0x63, 0x61, 0x66, 0xe9)
+    assert.equal(decodeBody(latin, "text/xml; charset=ISO-8859-1"), "café")
+    const prolog = new TextEncoder().encode(
+      `<?xml version="1.0" encoding="windows-1252"?><a>`
+    )
+    const xml = new Uint8Array([
+      ...prolog,
+      0x92,
+      ...new TextEncoder().encode("</a>"),
+    ])
+    assert.ok(decodeBody(xml, "text/xml").includes("’"))
+    const sjis = bytes(0x93, 0xfa, 0x96, 0x7b)
+    assert.equal(decodeBody(sjis, "text/html; charset=Shift_JIS"), "日本")
+    assert.equal(decodeBody(new TextEncoder().encode("é"), null), "é")
+    assert.equal(
+      decodeBody(new TextEncoder().encode("é"), "text/xml; charset=nonsense"),
+      "é"
     )
   })
 
@@ -341,7 +433,13 @@ describe("feeds", () => {
       "fd00::1",
       "::ffff:10.0.0.1",
       "fe80::1",
+      "fec0::1",
+      "::7f00:1",
+      "64:ff9b::a00:1",
+      "2002:a00:1::",
       "100.64.0.1",
+      "198.51.100.1",
+      "203.0.113.1",
     ])
       assert.equal(isPrivateAddress(ip), true, ip)
     for (const ip of ["8.8.8.8", "1.1.1.1", "2606:4700:4700::1111"])
@@ -360,6 +458,8 @@ describe("feeds", () => {
   })
 })
 
+const SIG = "AI-written"
+
 describe("the gate before publishing", () => {
   const evidence = "Revenue of $2,500 million grew 40% in 2026"
 
@@ -372,7 +472,7 @@ describe("the gate before publishing", () => {
 
   test("holds an invented number and an uncited post", () => {
     assert.match(holdReason("Up 45%", evidence, [item()]) ?? "", /45/)
-    assert.match(holdReason("Fine", evidence, []) ?? "", /cite/)
+    assert.match(holdReason("Fine", "", []) ?? "", /cite/)
     assert.equal(holdReason("Up 40%", evidence, [item()]), null)
   })
 
@@ -389,19 +489,67 @@ describe("the gate before publishing", () => {
   })
 
   test("the model never sees links", () => {
-    assert.ok(!inboxBrief([item()], []).includes("example.com"))
+    assert.ok(!inboxBrief([item()]).includes("example.com"))
+  })
+
+  test("a brief with no memory reads as it always did", () => {
+    assert.deepEqual(Object.keys(JSON.parse(inboxBrief([item()]))), [
+      "inbox",
+      "recent_posts",
+    ])
   })
 
   test("posts fit each platform", () => {
     const long = "word ".repeat(100).trim()
     const url = `https://example.com/${"a".repeat(300)}`
-    assert.ok(compose(long, null, "twitter").length <= 280)
-    const x = compose(long, url, "twitter")
+    assert.ok(compose(long, null, "twitter", SIG).length <= 280)
+    const x = compose(long, url, "twitter", SIG)
     assert.ok(x.endsWith(url))
     assert.ok(x.length - url.length + 23 <= 280)
-    assert.equal(compose("Hi", url, "bluesky"), "Hi")
-    assert.ok(compose(long, "https://a.co/b", "bluesky").length <= 300)
-    assert.equal(compose("Hi", "https://a.co/b", "instagram"), "Hi")
+    assert.equal(compose("Hi", url, "bluesky", SIG), `Hi\n\n${SIG}`)
+    assert.ok(compose(long, "https://a.co/b", "bluesky", SIG).length <= 300)
+    assert.equal(
+      compose("Hi", "https://a.co/b", "instagram", SIG),
+      `Hi\n\n${SIG}`
+    )
+  })
+
+  test("no post can clip the signature away", () => {
+    const bodies = [
+      "Hi",
+      "word ".repeat(1000),
+      "🧑‍🚀".repeat(4000),
+      "漫".repeat(4000),
+    ]
+    const links = [
+      null,
+      "https://a.co/b",
+      `https://example.com/${"a".repeat(90)}`,
+      `https://example.com/${"a".repeat(1900)}`,
+    ]
+    const size = (s: string) => [...new Intl.Segmenter().segment(s)].length
+    for (const platform of OUTPUT_PLATFORMS)
+      for (const body of bodies)
+        for (const link of links) {
+          const post = compose(body, link, platform, SIG)
+          assert.ok(post.includes(`\n\n${SIG}`), platform)
+          const counted =
+            platform === "twitter" && link
+              ? post.replace(link, "x".repeat(23))
+              : post
+          assert.ok(size(counted) <= LIMITS[platform], `${platform} over`)
+        }
+  })
+
+  test("a link that leaves no room is dropped, not the words", () => {
+    const url = `https://example.com/${"a".repeat(1900)}`
+    assert.equal(compose("Hi", url, "threads", SIG), `Hi\n\n${SIG}`)
+  })
+
+  test("every language signs, and others sign in English", () => {
+    assert.equal(signatureFor("en"), "AI-written")
+    assert.equal(signatureFor("fr"), "Écrit par une IA")
+    assert.equal(signatureFor("pt"), "AI-written")
   })
 
   test("schedule and freshness", () => {
@@ -420,5 +568,202 @@ describe("the gate before publishing", () => {
 
   test("slugs", () => {
     assert.equal(slugify("  Café Néws!! "), "cafe-news")
+  })
+})
+
+describe("after a person edits a post", () => {
+  const draft = {
+    text: "Revenue grew 40%",
+    evidence: "Revenue grew 40% in 2026",
+    sources: [{ title: "T", url: "https://x.test", source: "x" }],
+    signal: null,
+  }
+
+  test("unchanged words aren't checked again", () => {
+    const held = { ...draft, text: "Revenue grew 45%" }
+    assert.equal(reviewHold("Revenue grew 45%", held, "en"), null)
+  })
+
+  test("changed words are checked against the stored evidence", () => {
+    assert.match(reviewHold("Revenue grew 45%", draft, "en") ?? "", /45%/)
+    assert.equal(reviewHold("Revenue was up 40%", draft, "en"), null)
+  })
+
+  test("a wire draft stands on its signal, not an inbox item", () => {
+    const wire = { ...draft, sources: [], signal: { id: "s" } }
+    assert.equal(reviewHold("Revenue up 40%", wire, "en"), null)
+    const uncited = { ...draft, sources: [] }
+    assert.match(reviewHold("Revenue up 40%", uncited, "en") ?? "", /cite/)
+  })
+})
+
+describe("a machine's day", () => {
+  const limits = { dailyCap: 5, maxCreditsPerDay: 100 }
+  const day = (posts: number, attempts: number, credits: number) => ({
+    posts,
+    attempts,
+    credits,
+  })
+
+  test("the agent runs until something says stop", () => {
+    assert.equal(budgetStop(day(4, 9, 99), limits, 1), null)
+  })
+
+  test("the cap counts posts", () => {
+    assert.equal(budgetStop(day(5, 5, 0), limits, 1), "capped")
+  })
+
+  test("passes can't run forever: the ceiling is twice the cap", () => {
+    assert.equal(attemptCeiling(5), 10)
+    assert.equal(budgetStop(day(0, 10, 0), limits, 1), "ceiling")
+  })
+
+  test("the breaker goes first, so its notice shows", () => {
+    assert.equal(budgetStop(day(5, 10, 100), limits, 1), "breaker")
+  })
+
+  test("dismissed, expired and held posts don't take up the cap", () => {
+    const counted: readonly string[] = PUBLISHED_TRACK
+    assert.equal(counted.includes("dismissed"), false)
+    assert.equal(counted.includes("expired"), false)
+    assert.equal(counted.includes("new"), true)
+  })
+
+  test("old machines get a default limit", () => {
+    const { maxCreditsPerDay: _, ...saved } = config()
+    assert.equal(
+      machineConfig.parse(saved).maxCreditsPerDay,
+      DEFAULT_CREDITS_PER_DAY
+    )
+  })
+})
+
+const sent = (o: Partial<PublishReceipt> = {}): PublishReceipt => ({
+  accountId: "a",
+  platform: "bluesky",
+  username: "u",
+  url: null,
+  postId: "p",
+  error: null,
+  ...o,
+})
+
+describe("what counts as published", () => {
+  const failed = sent({ postId: null, error: "No" })
+
+  test("a public page doesn't hide failed accounts", () => {
+    assert.equal(publishOutcome(true, 1, [failed]), false)
+    assert.equal(publishOutcome(false, 1, [failed]), false)
+  })
+
+  test("a rejected post with an id didn't land", () => {
+    assert.equal(publishOutcome(true, 1, [sent({ error: "Rejected" })]), false)
+  })
+
+  test("one account taking it is enough", () => {
+    assert.equal(publishOutcome(false, 2, [failed, sent()]), true)
+  })
+
+  test("a page with no accounts counts, a machine with neither doesn't", () => {
+    assert.equal(publishOutcome(true, 0, []), true)
+    assert.equal(publishOutcome(false, 0, []), false)
+  })
+})
+
+describe("memory", () => {
+  const row = (
+    status: MachineDraftRow["status"],
+    text: string,
+    o: Partial<MachineDraftRow> = {}
+  ) =>
+    ({
+      text,
+      status,
+      receipts: [],
+      sources: [{ title: `About ${text}`, url: "https://x.test", source: "x" }],
+      signal: null,
+      dismiss_reason: null,
+      ...o,
+    }) as Pick<
+      MachineDraftRow,
+      "text" | "status" | "receipts" | "sources" | "signal" | "dismiss_reason"
+    >
+
+  test("only what reached someone counts as the outlet's voice", () => {
+    const m = splitMemory([
+      row("published", "out", { receipts: [sent()] }),
+      row("published", "page"),
+      row("published", "bounced", {
+        receipts: [sent({ postId: null, error: "No" })],
+      }),
+      row("new", "waiting"),
+      row("new", "held", { held: "It states 45%." }),
+      row("approved", "queued"),
+      row("failed", "broke"),
+      row("expired", "stale"),
+    ])
+    assert.deepEqual(m.delivered, ["out", "page"])
+    assert.deepEqual(m.inReview, [
+      "About bounced",
+      "About waiting",
+      "About held",
+      "About queued",
+      "About broke",
+      "About stale",
+    ])
+  })
+
+  test("the agent's unchecked words never come back to it", () => {
+    const brief = inboxBrief(
+      [],
+      splitMemory([row("new", "Secret claim", { sources: [] })])
+    )
+    assert.ok(!brief.includes("Secret claim"))
+  })
+
+  test("dismissed stories come back with their reason", () => {
+    const m = splitMemory([
+      row("dismissed", "x", { dismiss_reason: "dull" }),
+      row("dismissed", "y"),
+    ])
+    assert.deepEqual(m.dismissed, [
+      { story: "About x", reason: "dull" },
+      { story: "About y", reason: null },
+    ])
+    assert.equal(m.inReview.length, 0)
+    const brief = JSON.parse(inboxBrief([], m))
+    assert.equal(brief.rejected_by_the_owner_do_not_repeat.length, 2)
+  })
+})
+
+describe("the run ledger's inputs", () => {
+  test("a pass keeps its reason, and an empty filing isn't a pass", () => {
+    assert.deepEqual(passed("  Nothing new ", "p"), {
+      decision: "passed",
+      reason: "Nothing new",
+      prompt: "p",
+    })
+    assert.equal(passed(undefined, "p").decision, "passed")
+    assert.equal(fromTool({ text: " " }, [], "", "p").decision, "invalid")
+    assert.equal(fromTool({ text: "Hi" }, [], "", "p").decision, "filed")
+  })
+
+  test("counts items per source", () => {
+    assert.deepEqual(
+      tally([{ source: "a" }, { source: "a" }, { source: "b" }]),
+      {
+        a: 2,
+        b: 1,
+      }
+    )
+  })
+
+  test("notices are told from sentences", () => {
+    assert.deepEqual(noticeOf("budget"), { notice: "budget", detail: "" })
+    assert.deepEqual(noticeOf("unreadable:https://x.test/a"), {
+      notice: "unreadable",
+      detail: "https://x.test/a",
+    })
+    assert.equal(noticeOf("Couldn't read x: y."), null)
   })
 })

@@ -6,7 +6,14 @@ import {
 } from "@/lib/openrouter.server"
 import { MACHINE_EDITOR, promptId } from "@/lib/prompts.server"
 
-import { type Filed, type Input, inboxBrief, toFiled } from "./agent.logic"
+import {
+  type AgentResult,
+  type Input,
+  type Memory,
+  fromTool,
+  inboxBrief,
+  passed,
+} from "./agent.logic"
 import { readArticle } from "./feeds.server"
 import type { Item, MachineConfig } from "./model"
 
@@ -59,13 +66,13 @@ const TOOLS: Anthropic.Tool[] = [
 async function withClaude(
   system: string,
   items: Item[],
-  recent: string[],
+  memory: Memory,
   prompt: string,
   abort: AbortSignal
-) {
+): Promise<AgentResult> {
   const client = new Anthropic()
   const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: inboxBrief(items, recent) },
+    { role: "user", content: inboxBrief(items, memory) },
   ]
   let reads = 0
   let read = ""
@@ -80,17 +87,23 @@ async function withClaude(
       },
       { signal: abort }
     )
-    if (response.stop_reason === "refusal") return null
+    if (response.stop_reason === "refusal")
+      return { decision: "refused", reason: "", prompt }
     const calls = response.content.filter(
       (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
     )
     // Stopping without a tool call is a pass, never a post.
-    if (!calls.length) return null
+    if (!calls.length) {
+      const said = response.content.flatMap((b) =>
+        b.type === "text" ? [b.text] : []
+      )
+      return passed(said.join(" "), prompt)
+    }
     const final = calls.find((c) => c.name !== "read_item")
     if (final)
       return final.name === "file_post"
-        ? toFiled(final.input as Input, items, read, prompt)
-        : null
+        ? fromTool(final.input as Input, items, read, prompt)
+        : passed((final.input as { reason?: unknown }).reason, prompt)
     messages.push({ role: "assistant", content: response.content })
     const results: Anthropic.ToolResultBlockParam[] = []
     for (const call of calls) {
@@ -112,14 +125,18 @@ async function withClaude(
     }
     messages.push({ role: "user", content: results })
   }
-  return null
+  return { decision: "exhausted", reason: "", prompt }
 }
 
 const SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["post", "text", "scene", "alt", "item_ids"],
-  properties: { post: { type: "boolean" }, ...FILE_FIELDS },
+  required: ["post", "reason", "text", "scene", "alt", "item_ids"],
+  properties: {
+    post: { type: "boolean" },
+    reason: { type: "string" },
+    ...FILE_FIELDS,
+  },
 }
 
 // Text models on OpenRouter vary in their tool support, so these get the
@@ -128,30 +145,32 @@ async function withOpenRouter(
   connection: OpenRouterConnection,
   system: string,
   items: Item[],
-  recent: string[],
+  memory: Memory,
   prompt: string,
   abort: AbortSignal
-) {
+): Promise<AgentResult> {
   const out = (await completeJson(
     connection,
     {
-      system: `${system}\n\nread_item, file_post and pass aren't available here. Reply with JSON instead, with post: false to pass.`,
-      user: inboxBrief(items, recent),
+      system: `${system}\n\nread_item, file_post and pass aren't available here. Reply with JSON instead, with post: false to pass and why in reason.`,
+      user: inboxBrief(items, memory),
       schema: SCHEMA,
     },
     abort
-  )) as Input & { post?: boolean }
-  return out.post ? toFiled(out, items, "", prompt) : null
+  )) as Input & { post?: boolean; reason?: unknown }
+  return out.post
+    ? fromTool(out, items, "", prompt)
+    : passed(out.reason, prompt)
 }
 
 export async function runAgent(
   machine: { name: string; config: MachineConfig },
   brandVoice: string,
   inbox: Item[],
-  recent: string[],
+  memory: Memory,
   connection: OpenRouterConnection | null,
   abort: AbortSignal
-): Promise<Filed | null> {
+): Promise<AgentResult> {
   const { config } = machine
   const items = inbox.slice(0, MAX_INBOX)
   const system = MACHINE_EDITOR.render({
@@ -163,6 +182,6 @@ export async function runAgent(
   })
   const prompt = promptId(MACHINE_EDITOR)
   return connection
-    ? withOpenRouter(connection, system, items, recent, prompt, abort)
-    : withClaude(system, items, recent, prompt, abort)
+    ? withOpenRouter(connection, system, items, memory, prompt, abort)
+    : withClaude(system, items, memory, prompt, abort)
 }

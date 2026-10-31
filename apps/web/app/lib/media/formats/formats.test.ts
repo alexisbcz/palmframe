@@ -512,11 +512,12 @@ describe("x_thread", () => {
   })
 
   test("agrees with compose at the limit, so X_LINK can't drift", () => {
-    const words = "x".repeat(LIMITS.twitter - X_LINK - 2)
-    const post = compose(words, LONG_LINK, "twitter")
-    assert.equal(post, `${words}\n\n${LONG_LINK}`)
+    const sign = "AI"
+    const words = "x".repeat(LIMITS.twitter - X_LINK - sign.length - 3)
+    const post = compose(words, LONG_LINK, "twitter", sign)
+    assert.equal(post, `${words}\n\n${sign}\n${LONG_LINK}`)
     assert.equal(xLength(post), LIMITS.twitter)
-    const clipped = compose(`${words}x`, LONG_LINK, "twitter")
+    const clipped = compose(`${words}x`, LONG_LINK, "twitter", sign)
     assert.ok(clipped.includes("…"))
     assert.equal(xLength(clipped), LIMITS.twitter)
   })
@@ -588,8 +589,9 @@ describe("x_thread", () => {
     r.parts[2]!.text = compose(
       `About $2M a year. ${"x".repeat(300)}`,
       null,
-      "twitter"
-    )
+      "twitter",
+      "AI-written"
+    ).split("\n\n")[0]!
     has(xThread.check(r).problems, /Post 3 trails off/)
     r.parts[2]!.text = "This one waits..."
     has(xThread.check(r).problems, /Post 3 trails off/)
@@ -648,7 +650,10 @@ describe("x_thread", () => {
 
   test("the thread reads through compose untouched when it fits", () => {
     for (const { text } of goodThread(MAX_POSTS).parts)
-      assert.equal(compose(text, null, "twitter"), text)
+      assert.equal(
+        compose(text, null, "twitter", "AI-written"),
+        `${text}\n\nAI-written`
+      )
   })
 })
 

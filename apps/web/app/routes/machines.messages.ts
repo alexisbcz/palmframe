@@ -66,6 +66,9 @@ export const messages = defineMessages({
       youtube: "YouTube search",
     },
     posts: {
+      expired: "Expired",
+      halted:
+        "Publishing is paused for now. Nothing was sent, so try again later.",
       title: "Posts",
       waiting: "Waiting for you",
       queued: "Queued",
@@ -158,6 +161,9 @@ export const messages = defineMessages({
       cooldown: "Quiet time after firing (minutes)",
       cap: "Scheduled drafts a day",
       capHint: "At most this many posts a day.",
+      maxCredits: "Most credits a day",
+      maxCreditsHint:
+        "Past this, the machine keeps listening and stops spending until the next UTC day.",
       voice: "Audience and voice",
       voicePlaceholder: "Who is this for, and how should it sound?",
       language: "Language",
@@ -181,6 +187,18 @@ export const messages = defineMessages({
       machinesHint:
         "Brand kits, ad research, trends and content machines that turn into comics. Turning this off stops every machine.",
       open: "Open Studio",
+    },
+    notices: {
+      budget:
+        "This machine reached its daily credit limit. It's still listening, and picks up again tomorrow (UTC).",
+      unreadable: "These feeds answered, but no entry could be used: {feeds}",
+    },
+    dismissReasons: {
+      none: "No particular reason",
+      wrong: "It's wrong",
+      dull: "It's not interesting",
+      repeat: "We already covered it",
+      tone: "Wrong tone",
     },
     errors: {
       generic: "Something went wrong. Try again.",
@@ -252,6 +270,9 @@ export const messages = defineMessages({
       youtube: "Recherche YouTube",
     },
     posts: {
+      expired: "Expiré",
+      halted:
+        "La publication est suspendue pour le moment. Rien n'a été envoyé : réessayez plus tard.",
       title: "Posts",
       waiting: "En attente de vous",
       queued: "En file",
@@ -348,6 +369,9 @@ export const messages = defineMessages({
       cooldown: "Pause après déclenchement (minutes)",
       cap: "Brouillons planifiés par jour",
       capHint: "Au maximum ce nombre de posts par jour.",
+      maxCredits: "Crédits maximum par jour",
+      maxCreditsHint:
+        "Au-delà, la machine continue d'écouter et ne dépense plus jusqu'au prochain jour UTC.",
       voice: "Public et ton",
       voicePlaceholder: "À qui ça s’adresse, et sur quel ton ?",
       language: "Langue",
@@ -371,6 +395,19 @@ export const messages = defineMessages({
       machinesHint:
         "Kits de marque, veille publicitaire, tendances et machines à contenu qui deviennent des BD. Désactiver cette option arrête toutes les machines.",
       open: "Ouvrir Studio",
+    },
+    notices: {
+      budget:
+        "Cette machine a atteint sa limite de crédits du jour. Elle écoute toujours et reprend demain (UTC).",
+      unreadable:
+        "Ces flux ont répondu, mais aucune entrée n'est exploitable : {feeds}",
+    },
+    dismissReasons: {
+      none: "Sans raison particulière",
+      wrong: "C'est faux",
+      dull: "Sans intérêt",
+      repeat: "Déjà traité",
+      tone: "Mauvais ton",
     },
     errors: {
       generic: "Une erreur est survenue. Réessayez.",
@@ -442,6 +479,9 @@ export const messages = defineMessages({
       youtube: "Búsqueda en YouTube",
     },
     posts: {
+      expired: "Caducado",
+      halted:
+        "La publicación está en pausa por ahora. No se ha enviado nada: inténtalo más tarde.",
       title: "Publicaciones",
       waiting: "Esperándote",
       queued: "En cola",
@@ -537,6 +577,9 @@ export const messages = defineMessages({
       cooldown: "Pausa tras activarse (minutos)",
       cap: "Borradores programados al día",
       capHint: "Como máximo este número de publicaciones al día.",
+      maxCredits: "Máximo de créditos al día",
+      maxCreditsHint:
+        "A partir de aquí, la máquina sigue escuchando y deja de gastar hasta el siguiente día UTC.",
       voice: "Público y tono",
       voicePlaceholder: "¿Para quién es y cómo debe sonar?",
       language: "Idioma",
@@ -560,6 +603,19 @@ export const messages = defineMessages({
       machinesHint:
         "Kits de marca, análisis de anuncios, tendencias y máquinas de contenido que se convierten en cómics. Al desactivarlo se detienen todas las máquinas.",
       open: "Abrir Studio",
+    },
+    notices: {
+      budget:
+        "Esta máquina ha alcanzado su límite diario de créditos. Sigue escuchando y volverá mañana (UTC).",
+      unreadable:
+        "Estos feeds respondieron, pero ninguna entrada se pudo usar: {feeds}",
+    },
+    dismissReasons: {
+      none: "Sin motivo concreto",
+      wrong: "Es incorrecto",
+      dull: "No es interesante",
+      repeat: "Ya lo cubrimos",
+      tone: "Tono equivocado",
     },
     errors: {
       generic: "Algo ha fallado. Inténtalo de nuevo.",
@@ -631,6 +687,9 @@ export const messages = defineMessages({
       youtube: "YouTube-Suche",
     },
     posts: {
+      expired: "Abgelaufen",
+      halted:
+        "Das Veröffentlichen ist gerade pausiert. Es wurde nichts gesendet, versuche es später noch einmal.",
       title: "Beiträge",
       waiting: "Wartet auf dich",
       queued: "In der Warteschlange",
@@ -724,6 +783,9 @@ export const messages = defineMessages({
       cooldown: "Ruhezeit nach dem Auslösen (Minuten)",
       cap: "Geplante Entwürfe pro Tag",
       capHint: "Höchstens so viele Beiträge pro Tag.",
+      maxCredits: "Höchstens Credits pro Tag",
+      maxCreditsHint:
+        "Darüber hinaus hört die Maschine weiter zu und gibt bis zum nächsten UTC-Tag nichts mehr aus.",
       voice: "Zielgruppe und Ton",
       voicePlaceholder: "Für wen ist das, und wie soll es klingen?",
       language: "Sprache",
@@ -747,6 +809,19 @@ export const messages = defineMessages({
       machinesHint:
         "Brand-Kits, Anzeigen-Recherche, Trends und Content-Maschinen, aus denen Comics werden. Beim Ausschalten stoppen alle Maschinen.",
       open: "Studio öffnen",
+    },
+    notices: {
+      budget:
+        "Diese Maschine hat ihr Tageslimit an Credits erreicht. Sie hört weiter zu und macht morgen (UTC) weiter.",
+      unreadable:
+        "Diese Feeds haben geantwortet, aber kein Eintrag war nutzbar: {feeds}",
+    },
+    dismissReasons: {
+      none: "Kein bestimmter Grund",
+      wrong: "Das stimmt nicht",
+      dull: "Nicht interessant",
+      repeat: "Schon behandelt",
+      tone: "Falscher Ton",
     },
     errors: {
       generic: "Etwas ist schiefgelaufen. Versuche es noch einmal.",
@@ -818,6 +893,9 @@ export const messages = defineMessages({
       youtube: "Ricerca YouTube",
     },
     posts: {
+      expired: "Scaduto",
+      halted:
+        "La pubblicazione è in pausa per ora. Non è stato inviato nulla: riprova più tardi.",
       title: "Post",
       waiting: "In attesa di te",
       queued: "In coda",
@@ -913,6 +991,9 @@ export const messages = defineMessages({
       cooldown: "Pausa dopo l'attivazione (minuti)",
       cap: "Bozze pianificate al giorno",
       capHint: "Al massimo questo numero di post al giorno.",
+      maxCredits: "Crediti massimi al giorno",
+      maxCreditsHint:
+        "Oltre questa soglia la macchina continua ad ascoltare e smette di spendere fino al giorno UTC successivo.",
       voice: "Pubblico e tono",
       voicePlaceholder: "A chi è rivolto e come deve suonare?",
       language: "Lingua",
@@ -936,6 +1017,19 @@ export const messages = defineMessages({
       machinesHint:
         "Kit del brand, analisi degli annunci, tendenze e macchine di contenuti che diventano fumetti. Disattivandolo si fermano tutte le macchine.",
       open: "Apri Studio",
+    },
+    notices: {
+      budget:
+        "Questa macchina ha raggiunto il limite giornaliero di crediti. Continua ad ascoltare e riprende domani (UTC).",
+      unreadable:
+        "Questi feed hanno risposto, ma nessuna voce era utilizzabile: {feeds}",
+    },
+    dismissReasons: {
+      none: "Nessun motivo particolare",
+      wrong: "È sbagliato",
+      dull: "Non è interessante",
+      repeat: "Già trattato",
+      tone: "Tono sbagliato",
     },
     errors: {
       generic: "Qualcosa è andato storto. Riprova.",
@@ -1007,6 +1101,9 @@ export const messages = defineMessages({
       youtube: "YouTube検索",
     },
     posts: {
+      expired: "期限切れ",
+      halted:
+        "公開は現在停止中です。何も送信されていません。後でもう一度お試しください。",
       title: "投稿",
       waiting: "確認待ち",
       queued: "待機中",
@@ -1100,6 +1197,9 @@ export const messages = defineMessages({
       cooldown: "発動後の待機時間（分）",
       cap: "1 日の定期下書き数",
       capHint: "1日の投稿数の上限です。",
+      maxCredits: "1 日の上限クレジット",
+      maxCreditsHint:
+        "上限に達すると、マシンは受信を続けたまま、次の UTC 日まで支出を止めます。",
       voice: "読者と文体",
       voicePlaceholder: "誰に向けて、どんな文体にしますか？",
       language: "言語",
@@ -1123,6 +1223,19 @@ export const messages = defineMessages({
       machinesHint:
         "ブランドキット、広告リサーチ、トレンド、コンテンツマシンをコミックにつなげます。オフにするとすべてのマシンが停止します。",
       open: "Studio を開く",
+    },
+    notices: {
+      budget:
+        "このマシンは 1 日のクレジット上限に達しました。受信は続いており、明日 (UTC) に再開します。",
+      unreadable:
+        "これらのフィードは応答しましたが、使えるエントリがありません: {feeds}",
+    },
+    dismissReasons: {
+      none: "特に理由なし",
+      wrong: "内容が誤っている",
+      dull: "面白くない",
+      repeat: "すでに取り上げた",
+      tone: "トーンが合わない",
     },
     errors: {
       generic: "問題が発生しました。もう一度お試しください。",

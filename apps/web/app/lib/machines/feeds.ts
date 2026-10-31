@@ -1,26 +1,14 @@
+import { decodeHTMLStrict } from "entities"
+
 import type { Item } from "./model"
 
 // Parsers for polled sources, kept free of network code so they can be tested.
 const MAX_ITEMS = 25
 const SUMMARY = 600
+const TITLE_FROM_TEXT = 120
 
-const ENTITIES: Record<string, string> = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  apos: "'",
-  nbsp: " ",
-}
-
-export function decode(s: string) {
-  return s.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (whole, code: string) => {
-    if (code[0] !== "#") return ENTITIES[code.toLowerCase()] ?? whole
-    const hex = code[1]?.toLowerCase() === "x"
-    const n = parseInt(code.slice(hex ? 2 : 1), hex ? 16 : 10)
-    return n > 0 && n <= 0x10ffff ? String.fromCodePoint(n) : ""
-  })
-}
+// Strict, so a bare "&copy=1" in a URL's query string stays as it was written.
+export const decode = (s: string) => decodeHTMLStrict(s)
 
 export const stripHtml = (html: string) =>
   decode(
@@ -55,38 +43,84 @@ function atomLink(block: string) {
   return best?.match(/href=["']([^"']+)["']/i)?.[1] ?? ""
 }
 
+// Sites still write http:// in feeds they serve over https. A link that can't
+// be upgraded is dropped, and the column holding it refuses anything else.
 const https = (url: string) => {
-  const clean = decode(url).trim()
-  return clean.startsWith("https://") && clean.length <= 2000 ? clean : null
+  const clean = decode(url)
+    .trim()
+    .replace(/^http:\/\//i, "https://")
+  return /^https:\/\//i.test(clean) && clean.length <= 2000 ? clean : null
 }
 
-// RSS 2.0 and Atom. Items without an https link or a title are dropped: a post
-// must always be able to point at where it came from.
+// Feeds often escape their HTML: `&lt;p&gt;` has to become a tag before it can
+// be stripped, or the tags turn up as text.
+const fieldText = (s: string) => stripHtml(decode(s))
+
+const firstLine = (s: string) => {
+  if (s.length <= TITLE_FROM_TEXT) return s
+  const cut = s.slice(0, TITLE_FROM_TEXT)
+  return `${cut.slice(0, cut.lastIndexOf(" ") + 1 || undefined).trimEnd()}…`
+}
+
+const entries = (xml: string) => [
+  ...xml.matchAll(/<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi),
+]
+
+// Entries a feed has, before anything is dropped.
+export const entryCount = (xml: string) => entries(xml).length
+
+// RSS 2.0 and Atom. Items without a link are dropped: a post must always be
+// able to point at where it came from. Social feeds have no titles, so their
+// posts stand in for one.
 export function parseFeed(xml: string, source: string, now: number): Item[] {
-  const blocks = [
-    ...xml.matchAll(/<(item|entry)(?:\s[^>]*)?>([\s\S]*?)<\/\1>/gi),
-  ]
-  return blocks.slice(0, MAX_ITEMS).flatMap((m) => {
-    const block = m[2]!
-    const url = https(tag(block, "link") || atomLink(block))
-    const title = stripHtml(tag(block, "title")).slice(0, 500)
-    if (!url || !title) return []
-    const date = Date.parse(
-      tag(block, "pubDate", "published", "updated", "dc:date")
-    )
-    return [
-      {
-        key: (tag(block, "guid", "id") || url).slice(0, 300),
-        source,
-        title,
-        summary: stripHtml(
-          tag(block, "description", "summary", "content", "content:encoded")
-        ).slice(0, SUMMARY),
-        url,
-        at: Number.isNaN(date) ? now : date,
-      },
-    ]
-  })
+  return entries(xml)
+    .slice(0, MAX_ITEMS)
+    .flatMap((m) => {
+      const block = m[2]!
+      const url = https(tag(block, "link") || atomLink(block))
+      const summary = fieldText(
+        tag(
+          block,
+          "description",
+          "summary",
+          "content",
+          "content:encoded",
+          "media:description"
+        )
+      ).slice(0, SUMMARY)
+      const title =
+        fieldText(tag(block, "title")).slice(0, 500) || firstLine(summary)
+      if (!url || !title) return []
+      const date = Date.parse(
+        tag(block, "pubDate", "published", "updated", "dc:date")
+      )
+      return [
+        {
+          key: (tag(block, "guid", "id") || url).slice(0, 300),
+          source,
+          title,
+          summary,
+          url,
+          at: Number.isNaN(date) ? now : date,
+        },
+      ]
+    })
+}
+
+// The bytes as the server said they're encoded, or as the document itself says
+// when the header doesn't. A label nobody knows reads as UTF-8.
+export function decodeBody(bytes: Uint8Array, contentType: string | null) {
+  const head = new TextDecoder("latin1").decode(bytes.slice(0, 1024))
+  const label =
+    contentType?.match(/charset=["']?([\w.:-]+)/i)?.[1] ??
+    head.match(/^\s*<\?xml[^>]*encoding=["']([\w.:-]+)["']/i)?.[1] ??
+    head.match(/<meta[^>]+charset=["']?([\w.:-]+)/i)?.[1] ??
+    "utf-8"
+  try {
+    return new TextDecoder(label).decode(bytes)
+  } catch {
+    return new TextDecoder("utf-8").decode(bytes)
+  }
 }
 
 export interface GdeltArticle {
@@ -150,14 +184,15 @@ export function isPrivateAddress(ip: string) {
   const v = ip.toLowerCase().replace(/^::ffff:/, "")
   if (v.includes(":"))
     return (
-      v === "::" ||
-      v === "::1" ||
+      // Unspecified, loopback, and IPv4 written inside an IPv6 address.
+      ip.startsWith("::") ||
       /^f[cd]/.test(v) ||
-      /^fe[89ab]/.test(v) ||
+      /^fe[89a-f]/.test(v) ||
       /^ff/.test(v) ||
       v.startsWith("2001:db8") ||
-      // IPv4 written as hex after the mapping prefix.
-      ip.toLowerCase().startsWith("::ffff:")
+      // These carry an IPv4 address too, which can be a private one.
+      v.startsWith("64:ff9b:") ||
+      v.startsWith("2002:")
     )
   const parts = v.split(".").map(Number)
   if (parts.length !== 4 || parts.some((p) => !(p >= 0 && p <= 255)))
@@ -173,6 +208,8 @@ export function isPrivateAddress(ip: string) {
     (a === 172 && b >= 16 && b <= 31) ||
     (a === 192 && b === 168) ||
     (a === 192 && b === 0) ||
-    (a === 198 && (b === 18 || b === 19))
+    (a === 198 && (b === 18 || b === 19)) ||
+    (a === 198 && b === 51) ||
+    (a === 203 && b === 0)
   )
 }
