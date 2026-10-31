@@ -1,6 +1,14 @@
 import * as React from "react"
 import { useRevalidator } from "react-router"
 
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
@@ -25,6 +33,7 @@ export function OpenRouter({ result }: { result?: string | null }) {
   const [key, setKey] = React.useState("")
   const [busy, setBusy] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
+  const [disconnecting, setDisconnecting] = React.useState(false)
 
   const load = React.useCallback(async () => {
     const res = await fetch("/api/openrouter")
@@ -202,13 +211,30 @@ export function OpenRouter({ result }: { result?: string | null }) {
             variant="ghost"
             className="self-start text-destructive"
             isDisabled={busy === "disconnect"}
-            onPress={() => {
-              if (window.confirm(t("confirmDisconnect")))
-                void run("disconnect", "DELETE")
-            }}
+            onPress={() => setDisconnecting(true)}
           >
             {t("disconnect")}
           </Button>
+          <AlertDialog isOpen={disconnecting} onOpenChange={setDisconnecting}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("disconnectTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {t("disconnectBody")}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+              <Button
+                variant="destructive"
+                onPress={() => {
+                  setDisconnecting(false)
+                  void run("disconnect", "DELETE")
+                }}
+              >
+                {t("disconnect")}
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialog>
         </>
       )}
 

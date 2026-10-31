@@ -1,6 +1,14 @@
 import * as React from "react"
 import { Link } from "react-router"
 
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@workspace/ui/components/alert-dialog"
 import { Button } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Input } from "@workspace/ui/components/input"
@@ -206,6 +214,7 @@ export function ApiKeys() {
     access: Access
   } | null>(null)
   const [busy, setBusy] = React.useState<string | null>(null)
+  const [revoking, setRevoking] = React.useState<string | null>(null)
   const [fresh, setFresh] = React.useState<string | null>(null)
   const [copied, setCopied] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -270,7 +279,7 @@ export function ApiKeys() {
   }
 
   const revoke = (id: string) => {
-    if (!window.confirm(t("confirmRevoke"))) return
+    setRevoking(null)
     void run(id, async () => {
       const res = await fetch(`/api/keys?id=${encodeURIComponent(id)}`, {
         method: "DELETE",
@@ -424,7 +433,7 @@ export function ApiKeys() {
                   variant="ghost"
                   className="text-destructive"
                   isDisabled={busy === k.id}
-                  onPress={() => revoke(k.id)}
+                  onPress={() => setRevoking(k.id)}
                 >
                   {busy === k.id && <Spinner />}
                   {t("revoke")}
@@ -456,6 +465,24 @@ export function ApiKeys() {
           ))}
         </ul>
       )}
+      <AlertDialog
+        isOpen={revoking !== null}
+        onOpenChange={(open) => !open && setRevoking(null)}
+      >
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t("revokeTitle")}</AlertDialogTitle>
+          <AlertDialogDescription>{t("revokeBody")}</AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+          <Button
+            variant="destructive"
+            onPress={() => revoking && revoke(revoking)}
+          >
+            {t("revoke")}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialog>
     </div>
   )
 }

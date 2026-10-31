@@ -17,7 +17,8 @@ export const messages = defineMessages({
     lastUsed: "Last used {date}",
     neverUsed: "Never used",
     revoke: "Revoke",
-    confirmRevoke: "Revoke? Apps using this key stop working.",
+    revokeTitle: "Revoke this key?",
+    revokeBody: "Apps using this key stop working.",
     scopes: "What this key can do",
     scope: {
       read: "Read",
@@ -60,8 +61,8 @@ export const messages = defineMessages({
     lastUsed: "Utilisée le {date}",
     neverUsed: "Jamais utilisée",
     revoke: "Révoquer",
-    confirmRevoke:
-      "Révoquer ? Les apps qui l’utilisent cesseront de fonctionner.",
+    revokeTitle: "Révoquer cette clé ?",
+    revokeBody: "Les apps qui l’utilisent cesseront de fonctionner.",
     scopes: "Ce que cette clé peut faire",
     scope: {
       read: "Lecture",
@@ -105,7 +106,8 @@ export const messages = defineMessages({
     lastUsed: "Usada el {date}",
     neverUsed: "Nunca usada",
     revoke: "Revocar",
-    confirmRevoke: "¿Revocar? Las apps que la usan dejarán de funcionar.",
+    revokeTitle: "¿Revocar esta clave?",
+    revokeBody: "Las apps que la usan dejarán de funcionar.",
     scopes: "Qué puede hacer esta clave",
     scope: {
       read: "Lectura",
@@ -149,8 +151,8 @@ export const messages = defineMessages({
     lastUsed: "Zuletzt genutzt am {date}",
     neverUsed: "Nie genutzt",
     revoke: "Widerrufen",
-    confirmRevoke:
-      "Widerrufen? Apps mit diesem Schlüssel funktionieren dann nicht mehr.",
+    revokeTitle: "Diesen Schlüssel widerrufen?",
+    revokeBody: "Apps mit diesem Schlüssel funktionieren dann nicht mehr.",
     scopes: "Was dieser Schlüssel darf",
     scope: {
       read: "Lesen",
@@ -194,7 +196,8 @@ export const messages = defineMessages({
     lastUsed: "Usata il {date}",
     neverUsed: "Mai usata",
     revoke: "Revoca",
-    confirmRevoke: "Revocare? Le app che la usano smetteranno di funzionare.",
+    revokeTitle: "Revocare questa chiave?",
+    revokeBody: "Le app che la usano smetteranno di funzionare.",
     scopes: "Cosa può fare questa chiave",
     scope: {
       read: "Lettura",
@@ -238,7 +241,8 @@ export const messages = defineMessages({
     lastUsed: "最終使用 {date}",
     neverUsed: "未使用",
     revoke: "無効にする",
-    confirmRevoke: "無効にしますか?このキーを使うアプリは動かなくなります。",
+    revokeTitle: "このキーを無効にしますか?",
+    revokeBody: "このキーを使うアプリは動かなくなります。",
     scopes: "このキーでできること",
     scope: {
       read: "読み取り",

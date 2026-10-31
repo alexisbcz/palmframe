@@ -36,8 +36,9 @@ export const messages = defineMessages({
     imageModel: "Image model",
     textModel: "Story planning model",
     disconnect: "Disconnect",
-    confirmDisconnect:
-      "Disconnect OpenRouter? Palmframe forgets the key and credits pay again.",
+    disconnectTitle: "Disconnect OpenRouter?",
+    disconnectBody: "Palmframe forgets the key and credits pay again.",
+    cancel: "Cancel",
     errors: {
       generic: "Something went wrong. Try again.",
       connect: "OpenRouter didn't connect. Try again, or paste a key.",
@@ -79,8 +80,10 @@ export const messages = defineMessages({
     imageModel: "Modèle d’image",
     textModel: "Modèle de planification",
     disconnect: "Déconnecter",
-    confirmDisconnect:
-      "Déconnecter OpenRouter ? Palmframe oublie la clé et les crédits reprennent le relais.",
+    disconnectTitle: "Déconnecter OpenRouter ?",
+    disconnectBody:
+      "Palmframe oublie la clé et les crédits reprennent le relais.",
+    cancel: "Annuler",
     errors: {
       generic: "Une erreur est survenue. Réessayez.",
       connect:
@@ -125,8 +128,9 @@ export const messages = defineMessages({
     imageModel: "Modelo de imagen",
     textModel: "Modelo de planificación",
     disconnect: "Desconectar",
-    confirmDisconnect:
-      "¿Desconectar OpenRouter? Palmframe olvida la clave y vuelven a pagar los créditos.",
+    disconnectTitle: "¿Desconectar OpenRouter?",
+    disconnectBody: "Palmframe olvida la clave y vuelven a pagar los créditos.",
+    cancel: "Cancelar",
     errors: {
       generic: "Algo salió mal. Inténtalo de nuevo.",
       connect: "OpenRouter no se conectó. Inténtalo de nuevo o pega una clave.",
@@ -166,8 +170,10 @@ export const messages = defineMessages({
     imageModel: "Bildmodell",
     textModel: "Modell für die Story-Planung",
     disconnect: "Trennen",
-    confirmDisconnect:
-      "OpenRouter trennen? Palmframe vergisst den Schlüssel und Credits zahlen wieder.",
+    disconnectTitle: "OpenRouter trennen?",
+    disconnectBody:
+      "Palmframe vergisst den Schlüssel und Credits zahlen wieder.",
+    cancel: "Abbrechen",
     errors: {
       generic: "Etwas ist schiefgelaufen. Versuch es noch einmal.",
       connect:
@@ -211,8 +217,10 @@ export const messages = defineMessages({
     imageModel: "Modello di immagine",
     textModel: "Modello di pianificazione",
     disconnect: "Scollega",
-    confirmDisconnect:
-      "Scollegare OpenRouter? Palmframe dimentica la chiave e tornano a pagare i crediti.",
+    disconnectTitle: "Scollegare OpenRouter?",
+    disconnectBody:
+      "Palmframe dimentica la chiave e tornano a pagare i crediti.",
+    cancel: "Annulla",
     errors: {
       generic: "Qualcosa è andato storto. Riprova.",
       connect: "OpenRouter non si è collegato. Riprova o incolla una chiave.",
@@ -251,8 +259,9 @@ export const messages = defineMessages({
     imageModel: "画像モデル",
     textModel: "ストーリー構成モデル",
     disconnect: "接続を解除",
-    confirmDisconnect:
-      "OpenRouterの接続を解除しますか？キーは削除され、クレジットでの支払いに戻ります。",
+    disconnectTitle: "OpenRouterの接続を解除しますか？",
+    disconnectBody: "キーは削除され、クレジットでの支払いに戻ります。",
+    cancel: "キャンセル",
     errors: {
       generic: "問題が発生しました。もう一度お試しください。",
       connect:
