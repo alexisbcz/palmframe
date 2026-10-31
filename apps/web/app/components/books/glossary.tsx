@@ -125,6 +125,10 @@ export function GlossaryPanel({ book }: { book: Book }) {
   const [attached, setAttached] = React.useState<string[]>(book.glossaries)
   const [name, setName] = React.useState("")
   const [notice, setNotice] = React.useState<string | null>(null)
+  const [report, setReport] = React.useState<{
+    occurrences: number
+    breaks: { segment_id: string; term: string; expected: string }[]
+  } | null>(null)
   const action = useAction()
   const file = React.useRef<HTMLInputElement>(null)
 
@@ -291,6 +295,42 @@ export function GlossaryPanel({ book }: { book: Book }) {
         </p>
       )}
       <ErrorNote code={action.error} />
+      <div className="flex flex-col items-start gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          isDisabled={action.busy}
+          onPress={() =>
+            action.run(async () =>
+              setReport(await bookCall("checkGlossary", { id: book.id }))
+            )
+          }
+        >
+          {t("glossary.check")}
+        </Button>
+        {report && (
+          <div role="status" className="flex flex-col gap-1 text-sm">
+            <p className="text-muted-foreground">
+              {t("glossary.checkResult", {
+                count: report.breaks.length,
+                occurrences: n(report.occurrences),
+              })}
+            </p>
+            {report.breaks.length > 0 && (
+              <ul className="text-muted-foreground">
+                {report.breaks.slice(0, 20).map((b, i) => (
+                  <li key={`${b.segment_id}-${i}`}>
+                    {t("checks.details.glossary", {
+                      term: b.term,
+                      expected: b.expected,
+                    })}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
       {terms.length ? (
         <Panel>
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
