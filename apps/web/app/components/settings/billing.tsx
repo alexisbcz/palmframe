@@ -25,6 +25,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { useBalance } from "@/components/account/account-menu"
+import { CreditsPill } from "@/components/account/credits-pill"
 import { useLocale, useT } from "@/i18n/core"
 import { COSTS, isActive, type PlanId } from "@/lib/credits"
 import type { BillingData } from "@/routes/api.billing"
@@ -302,14 +303,12 @@ export function BillingPanel({
                   <span className="flex items-center gap-1.5 font-medium">
                     {t(`${plan.id}.name`)}
                     {popular && (
-                      <span className="rounded-full bg-brand px-1.5 py-px text-[10px] font-semibold text-brand-foreground">
-                        {t("palette.popular")}
-                      </span>
+                      <CreditsPill>{t("palette.popular")}</CreditsPill>
                     )}
                     {current && (
-                      <span className="rounded-full bg-foreground px-1.5 py-px text-[10px] font-semibold text-background">
+                      <CreditsPill className="bg-foreground text-background!">
                         {t("current")}
-                      </span>
+                      </CreditsPill>
                     )}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">

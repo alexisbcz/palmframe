@@ -24,6 +24,7 @@ import {
   useViewer,
 } from "@/components/account/account-menu"
 import { ApiKeys } from "@/components/account/api-keys"
+import { CreditsPill } from "@/components/account/credits-pill"
 import { messages as apiMessages } from "@/components/account/api-keys.messages"
 import { OpenRouter } from "@/components/account/openrouter"
 import { messages as openRouterMessages } from "@/components/account/openrouter.messages"
@@ -247,14 +248,18 @@ export function SettingsDialog() {
                 <span className="truncate text-sm font-medium">
                   {viewer.name}
                 </span>
-                <span className="truncate text-xs text-muted-foreground tabular-nums">
-                  {balance === null
-                    ? viewer.email
-                    : tb("pack", {
-                        count: balance,
-                        n: balance.toLocaleString(locale),
-                      })}
-                </span>
+                {balance === null ? (
+                  <span className="truncate text-xs text-muted-foreground">
+                    {viewer.email}
+                  </span>
+                ) : (
+                  <CreditsPill className="mt-0.5 self-start">
+                    {tb("pack", {
+                      count: balance,
+                      n: balance.toLocaleString(locale),
+                    })}
+                  </CreditsPill>
+                )}
               </span>
             </button>
           )}

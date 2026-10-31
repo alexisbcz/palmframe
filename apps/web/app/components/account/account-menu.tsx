@@ -43,6 +43,7 @@ import {
 import { setCredits, useCredits } from "@/lib/credits-store"
 import type { PlanId } from "@/lib/credits"
 import type { Viewer } from "@/lib/database"
+import { CreditsPill } from "./credits-pill"
 import { messages } from "./account.messages"
 
 const MOD =
@@ -112,15 +113,6 @@ export function Avatar({
       ) : (
         initials(viewer.name)
       )}
-    </span>
-  )
-}
-
-// The balance as a slanted badge, Higgsfield-style, in the app's amber.
-function CreditsPill({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="ms-auto inline-flex shrink-0 -skew-x-[8deg] items-center rounded-[5px] bg-amber-400 px-1.5 py-px text-xs font-extrabold whitespace-nowrap text-amber-950! italic tabular-nums">
-      {children}
     </span>
   )
 }
@@ -220,7 +212,7 @@ export function AccountMenu() {
             </Tile>
             <span className="min-w-0 truncate">{t("account.billing")}</span>
             {balance !== null && (
-              <CreditsPill>
+              <CreditsPill className="ms-auto">
                 {t("credits.balance", {
                   count: balance,
                   n: balance.toLocaleString(locale),
