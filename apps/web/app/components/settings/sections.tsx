@@ -304,7 +304,6 @@ export function AccountSection({ viewer }: { viewer: Viewer }) {
             <Button
               type="submit"
               className="data-pressed:scale-100!"
-              variant="outline"
               isDisabled={busy === "password" || !password}
             >
               {busy === "password" && <Spinner />}
