@@ -48,6 +48,10 @@ interface FetchOptions {
   hosts?: readonly string[]
 }
 
+export async function assertPublic(url: URL) {
+  await publicAddresses(url)
+}
+
 async function publicAddresses(url: URL) {
   if (url.protocol !== "https:") throw new Error("Only https is fetched.")
   if (url.port && url.port !== "443") throw new Error("Unusual port.")

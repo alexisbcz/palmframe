@@ -59,7 +59,7 @@ const ZIP_TAIL = 22 + U16_MAX + 20
 // Generous for MAX_ENTRIES: filenames are short.
 const MAX_ZIP_DIRECTORY = 64 * 1024 * 1024
 
-interface ZipEntry extends Entry {
+export interface ZipEntry extends Entry {
   packed: number
   method: number
   offset: number
@@ -171,7 +171,7 @@ export async function zipEntries(source: ByteSource) {
   return entries
 }
 
-async function zipEntryBytes(source: ByteSource, entry: ZipEntry) {
+export async function zipEntryBytes(source: ByteSource, entry: ZipEntry) {
   const local = await source.bytes(entry.offset, entry.offset + 30)
   if (local.length < 30 || view(local).getUint32(0, true) !== LOCAL)
     throw new ImportError("corrupt")
