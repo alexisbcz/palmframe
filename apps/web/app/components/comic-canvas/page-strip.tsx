@@ -31,6 +31,10 @@ import { useT } from "@/i18n/core"
 import { messages } from "./page-strip.messages"
 
 const THUMB_HEIGHT = 84
+// Sized in CSS from the slide ratio, so short phone screens get smaller
+// thumbnails without a jump on hydration.
+const THUMB_SIZE =
+  "h-(--thumb-height) w-[calc(var(--thumb-height)*var(--slide-ratio))] [@media(max-height:700px)]:max-md:h-14 [@media(max-height:700px)]:max-md:w-[calc(3.5rem*var(--slide-ratio))]"
 // Instagram caps a carousel at 20 slides.
 export const MAX_SLIDES = 20
 
@@ -102,7 +106,13 @@ export function PageStrip({
   return (
     <div
       data-slot="comic-pages"
-      className="flex shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5 max-md:flex-wrap"
+      className="flex shrink-0 items-center gap-3 border-b bg-background px-3 py-2.5 max-md:flex-wrap [@media(max-height:700px)]:max-md:gap-2 [@media(max-height:700px)]:max-md:py-1"
+      style={
+        {
+          "--slide-ratio": project.width / project.height,
+          "--thumb-height": `${thumbHeight}px`,
+        } as React.CSSProperties
+      }
     >
       <div className="flex shrink-0 flex-col items-center gap-1">
         <span className="text-xs font-medium tabular-nums">
@@ -182,9 +192,9 @@ export function PageStrip({
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "relative block cursor-pointer overflow-hidden rounded-sm ring-1 ring-foreground/15 transition-shadow outline-none hover:ring-foreground/40 focus-visible:ring-2 focus-visible:ring-ring",
+                  THUMB_SIZE,
                   active && "ring-2 ring-amber-500 hover:ring-amber-500"
                 )}
-                style={{ width, height: thumbHeight }}
                 data-roving
                 onClick={() => editor.goToPage(i)}
                 // Option+arrows move the slide itself.
@@ -283,8 +293,11 @@ export function PageStrip({
                 ? t("limit", { max: MAX_SLIDES })
                 : t("addAfter")
             }
-            className="flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed text-xs text-muted-foreground transition-colors outline-none hover:border-foreground/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-            style={{ width, height: thumbHeight }}
+            aria-label={t("add")}
+            className={cn(
+              "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-sm border border-dashed text-xs text-muted-foreground transition-colors outline-none hover:border-foreground/40 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+              THUMB_SIZE
+            )}
             onClick={editor.addPage}
           >
             <HugeiconsIcon
@@ -292,7 +305,9 @@ export function PageStrip({
               strokeWidth={2}
               className="size-4"
             />
-            {t("add")}
+            <span className="[@media(max-height:700px)]:max-md:hidden">
+              {t("add")}
+            </span>
           </button>
         </li>
       </ol>

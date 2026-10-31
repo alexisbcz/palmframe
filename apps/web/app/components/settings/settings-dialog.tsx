@@ -222,7 +222,8 @@ export function SettingsDialog() {
     <Dialog
       isOpen={open}
       onOpenChange={(o) => (o ? setOpen(true) : close())}
-      className="h-[min(46rem,calc(100svh-2rem))] gap-0 overflow-hidden p-0 sm:max-w-5xl"
+      // The fixed height has to reach the inner dialog, or nothing scrolls.
+      className="h-[min(46rem,calc(100svh-2rem))] grid-rows-[minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-5xl [&>[role=dialog]]:h-full [&>[role=dialog]]:min-h-0"
     >
       <div className="flex h-full min-h-0 flex-col md:flex-row">
         <aside className="flex min-w-0 shrink-0 flex-col gap-3 border-b bg-muted/40 p-3 md:w-64 md:border-e md:border-b-0 dark:bg-background/40">
@@ -258,7 +259,7 @@ export function SettingsDialog() {
             </button>
           )}
 
-          <label className="flex h-8 items-center gap-2 rounded-lg border border-input bg-background px-2.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30">
+          <label className="flex h-8 items-center gap-2 rounded-lg border border-input bg-background px-2.5 focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30 [@media(max-height:700px)]:max-md:hidden">
             <HugeiconsIcon
               icon={SearchIcon}
               strokeWidth={2}
@@ -315,7 +316,7 @@ export function SettingsDialog() {
                     >
                       <span
                         className={cn(
-                          "flex size-6 shrink-0 items-center justify-center rounded-md ring-1 [&_svg]:size-3.5",
+                          "flex size-6 shrink-0 items-center justify-center rounded-md ring-1 max-[389px]:hidden [&_svg]:size-3.5",
                           s === "billing"
                             ? "bg-brand text-brand-foreground ring-transparent"
                             : "bg-muted text-foreground ring-foreground/15 dark:ring-foreground/20"

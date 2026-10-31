@@ -8,6 +8,7 @@ import {
   FolderLibraryIcon,
   GridViewIcon,
   LanguageSkillIcon,
+  Login03Icon,
   Logout01Icon,
   CommandIcon,
   Moon02Icon,
@@ -157,9 +158,17 @@ export function AccountMenu() {
     return (
       <Link
         to="/login?next=/projects"
-        className={cn(buttonVariants({ variant: "outline" }))}
+        className={cn(
+          buttonVariants({ variant: "outline" }),
+          "max-[359px]:size-8 max-[359px]:px-0"
+        )}
       >
-        {t("account.signIn")}
+        <HugeiconsIcon
+          icon={Login03Icon}
+          strokeWidth={2}
+          className="min-[360px]:hidden"
+        />
+        <span className="max-[359px]:sr-only">{t("account.signIn")}</span>
       </Link>
     )
 

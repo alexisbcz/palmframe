@@ -19,9 +19,12 @@ import { messages as lookMessages } from "./look.messages"
 import type { StyleId } from "./model"
 import { BEATS, dimensionTags, type Dimension, type Setup } from "./setups"
 import { roving } from "./roving"
+import { useMedia } from "./use-media"
 
 const ROW = 140
 const HEIGHT = 308
+const COMPACT_ROW = 92
+const COMPACT_HEIGHT = 156
 
 interface WheelItem {
   id: string | null
@@ -45,6 +48,10 @@ function Wheel({
   value: string | null
   onChange: (id: string | null) => void
 }) {
+  // The four wheels share a phone's width, so cards shrink to fit a column.
+  const compact = useMedia("(max-width: 639px)")
+  const row = compact ? COMPACT_ROW : ROW
+  const height = compact ? COMPACT_HEIGHT : HEIGHT
   const ref = React.useRef<HTMLDivElement>(null)
   const index = Math.max(
     0,
@@ -56,31 +63,31 @@ function Wheel({
   React.useLayoutEffect(() => {
     const el = ref.current
     if (!el) return
-    if (Math.round(el.scrollTop / ROW) === index) return
+    if (Math.round(el.scrollTop / row) === index) return
     el.scrollTo({
-      top: index * ROW,
+      top: index * row,
       behavior: pos === index ? "auto" : "smooth",
     })
     // Only sync from outside; scrolling reports its own position.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index])
+  }, [index, row])
 
   const onScroll = () => {
     const el = ref.current
     if (!el) return
-    setPos(el.scrollTop / ROW)
+    setPos(el.scrollTop / row)
     clearTimeout(settle.current)
     settle.current = setTimeout(() => {
       const i = Math.min(
         items.length - 1,
-        Math.max(0, Math.round(el.scrollTop / ROW))
+        Math.max(0, Math.round(el.scrollTop / row))
       )
       if (items[i] && items[i]!.id !== value) onChange(items[i]!.id)
     }, 120)
   }
 
   const go = (i: number) =>
-    ref.current?.scrollTo({ top: i * ROW, behavior: "smooth" })
+    ref.current?.scrollTo({ top: i * row, behavior: "smooth" })
   const current =
     items[Math.min(items.length - 1, Math.max(0, Math.round(pos)))]
 
@@ -105,7 +112,7 @@ function Wheel({
           }
         }}
         className="relative w-full snap-y snap-mandatory [scrollbar-width:none] overflow-y-auto rounded-xl [mask-image:linear-gradient(transparent,black_30%,black_70%,transparent)] outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        style={{ height: HEIGHT, paddingBlock: (HEIGHT - ROW) / 2 }}
+        style={{ height: height, paddingBlock: (height - row) / 2 }}
       >
         {items.map((item, i) => {
           const d = Math.min(1.6, Math.abs(i - pos))
@@ -118,18 +125,19 @@ function Wheel({
               aria-selected={on}
               tabIndex={-1}
               onClick={() => go(i)}
-              className="flex w-full cursor-pointer snap-center items-center justify-center outline-none"
+              className="flex w-full cursor-pointer snap-center items-center justify-center outline-none max-sm:px-1"
               style={{
-                height: ROW,
+                height: row,
                 opacity: 1 - d * 0.5,
                 transform: `scale(${1 - Math.min(1, d) * 0.14})`,
               }}
             >
               <span
                 className={cn(
-                  "relative flex h-[124px] w-[100px] items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-foreground/10 transition-shadow",
+                  "relative flex w-full max-w-[100px] items-center justify-center overflow-hidden rounded-xl bg-muted ring-1 ring-foreground/10 transition-shadow",
                   on && "shadow-lg ring-2 ring-foreground/70"
                 )}
+                style={{ height: row - 16 }}
               >
                 {item.image ? (
                   <img
@@ -154,11 +162,13 @@ function Wheel({
       <span className="mt-1 text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
         {title}
       </span>
-      <span className="max-w-full truncate text-sm font-medium">
+      <span className="line-clamp-2 max-w-full px-1 text-center text-sm font-medium break-words max-sm:text-xs sm:truncate">
         {current?.label}
       </span>
       {hint && (
-        <span className="text-[10px] text-muted-foreground">{hint}</span>
+        <span className="text-center text-[10px] text-muted-foreground">
+          {hint}
+        </span>
       )}
     </div>
   )
@@ -225,7 +235,7 @@ export function SetupPanel({
             aria-pressed={tab === id}
             onClick={() => setTab(id)}
             className={cn(
-              "h-8 cursor-pointer rounded-full px-3.5 text-sm font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring",
+              "h-8 cursor-pointer rounded-full px-3.5 text-sm font-medium text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring max-sm:px-2 max-sm:text-xs",
               tab === id &&
                 "bg-foreground text-background hover:text-background"
             )}
@@ -250,7 +260,7 @@ export function SetupPanel({
       </div>
 
       {tab === "custom" && (
-        <div className="relative rounded-xl bg-muted/40 p-3 pb-12">
+        <div className="relative rounded-xl bg-muted/40 p-3 pb-12 max-sm:px-1">
           <div
             className="grid grid-cols-4 divide-x divide-foreground/10"
             data-roving-group
@@ -300,7 +310,7 @@ export function SetupPanel({
 
       {tab === "recommended" && (
         <div
-          className="grid grid-cols-4 gap-2 rounded-xl bg-muted/40 p-3"
+          className="grid grid-cols-2 gap-2 rounded-xl bg-muted/40 p-3 sm:grid-cols-4"
           data-roving-group
           onKeyDown={roving()}
         >
@@ -323,7 +333,7 @@ export function SetupPanel({
         <div className="rounded-xl bg-muted/40 p-3">
           {saved.length ? (
             <div
-              className="grid grid-cols-4 gap-2"
+              className="grid grid-cols-2 gap-2 sm:grid-cols-4"
               data-roving-group
               onKeyDown={roving()}
             >

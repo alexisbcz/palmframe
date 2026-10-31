@@ -199,7 +199,7 @@ export function Composer({
       className="relative flex shrink-0 flex-col border-t bg-background px-3 py-2.5"
     >
       {open === "setup" && (
-        <div className="absolute inset-x-3 bottom-full z-30 mx-auto mb-2 max-w-3xl">
+        <div className="absolute inset-x-3 bottom-full z-30 mx-auto mb-2 max-h-[calc(100svh-10rem)] max-w-3xl overflow-y-auto rounded-2xl">
           <SetupPanel
             setup={setup}
             saved={saved.setups}
@@ -246,9 +246,10 @@ export function Composer({
       <div
         data-roving-group
         onKeyDown={roving()}
-        className="mx-auto flex w-full max-w-5xl flex-1 gap-2 rounded-2xl bg-muted/60 p-2 ring-1 ring-foreground/10 transition-shadow has-[textarea:focus]:ring-3 has-[textarea:focus]:ring-ring/50"
+        className="mx-auto flex w-full max-w-5xl flex-1 gap-2 rounded-2xl bg-muted/60 p-2 ring-1 ring-foreground/10 transition-shadow has-[textarea:focus]:ring-3 has-[textarea:focus]:ring-ring/50 max-sm:grid max-sm:grid-cols-[minmax(0,1fr)_auto]"
       >
-        <div className="flex min-w-0 flex-1 flex-col gap-2">
+        {/* On phones the chips take a full row under the prompt and the button. */}
+        <div className="flex min-w-0 flex-1 flex-col gap-2 max-sm:contents">
           <textarea
             ref={textareaRef}
             aria-label={t("placeholder")}
@@ -265,9 +266,9 @@ export function Composer({
                 run()
               }
             }}
-            className="min-h-12 w-full flex-1 resize-none bg-transparent px-2 py-1 text-[15px] outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed"
+            className="min-h-12 w-full flex-1 resize-none bg-transparent px-2 py-1 text-[15px] outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed max-sm:col-start-1 max-sm:row-start-1"
           />
-          <div className="-m-1 flex min-w-0 [scrollbar-width:none] items-center gap-1.5 overflow-x-auto p-1">
+          <div className="-m-1 flex min-w-0 [scrollbar-width:none] items-center gap-1.5 overflow-x-auto p-1 max-sm:col-span-2 max-sm:row-start-2">
             <div className="relative">
               <Chip
                 pressed={open === "cast"}
@@ -453,7 +454,7 @@ export function Composer({
               : !prompted || anyBusy
           }
           className={cn(
-            "flex w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-amber-400 text-amber-950 shadow-[inset_0_-3px_0_rgb(0_0_0/0.15)] transition outline-none hover:bg-amber-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-400 sm:w-36",
+            "flex w-28 shrink-0 cursor-pointer flex-col items-center justify-center gap-0.5 rounded-xl bg-amber-400 px-1 text-center text-amber-950 shadow-[inset_0_-3px_0_rgb(0_0_0/0.15)] transition outline-none hover:bg-amber-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber-400 max-sm:col-start-2 max-sm:row-start-1 max-sm:w-24 sm:w-36",
             job && "bg-amber-300"
           )}
         >
@@ -493,7 +494,7 @@ export function Composer({
       </div>
 
       {open === "cast" && panel && (
-        <div className="absolute start-3 bottom-full z-30 mb-2 w-72 rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
+        <div className="absolute start-3 bottom-full z-30 mb-2 max-h-[calc(100svh-10rem)] w-72 max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
           <CastRow panel={panel} editor={editor} />
         </div>
       )}
@@ -505,16 +506,17 @@ export function Composer({
       )}
 
       {open === "tags" && panel && (
-        <div className="absolute start-3 bottom-full z-30 mb-2 w-[26rem] max-w-[calc(100%-1.5rem)] rounded-xl bg-popover p-2.5 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
+        <div className="absolute start-3 bottom-full z-30 mb-2 flex max-h-[calc(100svh-10rem)] w-[26rem] max-w-[calc(100%-1.5rem)] flex-col rounded-xl bg-popover p-2.5 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
           <p className="pb-2 text-xs font-medium text-muted-foreground">
             {t("addTags")}
           </p>
           <TagField
             tags={tags}
-            autoFocus
+            // Not on touch screens, where it would raise the keyboard.
+            autoFocus={matchMedia("(pointer: fine)").matches}
             onChange={(next) => update({ tags: next })}
           />
-          <div className="mt-2 max-h-72 overflow-y-auto pe-1">
+          <div className="mt-2 max-h-72 min-h-0 overflow-y-auto pe-1">
             <TagBrowser
               tags={tags}
               onChange={(next) => update({ tags: next })}
@@ -524,13 +526,13 @@ export function Composer({
       )}
 
       {open === "advanced" && panel && (
-        <div className="absolute start-3 bottom-full z-30 mb-2 max-h-[70vh] w-[24rem] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
+        <div className="absolute start-3 bottom-full z-30 mb-2 max-h-[calc(100svh-10rem)] w-[24rem] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
           <AdvancedFields panel={panel} editor={editor} />
         </div>
       )}
 
       {open === "takes" && panel && (
-        <div className="absolute start-3 bottom-full z-30 mb-2 max-h-[70vh] w-[26rem] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
+        <div className="absolute start-3 bottom-full z-30 mb-2 max-h-[calc(100svh-10rem)] w-[26rem] max-w-[calc(100%-1.5rem)] overflow-y-auto rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
           <TakesGrid panel={panel} editor={editor} generator={generator} />
         </div>
       )}

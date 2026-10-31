@@ -221,7 +221,7 @@ export function BillingPanel({
       </div>
 
       {/* A ring when focused, like the app's other fields. */}
-      <div className="px-2 pt-2 [&_[data-slot=input-group]]:has-[input:focus-visible]:border-ring [&_[data-slot=input-group]]:has-[input:focus-visible]:ring-3 [&_[data-slot=input-group]]:has-[input:focus-visible]:ring-ring/50">
+      <div className="px-2 pt-2 [&_[data-slot=input-group]]:has-[input:focus-visible]:border-ring [&_[data-slot=input-group]]:has-[input:focus-visible]:ring-3 [&_[data-slot=input-group]]:has-[input:focus-visible]:ring-ring/50 [&_input]:truncate">
         <CommandInput placeholder={t("palette.placeholder")} />
       </div>
       <CommandList
@@ -264,7 +264,7 @@ export function BillingPanel({
                 {t("free.credits")} · {t("free.note")}
               </span>
             </span>
-            <span className="ms-auto flex flex-col items-end">
+            <span className="ms-auto flex shrink-0 flex-col items-end whitespace-nowrap">
               <span className="font-semibold tabular-nums">
                 {t("free.price")}
               </span>

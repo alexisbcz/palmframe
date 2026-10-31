@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Link, useSubmit } from "react-router"
+import { Link, useNavigate, useSubmit } from "react-router"
 import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
@@ -81,6 +81,7 @@ import type { CloudProject } from "./use-cloud-sync"
 import { useComicEditor, type ComicEditor } from "./use-editor"
 import { hasPrompt, useGenerator } from "./use-generator"
 import { useAssetsFromUrl } from "@/components/catalog/editor-tab"
+import { useMedia } from "./use-media"
 import { useT } from "@/i18n/core"
 import { messages } from "./editor.messages"
 import { messages as sidebarMessages } from "./sidebar.messages"
@@ -199,6 +200,7 @@ export function ComicCanvasEditor({
   const editor = useComicEditor({ initial: cloud?.project })
   const series = useSeries(cloud?.series ?? null, editor)
   const submit = useSubmit()
+  const navigate = useNavigate()
   const viewer = useViewer()
   const generator = useGenerator(editor)
   const [tab, setTab] = React.useState<SidebarTab>("layers")
@@ -323,8 +325,8 @@ export function ComicCanvasEditor({
 
   return (
     <div className="grid h-svh grid-cols-[minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] overflow-hidden bg-background text-foreground">
-      <header className="flex h-12 items-center justify-between gap-1.5 border-b px-2 sm:gap-2 sm:px-2.5">
-        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
+      <header className="flex h-12 items-center justify-between gap-1 border-b px-1.5 min-[360px]:gap-1.5 min-[360px]:px-2 sm:gap-2 sm:px-2.5">
+        <div className="flex min-w-0 items-center gap-1 min-[360px]:gap-1.5 sm:gap-2">
           <DropdownMenuTrigger>
             <Button variant="secondary">
               {t("menu.open")}
@@ -332,6 +334,7 @@ export function ComicCanvasEditor({
                 icon={ArrowDown01Icon}
                 strokeWidth={2}
                 data-icon="inline-end"
+                className="max-[359px]:hidden"
               />
             </Button>
             <DropdownMenu
@@ -347,6 +350,7 @@ export function ComicCanvasEditor({
                   editor.replaceProject(createDefaultProject())
                   setView((v) => ({ ...v, fit: true }))
                 }
+                if (key === "catalog") navigate("/catalog")
                 if (key === "open") openProject()
                 if (key === "generate-all") generator.generateAll()
                 if (key === "restyle-all") setRestyling(true)
@@ -358,6 +362,11 @@ export function ComicCanvasEditor({
                   )
               }}
             >
+              {/* Too narrow for the header's link. */}
+              <DropdownMenuItem id="catalog" className="min-[360px]:hidden">
+                <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
+                {ts("tabs.catalog")}
+              </DropdownMenuItem>
               <DropdownMenuItem id="new">
                 <HugeiconsIcon icon={FileAddIcon} strokeWidth={2} />
                 {t("menu.newCarousel")}
@@ -413,18 +422,21 @@ export function ComicCanvasEditor({
             />
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-1 min-[360px]:gap-1.5 sm:gap-2">
           <Link
             to="/catalog"
             aria-label={ts("tabs.catalog")}
-            className={buttonVariants({ variant: "ghost" })}
+            className={cn(
+              buttonVariants({ variant: "ghost" }),
+              "max-[359px]:hidden"
+            )}
           >
             <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
             <span className="max-sm:hidden">{ts("tabs.catalog")}</span>
           </Link>
           {/* Signed in, these live in the account menu. */}
           {!viewer && (
-            <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 min-[360px]:gap-1.5 sm:gap-2">
               <span className="contents max-sm:hidden">
                 <GitHubButton />
               </span>
@@ -726,6 +738,7 @@ function ToolButton({
       onPress={onPress}
       isDisabled={isDisabled}
       data-roving
+      className="max-[339px]:w-[29px]"
     >
       <HugeiconsIcon icon={icon} strokeWidth={2} />
     </Button>
@@ -739,18 +752,6 @@ function ToolButton({
         {shortcut && <span className="text-background/60">{shortcut}</span>}
       </Tooltip>
     </TooltipTrigger>
-  )
-}
-
-function useMedia(query: string) {
-  return React.useSyncExternalStore(
-    (onChange) => {
-      const mql = window.matchMedia(query)
-      mql.addEventListener("change", onChange)
-      return () => mql.removeEventListener("change", onChange)
-    },
-    () => window.matchMedia(query).matches,
-    () => false
   )
 }
 
@@ -808,7 +809,7 @@ function Toolbar({
       data-roving-group
       // Capture: react-aria buttons stop keydown from bubbling.
       onKeyDownCapture={roving({ axis: "x" })}
-      className="absolute start-1/2 bottom-3 flex max-w-[calc(100%-1rem)] -translate-x-1/2 [scrollbar-width:none] items-center gap-0.5 overflow-x-auto rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg sm:bottom-4 rtl:translate-x-1/2"
+      className="absolute start-1/2 bottom-3 flex max-w-[calc(100%-1rem)] -translate-x-1/2 [scrollbar-width:none] items-center overflow-x-auto rounded-xl border bg-popover p-1 text-popover-foreground shadow-lg min-[390px]:gap-0.5 sm:bottom-4 rtl:translate-x-1/2"
     >
       <span className="contents md:hidden">
         <ToolButton
@@ -816,7 +817,10 @@ function Toolbar({
           icon={Layers01Icon}
           onPress={() => onPanel("layers")}
         />
-        <Separator orientation="vertical" className="mx-0.5 my-1.5 sm:mx-1" />
+        <Separator
+          orientation="vertical"
+          className="mx-0.5 my-1.5 max-[389px]:hidden sm:mx-1"
+        />
       </span>
       <ToolButton
         label={t("toolbar.undo")}
@@ -832,7 +836,10 @@ function Toolbar({
         onPress={editor.redo}
         isDisabled={!editor.canRedo}
       />
-      <Separator orientation="vertical" className="mx-0.5 my-1.5 sm:mx-1" />
+      <Separator
+        orientation="vertical"
+        className="mx-0.5 my-1.5 max-[389px]:hidden sm:mx-1"
+      />
       <ToolButton
         label={t("toolbar.panel")}
         icon={SquareIcon}
@@ -864,11 +871,14 @@ function Toolbar({
           pickFile("image/*").then((f) => f && insertImageFile(editor, f))
         }
       />
-      <Separator orientation="vertical" className="mx-0.5 my-1.5 sm:mx-1" />
+      <Separator
+        orientation="vertical"
+        className="mx-0.5 my-1.5 max-[389px]:hidden sm:mx-1"
+      />
       <DropdownMenuTrigger>
         <Button
           variant="ghost"
-          className="w-14 px-1.5 tabular-nums sm:w-20"
+          className="w-14 px-1.5 tabular-nums max-[339px]:w-11 max-[339px]:px-0 sm:w-20"
           data-roving
         >
           {Math.round(zoom * 100)}%
@@ -903,7 +913,10 @@ function Toolbar({
         </DropdownMenu>
       </DropdownMenuTrigger>
       <span className="contents lg:hidden">
-        <Separator orientation="vertical" className="mx-0.5 my-1.5 sm:mx-1" />
+        <Separator
+          orientation="vertical"
+          className="mx-0.5 my-1.5 max-[389px]:hidden sm:mx-1"
+        />
         <ToolButton
           label={t("toolbar.inspect")}
           icon={SlidersHorizontalIcon}

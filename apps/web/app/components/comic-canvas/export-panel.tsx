@@ -220,7 +220,7 @@ function Segmented<T extends string>({
           data-roving
           onClick={() => onChange(o.id)}
           className={cn(
-            "h-7 flex-1 cursor-pointer rounded-md px-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition outline-none hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50",
+            "h-7 flex-1 cursor-pointer rounded-md px-2 text-sm font-medium whitespace-nowrap text-muted-foreground transition outline-none hover:text-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 max-[389px]:px-1 max-[389px]:text-xs",
             value === o.id &&
               "bg-background text-foreground shadow-sm ring-1 ring-foreground/10"
           )}
