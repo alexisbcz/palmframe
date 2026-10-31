@@ -12,3 +12,8 @@ Storyboards
 TikTok
 Turborepo
 Vercel
+GDELT
+Threads
+Zernio
+Teardown
+Lookups

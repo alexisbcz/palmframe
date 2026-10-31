@@ -489,6 +489,8 @@ const KINDS = [
   "continuity_check",
   "asset_idea",
   "machine_draft",
+  "machine_run",
+  "machine_image",
   "brand_kit",
   "studio_lookup",
   "studio_board",

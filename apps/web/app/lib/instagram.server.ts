@@ -192,6 +192,138 @@ export async function uploadMedia(file: Blob, filename: string) {
   return body.publicUrl
 }
 
+// Machines post from the scheduled runner, where no one is signed in. Reading
+// only: a user with no profile simply has no accounts to post to.
+export async function existingProfile(userId: string) {
+  const cached = profiles.get(userId)
+  if (cached) return cached
+  const { body } = await call<{ profiles: { _id: string }[] }>(
+    `/profiles?externalId=${encodeURIComponent(userId)}`
+  )
+  const id = body.profiles[0]?._id ?? null
+  if (id) profiles.set(userId, id)
+  return id
+}
+
+export interface ConnectedAccount extends InstagramAccount {
+  platform: string
+}
+
+export async function listAccounts(
+  profileId: string
+): Promise<ConnectedAccount[]> {
+  const { body } = await call<{
+    accounts: {
+      _id: string
+      platform: string
+      profileId?: string | { _id: string }
+      username?: string
+      displayName?: string
+      profilePicture?: string | null
+      isActive?: boolean
+    }[]
+  }>(
+    `/accounts?profileId=${encodeURIComponent(profileId)}&status=connected&limit=100`
+  )
+  return body.accounts
+    .filter(
+      (a) =>
+        a.isActive !== false &&
+        (typeof a.profileId === "object" ? a.profileId?._id : a.profileId) ===
+          profileId
+    )
+    .map((a) => ({
+      id: a._id,
+      platform: a.platform,
+      username: a.username ?? "",
+      displayName: a.displayName ?? a.username ?? "",
+      picture: a.profilePicture ?? null,
+    }))
+}
+
+export async function connectPlatformUrl(
+  profileId: string,
+  platform: string,
+  redirectUrl: string
+) {
+  const params = new URLSearchParams({
+    profileId,
+    redirect_url: redirectUrl,
+    welcome: "false",
+  })
+  const { body } = await call<{ authUrl: string }>(
+    `/connect/${encodeURIComponent(platform)}?${params}`
+  )
+  return body.authUrl
+}
+
+// The app password passes through to the publishing service; we don't keep it.
+export async function connectBluesky(
+  profileId: string,
+  identifier: string,
+  appPassword: string
+) {
+  const { body } = await call<{ currentUserId: string }>("/users")
+  await call("/connect/bluesky/credentials", {
+    method: "POST",
+    body: JSON.stringify({
+      identifier,
+      appPassword,
+      state: `${body.currentUserId}-${profileId}`,
+    }),
+  })
+}
+
+export interface MachinePostRequest {
+  profileId: string
+  platform: string
+  accountId: string
+  text: string
+  imageUrl: string | null
+  alt: string
+  idempotencyKey: string
+}
+
+// One post to one account, right now. A 207 is still a resolved call, so the
+// outcome comes from the post's own status.
+export async function postToAccount(r: MachinePostRequest) {
+  const owned = await listAccounts(r.profileId)
+  if (!owned.some((a) => a.id === r.accountId && a.platform === r.platform))
+    throw new InstagramError("That account isn't connected any more.", 404)
+  const { body } = await call<{
+    post: ZernioPost
+    error?: string
+    warnings?: string[]
+  }>("/posts", {
+    method: "POST",
+    idempotencyKey: r.idempotencyKey,
+    body: JSON.stringify({
+      content: r.text,
+      ...(r.imageUrl && {
+        mediaItems: [
+          {
+            type: "image",
+            url: r.imageUrl,
+            ...(r.alt && { altText: r.alt.slice(0, 1000) }),
+          },
+        ],
+      }),
+      platforms: [
+        {
+          platform: r.platform,
+          accountId: r.accountId,
+          ...(r.platform === "instagram" && {
+            platformSpecificData: AI_LABEL,
+          }),
+        },
+      ],
+      publishNow: true,
+      metadata: { source: "palmframe-machine" },
+    }),
+  })
+  return toResult(body.post, body)
+}
+
 export type PublishMode = "now" | "schedule"
 export type PublishAs = "feed" | "story"
 

@@ -93,7 +93,7 @@ and a storyboard becomes a comic project.
 | Teardown         | ScrapeCreators                  | A video's numbers and transcript     |
 | Product to comic | context.dev                     | A product page's facts               |
 
-The storyboard prompt borrows the structure and the idea of someone else's work,
+The storyboard prompt borrows the structure and the idea of another brand's work,
 never its wording, characters or brand. On a product page it claims only what
 the page says. Studio needs these on the server:
 
@@ -110,20 +110,30 @@ when the person's OpenRouter account pays. Run the unit tests with
 ### Content machines
 
 Content machines are a Labs feature, off until someone turns them on under
-**Settings > Labs**. A machine filters a live public stream and writes short,
-number-first drafts from what stands out: a post, plus a scene that **Make the
-comic** turns into a project. Nothing publishes on its own.
+**Settings > Labs**. Each machine is a small media outlet: it hears its sources,
+an agent picks what's worth a post, and the post goes out on a schedule.
 
-| Stream            | Connection             | Fires on                     |
-| ----------------- | ---------------------- | ---------------------------- |
-| Bluesky Jetstream | WebSocket, with replay | A burst of keyword matches   |
-| Wikipedia changes | Server-sent events     | A burst of edits to a page   |
-| Coinbase trades   | WebSocket              | A price move inside a window |
+- **Sources:** a live stream (Bluesky, Wikipedia or Coinbase prices), plus polled
+  RSS feeds, news search through GDELT, the Hacker News front page, and TikTok or
+  YouTube searches. Everything lands in the machine's inbox once.
+- **Agent:** on each run, Claude reads the new items, may open up to two pages,
+  and files one post or passes. Accounts paying through OpenRouter get a single
+  pass over the headlines.
+- **Outputs:** a public page at `/m/:slug` with an RSS feed, and accounts on X,
+  Threads, LinkedIn, Instagram and Bluesky, connected through the same publishing
+  service as Instagram.
 
-The filter in `apps/web/app/lib/machines` runs in the browser for the live wire
-and on the server for scheduled runs. Listening is free. A draft costs credits
-when the server's Anthropic key writes it, nothing when the person's OpenRouter
-account pays, and with no writer configured a draft is the raw facts.
+A machine starts in review mode, where each post waits for its owner. In auto
+mode, posts go out unattended, except that `lib/machines/gate.ts` holds any post
+that cites nothing or states a number its sources don't. The agent never sees
+links and has no way to publish: it files text, and plain code does the rest.
+Three failed runs in a row pause a machine, and running out of credits pauses it
+at once.
+
+Each run with new items costs 1 credit even if the agent passes, and each
+picture costs 4. Runs are free in credits when the person's OpenRouter account
+pays. Pictures need `PRUNA_API_KEY` on the server or an OpenRouter connection;
+without either, machines post text.
 
 Vercel functions can't hold a socket open, so `.github/workflows/machines.yml`
 calls the tick route every 10 minutes. Each tick replays what Bluesky and

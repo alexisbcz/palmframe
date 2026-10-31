@@ -1,12 +1,30 @@
 import assert from "node:assert/strict"
 import { describe, test } from "node:test"
 
+import { toFiled, inboxBrief } from "./agent.logic"
 import { compileWords, createDetector } from "./detect"
 import {
+  isPrivateAddress,
+  parseFeed,
+  parseGdelt,
+  parseHackerNews,
+  stripHtml,
+} from "./feeds"
+import {
+  compose,
+  freshItems,
+  holdReason,
+  isDue,
+  unsupportedNumbers,
+} from "./gate"
+import {
+  type Item,
   type MachineConfig,
   type Reading,
   PRESETS,
+  feedSchema,
   machineConfig,
+  slugify,
 } from "./model"
 import {
   coinbaseProducts,
@@ -25,6 +43,11 @@ const config = (o: Partial<MachineConfig> = {}): MachineConfig => ({
   dailyCap: 5,
   voice: "",
   language: "en",
+  mission: "",
+  feeds: [],
+  listen: true,
+  everyMinutes: 60,
+  image: false,
   ...o,
 })
 const edit = (at: number, subject = "Eclipse"): Reading => ({
@@ -235,4 +258,165 @@ describe("parsers, on messages captured from the live streams", () => {
 
 test("every preset is a valid config", () => {
   for (const p of PRESETS) machineConfig.parse(p.config)
+})
+
+const item = (o: Partial<Item> = {}): Item => ({
+  key: "a",
+  source: "Example",
+  title: "Anthropic raises $2,500 million",
+  summary: "Revenue grew 40% in 2026.",
+  url: "https://example.com/a",
+  at: 1_000,
+  ...o,
+})
+
+describe("feeds", () => {
+  test("reads RSS, with CDATA and entities", () => {
+    const [i] = parseFeed(
+      `<rss><channel><title>Site</title><item><title><![CDATA[A &amp; B]]></title>
+      <link>https://x.test/1?a=1&amp;b=2</link><guid>g1</guid>
+      <pubDate>Sat, 31 Oct 2026 16:00:00 GMT</pubDate>
+      <description>&lt;p&gt;Hello &amp;amp; <b>bye</b>&lt;/p&gt;</description></item></channel></rss>`,
+      "x.test",
+      5
+    )
+    assert.equal(i?.title, "A & B")
+    assert.equal(i?.url, "https://x.test/1?a=1&b=2")
+    assert.equal(i?.key, "g1")
+    assert.equal(i?.at, Date.UTC(2026, 9, 31, 16))
+  })
+
+  test("reads Atom and drops items with no https link", () => {
+    const items = parseFeed(
+      `<feed><entry><title>Ok</title><id>1</id><link rel="alternate" href="https://x.test/ok"/></entry>
+      <entry><title>Plain</title><link href="http://x.test/no"/></entry></feed>`,
+      "x",
+      5
+    )
+    assert.deepEqual(
+      items.map((i) => i.url),
+      ["https://x.test/ok"]
+    )
+  })
+
+  test("scripts in a page are not article text", () => {
+    assert.equal(
+      stripHtml("<script>evil()</script><p>Real &amp; text</p>"),
+      "Real & text"
+    )
+  })
+
+  test("reads GDELT dates and Hacker News hits", () => {
+    const [g] = parseGdelt(
+      {
+        articles: [
+          {
+            url: "https://x.test/",
+            title: "T",
+            domain: "x.test",
+            seendate: "20261031T120000Z",
+          },
+        ],
+      },
+      5
+    )
+    assert.equal(g?.at, Date.UTC(2026, 9, 31, 12))
+    const [h] = parseHackerNews(
+      { hits: [{ objectID: "9", title: "Ask HN" }] },
+      5
+    )
+    assert.equal(h?.url, "https://news.ycombinator.com/item?id=9")
+  })
+
+  test("refuses non-public addresses", () => {
+    for (const ip of [
+      "127.0.0.1",
+      "10.0.0.1",
+      "169.254.169.254",
+      "192.168.1.1",
+      "172.16.0.1",
+      "::1",
+      "fd00::1",
+      "::ffff:10.0.0.1",
+      "fe80::1",
+      "100.64.0.1",
+    ])
+      assert.equal(isPrivateAddress(ip), true, ip)
+    for (const ip of ["8.8.8.8", "1.1.1.1", "2606:4700:4700::1111"])
+      assert.equal(isPrivateAddress(ip), false, ip)
+  })
+
+  test("feeds must be https", () => {
+    assert.equal(
+      feedSchema.safeParse({ kind: "rss", url: "http://x.test" }).success,
+      false
+    )
+    assert.equal(
+      feedSchema.safeParse({ kind: "rss", url: "https://x.test/f" }).success,
+      true
+    )
+  })
+})
+
+describe("the gate before publishing", () => {
+  const evidence = "Revenue of $2,500 million grew 40% in 2026"
+
+  test("finds numbers the sources never stated", () => {
+    assert.deepEqual(unsupportedNumbers("Revenue up 45%", evidence), ["45"])
+    assert.deepEqual(unsupportedNumbers("$2500 million, up 40%", evidence), [])
+    assert.deepEqual(unsupportedNumbers("Up 1 2 3", evidence), [])
+    assert.deepEqual(unsupportedNumbers("$25 million", evidence), ["25"])
+  })
+
+  test("holds an invented number and an uncited post", () => {
+    assert.match(holdReason("Up 45%", evidence, [item()]) ?? "", /45/)
+    assert.match(holdReason("Fine", evidence, []) ?? "", /cite/)
+    assert.equal(holdReason("Up 40%", evidence, [item()]), null)
+  })
+
+  test("the agent can only cite what is in the inbox", () => {
+    const filed = toFiled(
+      { text: "Hi", item_ids: [0, 7, "x", 0] },
+      [item()],
+      "",
+      "p"
+    )
+    assert.equal(filed?.sources.length, 1)
+    assert.equal(filed?.link, "https://example.com/a")
+    assert.equal(toFiled({ text: "  " }, [item()], "", "p"), null)
+  })
+
+  test("the model never sees links", () => {
+    assert.ok(!inboxBrief([item()], []).includes("example.com"))
+  })
+
+  test("posts fit each platform", () => {
+    const long = "word ".repeat(100).trim()
+    const url = `https://example.com/${"a".repeat(300)}`
+    assert.ok(compose(long, null, "twitter").length <= 280)
+    const x = compose(long, url, "twitter")
+    assert.ok(x.endsWith(url))
+    assert.ok(x.length - url.length + 23 <= 280)
+    assert.equal(compose("Hi", url, "bluesky"), "Hi")
+    assert.ok(compose(long, "https://a.co/b", "bluesky").length <= 300)
+    assert.equal(compose("Hi", "https://a.co/b", "instagram"), "Hi")
+  })
+
+  test("schedule and freshness", () => {
+    assert.equal(isDue(null, 5), true)
+    assert.equal(isDue(new Date(10).toISOString(), 5), false)
+    const now = 100 * 3_600_000
+    const items = freshItems(
+      [item({ at: now - 49 * 3_600_000 }), item({ at: now, key: "b" })],
+      now
+    )
+    assert.deepEqual(
+      items.map((i) => i.key),
+      ["b"]
+    )
+  })
+
+  test("slugs", () => {
+    assert.equal(slugify("  Café Néws!! "), "cafe-news")
+  })
 })

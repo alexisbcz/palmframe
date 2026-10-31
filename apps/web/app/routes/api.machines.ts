@@ -9,8 +9,21 @@ import {
   uid,
 } from "@/components/comic-canvas/model"
 import type { MachineRow } from "@/lib/database"
-import { machineConfig, machineInput, signalSchema } from "@/lib/machines/model"
+import {
+  InstagramError,
+  connectBluesky,
+  instagramEnabled,
+  profileFor,
+} from "@/lib/instagram.server"
+import {
+  machineConfig,
+  machineInput,
+  signalSchema,
+  slugify,
+} from "@/lib/machines/model"
+import { publishDraft } from "@/lib/machines/publish.server"
 import { OutOfCredits, writeDraft } from "@/lib/machines/writer.server"
+import { supabaseAdmin } from "@/lib/supabase-admin.server"
 import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/api.machines"
@@ -24,6 +37,16 @@ const body = z.discriminatedUnion("intent", [
   z.object({ intent: z.literal("draft"), id, signal: signalSchema }),
   z.object({ intent: z.literal("dismiss"), id }),
   z.object({ intent: z.literal("comic"), id }),
+  z.object({
+    intent: z.literal("approve"),
+    id,
+    text: z.string().trim().min(1).max(500),
+  }),
+  z.object({
+    intent: z.literal("bluesky"),
+    identifier: z.string().trim().min(3).max(253),
+    appPassword: z.string().trim().min(8).max(64),
+  }),
 ])
 
 const fail = (error: string, status: number) =>
@@ -75,10 +98,36 @@ export async function action({ request }: Route.ActionArgs) {
   switch (r.intent) {
     case "save": {
       const { id: machineId, ...fields } = r.machine
+      if (
+        fields.publish_mode === "auto" &&
+        !fields.outputs.length &&
+        !fields.public
+      )
+        return fail("Invalid request.", 400)
+      if (fields.public) {
+        const { data: own } = machineId
+          ? await supabase
+              .from("comic_machines")
+              .select("slug")
+              .eq("id", machineId)
+              .maybeSingle()
+          : { data: null }
+        // Keeps its address once it has one, so links and readers don't break.
+        Object.assign(fields, {
+          slug:
+            own?.slug ??
+            `${slugify(fields.name) || "machine"}-${crypto.randomUUID().slice(0, 6)}`,
+        })
+      }
       const saved = machineId
         ? await supabase
             .from("comic_machines")
-            .update({ ...fields, state: {}, last_error: null })
+            .update({
+              ...fields,
+              state: {},
+              last_error: null,
+              next_run_at: null,
+            })
             .eq("id", machineId)
             .select("id")
             .single()
@@ -101,7 +150,11 @@ export async function action({ request }: Route.ActionArgs) {
     case "run": {
       const { error } = await supabase
         .from("comic_machines")
-        .update({ enabled: r.on })
+        // Turning a machine on means its first run is the next tick.
+        .update({
+          enabled: r.on,
+          ...(r.on && { next_run_at: null, failures: 0 }),
+        })
         .eq("id", r.id)
       return error ? fail(error.message, 500) : Response.json({ ok: true })
     }
@@ -137,16 +190,18 @@ export async function action({ request }: Route.ActionArgs) {
           request.signal
         )
         if (!draft) return Response.json({ passed: true })
-        const { error } = await supabase.from("comic_machine_drafts").upsert(
-          {
-            machine_id: machine.id,
-            user_id: viewer.id,
-            signal_id: r.signal.id,
-            signal: r.signal,
-            ...draft,
-          },
-          { onConflict: "machine_id,signal_id", ignoreDuplicates: true }
-        )
+        const { error } = await supabaseAdmin()
+          .from("comic_machine_drafts")
+          .upsert(
+            {
+              machine_id: machine.id,
+              user_id: viewer.id,
+              signal_id: r.signal.id,
+              signal: r.signal,
+              ...draft,
+            },
+            { onConflict: "machine_id,signal_id", ignoreDuplicates: true }
+          )
         return error ? fail(error.message, 500) : Response.json({ ok: true })
       } catch (e) {
         if (e instanceof OutOfCredits) return fail("credits", 402)
@@ -154,11 +209,59 @@ export async function action({ request }: Route.ActionArgs) {
       }
     }
     case "dismiss": {
-      const { error } = await supabase
+      const { data: owned } = await supabase
+        .from("comic_machine_drafts")
+        .select("id")
+        .eq("id", r.id)
+        .maybeSingle()
+      if (!owned) return fail("Not found", 404)
+      const { error } = await supabaseAdmin()
         .from("comic_machine_drafts")
         .update({ status: "dismissed" })
         .eq("id", r.id)
+        .in("status", ["new", "failed", "used"])
       return error ? fail(error.message, 500) : Response.json({ ok: true })
+    }
+    // A person read it: it may go out, in their words if they changed it.
+    case "approve": {
+      const { data: draft } = await supabase
+        .from("comic_machine_drafts")
+        .select("id, machine_id")
+        .eq("id", r.id)
+        .maybeSingle()
+      if (!draft) return fail("Not found", 404)
+      const { data: machine } = await supabase
+        .from("comic_machines")
+        .select("*")
+        .eq("id", draft.machine_id)
+        .maybeSingle()
+      if (!machine) return fail("Not found", 404)
+      const { data: approved } = await supabaseAdmin()
+        .from("comic_machine_drafts")
+        .update({ status: "approved", text: r.text, held: null })
+        .eq("id", r.id)
+        .in("status", ["new", "failed"])
+        .select("id")
+      if (!approved?.length) return fail("Not found", 404)
+      const result = await publishDraft(r.id, machine as MachineRow)
+      return Response.json({
+        ok: !!result?.published,
+        errors: result?.errors.map((e) => e.error) ?? [],
+      })
+    }
+    case "bluesky": {
+      if (!instagramEnabled()) return fail("Not found", 404)
+      try {
+        await connectBluesky(
+          await profileFor(viewer),
+          r.identifier,
+          r.appPassword
+        )
+        return Response.json({ ok: true })
+      } catch (e) {
+        if (!(e instanceof InstagramError)) console.error(e)
+        return fail("bluesky", 400)
+      }
     }
     case "comic": {
       const { data: draft } = await supabase
@@ -171,15 +274,22 @@ export async function action({ request }: Route.ActionArgs) {
       const project = await supabase
         .from("comic_projects")
         .insert({
-          title: draft.signal.title.slice(0, 120),
+          title: (
+            draft.signal?.title ??
+            draft.sources[0]?.title ??
+            draft.text
+          ).slice(0, 120),
           data: comicFrom(draft),
         })
         .select("id")
         .single()
       if (project.error) return fail(project.error.message, 500)
-      await supabase
+      await supabaseAdmin()
         .from("comic_machine_drafts")
-        .update({ status: "used", project_id: project.data.id })
+        .update({
+          project_id: project.data.id,
+          ...(draft.status === "new" && { status: "used" as const }),
+        })
         .eq("id", r.id)
       return Response.json({ project: project.data.id })
     }
