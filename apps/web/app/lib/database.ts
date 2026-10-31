@@ -20,12 +20,14 @@ import type {
   Item,
   MachineConfig,
   MachineOutput,
+  OutputPlatform,
   PostSource,
   PublishMode,
   PublishReceipt,
   Signal,
   SourceId,
 } from "./machines/model"
+import type { FormatId, Part } from "./media/model"
 import type {
   Board,
   BrandColor,
@@ -106,6 +108,7 @@ export interface Database {
           link?: string | null
           image_url?: string | null
           held?: string | null
+          platform?: OutputPlatform | null
           status?: MachineDraftRow["status"]
         }
         Update: {
@@ -128,8 +131,37 @@ export interface Database {
       }
       comic_deep_dives: {
         Row: DeepDiveRow
-        Insert: { user_id: string; lead: string; job: string }
+        Insert: {
+          user_id: string
+          lead: string
+          job: string
+          machine_id?: string | null
+        }
         Update: Partial<Omit<DeepDiveRow, "id" | "user_id" | "lead" | "job">>
+        Relationships: []
+      }
+      comic_media_renditions: {
+        Row: MediaRenditionRow
+        Insert: {
+          user_id: string
+          deep_dive_id: string
+          format: FormatId
+          job: string
+          machine_id?: string | null
+        }
+        Update: Partial<
+          Pick<
+            MediaRenditionRow,
+            | "status"
+            | "title"
+            | "parts"
+            | "meta"
+            | "findings"
+            | "problems"
+            | "attempts"
+            | "leased_until"
+          >
+        >
         Relationships: []
       }
       comic_brand_kits: {
@@ -508,6 +540,26 @@ export type DeepDiveRow = {
   slices: number
   leased_until: string | null
   job: string
+  machine_id: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type MediaRenditionRow = {
+  id: string
+  user_id: string
+  deep_dive_id: string
+  machine_id: string | null
+  format: FormatId
+  status: DeepDiveStatus
+  title: string
+  parts: Part[]
+  meta: Record<string, string>
+  findings: Finding[]
+  problems: string[]
+  attempts: number
+  leased_until: string | null
+  job: string
   created_at: string
   updated_at: string
 }
@@ -549,6 +601,7 @@ export type MachineDraftRow = {
   link: string | null
   image_url: string | null
   held: string | null
+  platform: OutputPlatform | null
   receipts: PublishReceipt[]
   published_at: string | null
   created_at: string

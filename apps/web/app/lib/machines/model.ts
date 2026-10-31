@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { FORMATS } from "@/lib/media/model"
+
 // Content machines: small media outlets. Each one hears its sources, an agent
 // decides what is worth a post, and the post goes out on a schedule.
 // Shared by the browser (the live wire) and the server (the scheduled runner),
@@ -71,6 +73,20 @@ export type PublishMode = (typeof PUBLISH_MODES)[number]
 
 export const EVERY_MINUTES = [15, 30, 60, 180, 360, 720, 1440] as const
 
+// Off unless asked for: a Story costs far more than a post.
+export const MAX_STORIES_PER_DAY = 3
+export const mediaConfig = z.object({
+  enabled: z.boolean().default(false),
+  formats: z.array(z.enum(FORMATS)).max(FORMATS.length).default([]),
+  storiesPerDay: z.number().int().min(1).max(MAX_STORIES_PER_DAY).default(1),
+})
+export type MediaConfig = z.infer<typeof mediaConfig>
+export const NO_MEDIA: MediaConfig = {
+  enabled: false,
+  formats: [],
+  storiesPerDay: 1,
+}
+
 export const machineConfig = z.object({
   keywords: z.array(word).max(20).default([]),
   exclude: z.array(word).max(20).default([]),
@@ -96,6 +112,8 @@ export const machineConfig = z.object({
   everyMinutes: z.number().int().min(15).max(1440).default(60),
   // Draw a picture for each post.
   image: z.boolean().default(false),
+  // Research the post's lead into a Story and render it into these formats.
+  media: mediaConfig.default(NO_MEDIA),
 })
 export type MachineConfig = z.infer<typeof machineConfig>
 
@@ -220,6 +238,7 @@ const base = {
   listen: true,
   everyMinutes: 60,
   image: false,
+  media: NO_MEDIA,
 }
 
 export const PRESETS: MachinePreset[] = [

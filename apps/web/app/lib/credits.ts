@@ -60,6 +60,7 @@ export const COSTS = {
   studio_lookup: 1, // one search of ads or videos, or reading one link
   studio_board: 4, // an LLM planning a comic from a source
   deep_dive: 40, // an agent researching a lead and writing an article
+  media_render: 12, // adapting a Story to one format, with its fact-check
 } as const
 
 export type Operation = keyof typeof COSTS

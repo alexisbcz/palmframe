@@ -13,6 +13,7 @@ export const messages = defineMessages({
       trends: "Trends",
       teardown: "Teardown",
       product: "Product to comic",
+      media: "Media",
       machines: "Content machines",
     },
     start: {
@@ -144,6 +145,7 @@ export const messages = defineMessages({
       trends: "Tendances",
       teardown: "Décryptage",
       product: "Du produit à la BD",
+      media: "Médias",
       machines: "Machines à contenu",
     },
     start: {
@@ -276,6 +278,7 @@ export const messages = defineMessages({
       trends: "Tendencias",
       teardown: "Análisis",
       product: "Del producto al cómic",
+      media: "Medios",
       machines: "Máquinas de contenido",
     },
     start: {
@@ -409,6 +412,7 @@ export const messages = defineMessages({
       trends: "Trends",
       teardown: "Analyse",
       product: "Vom Produkt zum Comic",
+      media: "Medien",
       machines: "Content-Maschinen",
     },
     start: {
@@ -542,6 +546,7 @@ export const messages = defineMessages({
       trends: "Tendenze",
       teardown: "Analisi",
       product: "Dal prodotto al fumetto",
+      media: "Media",
       machines: "Macchine di contenuti",
     },
     start: {
@@ -675,6 +680,7 @@ export const messages = defineMessages({
       trends: "トレンド",
       teardown: "分析",
       product: "商品からコミック",
+      media: "メディア",
       machines: "コンテンツマシン",
     },
     start: {

@@ -2,6 +2,8 @@ import type { AgentMessage } from "@earendil-works/pi-agent-core"
 
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
+import { afterStory } from "@/lib/media/pipeline.server"
+
 import { workOn } from "./agent.server"
 import type { LogLine } from "./model"
 import type { Run } from "./tools.server"
@@ -14,22 +16,25 @@ const table = () => supabaseAdmin().from("comic_deep_dives")
 
 // Functions stop after a few minutes and research takes longer, so a run is a
 // chain of stretches. Each hands the next its saved conversation.
-export async function kick(origin: string, id: string) {
+export async function kickWork(origin: string, path: string, id: string) {
   const secret = process.env.MACHINES_CRON_SECRET?.trim()
   if (!secret) throw new Error("MACHINES_CRON_SECRET is not set.")
-  const call = fetch(`${origin}/api/deep-dives/work`, {
+  const call = fetch(`${origin}${path}`, {
     method: "POST",
     headers: {
       authorization: `Bearer ${secret}`,
       "content-type": "application/json",
     },
     body: JSON.stringify({ id }),
-  }).catch((e) => console.error("Deep dive kick failed", id, e))
+  }).catch((e) => console.error("Work kick failed", path, id, e))
   // Long enough for the request to leave; the next function does the work.
   await Promise.race([call, new Promise((r) => setTimeout(r, 1_500))])
 }
 
-async function fail(row: { id: string; user_id: string; job: string }, why: string) {
+export const kick = (origin: string, id: string) =>
+  kickWork(origin, "/api/deep-dives/work", id)
+
+export async function fail(row: { id: string; user_id: string; job: string }, why: string) {
   await table()
     .update({ status: "failed", problems: [why], leased_until: null })
     .eq("id", row.id)
@@ -104,12 +109,12 @@ export async function runSlice(id: string, origin: string) {
   }
   await save(messages)
   if (run.done) {
-    await table()
-      .update({
-        status: run.problems.length ? "review" : "done",
-        leased_until: null,
-      })
-      .eq("id", id)
+    const status = run.problems.length ? "review" : "done"
+    await table().update({ status, leased_until: null }).eq("id", id)
+    if (status === "done" && row.machine_id)
+      await afterStory(id, row.machine_id, origin).catch((e) =>
+        console.error("Story formats failed to start", id, e)
+      )
     return "finished"
   }
   await table()

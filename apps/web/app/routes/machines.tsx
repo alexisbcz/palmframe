@@ -26,6 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
+import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -49,6 +50,8 @@ import {
   useT,
 } from "@/i18n/core"
 import { COSTS } from "@/lib/credits"
+import { availableFormats } from "@/lib/media/formats"
+import type { FormatId } from "@/lib/media/model"
 import type {
   MachineDraftRow,
   MachineItemRow,
@@ -74,6 +77,8 @@ import {
   type Reading,
   type Signal,
   MAX_MACHINES,
+  type MediaConfig,
+  NO_MEDIA,
   PRESETS,
   SOURCES,
   SOURCE_INFO,
@@ -87,6 +92,7 @@ import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/machines"
 import { messages } from "./machines.messages"
+import { messages as mediaMessages } from "./media.messages"
 
 export const meta: Route.MetaFunction = ({ matches }) => {
   const root = matches[0]?.loaderData as { locale?: unknown } | undefined
@@ -133,6 +139,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     ),
     posting,
     canDraw: imageAvailable(connection),
+    formats: availableFormats(),
     scheduled: !!process.env.MACHINES_CRON_SECRET?.trim(),
   }
 }
@@ -755,13 +762,16 @@ function Filter({
   accounts,
   posting,
   canDraw,
+  formats,
 }: {
   machine: MachineRow
   accounts: Connected[]
   posting: boolean
   canDraw: boolean
+  formats: FormatId[]
 }) {
   const t = useT(messages)
+  const tMedia = useT(mediaMessages)
   const revalidator = useRevalidator()
   const c = machine.config
   const [name, setName] = React.useState(machine.name)
@@ -778,6 +788,8 @@ function Filter({
   const [listen, setListen] = React.useState(c.listen)
   const [every, setEvery] = React.useState(c.everyMinutes)
   const [image, setImage] = React.useState(c.image)
+  // Machines saved before Stories have no such field.
+  const [media, setMedia] = React.useState<MediaConfig>(c.media ?? NO_MEDIA)
   const [mode, setMode] = React.useState<PublishMode>(machine.publish_mode)
   const [outputs, setOutputs] = React.useState<MachineOutput[]>(machine.outputs)
   const [isPublic, setPublic] = React.useState(machine.public)
@@ -837,6 +849,7 @@ function Filter({
             listen,
             everyMinutes: every,
             image,
+            media,
           } satisfies MachineConfig,
           publish_mode: mode,
           outputs,
@@ -971,6 +984,44 @@ function Filter({
             ? t("out.imageHint", { cost: COSTS.machine_image })
             : t("out.imageOff")}
         </p>
+        {formats.length > 0 && (
+          <>
+            <label className="flex items-center gap-2 text-sm">
+              <Switch
+                aria-label={t("out.story")}
+                isSelected={media.enabled}
+                onChange={(enabled) => setMedia({ ...media, enabled })}
+              />
+              {t("out.story")}
+            </label>
+            <p className="text-sm text-muted-foreground">
+              {t("out.storyHint", {
+                story: COSTS.deep_dive,
+                format: COSTS.media_render,
+              })}
+            </p>
+            {media.enabled && (
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                {formats.map((f) => (
+                  <Checkbox
+                    key={f}
+                    isSelected={media.formats.includes(f)}
+                    onChange={(on) =>
+                      setMedia({
+                        ...media,
+                        formats: on
+                          ? [...media.formats, f]
+                          : media.formats.filter((x) => x !== f),
+                      })
+                    }
+                  >
+                    {tMedia(`formats.${f}`)}
+                  </Checkbox>
+                ))}
+              </div>
+            )}
+          </>
+        )}
         <Field
           label={t("out.mode")}
           htmlFor="machine-mode"
@@ -1159,6 +1210,7 @@ function Machine({
   accounts,
   posting,
   canDraw,
+  formats,
   scheduled,
 }: {
   machine: MachineRow
@@ -1167,6 +1219,7 @@ function Machine({
   accounts: Connected[]
   posting: boolean
   canDraw: boolean
+  formats: FormatId[]
   scheduled: boolean
 }) {
   const t = useT(messages)
@@ -1279,6 +1332,7 @@ function Machine({
         accounts={accounts}
         posting={posting}
         canDraw={canDraw}
+        formats={formats}
       />
 
       <AlertDialog isOpen={confirming} onOpenChange={setConfirming}>
@@ -1306,7 +1360,7 @@ function Machine({
 }
 
 export default function Machines({ loaderData }: Route.ComponentProps) {
-  const { machines, drafts, items, accounts, posting, canDraw, scheduled } =
+  const { machines, drafts, items, accounts, posting, canDraw, formats, scheduled } =
     loaderData
   const t = useT(messages)
   const revalidator = useRevalidator()
@@ -1410,6 +1464,7 @@ export default function Machines({ loaderData }: Route.ComponentProps) {
             accounts={accounts}
             posting={posting}
             canDraw={canDraw}
+            formats={formats}
             scheduled={scheduled}
           />
         </div>

@@ -760,7 +760,7 @@
 
     "@vale-ts/spell": ["@vale-ts/spell@../vale.ts/.artifacts/vale-ts-spell-0.1.0.tgz", {}, "sha512-m1yVCaHR17oArkDZ6GfgszaGsWTjheMFHD5wnajcRIdbCR5BqcHN40B0/XwoqD47b96DiyI2IxNEefpCNYuMIw=="],
 
-    "@vale-ts/tengo": ["@vale-ts/tengo@../vale.ts/.artifacts/vale-ts-tengo-0.1.0.tgz", { "dependencies": { "@vale-ts/regex": "^0.1.0" } }, "sha512-R4aC1XT5i/JZI6P8sSTuwkL4lEDZ19X0uvF2ggj9SmTB31vJAz7yKz37mL+tYRub0HSSUWoWZP7IAQCM9cIEZg=="],
+    "@vale-ts/tengo": ["@vale-ts/tengo@../vale.ts/.artifacts/vale-ts-tengo-0.1.0.tgz", { "dependencies": { "@vale-ts/regex": "^0.1.0" } }, "sha512-f9MMSt++kELTIS/9zRBDJ4a5z2tPMLlT9cYuBEkNh3MOF/OLdDAeRl01ipcfBQ1OORKGpxVQ8CvIzva6I6AOhQ=="],
 
     "@vercel/react-router": ["@vercel/react-router@1.3.7", "", { "dependencies": { "@vercel/static-config": "3.4.4", "ts-morph": "12.0.0" }, "peerDependencies": { "@react-router/dev": "7", "@react-router/node": "7", "isbot": "5", "react": ">=18", "react-dom": ">=18" } }, "sha512-6lR2IymF6VYNBxzxDJ2xU7IdeeTLgDC7Hz3jW3eTwZxECOHRdl9zJ300cEp3QHGrvD7T1Kz3SqOUD06F9Ea2fg=="],
 

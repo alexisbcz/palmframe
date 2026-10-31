@@ -13,5 +13,5 @@ export async function action({ request }: Route.ActionArgs) {
   const given = request.headers.get("authorization") ?? ""
   if (!secret || !timingSafeEqual(digest(given), digest(`Bearer ${secret}`)))
     return Response.json({ error: "Unauthorized" }, { status: 401 })
-  return Response.json(await runMachines())
+  return Response.json(await runMachines(new URL(request.url).origin))
 }

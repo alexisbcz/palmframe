@@ -1,6 +1,6 @@
 import { COSTS } from "@/lib/credits"
 import { leadSchema } from "@/lib/deepdive/model"
-import { kick } from "@/lib/deepdive/run.server"
+import { fail as failDive, kick } from "@/lib/deepdive/run.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 import { getViewer } from "@/lib/supabase.server"
 
@@ -45,6 +45,12 @@ export async function action({ request }: Route.ActionArgs) {
     await supabase.rpc("refund_credits", { p_job: job })
     return fail("generic", 500)
   }
-  await kick(new URL(request.url).origin, data.id)
-  return Response.json({ id: data.id })
+  try {
+    await kick(new URL(request.url).origin, data.id)
+  } catch (e) {
+    console.error("Deep dive didn't start", data.id, e)
+    await failDive({ id: data.id, user_id: viewer.id, job }, "It couldn't start.")
+    return fail("generic", 500)
+  }
+  return Response.json({ id: data.id, balance: spent.data })
 }

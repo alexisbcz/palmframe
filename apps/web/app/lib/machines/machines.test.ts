@@ -21,6 +21,7 @@ import {
   type Item,
   type MachineConfig,
   type Reading,
+  NO_MEDIA,
   PRESETS,
   feedSchema,
   machineConfig,
@@ -48,6 +49,7 @@ const config = (o: Partial<MachineConfig> = {}): MachineConfig => ({
   listen: true,
   everyMinutes: 60,
   image: false,
+  media: NO_MEDIA,
   ...o,
 })
 const edit = (at: number, subject = "Eclipse"): Reading => ({

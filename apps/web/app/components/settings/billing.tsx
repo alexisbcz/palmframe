@@ -494,6 +494,7 @@ const KINDS = [
   "brand_kit",
   "studio_lookup",
   "deep_dive",
+  "media_render",
   "studio_board",
   "edit",
   "vary",

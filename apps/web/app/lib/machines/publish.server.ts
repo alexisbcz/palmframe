@@ -72,7 +72,9 @@ export async function publishDraft(id: string, machine: MachineRow) {
   // Accounts that already took this post keep their receipt on a retry.
   const done = draft.receipts.filter((r) => r.postId && !r.error)
   const pending = machine.outputs.filter(
-    (o) => !done.some((r) => r.accountId === o.accountId)
+    (o) =>
+      (!draft.platform || o.platform === draft.platform) &&
+      !done.some((r) => r.accountId === o.accountId)
   )
   let profileId: string | null = null
   if (pending.length && instagramEnabled()) {

@@ -14,6 +14,7 @@ import {
   Fire02Icon,
   Home01Icon,
   MegaphoneIcon,
+  NewsIcon,
   PaintBoardIcon,
   RadioIcon,
   ShoppingBag01Icon,
@@ -72,6 +73,7 @@ const NAV = [
   { to: "/studio/trends", key: "trends", icon: Fire02Icon },
   { to: "/studio/teardown", key: "teardown", icon: Video01Icon },
   { to: "/studio/product", key: "product", icon: ShoppingBag01Icon },
+  { to: "/studio/media", key: "media", icon: NewsIcon },
   { to: "/machines", key: "machines", icon: RadioIcon },
 ] as const
 

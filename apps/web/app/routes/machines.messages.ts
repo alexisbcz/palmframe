@@ -104,6 +104,9 @@ export const messages = defineMessages({
       image: "Draw a picture for each post",
       imageHint: "{cost} credits per picture.",
       imageOff: "Pictures need an OpenRouter connection on this server.",
+      story: "Research a full Story from what it posts",
+      storyHint:
+        "{story} credits per Story, {format} per format, one Story a day. Formats wait in Media. LinkedIn also becomes a draft that follows the publishing setting.",
       mode: "Publishing",
       review: "Review each post",
       auto: "Post automatically",
@@ -283,6 +286,9 @@ export const messages = defineMessages({
       imageHint: "{cost} crédits par image.",
       imageOff:
         "Les images nécessitent une connexion OpenRouter sur ce serveur.",
+      story: "Enquêter à fond sur ce qu’elle publie",
+      storyHint:
+        "{story} crédits par Story, {format} par format, une Story par jour. Les formats attendent dans Médias. LinkedIn devient aussi un brouillon soumis au réglage de publication.",
       mode: "Publication",
       review: "Relire chaque post",
       auto: "Publier automatiquement",
@@ -463,6 +469,9 @@ export const messages = defineMessages({
       imageHint: "{cost} créditos por imagen.",
       imageOff:
         "Las imágenes necesitan una conexión de OpenRouter en este servidor.",
+      story: "Investigar a fondo lo que publica",
+      storyHint:
+        "{story} créditos por Story, {format} por formato, una Story al día. Los formatos esperan en Medios. LinkedIn también se convierte en un borrador que sigue el ajuste de publicación.",
       mode: "Publicación",
       review: "Revisar cada publicación",
       auto: "Publicar automáticamente",
@@ -640,6 +649,9 @@ export const messages = defineMessages({
       image: "Für jeden Beitrag ein Bild zeichnen",
       imageHint: "{cost} Credits pro Bild.",
       imageOff: "Bilder brauchen auf diesem Server eine OpenRouter-Verbindung.",
+      story: "Aus ihren Posts eine ganze Story recherchieren",
+      storyHint:
+        "{story} Credits pro Story, {format} pro Format, eine Story pro Tag. Formate warten unter Medien. LinkedIn wird außerdem zu einem Entwurf, der der Veröffentlichungseinstellung folgt.",
       mode: "Veröffentlichung",
       review: "Jeden Beitrag prüfen",
       auto: "Automatisch posten",
@@ -819,6 +831,9 @@ export const messages = defineMessages({
       imageHint: "{cost} crediti per immagine.",
       imageOff:
         "Le immagini richiedono una connessione OpenRouter su questo server.",
+      story: "Approfondire in una Story ciò che pubblica",
+      storyHint:
+        "{story} crediti per Story, {format} per formato, una Story al giorno. I formati restano in Media. LinkedIn diventa anche una bozza che segue l’impostazione di pubblicazione.",
       mode: "Pubblicazione",
       review: "Rivedi ogni post",
       auto: "Pubblica automaticamente",
@@ -996,6 +1011,9 @@ export const messages = defineMessages({
       image: "投稿ごとに画像を描く",
       imageHint: "画像1枚につき{cost}クレジット。",
       imageOff: "画像にはこのサーバーでのOpenRouter接続が必要です。",
+      story: "投稿内容を本格的なストーリーに調査する",
+      storyHint:
+        "ストーリー1本につき{story}クレジット、形式ごとに{format}クレジット、1日1本まで。各形式はメディアで確認できます。LinkedInは公開設定に従う下書きにもなります。",
       mode: "公開方法",
       review: "投稿ごとに確認",
       auto: "自動で投稿",

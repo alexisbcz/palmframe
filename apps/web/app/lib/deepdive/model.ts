@@ -1,6 +1,17 @@
 import { z } from "zod"
 
-export const leadSchema = z.url().startsWith("https://").max(500)
+// A link to start from, or a topic in plain words. Anything shaped like a link
+// has to be a real https one.
+export const leadSchema = z
+  .string()
+  .trim()
+  .min(3)
+  .max(500)
+  .refine(
+    (s) =>
+      !/^[a-z][a-z0-9+.-]*:/i.test(s) ||
+      z.url().startsWith("https://").safeParse(s).success
+  )
 
 export interface Finding {
   line: number

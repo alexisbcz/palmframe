@@ -1,5 +1,6 @@
 import { COSTS } from "@/lib/credits"
 import type { MachineRow } from "@/lib/database"
+import { resumeStalled, startMachineStory } from "@/lib/media/pipeline.server"
 import { OpenRouterError, payingConnection } from "@/lib/openrouter.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
@@ -185,7 +186,12 @@ const dayStart = (now: number) =>
 
 // One edition: read the inbox, let the agent pick, then decide in plain code
 // whether the post may go out by itself.
-async function edition(l: Listener, now: number, deadline: number) {
+async function edition(
+  l: Listener,
+  now: number,
+  deadline: number,
+  origin: string
+) {
   const { machine, config } = l
   const admin = supabaseAdmin()
   const abort = AbortSignal.timeout(Math.max(1_000, deadline - Date.now()))
@@ -327,6 +333,10 @@ async function edition(l: Listener, now: number, deadline: number) {
       "key",
       filed.sources.map((i) => i.key)
     )
+  // A Story is an extra. It can't cost the machine the post it just filed.
+  await startMachineStory(machine, config.media, filed.sources[0], draftKey, origin).catch(
+    (e) => console.error("Machine story didn't start", machine.id, e)
+  )
   return { drafts: 1, failed: false }
 }
 
@@ -355,7 +365,7 @@ async function publishQueue(machines: MachineRow[], deadline: number) {
   return published
 }
 
-export async function runMachines() {
+export async function runMachines(origin: string) {
   const now = Date.now()
   const deadline = now + DEADLINE_MS
   const admin = supabaseAdmin()
@@ -414,7 +424,7 @@ export async function runMachines() {
       if (Date.now() + EDITION_MS > deadline) return
       let failures = 0
       try {
-        const r = await edition(l, now, deadline)
+        const r = await edition(l, now, deadline, origin)
         drafts += r.drafts
         failures = r.failed ? l.machine.failures + 1 : 0
       } catch (e) {
@@ -442,6 +452,9 @@ export async function runMachines() {
     })
   )
 
+  await resumeStalled(origin).catch((e) =>
+    console.error("Media runs not resumed", e)
+  )
   const published = await publishQueue(machines, deadline + 20_000)
   await admin
     .from("comic_machine_items")
