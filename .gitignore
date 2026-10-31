@@ -26,3 +26,6 @@ pnpm-debug.log*
 
 # Personal comics: openable locally, never committed or deployed
 apps/web/public/comics/private/
+
+# Copied from pdfjs-dist at build time
+apps/web/public/pdfjs/
