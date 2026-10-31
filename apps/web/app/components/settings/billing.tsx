@@ -401,9 +401,9 @@ export function BillingPanel({
               <span className="min-w-0 truncate text-muted-foreground group-data-focused/command-item:text-foreground">
                 {t(`ops.${op}`)}
               </span>
-              <span className="ms-auto shrink-0 text-xs tabular-nums">
+              <CreditsPill className="ms-auto">
                 {t("cost", { count: COSTS[op], n: n(COSTS[op]) })}
-              </span>
+              </CreditsPill>
             </CommandItem>
           ))}
         </CommandGroup>

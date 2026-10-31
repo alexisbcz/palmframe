@@ -29,6 +29,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Textarea } from "@workspace/ui/components/textarea"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { useOpenRouter } from "@/components/account/account-menu"
 import { useT } from "@/i18n/core"
 import { COSTS } from "@/lib/credits"
@@ -294,11 +295,15 @@ function ContinuityCheck({
           />
         )}
         {running ? t("check.running") : t("check.run")}
-        <span className="ms-auto text-xs text-muted-foreground tabular-nums">
-          {openrouter
-            ? t("check.openrouter")
-            : t("check.cost", { count: cost })}
-        </span>
+        {openrouter ? (
+          <span className="ms-auto text-xs text-muted-foreground">
+            {t("check.openrouter")}
+          </span>
+        ) : (
+          <CreditsPill className="ms-auto">
+            {t("check.cost", { count: cost })}
+          </CreditsPill>
+        )}
       </Button>
       {(!series.facts.length || !text) && (
         <p className="text-xs text-muted-foreground">{t("check.nothing")}</p>

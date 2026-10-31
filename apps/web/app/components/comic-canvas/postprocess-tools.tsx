@@ -23,6 +23,7 @@ import {
 } from "@workspace/ui/components/toggle-group"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { useT } from "@/i18n/core"
 import { COSTS } from "@/lib/credits"
 import {
@@ -212,9 +213,9 @@ export function PostprocessSection({
     >
       <HugeiconsIcon icon={icon} strokeWidth={2} data-icon="inline-start" />
       {label}
-      <span className="ms-auto text-xs text-muted-foreground tabular-nums">
+      <CreditsPill className="ms-auto">
         {t("cost", { count: COSTS[op] })}
-      </span>
+      </CreditsPill>
     </Button>
   )
 

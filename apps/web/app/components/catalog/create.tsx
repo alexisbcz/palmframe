@@ -21,6 +21,7 @@ import {
   ToggleGroupItem,
 } from "@workspace/ui/components/toggle-group"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { AccountMenu, useOpenRouter } from "@/components/account/account-menu"
 import { Logo } from "@/components/auth/auth-ui"
 import { STYLE_CARDS } from "@/components/comic-canvas/look"
@@ -460,11 +461,15 @@ export function CreateAsset({
                   />
                 )}
                 {t("create.polish")}
-                <span className="ms-auto text-xs text-muted-foreground tabular-nums">
-                  {openrouter
-                    ? t("create.onOpenRouter")
-                    : t("create.credits", { count: COSTS.asset_idea })}
-                </span>
+                {openrouter ? (
+                  <span className="ms-auto text-xs text-muted-foreground">
+                    {t("create.onOpenRouter")}
+                  </span>
+                ) : (
+                  <CreditsPill className="ms-auto">
+                    {t("create.credits", { count: COSTS.asset_idea })}
+                  </CreditsPill>
+                )}
               </Button>
             )}
           </div>
@@ -536,11 +541,13 @@ export function CreateAsset({
                   />
                 )}
                 {t("create.draw")}
-                <span className="tabular-nums opacity-70">
-                  {openrouter
-                    ? t("create.onOpenRouter")
-                    : t("create.credits", { count: cost })}
-                </span>
+                {openrouter ? (
+                  <span className="opacity-70">{t("create.onOpenRouter")}</span>
+                ) : (
+                  <CreditsPill>
+                    {t("create.credits", { count: cost })}
+                  </CreditsPill>
+                )}
               </Button>
               {short && (
                 <p className="text-xs text-destructive">{t("create.short")}</p>

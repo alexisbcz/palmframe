@@ -21,6 +21,7 @@ import {
 } from "@workspace/ui/components/toggle-group"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { useOpenRouter } from "@/components/account/account-menu"
 import { openSettings } from "@/components/settings/settings-dialog"
 import { useT } from "@/i18n/core"
@@ -470,18 +471,19 @@ function RunDialog({
                 >
                   {t(`steps.${id}`, { count })}
                 </span>
-                {!!count && (
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {openrouter
-                      ? null
-                      : quote.costs[id]
-                        ? t("credits", {
-                            count: quote.costs[id],
-                            n: quote.costs[id],
-                          })
-                        : t("free")}
-                  </span>
-                )}
+                {!!count &&
+                  (openrouter ? null : quote.costs[id] ? (
+                    <CreditsPill>
+                      {t("credits", {
+                        count: quote.costs[id],
+                        n: quote.costs[id],
+                      })}
+                    </CreditsPill>
+                  ) : (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {t("free")}
+                    </span>
+                  ))}
               </li>
             )
           })}

@@ -18,6 +18,7 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Textarea } from "@workspace/ui/components/textarea"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { FLAG_CLASS, Flag } from "@/components/flag"
 import { openSettings } from "@/components/settings/settings-dialog"
 import { LOCALES, LOCALE_NAMES, isLocale, useT, type Locale } from "@/i18n/core"
@@ -164,9 +165,7 @@ export function LetteringSection({
               {busy && <Spinner data-icon="inline-start" />}
               {t(fresh ? "retranslate" : "translate")}
               {!!info?.cost && (
-                <span className="text-muted-foreground tabular-nums">
-                  {t("cost", { count: info.cost })}
-                </span>
+                <CreditsPill>{t("cost", { count: info.cost })}</CreditsPill>
               )}
             </Button>
           )}

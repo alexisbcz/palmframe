@@ -24,6 +24,7 @@ import {
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { useOpenRouter } from "@/components/account/account-menu"
 import { useT } from "@/i18n/core"
 import { COSTS } from "@/lib/credits"
@@ -277,9 +278,15 @@ export function EditSection({
             data-icon="inline-start"
           />
           {t(`run.${tool}`)}
-          <span className="ms-auto text-xs text-muted-foreground tabular-nums">
-            {openrouter ? "OpenRouter" : t("cost", { count: COSTS[tool] })}
-          </span>
+          {openrouter ? (
+            <span className="ms-auto text-xs text-muted-foreground">
+              {"OpenRouter"}
+            </span>
+          ) : (
+            <CreditsPill className="ms-auto">
+              {t("cost", { count: COSTS[tool] })}
+            </CreditsPill>
+          )}
         </Button>
       )}
 

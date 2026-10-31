@@ -23,6 +23,7 @@ import {
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { useOpenRouter } from "@/components/account/account-menu"
 import { useT } from "@/i18n/core"
 import { COSTS } from "@/lib/credits"
@@ -204,9 +205,15 @@ export function GuideSection({
             <span className="truncate">
               {coverage ? t("coverage.again") : t("coverage.draw")}
             </span>
-            <span className="ms-auto text-xs text-muted-foreground tabular-nums">
-              {openrouter ? "OpenRouter" : t("cost", { count: COSTS.coverage })}
-            </span>
+            {openrouter ? (
+              <span className="ms-auto text-xs text-muted-foreground">
+                {"OpenRouter"}
+              </span>
+            ) : (
+              <CreditsPill className="ms-auto">
+                {t("cost", { count: COSTS.coverage })}
+              </CreditsPill>
+            )}
           </Button>
         )}
         {!hasPrompt(panel) && (

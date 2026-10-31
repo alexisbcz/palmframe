@@ -23,6 +23,7 @@ import {
 } from "@workspace/ui/components/toggle-group"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { useOpenRouter } from "@/components/account/account-menu"
 import { useT } from "@/i18n/core"
 import { COSTS } from "@/lib/credits"
@@ -168,10 +169,12 @@ function panelsOf(page: ComicPage) {
 function CostHint({ count }: { count: number }) {
   const t = useT(messages)
   const openrouter = useOpenRouter()
-  return (
-    <span className="ms-auto text-xs text-muted-foreground tabular-nums">
-      {openrouter ? t("openrouter") : t("cost", { count })}
+  return openrouter ? (
+    <span className="ms-auto text-xs text-muted-foreground">
+      {t("openrouter")}
     </span>
+  ) : (
+    <CreditsPill className="ms-auto">{t("cost", { count })}</CreditsPill>
   )
 }
 

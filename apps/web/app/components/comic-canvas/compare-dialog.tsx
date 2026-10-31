@@ -13,6 +13,7 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { CreditsPill } from "@/components/account/credits-pill"
 import { useOpenRouter } from "@/components/account/account-menu"
 import { useT, type Translate } from "@/i18n/core"
 import { INSUFFICIENT_CREDITS, useCredits } from "@/lib/credits-store"
@@ -258,9 +259,7 @@ export function CompareDialog({
             />
             {t("try", { engine: ENGINES[engine] })}
             {!openrouter && (
-              <span className="text-muted-foreground tabular-nums">
-                {t("cost", { count: cost })}
-              </span>
+              <CreditsPill>{t("cost", { count: cost })}</CreditsPill>
             )}
           </Button>
         )}
