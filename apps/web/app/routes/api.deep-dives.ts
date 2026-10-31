@@ -49,7 +49,10 @@ export async function action({ request }: Route.ActionArgs) {
     await kick(new URL(request.url).origin, data.id)
   } catch (e) {
     console.error("Deep dive didn't start", data.id, e)
-    await failDive({ id: data.id, user_id: viewer.id, job }, "It couldn't start.")
+    await failDive(
+      { id: data.id, user_id: viewer.id, job },
+      "It couldn't start."
+    )
     return fail("generic", 500)
   }
   return Response.json({ id: data.id, balance: spent.data })

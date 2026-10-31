@@ -334,9 +334,13 @@ async function edition(
       filed.sources.map((i) => i.key)
     )
   // A Story is an extra. It can't cost the machine the post it just filed.
-  await startMachineStory(machine, config.media, filed.sources[0], draftKey, origin).catch(
-    (e) => console.error("Machine story didn't start", machine.id, e)
-  )
+  await startMachineStory(
+    machine,
+    config.media,
+    filed.sources[0],
+    draftKey,
+    origin
+  ).catch((e) => console.error("Machine story didn't start", machine.id, e))
   return { drafts: 1, failed: false }
 }
 

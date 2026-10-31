@@ -383,7 +383,7 @@ export default function StudioMediaStory({ loaderData }: Route.ComponentProps) {
                             href={f.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="ms-1 block truncate text-xs text-muted-foreground hover:underline"
+                            className="block truncate text-xs text-muted-foreground hover:underline"
                           >
                             {f.url}
                           </a>

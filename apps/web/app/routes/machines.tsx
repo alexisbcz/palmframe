@@ -1360,8 +1360,16 @@ function Machine({
 }
 
 export default function Machines({ loaderData }: Route.ComponentProps) {
-  const { machines, drafts, items, accounts, posting, canDraw, formats, scheduled } =
-    loaderData
+  const {
+    machines,
+    drafts,
+    items,
+    accounts,
+    posting,
+    canDraw,
+    formats,
+    scheduled,
+  } = loaderData
   const t = useT(messages)
   const revalidator = useRevalidator()
   const [selected, setSelected] = React.useState<string | null>(null)
