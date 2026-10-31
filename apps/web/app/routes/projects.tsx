@@ -200,7 +200,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
       </header>
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <h1 className="text-4xl lettering">{t("projects.title")}</h1>
+          <h1 className="text-2xl font-semibold">{t("projects.title")}</h1>
           <div className="flex items-center gap-2">
             <Button variant="ghost" onPress={() => setNaming(true)}>
               <HugeiconsIcon icon={LibraryIcon} strokeWidth={2} />
@@ -237,13 +237,13 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
           </SeriesSection>
         ))}
         {loose.length > 0 && series.length > 0 && (
-          <h2 className="text-2xl lettering">{ts("otherCarousels")}</h2>
+          <h2 className="font-semibold">{ts("otherCarousels")}</h2>
         )}
         {loose.length ? (
           <ul className={GRID}>{loose.map(card)}</ul>
         ) : series.length ? null : (
           <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed px-6 py-16 text-center">
-            <p className="text-2xl lettering">{t("projects.empty")}</p>
+            <p className="font-medium">{t("projects.empty")}</p>
             <p className="max-w-sm text-sm text-balance text-muted-foreground">
               {t("projects.emptyHint")}
             </p>
@@ -310,7 +310,7 @@ function SeriesSection({
       className="flex flex-col gap-3"
     >
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <h2 className="min-w-0 truncate text-2xl lettering">
+        <h2 className="min-w-0 truncate font-semibold">
           {series.title || t("untitled")}
         </h2>
         <span className="text-xs text-muted-foreground tabular-nums">

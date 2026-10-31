@@ -158,7 +158,7 @@
     font-size: 16px;
   }
 }
-/* Page titles and the wordmark, in the lettering the comics themselves use. */
+/* The wordmark and error pages, in the lettering the comics themselves use. */
 @utility lettering {
   font-family: var(--font-display) !important;
   font-weight: 400 !important;

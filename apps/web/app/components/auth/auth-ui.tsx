@@ -104,7 +104,7 @@ export function AuthCard({
             <HugeiconsIcon icon={icon} strokeWidth={2} className="size-5" />
           </span>
         )}
-        <CardTitle className="lettering text-3xl">{title}</CardTitle>
+        <CardTitle className="text-xl">{title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>{children}</CardContent>
