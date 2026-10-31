@@ -79,6 +79,34 @@ Optional:
   instead of Zernio.
 - `ZERNIO_API_URL` overrides the API base (default `https://zernio.com/api/v1`).
 
+### Studio
+
+Studio is a Labs feature, off until someone turns it on under **Settings >
+Labs**. Everything in it leads to the same place: a source becomes a storyboard,
+and a storyboard becomes a comic project.
+
+| Page             | Source                          | What it gives                        |
+| ---------------- | ------------------------------- | ------------------------------------ |
+| Brand kit        | context.dev                     | Logos, colours, fonts, voice         |
+| Ad library       | ScrapeCreators, Meta Ad Library | Running ads, longest-running first   |
+| Trends           | ScrapeCreators                  | TikTok, Instagram and YouTube videos |
+| Teardown         | ScrapeCreators                  | A video's numbers and transcript     |
+| Product to comic | context.dev                     | A product page's facts               |
+
+The storyboard prompt borrows the structure and the idea of someone else's work,
+never its wording, characters or brand. On a product page it claims only what
+the page says. Studio needs these on the server:
+
+```bash
+# apps/web/.env, or your host's environment
+SCRAPECREATORS_API_KEY=...
+CONTEXT_DEV_API_KEY=...
+```
+
+Lookups cost credits and refund on failure. Storyboards cost nothing in credits
+when the person's OpenRouter account pays. Run the unit tests with
+`bun test apps/web/app/lib/studio`.
+
 ### Content machines
 
 Content machines are a Labs feature, off until someone turns them on under

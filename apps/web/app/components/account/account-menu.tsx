@@ -189,7 +189,7 @@ export function AccountMenu() {
         onAction={(key) => {
           if (key === "projects") navigate("/projects")
           if (key === "catalog") navigate("/catalog")
-          if (key === "machines") navigate("/machines")
+          if (key === "studio") navigate("/studio")
           if (key === "billing") openSettings("billing")
           if (key === "settings") openSettings()
           if (key === "commands")
@@ -238,11 +238,11 @@ export function AccountMenu() {
             {t("account.catalog")}
           </DropdownMenuItem>
           {viewer.labs.machines && (
-            <DropdownMenuItem id="machines" textValue={tm("title")}>
+            <DropdownMenuItem id="studio" textValue={tm("labs.machines")}>
               <Tile>
                 <HugeiconsIcon icon={RadioIcon} strokeWidth={2} />
               </Tile>
-              {tm("title")}
+              {tm("labs.machines")}
             </DropdownMenuItem>
           )}
           <DropdownMenuItem id="settings" textValue={t("account.settings")}>

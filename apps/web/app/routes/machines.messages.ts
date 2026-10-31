@@ -89,10 +89,10 @@ export const messages = defineMessages({
     labs: {
       title: "Labs",
       nav: "Features still being tried out.",
-      machines: "Content machines",
+      machines: "Studio",
       machinesHint:
-        "Turn live public streams into post and comic drafts. Turning this off stops every machine.",
-      open: "Open content machines",
+        "Brand kits, ad research, trends and content machines that turn into comics. Turning this off stops every machine.",
+      open: "Open Studio",
     },
     errors: {
       generic: "Something went wrong. Try again.",
@@ -189,10 +189,10 @@ export const messages = defineMessages({
     labs: {
       title: "Labo",
       nav: "Des fonctionnalités encore à l’essai.",
-      machines: "Machines à contenu",
+      machines: "Studio",
       machinesHint:
-        "Transformez des flux publics en direct en brouillons de posts et de BD. Désactiver cette option arrête toutes les machines.",
-      open: "Ouvrir les machines à contenu",
+        "Kits de marque, veille publicitaire, tendances et machines à contenu qui deviennent des BD. Désactiver cette option arrête toutes les machines.",
+      open: "Ouvrir Studio",
     },
     errors: {
       generic: "Une erreur est survenue. Réessayez.",
@@ -288,10 +288,10 @@ export const messages = defineMessages({
     labs: {
       title: "Labs",
       nav: "Funciones todavía en prueba.",
-      machines: "Máquinas de contenido",
+      machines: "Studio",
       machinesHint:
-        "Convierte flujos públicos en directo en borradores de posts y cómics. Al desactivarlo se detienen todas las máquinas.",
-      open: "Abrir las máquinas de contenido",
+        "Kits de marca, análisis de anuncios, tendencias y máquinas de contenido que se convierten en cómics. Al desactivarlo se detienen todas las máquinas.",
+      open: "Abrir Studio",
     },
     errors: {
       generic: "Algo ha fallado. Inténtalo de nuevo.",
@@ -387,10 +387,10 @@ export const messages = defineMessages({
     labs: {
       title: "Labs",
       nav: "Funktionen in der Testphase.",
-      machines: "Content-Maschinen",
+      machines: "Studio",
       machinesHint:
-        "Mache aus öffentlichen Live-Streams Entwürfe für Posts und Comics. Beim Ausschalten stoppen alle Maschinen.",
-      open: "Content-Maschinen öffnen",
+        "Brand-Kits, Anzeigen-Recherche, Trends und Content-Maschinen, aus denen Comics werden. Beim Ausschalten stoppen alle Maschinen.",
+      open: "Studio öffnen",
     },
     errors: {
       generic: "Etwas ist schiefgelaufen. Versuche es noch einmal.",
@@ -486,10 +486,10 @@ export const messages = defineMessages({
     labs: {
       title: "Labs",
       nav: "Funzioni ancora in prova.",
-      machines: "Macchine di contenuti",
+      machines: "Studio",
       machinesHint:
-        "Trasforma i flussi pubblici in diretta in bozze di post e fumetti. Disattivandolo si fermano tutte le macchine.",
-      open: "Apri le macchine di contenuti",
+        "Kit del brand, analisi degli annunci, tendenze e macchine di contenuti che diventano fumetti. Disattivandolo si fermano tutte le macchine.",
+      open: "Apri Studio",
     },
     errors: {
       generic: "Qualcosa è andato storto. Riprova.",
@@ -585,10 +585,10 @@ export const messages = defineMessages({
     labs: {
       title: "ラボ",
       nav: "試験中の機能です。",
-      machines: "コンテンツマシン",
+      machines: "Studio",
       machinesHint:
-        "公開ライブストリームを投稿とコミックの下書きに変えます。オフにするとすべてのマシンが停止します。",
-      open: "コンテンツマシンを開く",
+        "ブランドキット、広告リサーチ、トレンド、コンテンツマシンをコミックにつなげます。オフにするとすべてのマシンが停止します。",
+      open: "Studio を開く",
     },
     errors: {
       generic: "問題が発生しました。もう一度お試しください。",

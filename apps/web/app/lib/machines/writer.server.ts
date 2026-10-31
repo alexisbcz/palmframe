@@ -7,6 +7,7 @@ import {
   payingConnection,
 } from "@/lib/openrouter.server"
 import { MACHINE_WRITER, promptId } from "@/lib/prompts.server"
+import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
 import type { MachineConfig, Signal } from "./model"
 
@@ -93,9 +94,18 @@ export async function writeDraft(
   const openrouter = await payingConnection(userId)
   if (!openrouter && !process.env.ANTHROPIC_API_KEY) return plain(signal)
   if (!openrouter) await billing.spend(COSTS.machine_draft)
+  // The machine's own notes come first; the brand kit fills in the rest.
+  const { data: brand } = await supabaseAdmin()
+    .from("comic_brand_kits")
+    .select("name, voice")
+    .eq("user_id", userId)
+    .eq("active", true)
+    .maybeSingle()
   const system = MACHINE_WRITER.render({
     signal,
-    voice: config.voice,
+    voice: [config.voice, brand?.voice && `${brand.name}: ${brand.voice}`]
+      .filter(Boolean)
+      .join("\n"),
     language: config.language,
   })
   try {

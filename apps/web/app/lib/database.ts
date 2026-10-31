@@ -9,6 +9,13 @@ import type { AssetPayload } from "@/components/catalog/model"
 import type { SubscriptionCache } from "./credits"
 import type { DetectorState } from "./machines/detect"
 import type { MachineConfig, Signal, SourceId } from "./machines/model"
+import type {
+  Board,
+  BrandColor,
+  BrandFont,
+  BrandLogo,
+  StudioSource,
+} from "./studio/model"
 
 // The slice of the shared database this app uses. The other tables belong
 // to the palmframe editor.
@@ -72,6 +79,18 @@ export interface Database {
           status?: MachineDraftRow["status"]
           project_id?: string | null
         }
+        Relationships: []
+      }
+      comic_brand_kits: {
+        Row: BrandKitRow
+        Insert: Omit<BrandKitRow, "id" | "user_id" | "created_at">
+        Update: { voice?: string; active?: boolean }
+        Relationships: []
+      }
+      comic_studio_boards: {
+        Row: StudioBoardRow
+        Insert: Omit<StudioBoardRow, "id" | "user_id" | "created_at">
+        Update: { project_id?: string | null }
         Relationships: []
       }
       comic_series: {
@@ -370,6 +389,34 @@ export type ComicAssetRow = {
   hidden: boolean
   created_at: string
   updated_at: string
+}
+
+export type BrandKitRow = {
+  id: string
+  user_id: string
+  domain: string
+  name: string
+  slogan: string
+  description: string
+  colors: BrandColor[]
+  logos: BrandLogo[]
+  fonts: BrandFont[]
+  voice: string
+  active: boolean
+  created_at: string
+}
+
+export type StudioBoardRow = {
+  id: string
+  user_id: string
+  kind: StudioSource["kind"]
+  title: string
+  source: StudioSource
+  board: Board
+  brand_id: string | null
+  project_id: string | null
+  prompt: string | null
+  created_at: string
 }
 
 export type MachineRow = {

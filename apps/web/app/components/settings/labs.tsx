@@ -65,7 +65,7 @@ export function LabsSection({
       )}
       {viewer.labs.machines && (
         <Link
-          to="/machines"
+          to="/studio"
           onClick={onClose}
           className={cn(buttonVariants({ variant: "outline" }), "self-start")}
         >
