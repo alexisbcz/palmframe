@@ -4,95 +4,23 @@ on:
   push:
     branches: [main]
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   post:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - run: node .github/scripts/bluesky.mjs
         env:
+          REPO: ${{ github.repository }}
+          GITHUB_TOKEN: ${{ github.token }}
           BLUESKY_HANDLE: palmframe.com
           BLUESKY_APP_PASSWORD: ${{ secrets.BLUESKY_APP_PASSWORD }}
-        with:
-          script: |
-            const LIMIT = 300
-            const graphemes = (s) => [...new Intl.Segmenter().segment(s)].length
-            const clip = (s, max) => {
-              const parts = [...new Intl.Segmenter().segment(s)].map((p) => p.segment)
-              return parts.length <= max ? s : `${parts.slice(0, max - 1).join("").trimEnd()}…`
-            }
-
-            const push = context.payload
-            const subjects = push.commits
-              .filter((c) => c.distinct)
-              .map((c) => c.message.split("\n")[0].trim())
-              .filter((s) => !s.startsWith("Merge "))
-            if (!subjects.length) return core.info("Nothing to post.")
-
-            const linkText = subjects.length === 1 ? "See the commit" : "See the changes"
-            const link =
-              subjects.length === 1
-                ? push.commits.findLast((c) => c.distinct && !c.message.startsWith("Merge ")).url
-                : push.compare
-
-            // Keeps whole lines and says how many didn't fit.
-            const room = LIMIT - graphemes(`\n\n${linkText}`)
-            let body = clip(subjects[0], room)
-            if (subjects.length > 1) {
-              const kept = []
-              for (const [i, subject] of subjects.entries()) {
-                const rest = subjects.length - i - 1
-                const more = rest ? `\n…and ${rest} more` : ""
-                const next = [...kept, `• ${subject}`].join("\n")
-                if (graphemes(next + more) > room) {
-                  if (!kept.length) kept.push(clip(`• ${subject}`, room - graphemes(more)))
-                  break
-                }
-                kept.push(`• ${subject}`)
-              }
-              const left = subjects.length - kept.length
-              body = [...kept, ...(left ? [`…and ${left} more`] : [])].join("\n")
-            }
-
-            const prefix = `${body}\n\n`
-            const byteStart = new TextEncoder().encode(prefix).length
-            const byteEnd = byteStart + new TextEncoder().encode(linkText).length
-
-            const xrpc = async (method, body, token) => {
-              const res = await fetch(`https://bsky.social/xrpc/${method}`, {
-                method: "POST",
-                headers: {
-                  "content-type": "application/json",
-                  ...(token && { authorization: `Bearer ${token}` }),
-                },
-                body: JSON.stringify(body),
-              })
-              if (!res.ok) throw new Error(`${method}: ${res.status} ${await res.text()}`)
-              return res.json()
-            }
-
-            const session = await xrpc("com.atproto.server.createSession", {
-              identifier: process.env.BLUESKY_HANDLE,
-              password: process.env.BLUESKY_APP_PASSWORD,
-            })
-            const post = await xrpc(
-              "com.atproto.repo.createRecord",
-              {
-                repo: session.did,
-                collection: "app.bsky.feed.post",
-                record: {
-                  $type: "app.bsky.feed.post",
-                  text: prefix + linkText,
-                  createdAt: new Date().toISOString(),
-                  facets: [
-                    {
-                      index: { byteStart, byteEnd },
-                      features: [{ $type: "app.bsky.richtext.facet#link", uri: link }],
-                    },
-                  ],
-                },
-              },
-              session.accessJwt
-            )
-            core.info(`Posted ${post.uri}`)
+          PRUNA_API_KEY: ${{ secrets.PRUNA_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
