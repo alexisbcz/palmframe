@@ -5,6 +5,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ApiIcon,
   CreditCardIcon,
+  LabsIcon,
   LockPasswordIcon,
   Logout01Icon,
   PaintBoardIcon,
@@ -32,12 +33,15 @@ import { useLocale, useT } from "@/i18n/core"
 import type { BillingData } from "@/routes/api.billing"
 import { messages as billingMessages } from "@/routes/pricing.messages"
 
+import { messages as labsMessages } from "@/routes/machines.messages"
+
 import { BillingPanel, BillingSkeleton } from "./billing"
+import { LabsSection } from "./labs"
 import { AccountSection, PreferencesSection, ProfileSection } from "./sections"
 import { messages } from "./settings.messages"
 
 export type SettingsSection =
-  "profile" | "account" | "prefs" | "billing" | "openrouter" | "api"
+  "profile" | "account" | "prefs" | "billing" | "openrouter" | "api" | "labs"
 
 const SECTIONS: SettingsSection[] = [
   "profile",
@@ -46,6 +50,7 @@ const SECTIONS: SettingsSection[] = [
   "billing",
   "openrouter",
   "api",
+  "labs",
 ]
 const isSection = (s: unknown): s is SettingsSection =>
   SECTIONS.includes(s as SettingsSection)
@@ -67,10 +72,11 @@ const ICONS = {
   billing: CreditCardIcon,
   openrouter: PlugSocketIcon,
   api: ApiIcon,
+  labs: LabsIcon,
 } satisfies Record<SettingsSection, unknown>
 
 const GROUPS = [
-  { id: "you", sections: ["profile", "account", "prefs"] },
+  { id: "you", sections: ["profile", "account", "prefs", "labs"] },
   { id: "billing", sections: ["billing"] },
   { id: "connections", sections: ["openrouter", "api"] },
 ] as const
@@ -90,6 +96,7 @@ export function SettingsDialog() {
   const tb = useT(billingMessages)
   const to = useT(openRouterMessages)
   const ta = useT(apiMessages)
+  const tl = useT(labsMessages)
   const { locale } = useLocale()
   const viewer = useViewer()
   const balance = useBalance()
@@ -179,15 +186,15 @@ export function SettingsDialog() {
       ?.scrollIntoView({ block: "nearest", inline: "nearest" })
   }, [open, section])
 
-  const label = (s: SettingsSection) =>
-    s === "billing"
-      ? tb("title")
-      : s === "openrouter"
-        ? to("title")
-        : s === "api"
-          ? ta("title")
-          : t(`${s}.title`)
-  const description = (s: SettingsSection) => t(`nav.${s}`)
+  const label = (s: SettingsSection) => {
+    if (s === "billing") return tb("title")
+    if (s === "openrouter") return to("title")
+    if (s === "api") return ta("title")
+    if (s === "labs") return tl("labs.title")
+    return t(`${s}.title`)
+  }
+  const description = (s: SettingsSection) =>
+    s === "labs" ? tl("labs.nav") : t(`nav.${s}`)
   // Each section is found by its name, its description and what's in it.
   const keywords: Record<SettingsSection, string[]> = {
     profile: [t("profile.avatar"), t("profile.name")],
@@ -204,6 +211,7 @@ export function SettingsDialog() {
     ],
     openrouter: [to("pay"), to("imageModel"), to("textModel"), "key"],
     api: [ta("name"), "MCP", "key", "token"],
+    labs: [tl("labs.machines")],
   }
   const q = fold(query.trim())
   const matches = allowed.filter(
@@ -392,6 +400,9 @@ export function SettingsDialog() {
                     <OpenRouter result={flash.openrouter} />
                   )}
                   {section === "api" && <ApiKeys />}
+                  {section === "labs" && viewer && (
+                    <LabsSection viewer={viewer} onClose={close} />
+                  )}
                 </div>
               </div>
             </>

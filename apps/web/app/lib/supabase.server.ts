@@ -55,6 +55,7 @@ export function toViewer(user: User): Viewer {
       )
         ? meta.avatar_url
         : null,
+    labs: { machines: meta.labs?.machines === true },
   }
 }
 

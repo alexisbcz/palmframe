@@ -7,6 +7,8 @@ import type {
 import type { AssetPayload } from "@/components/catalog/model"
 
 import type { SubscriptionCache } from "./credits"
+import type { DetectorState } from "./machines/detect"
+import type { MachineConfig, Signal, SourceId } from "./machines/model"
 
 // The slice of the shared database this app uses. The other tables belong
 // to the palmframe editor.
@@ -33,6 +35,42 @@ export interface Database {
           share_token?: string | null
           series_id?: string | null
           series_position?: number | null
+        }
+        Relationships: []
+      }
+      comic_machines: {
+        Row: MachineRow
+        Insert: {
+          name: string
+          source: SourceId
+          config: MachineConfig
+        }
+        Update: {
+          name?: string
+          source?: SourceId
+          config?: MachineConfig
+          enabled?: boolean
+          state?: DetectorState
+          last_run_at?: string | null
+          last_error?: string | null
+        }
+        Relationships: []
+      }
+      comic_machine_drafts: {
+        Row: MachineDraftRow
+        Insert: {
+          machine_id: string
+          user_id?: string
+          signal_id: string
+          signal: Signal
+          text: string
+          scene?: string
+          alt?: string
+          prompt?: string | null
+        }
+        Update: {
+          status?: MachineDraftRow["status"]
+          project_id?: string | null
         }
         Relationships: []
       }
@@ -334,12 +372,43 @@ export type ComicAssetRow = {
   updated_at: string
 }
 
+export type MachineRow = {
+  id: string
+  user_id: string
+  name: string
+  source: SourceId
+  config: MachineConfig
+  enabled: boolean
+  state: DetectorState
+  last_run_at: string | null
+  last_error: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type MachineDraftRow = {
+  id: string
+  machine_id: string
+  user_id: string
+  signal_id: string
+  signal: Signal
+  text: string
+  scene: string
+  alt: string
+  status: "new" | "used" | "dismissed"
+  project_id: string | null
+  prompt: string | null
+  created_at: string
+}
+
 export interface Viewer {
   id: string
   email: string
   name: string
   // Public URL of their profile picture, if they set one.
   avatarUrl: string | null
+  // Features they turned on in Settings, under Labs.
+  labs: { machines: boolean }
 }
 
 export const COMICS_BUCKET = "comics"

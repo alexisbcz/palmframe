@@ -8,14 +8,14 @@ Live at [www.palmframe.com](https://www.palmframe.com).
 
 ## Example
 
-*Lost Property*, a six-slide carousel about a station's lost-and-found clerk and
+_Lost Property_, a six-slide carousel about a station's lost-and-found clerk and
 the red umbrella she never threw away. Its characters are drawn from model
 sheets, so they stay the same from panel to panel. You can open it in the editor
 at `/?project=/comics/lost-property.json`.
 
-| | | |
-| --- | --- | --- |
-| ![Slide 1: Mara behind the lost-and-found counter, with the title Lost Property](docs/lost-property/slide-1.png) | ![Slide 2: the thirty-day rule, and a red umbrella left on a platform twelve years ago](docs/lost-property/slide-2.png) | ![Slide 3: Mara stands the umbrella by the window, and an old man arrives at the door](docs/lost-property/slide-3.png) |
+|                                                                                                                            |                                                                                                                              |                                                                                                                            |
+| -------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| ![Slide 1: Mara behind the lost-and-found counter, with the title Lost Property](docs/lost-property/slide-1.png)           | ![Slide 2: the thirty-day rule, and a red umbrella left on a platform twelve years ago](docs/lost-property/slide-2.png)      | ![Slide 3: Mara stands the umbrella by the window, and an old man arrives at the door](docs/lost-property/slide-3.png)     |
 | ![Slide 4: the old man says his wife lost a red umbrella, and Mara lays it on the counter](docs/lost-property/slide-4.png) | ![Slide 5: he hugs the umbrella and asks her to lend it to the next person the rain catches](docs/lost-property/slide-5.png) | ![Slide 6: Mara lends the umbrella to a soaked stranger, and it disappears into the crowd](docs/lost-property/slide-6.png) |
 
 ## Stack
@@ -78,6 +78,41 @@ Optional:
   (`GET /v1/connect/oauth-apps`), so Instagram's consent screen names Palmframe
   instead of Zernio.
 - `ZERNIO_API_URL` overrides the API base (default `https://zernio.com/api/v1`).
+
+### Content machines
+
+Content machines are a Labs feature, off until someone turns them on under
+**Settings > Labs**. A machine filters a live public stream and writes short,
+number-first drafts from what stands out: a post, plus a scene that **Make the
+comic** turns into a project. Nothing publishes on its own.
+
+| Stream            | Connection             | Fires on                     |
+| ----------------- | ---------------------- | ---------------------------- |
+| Bluesky Jetstream | WebSocket, with replay | A burst of keyword matches   |
+| Wikipedia changes | Server-sent events     | A burst of edits to a page   |
+| Coinbase trades   | WebSocket              | A price move inside a window |
+
+The filter in `apps/web/app/lib/machines` runs in the browser for the live wire
+and on the server for scheduled runs. Listening is free. A draft costs credits
+when the server's Anthropic key writes it, nothing when the person's OpenRouter
+account pays, and with no writer configured a draft is the raw facts.
+
+Vercel functions can't hold a socket open, so `.github/workflows/machines.yml`
+calls the tick route every 10 minutes. Each tick replays what Bluesky and
+Wikipedia said since the last one, and compares prices across ticks. To turn
+scheduled runs on, set the same secret on the server and in GitHub Actions:
+
+```bash
+# apps/web/.env, or your host's environment
+MACHINES_CRON_SECRET=...
+SUPABASE_SECRET_KEY=...
+
+# GitHub Actions secrets
+MACHINES_CRON_SECRET=...
+MACHINES_TICK_URL=https://www.palmframe.com/api/machines/tick
+```
+
+Run the unit tests with `bun test apps/web/app/lib/machines`.
 
 ## Adding components
 
