@@ -14,6 +14,7 @@ export const messages = defineMessages({
       teardown: "Teardown",
       product: "Product to comic",
       media: "Media",
+      books: "Books",
       machines: "Content machines",
     },
     start: {
@@ -146,6 +147,7 @@ export const messages = defineMessages({
       teardown: "Décryptage",
       product: "Du produit à la BD",
       media: "Médias",
+      books: "Livres",
       machines: "Machines à contenu",
     },
     start: {
@@ -279,6 +281,7 @@ export const messages = defineMessages({
       teardown: "Análisis",
       product: "Del producto al cómic",
       media: "Medios",
+      books: "Libros",
       machines: "Máquinas de contenido",
     },
     start: {
@@ -413,6 +416,7 @@ export const messages = defineMessages({
       teardown: "Analyse",
       product: "Vom Produkt zum Comic",
       media: "Medien",
+      books: "Bücher",
       machines: "Content-Maschinen",
     },
     start: {
@@ -547,6 +551,7 @@ export const messages = defineMessages({
       teardown: "Analisi",
       product: "Dal prodotto al fumetto",
       media: "Media",
+      books: "Libri",
       machines: "Macchine di contenuti",
     },
     start: {
@@ -681,6 +686,7 @@ export const messages = defineMessages({
       teardown: "分析",
       product: "商品からコミック",
       media: "メディア",
+      books: "書籍",
       machines: "コンテンツマシン",
     },
     start: {

@@ -10,6 +10,7 @@ import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowLeft01Icon,
+  BookOpen02Icon,
   CheckmarkCircle02Icon,
   Fire02Icon,
   Home01Icon,
@@ -74,6 +75,7 @@ const NAV = [
   { to: "/studio/teardown", key: "teardown", icon: Video01Icon },
   { to: "/studio/product", key: "product", icon: ShoppingBag01Icon },
   { to: "/studio/media", key: "media", icon: NewsIcon },
+  { to: "/studio/books", key: "books", icon: BookOpen02Icon },
   { to: "/machines", key: "machines", icon: RadioIcon },
 ] as const
 

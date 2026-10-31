@@ -19,6 +19,7 @@ import {
   type Access,
   type Caller,
 } from "@/lib/api.server"
+import { bookTools } from "@/lib/books/mcp.server"
 
 import type { Route } from "./+types/mcp"
 
@@ -27,7 +28,7 @@ import type { Route } from "./+types/mcp"
 // Paid tools come in pairs, estimate then start, so an agent shows the
 // cost before it spends. A key only gets the tools its scopes open.
 
-function server(caller: Caller) {
+async function server(caller: Caller, origin: string) {
   const mcp = new McpServer({ name: "palmframe", version: "1.0.0" })
 
   const tool = <Shape extends z.ZodRawShape>(
@@ -144,6 +145,7 @@ function server(caller: Caller) {
     "write",
     ({ operation_id }) => cancelJob(caller, operation_id)
   )
+  await bookTools(caller, tool, origin)
   return mcp
 }
 
@@ -161,7 +163,7 @@ async function handle(request: Request) {
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
   })
-  await server(caller).connect(transport)
+  await (await server(caller, new URL(request.url).origin)).connect(transport)
   return transport.handleRequest(request)
 }
 

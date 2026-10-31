@@ -20,7 +20,7 @@ const GDELT_GAP_MS = 5_500
 
 export class FeedBusy extends Error {}
 
-async function assertPublic(url: URL) {
+export async function assertPublic(url: URL) {
   if (url.protocol !== "https:") throw new Error("Only https is fetched.")
   if (url.port && url.port !== "443") throw new Error("Unusual port.")
   const addresses = await lookup(url.hostname, { all: true })
