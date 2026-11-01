@@ -25,7 +25,8 @@ import {
   type ParsedChapter,
   type Term,
 } from "./model"
-import type { LaidOutPage, PageBlock } from "./parse/layout"
+import { assertReadable } from "./parse/index"
+import type { PageBlock } from "./parse/layout"
 import { assemblePages } from "./parse/layout"
 import {
   BACKCHECK_SCHEMA,
@@ -96,13 +97,25 @@ export interface EngineRepo {
   addSuggestions(book: BookRow, terms: NewTerm[]): Promise<void>
   job(id: string): Promise<JobRow>
   setJob(id: string, patch: Partial<JobRow>): Promise<void>
-  finishJob(id: string, patch: Partial<JobRow>): Promise<boolean>
+  // Ends a job and settles it in one step. Returns the credits used, or null
+  // if it had already closed.
+  closeJob(
+    id: string,
+    close: Pick<JobRow, "status" | "error" | "result" | "usage">,
+    rate: number,
+    flat: number
+  ): Promise<number | null>
   startQa(job: JobRow): Promise<void>
-  settle(job: JobRow, used: number): Promise<number>
   replaceIssues(chapter: ChapterRow, issues: NewIssue[]): Promise<void>
   scanPages(bookId: string, limit: number): Promise<PageRow[]>
   allPages(bookId: string): Promise<PageRow[]>
-  setPage(id: string, patch: Partial<PageRow>): Promise<void>
+  // Throws JobClosed once the job has ended, like `save`.
+  savePage(
+    jobId: string,
+    pageId: string,
+    patch: Pick<PageRow, "status" | "attempts"> &
+      Partial<Pick<PageRow, "blocks" | "confidence">>
+  ): Promise<void>
   pageImage(path: string): Promise<{ data: string; media: string }>
   writeBook(book: BookRow, chapters: ParsedChapter[]): Promise<void>
   replaceChapter(
@@ -117,7 +130,13 @@ export interface Engine {
   model: BookModel
   now: () => number
   emit: (event: string, job: JobRow) => Promise<void>
+  // Fires at the slice's deadline, so a slow model can't outlive the function.
+  signal?: AbortSignal
 }
+
+// The job was cancelled or finished under a slice still working. Its bill is
+// final, so nothing more may land.
+export class JobClosed extends Error {}
 
 export type SliceResult = "continue" | "wait" | "done"
 
@@ -134,18 +153,27 @@ function fail(job: JobRow, e: Engine, error: string) {
   return finish(e, job, "failed", error)
 }
 
-// What each kind of job is worth at this point, from rows rather than from
-// memory, so a resumed job bills the same as an unbroken one.
-const usedCredits = (job: JobRow) => {
-  if (job.payer !== "credits") return 0
-  if (job.kind === "translate")
-    return Math.min(
-      job.credits_charged,
-      wordsToCredits(job.billable, job.params.mode ?? "standard")
-    )
-  if (job.kind === "ocr")
-    return Math.min(job.credits_charged, job.billable * BOOK_RATES.ocr_page)
-  return job.status === "succeeded" ? job.credits_charged : 0
+// Credits per billable unit. The database does the sum, on the row it locks,
+// so a resumed job bills the same as an unbroken one.
+const rateOf = (job: JobRow) =>
+  job.kind === "translate"
+    ? BOOK_RATES[job.params.mode ?? "standard"] / 1000
+    : job.kind === "ocr"
+      ? BOOK_RATES.ocr_page
+      : 0
+
+// How many words the held credits pay for. Rounding can only make it more than
+// the estimate, so a normal run never reaches it.
+const allowance = (job: JobRow) =>
+  job.payer === "credits"
+    ? job.credits_charged * (1000 / BOOK_RATES[job.params.mode ?? "standard"])
+    : Infinity
+
+async function overBudget(e: Engine, job: JobRow, words: number) {
+  const current = await e.repo.job(job.id)
+  if (current.billable + words <= allowance(current)) return false
+  await finish(e, job, "failed", "budget_reached")
+  return true
 }
 
 export async function finish(
@@ -155,24 +183,16 @@ export async function finish(
   error?: string,
   result?: Record<string, unknown>
 ) {
-  // Counters from the row: a slice's copy can be behind what was really saved.
-  const fresh = await e.repo.job(job.id)
-  const closed = { ...fresh, usage: job.usage, status }
-  const used = usedCredits(closed)
-  const moved = await e.repo.finishJob(job.id, {
-    status,
-    error: error ?? null,
-    result: result ?? fresh.result,
-    usage: job.usage,
-    credits_used: used,
-    leased_until: null,
-    next_at: null,
-    finished_at: new Date(e.now()).toISOString(),
-  })
+  const metered = job.kind === "translate" || job.kind === "ocr"
+  const used = await e.repo.closeJob(
+    job.id,
+    { status, error: error ?? null, result: result ?? null, usage: job.usage },
+    rateOf(job),
+    !metered && status === "succeeded" ? job.credits_charged : 0
+  )
   // Someone else closed it: it was settled there.
-  if (!moved) return
-  if (closed.payer === "credits" && closed.credits_charged > 0)
-    await e.repo.settle(closed, used)
+  if (used === null) return false
+  const closed = await e.repo.job(job.id)
   if (status !== "succeeded") {
     const back = {
       ingest: "failed",
@@ -187,7 +207,8 @@ export async function finish(
         ...(closed.kind === "ingest" && { error: error ?? null }),
       })
   }
-  await e.emit(`job.${status}`, { ...closed, credits_used: used })
+  await e.emit(`job.${status}`, closed)
+  return true
 }
 
 // One retry at the end of a slice, then give up: a job that keeps failing
@@ -207,6 +228,7 @@ export async function recoverable(e: Engine, job: JobRow, error: unknown) {
   await e.repo.setJob(job.id, {
     state: { ...job.state, errors },
     usage: job.usage,
+    claims: 0,
     leased_until: null,
     next_at: new Date(e.now() + BACKOFF_MS).toISOString(),
   })
@@ -338,8 +360,7 @@ async function translateChunk(
   chapter: ChapterRow | undefined,
   summary: string,
   allTerms: GlossaryTerm[],
-  segments: SegmentRow[],
-  signal?: AbortSignal
+  segments: SegmentRow[]
 ) {
   const terms = termsFor(
     allTerms,
@@ -364,7 +385,7 @@ async function translateChunk(
   })
   let first: { value: unknown; usage: Usage }
   try {
-    first = await e.model.json(call(payload(segments)), signal)
+    first = await e.model.json(call(payload(segments)), e.signal)
   } catch (error) {
     if (error instanceof ModelDeclined || error instanceof ModelCutShort) {
       // A long chunk retries as smaller ones. One line at a time isolates a
@@ -386,7 +407,7 @@ async function translateChunk(
   if (!bad.length) return
   let second: Awaited<ReturnType<typeof sortReply>> | null = null
   try {
-    const reply = await e.model.json(call(payload(bad, notes)), signal)
+    const reply = await e.model.json(call(payload(bad, notes)), e.signal)
     addUsage(job, reply.usage)
     second = sortReply(reply.value, bad, terms, book)
   } catch (error) {
@@ -425,14 +446,17 @@ async function summarize(
     .join("\n")
     .slice(0, 24_000)
   if (!text) return
-  const reply = await e.model.json({
-    task: "summary",
-    system: SUMMARY_SYSTEM,
-    user: `Summary so far:\n${previous || "(none)"}\n\nChapter:\n${text}`,
-    schema: SUMMARY_SCHEMA,
-    effort: "low",
-    maxTokens: 2_000,
-  })
+  const reply = await e.model.json(
+    {
+      task: "summary",
+      system: SUMMARY_SYSTEM,
+      user: `Summary so far:\n${previous || "(none)"}\n\nChapter:\n${text}`,
+      schema: SUMMARY_SCHEMA,
+      effort: "low",
+      maxTokens: 2_000,
+    },
+    e.signal
+  )
   addUsage(job, reply.usage)
   const summary = String((reply.value as { summary?: unknown }).summary ?? "")
   chapter.summary = summary.slice(0, 4_000)
@@ -445,11 +469,12 @@ const latestSummary = (chapters: ChapterRow[], position: number) =>
 
 async function completeTranslation(e: Engine, job: JobRow) {
   const fresh = await e.repo.job(job.id)
-  await e.repo.setBook(job.book_id, { status: "review" })
-  await finish(e, job, "succeeded", undefined, {
+  const closed = await finish(e, job, "succeeded", undefined, {
     translated: fresh.done,
     billed_words: fresh.billable,
   })
+  if (!closed) return
+  await e.repo.setBook(job.book_id, { status: "review" })
   await e.repo.startQa(fresh)
 }
 
@@ -460,13 +485,14 @@ async function economyPass(
   system: string,
   chapters: ChapterRow[],
   terms: GlossaryTerm[]
-): Promise<SliceResult> {
+): Promise<SliceResult | "stopped"> {
   const batch = e.model.batch!
   const open = job.state.batch
   if (open) {
     const results = await batch.results(open.id)
     if (!results) {
       await e.repo.setJob(job.id, {
+        claims: 0,
         leased_until: null,
         next_at: new Date(e.now() + BATCH_POLL_MS).toISOString(),
       })
@@ -510,6 +536,14 @@ async function economyPass(
     pending.filter((s) => s.chapter_id === chapterId)
   )
   if (!inChapter.length) return "continue"
+  if (
+    await overBudget(
+      e,
+      job,
+      inChapter.reduce((n, s) => n + s.words, 0)
+    )
+  )
+    return "stopped"
   const chapter = chapters.find((c) => c.id === chapterId)
   const summary = latestSummary(chapters, chapter?.position ?? 0)
   const chunks = chunkSegments(inChapter)
@@ -553,6 +587,7 @@ async function economyPass(
   }
   await e.repo.setJob(job.id, {
     state: job.state,
+    claims: 0,
     leased_until: null,
     next_at: new Date(e.now() + BATCH_POLL_MS).toISOString(),
   })
@@ -622,6 +657,7 @@ export async function translateSlice(
     while (e.now() < deadline) {
       const step = await economyPass(e, job, book, system, chapters, terms)
       if (step === "wait") return "wait"
+      if (step === "stopped") return "done"
       if (step === "done") {
         await completeTranslation(e, job)
         return "done"
@@ -652,6 +688,10 @@ export async function translateSlice(
       const chunks = (
         retrying.length ? chunkSegments(retrying, 1) : chunkSegments(todo)
       ).slice(0, CONCURRENCY)
+      const going = chunks
+        .flatMap((c) => c.segments)
+        .reduce((n, s) => n + s.words, 0)
+      if (await overBudget(e, job, going)) return "done"
       const before = job.done
       await Promise.all(
         chunks.map((chunk) =>
@@ -705,16 +745,21 @@ export async function extractSlice(
     segments.filter((s) => s.kind === "paragraph" && s.source.length > 200),
     40
   ).map((s) => stripTags(s.source).slice(0, 700))
-  const reply = await e.model.json({
-    task: "extract",
-    system: extractSystem(book.source_lang, book.target_lang),
-    user: `Candidates:\n${candidates
-      .map((c) => `${c.source} (${c.count}): ${c.context}`)
-      .join("\n")}\n\nPassages:\n${passages.join("\n\n")}`,
-    schema: EXTRACT_SCHEMA,
-    effort: "medium",
-  })
+  const reply = await e.model.json(
+    {
+      task: "extract",
+      system: extractSystem(book.source_lang, book.target_lang),
+      user: `Candidates:\n${candidates
+        .map((c) => `${c.source} (${c.count}): ${c.context}`)
+        .join("\n")}\n\nPassages:\n${passages.join("\n\n")}`,
+      schema: EXTRACT_SCHEMA,
+      effort: "medium",
+    },
+    e.signal
+  )
   addUsage(job, reply.usage)
+  // Cancelled while the model read: refunded, so nothing of it may land.
+  if ((await e.repo.job(job.id)).status !== "running") return "done"
   const value = reply.value as BookBible & {
     terms?: Omit<Term, "id" | "state" | "case_sensitive">[]
   }
@@ -785,25 +830,32 @@ function cleanOcr(value: unknown): { blocks: PageBlock[]; confidence: number } {
 async function readPage(e: Engine, job: JobRow, page: PageRow) {
   try {
     const image = await e.repo.pageImage(page.image_path!)
-    const reply = await e.model.json({
-      task: "ocr",
-      system: OCR_SYSTEM,
-      user: "Transcribe this page.",
-      images: [image],
-      schema: OCR_SCHEMA,
-      effort: "low",
-    })
+    const reply = await e.model.json(
+      {
+        task: "ocr",
+        system: OCR_SYSTEM,
+        user: "Transcribe this page.",
+        images: [image],
+        schema: OCR_SCHEMA,
+        effort: "low",
+      },
+      e.signal
+    )
     addUsage(job, reply.usage)
     const { blocks, confidence } = cleanOcr(reply.value)
-    await e.repo.setPage(page.id, { status: "done", blocks, confidence })
-    return true
+    await e.repo.savePage(job.id, page.id, {
+      status: "done",
+      blocks,
+      confidence,
+      attempts: page.attempts,
+    })
   } catch (error) {
     if (error instanceof ModelDeclined || error instanceof ModelCutShort) {
-      await e.repo.setPage(page.id, {
+      await e.repo.savePage(job.id, page.id, {
         attempts: page.attempts + 1,
-        ...(page.attempts + 1 >= MAX_ATTEMPTS && { status: "failed" }),
+        status: page.attempts + 1 >= MAX_ATTEMPTS ? "failed" : "pending",
       })
-      return false
+      return
     }
     throw error
   }
@@ -841,11 +893,18 @@ export async function assembleOcr(e: Engine, book: BookRow) {
     }
     return
   }
-  const laid: LaidOutPage[] = pages.map((p) => ({
-    number: p.number,
-    blocks: p.blocks,
-  }))
-  await e.repo.writeBook(book, assemblePages(laid, book.outline))
+  const chapters = assemblePages(
+    pages.map((p) => ({ number: p.number, blocks: p.blocks })),
+    book.outline
+  )
+  assertReadable({
+    meta: { title: "", author: "", language: null },
+    chapters,
+    assets: [],
+    scans: [],
+    warnings: [],
+  })
+  await e.repo.writeBook(book, chapters)
 }
 
 export async function ocrSlice(
@@ -861,18 +920,11 @@ export async function ocrSlice(
     if (!pages.length) {
       await assembleOcr(e, await e.repo.book(job.book_id))
       await e.repo.setBook(book.id, { status: "setup" })
-      await finish(e, { ...current, usage: job.usage }, "succeeded")
+      await finish(e, job, "succeeded")
       return "done"
     }
-    const read = await Promise.all(pages.map((p) => readPage(e, job, p)))
-    const count = read.filter(Boolean).length
-    const billable = current.billable + count
-    await e.repo.setJob(job.id, {
-      billable,
-      done: current.done + count,
-      usage: job.usage,
-    })
-    job.billable = billable
+    await Promise.all(pages.map((p) => readPage(e, job, p)))
+    await e.repo.setJob(job.id, { usage: job.usage })
   }
   return "continue"
 }
@@ -887,6 +939,7 @@ export async function qaSlice(
   const chapters = await e.repo.chapters(book.id)
   let cursor = job.state.cursor ?? 0
   while (cursor < chapters.length && e.now() < deadline) {
+    if ((await e.repo.job(job.id)).status !== "running") return "done"
     const chapter = chapters[cursor]!
     const segments = await e.repo.chapterSegments(chapter.id)
     const issues: NewIssue[] = segments.flatMap((s) =>
@@ -908,19 +961,22 @@ export async function qaSlice(
         segments.filter((s) => s.translatable && s.target?.trim())
       )
       if (sample.length) {
-        const reply = await e.model.json({
-          task: "backcheck",
-          system: backCheckSystem(book.source_lang, book.target_lang),
-          user: JSON.stringify(
-            sample.map((s) => ({
-              id: s.id,
-              source: stripTags(s.source),
-              translation: stripTags(s.target!),
-            }))
-          ),
-          schema: BACKCHECK_SCHEMA,
-          effort: "low",
-        })
+        const reply = await e.model.json(
+          {
+            task: "backcheck",
+            system: backCheckSystem(book.source_lang, book.target_lang),
+            user: JSON.stringify(
+              sample.map((s) => ({
+                id: s.id,
+                source: stripTags(s.source),
+                translation: stripTags(s.target!),
+              }))
+            ),
+            schema: BACKCHECK_SCHEMA,
+            effort: "low",
+          },
+          e.signal
+        )
         addUsage(job, reply.usage)
         const known = new Set(sample.map((s) => s.id))
         for (const row of (
@@ -941,6 +997,8 @@ export async function qaSlice(
       segments.filter((s) => s.translatable).length,
       issues
     )
+    // A cancelled back-check was refunded, so its findings don't land.
+    if ((await e.repo.job(job.id)).status !== "running") return "done"
     await e.repo.replaceIssues(chapter, issues)
     await e.repo.setChapter(chapter.id, { score })
     cursor++

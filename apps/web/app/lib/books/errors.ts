@@ -11,6 +11,7 @@ export const BOOK_ERROR_CODES = [
   "empty",
   "too_many_pages",
   "too_long",
+  "too_slow",
   "upload_missing",
 ] as const
 

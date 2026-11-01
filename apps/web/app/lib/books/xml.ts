@@ -2,22 +2,25 @@ import {
   CDATA,
   Comment,
   Document,
+  DomHandler,
   Element,
   ProcessingInstruction,
   Text,
   type AnyNode,
   type ChildNode,
 } from "domhandler"
-import { parseDocument } from "htmlparser2"
+import { Parser, type ParserOptions } from "htmlparser2"
 
 import { BookParseError } from "./errors"
-import { MAX_PART_BYTES, MAX_XML_DEPTH } from "./limits"
+import { MAX_PART_BYTES, MAX_XML_DEPTH, MAX_XML_NODES } from "./limits"
 
 // htmlparser2 never reads a DTD, so entities a book declares aren't expanded
 // and nothing is fetched. A document that declares them is refused anyway:
 // nothing legitimate needs one, and a downstream reader of a rewritten file
 // might be less careful. The stock XHTML doctypes pass.
-const DOCTYPE = /<!DOCTYPE[^>[]*(\[|>)/gi
+const DOCTYPE = "<!doctype"
+// Longer than any real one, and short enough to test with a regex in peace.
+const MAX_DOCTYPE = 1024
 const DECLARES = /<!(ENTITY|ELEMENT|ATTLIST|NOTATION)\b/i
 const STOCK_DOCTYPE =
   /^<!DOCTYPE\s+(html|ncx|package)(\s+PUBLIC\s+"[^"<>]*"(\s+"https?:\/\/[^"<>]*")?)?(\s+SYSTEM\s+"about:legacy-compat")?\s*>$/i
@@ -25,9 +28,37 @@ const STOCK_DOCTYPE =
 export function assertSafeXml(xml: string) {
   if (DECLARES.test(xml))
     throw new BookParseError("unsafe_xml", "The file declares XML entities.")
-  for (const m of xml.matchAll(DOCTYPE))
-    if (m[1] === "[" || !STOCK_DOCTYPE.test(m[0]))
-      throw new BookParseError("unsafe_xml", "Unexpected DOCTYPE.")
+  // By hand and only once: a regex here takes quadratic time on a file of
+  // nothing but `<!DOCTYPE`, and a document has one.
+  const lower = xml.toLowerCase()
+  const at = lower.indexOf(DOCTYPE)
+  if (at < 0) return
+  const head = xml.slice(at, at + MAX_DOCTYPE)
+  const end = head.search(/[>[]/)
+  if (
+    end < 0 ||
+    head[end] === "[" ||
+    !STOCK_DOCTYPE.test(head.slice(0, end + 1)) ||
+    lower.indexOf(DOCTYPE, at + DOCTYPE.length) >= 0
+  )
+    throw new BookParseError("unsafe_xml", "Unexpected DOCTYPE.")
+}
+
+class CappedHandler extends DomHandler {
+  private nodes = 0
+
+  override addNode(node: Parameters<DomHandler["addNode"]>[0]) {
+    if (++this.nodes > MAX_XML_NODES)
+      throw new BookParseError("too_long", "Too many nodes.")
+    super.addNode(node)
+  }
+}
+
+// `parseDocument`, with a ceiling on how much it may build.
+function parse(source: string, options: ParserOptions) {
+  const handler = new CappedHandler(undefined, options)
+  new Parser(handler, options).end(source)
+  return handler.root
 }
 
 function assertDepth(root: AnyNode) {
@@ -55,7 +86,7 @@ export const decodeText = (bytes: Uint8Array) => {
 
 export function parseXml(source: string) {
   assertSafeXml(source)
-  const doc = parseDocument(source, {
+  const doc = parse(source, {
     xmlMode: true,
     decodeEntities: true,
     recognizeSelfClosing: true,
@@ -67,7 +98,7 @@ export function parseXml(source: string) {
 // Plain HTML, with the forgiving rules browsers use: `<br>`, unclosed `<p>`.
 export function parseHtml(source: string) {
   assertSafeXml(source)
-  const doc = parseDocument(source, {
+  const doc = parse(source, {
     xmlMode: false,
     decodeEntities: true,
     lowerCaseTags: true,

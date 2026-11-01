@@ -192,9 +192,10 @@ export async function sendPublic(
     hosts: readonly string[]
     body?: string
     signal?: AbortSignal
+    headers?: Record<string, string>
   }
 ) {
-  const { method, hosts, body, signal } = options
+  const { method, hosts, body, signal, headers } = options
   const url = new URL(raw)
   if (!hosts.includes(url.hostname)) throw new Error("Not an allowed host.")
   const res = await open(
@@ -206,6 +207,7 @@ export async function sendPublic(
         "content-type": "application/json",
         "content-length": String(Buffer.byteLength(body)),
       }),
+      ...headers,
     },
     AbortSignal.any([
       AbortSignal.timeout(TIMEOUT_MS),

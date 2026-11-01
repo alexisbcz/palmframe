@@ -131,11 +131,16 @@ function tools(book: BookRow, actor: Actor, turn: Turn): AgentTool<any>[] {
         const locked = (data ?? []).filter((s) => s.status === "locked").length
         const items = changes.flatMap((c) => {
           const s = rows.get(c.segment_id)
-          return s && s.status !== "locked" && s.target !== c.text
+          // Only lines that have a translation to change. Locked ones are
+          // reported; untranslated ones go through a paid job.
+          return s &&
+            (s.status === "machine" || s.status === "reviewed") &&
+            s.target?.trim() &&
+            s.target !== c.text
             ? [
                 {
                   segment_id: s.id,
-                  before: s.target ?? "",
+                  before: s.target!,
                   after: c.text,
                   version: s.version,
                 },
@@ -185,8 +190,7 @@ export async function replaceAcross(
     .filter(
       (s) =>
         s.target?.includes(find) &&
-        s.status !== "locked" &&
-        s.status !== "pending"
+        (s.status === "machine" || s.status === "reviewed")
     )
     .slice(0, MAX_CHANGES)
     .map((s) => ({
@@ -220,7 +224,9 @@ async function fakeReply(
       .eq("book_id", book.id)
       .in("id", selected)
     const items = (data ?? [])
-      .filter((s) => s.status !== "locked" && s.target)
+      .filter(
+        (s) => (s.status === "machine" || s.status === "reviewed") && s.target
+      )
       .map((s) => ({
         segment_id: s.id,
         before: s.target!,
@@ -296,14 +302,12 @@ export async function chat(
     .eq("book_id", id)
     .order("created_at", { ascending: false })
     .limit(HISTORY)
-  await db
-    .from("book_messages")
-    .insert({
-      book_id: id,
-      user_id: actor.userId,
-      role: "user",
-      content: message,
-    })
+  await db.from("book_messages").insert({
+    book_id: id,
+    user_id: actor.userId,
+    role: "user",
+    content: message,
+  })
 
   const turn: Turn = { changeSet: null }
   let text: string

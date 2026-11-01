@@ -96,7 +96,9 @@ export function ChecksPanel({
             isDisabled={running || action.busy}
             onPress={() => start(true)}
           >
-            {t("checks.backCheck", { cost: BOOK_RATES.backcheck })}
+            {t("checks.backCheck", {
+              cost: Math.max(1, chapters.length) * BOOK_RATES.backcheck,
+            })}
           </Button>
         </div>
       </div>

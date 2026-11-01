@@ -41,7 +41,7 @@ export const JOB_KINDS = [
 export type JobKind = (typeof JOB_KINDS)[number]
 
 export type JobStatus =
-  "queued" | "running" | "succeeded" | "failed" | "cancelled"
+  "unpaid" | "queued" | "running" | "succeeded" | "failed" | "cancelled"
 
 export const SEGMENT_STATUSES = [
   "pending",
@@ -291,8 +291,8 @@ export const BOOK_RATES = {
   ocr_page: 4,
   // The glossary, character and tone pass, once per book.
   extract: 15,
-  // An extra round of independent back-checks, on request.
-  backcheck: 10,
+  // An extra round of independent back-checks, per chapter, on request.
+  backcheck: 2,
   // One message to the book's assistant.
   chat: 2,
 } as const
@@ -311,5 +311,10 @@ export function countWords(text: string) {
   const rest = text.replace(DENSE, " ").match(/[\p{L}\p{N}][\p{L}\p{N}'’-]*/gu)
   return Math.ceil(dense / 2) + (rest?.length ?? 0)
 }
+
+// What a text is billed as. Long unbroken strings count as one word each, so a
+// segment can't be made cheap by leaving out the spaces.
+export const billableWords = (text: string) =>
+  Math.max(countWords(text), Math.ceil([...text].length / 6))
 
 export const uuid = z.string().regex(/^[0-9a-f-]{36}$/i)

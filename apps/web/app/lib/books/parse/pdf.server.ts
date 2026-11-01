@@ -1,5 +1,11 @@
 import { BookParseError } from "../errors"
-import { MAX_PDF_PAGES, MIN_PAGE_CHARS, SCAN_SIDE } from "../limits"
+import {
+  MAX_PDF_PAGES,
+  MIN_PAGE_CHARS,
+  PDF_PAGE_MS,
+  PDF_PARSE_MS,
+  SCAN_SIDE,
+} from "../limits"
 import { encodeGrayPng, shrinkGray } from "../png"
 import {
   bodySize,
@@ -77,6 +83,22 @@ async function outlineOf(doc: Doc): Promise<OutlineEntry[]> {
   return out
 }
 
+// pdf.js runs on this thread, so a tight loop inside it can't be interrupted:
+// that case ends when the function is killed, and the job's claim count fails
+// it. This catches everything that still yields, which is nearly all of it.
+export function withTimeout<T>(work: Promise<T>, ms: number) {
+  let timer: ReturnType<typeof setTimeout>
+  return Promise.race([
+    work,
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () => reject(new BookParseError("too_slow")),
+        Math.max(0, ms)
+      )
+    }),
+  ]).finally(() => clearTimeout(timer))
+}
+
 export interface ReadPdf {
   meta: { title: string; author: string; language: string | null }
   pages: LaidOutPage[]
@@ -86,53 +108,64 @@ export interface ReadPdf {
   pageCount: number
 }
 
-export async function readPdf(bytes: Uint8Array): Promise<ReadPdf> {
-  const { lib, task, doc } = await open(bytes)
+export async function readPdf(
+  bytes: Uint8Array,
+  deadline = Date.now() + PDF_PARSE_MS
+): Promise<ReadPdf> {
+  const { task, doc } = await withTimeout(open(bytes), deadline - Date.now())
   try {
+    return await withTimeout(readPages(doc, deadline), deadline - Date.now())
+  } finally {
+    await task.destroy().catch(() => {})
+  }
+}
+
+async function readPage(doc: Doc, number: number) {
+  const page = await doc.getPage(number)
+  const view = page.getViewport({ scale: 1 })
+  const content = await page.getTextContent()
+  const items: PdfItem[] = []
+  let chars = 0
+  for (const item of content.items) {
+    if (!("str" in item)) continue
+    chars += item.str.trim().length
+    const [a, b, , d, e, f] = item.transform as number[]
+    const size = Math.hypot(a!, b!) || Math.abs(d!) || item.height
+    items.push({
+      str: item.str,
+      x: e!,
+      y: f!,
+      width: item.width,
+      size,
+      bold: /bold|black|heavy/i.test(
+        content.styles[item.fontName]?.fontFamily ?? ""
+      ),
+    })
+  }
+  page.cleanup()
+  return {
+    chars,
+    page: { number, width: view.width, height: view.height, items },
+  }
+}
+
+async function readPages(doc: Doc, deadline: number): Promise<ReadPdf> {
+  {
     if (doc.numPages > MAX_PDF_PAGES) throw new BookParseError("too_many_pages")
     const pages: PdfPage[] = []
     const scans: number[] = []
     const warnings: string[] = []
     for (let number = 1; number <= doc.numPages; number++) {
+      if (Date.now() > deadline) throw new BookParseError("too_slow")
       try {
-        const page = await doc.getPage(number)
-        const view = page.getViewport({ scale: 1 })
-        const content = await page.getTextContent()
-        const items: PdfItem[] = []
-        let chars = 0
-        for (const item of content.items) {
-          if (!("str" in item)) continue
-          chars += item.str.trim().length
-          const [a, b, , d, e, f] = item.transform as number[]
-          const size = Math.hypot(a!, b!) || Math.abs(d!) || item.height
-          items.push({
-            str: item.str,
-            x: e!,
-            y: f!,
-            width: item.width,
-            size,
-            bold: /bold|black|heavy/i.test(
-              content.styles[item.fontName]?.fontFamily ?? ""
-            ),
-          })
-        }
-        if (chars < MIN_PAGE_CHARS) {
-          const ops = await page.getOperatorList()
-          const picture = ops.fnArray.some(
-            (fn) =>
-              fn === lib.OPS.paintImageXObject ||
-              fn === lib.OPS.paintInlineImageXObject ||
-              fn === lib.OPS.paintImageMaskXObject
-          )
-          if (picture) {
-            scans.push(number)
-            items.length = 0
-          }
-        }
-        pages.push({ number, width: view.width, height: view.height, items })
-        page.cleanup()
+        const read = await withTimeout(readPage(doc, number), PDF_PAGE_MS)
+        // Text only here. Whether a thin page really is a scan is settled when
+        // its picture is pulled out: decoding every image to find out is what
+        // would stop a large scanned book from ever getting past this loop.
+        if (read.chars < MIN_PAGE_CHARS) scans.push(number)
+        pages.push(read.page)
       } catch (e) {
-        if (e instanceof BookParseError) throw e
+        if (e instanceof BookParseError && e.code !== "too_slow") throw e
         warnings.push(`Page ${number} could not be read.`)
       }
     }
@@ -154,8 +187,6 @@ export async function readPdf(bytes: Uint8Array): Promise<ReadPdf> {
       warnings,
       pageCount: doc.numPages,
     }
-  } finally {
-    await task.destroy().catch(() => {})
   }
 }
 
@@ -199,64 +230,91 @@ const decoded = (page: Awaited<ReturnType<Doc["getPage"]>>, name: string) =>
     })
   })
 
-export interface ScanImage {
-  number: number
-  png: Uint8Array
-  width: number
-  height: number
+export type Scan =
+  | { number: number; png: Uint8Array; width: number; height: number }
+  // A picture that can't be used, or a page that took too long.
+  | { number: number; png: null; blank?: false }
+  // No picture at all: an ordinary page that happens to hold few words.
+  | { number: number; png: null; blank: true }
+
+const pictureOps = (lib: PdfJs) => [
+  lib.OPS.paintImageXObject,
+  lib.OPS.paintImageMaskXObject,
+  lib.OPS.paintInlineImageXObject,
+]
+
+async function scanPage(lib: PdfJs, doc: Doc, number: number): Promise<Scan> {
+  const page = await doc.getPage(number)
+  const ops = await page.getOperatorList()
+  const pictures = pictureOps(lib)
+  if (!ops.fnArray.some((fn) => pictures.includes(fn)))
+    return { number, png: null, blank: true }
+  let best: Decoded | null = null
+  for (let i = 0; i < ops.fnArray.length; i++) {
+    const fn = ops.fnArray[i]
+    if (
+      fn === lib.OPS.paintImageXObject ||
+      fn === lib.OPS.paintImageMaskXObject
+    ) {
+      const name = (ops.argsArray[i] as unknown[])?.[0]
+      if (typeof name !== "string") continue
+      const image = await decoded(page, name)
+      if (
+        image?.data &&
+        (!best || image.width * image.height > best.width * best.height)
+      )
+        best = image
+    } else if (fn === lib.OPS.paintInlineImageXObject) {
+      const image = (ops.argsArray[i] as Decoded[])?.[0]
+      if (
+        image?.data &&
+        (!best || image.width * image.height > best.width * best.height)
+      )
+        best = image
+    }
+  }
+  const view = page.getViewport({ scale: 1 })
+  const usable =
+    best && best.width >= view.width * 0.6 && best.height >= view.height * 0.6
+  const gray = usable ? toGray(best!) : null
+  page.cleanup()
+  if (!gray) return { number, png: null }
+  const small = shrinkGray(gray, best!.width, best!.height, SCAN_SIDE)
+  return {
+    number,
+    png: encodeGrayPng(small.gray, small.width, small.height),
+    width: small.width,
+    height: small.height,
+  }
 }
 
-// The largest picture on each page, as grey PNG. Returns null for a page whose
-// scan is cut into strips or drawn as vector shapes: there's no one image to
-// take, and such a page is reported rather than guessed at.
-export async function extractScans(bytes: Uint8Array, numbers: number[]) {
+// The largest picture on each page, as grey PNG, handed over one at a time so
+// the caller can save its place: a function that dies on page 400 loses one
+// page, not the 399 before it. Stops at the deadline with the rest undone.
+// A page whose scan is cut into strips or drawn as vector shapes comes back
+// with no image: there's no one picture to take, and it's reported, not guessed.
+export async function extractScans(
+  bytes: Uint8Array,
+  numbers: number[],
+  options: {
+    deadline?: number
+    onPage?: (scan: Scan) => Promise<void>
+  } = {}
+) {
   const { lib, task, doc } = await open(bytes)
-  const out: (ScanImage | { number: number; png: null })[] = []
+  const out: Scan[] = []
   try {
     for (const number of numbers) {
-      const page = await doc.getPage(number)
-      const ops = await page.getOperatorList()
-      let best: Decoded | null = null
-      for (let i = 0; i < ops.fnArray.length; i++) {
-        const fn = ops.fnArray[i]
-        if (
-          fn === lib.OPS.paintImageXObject ||
-          fn === lib.OPS.paintImageMaskXObject
-        ) {
-          const name = (ops.argsArray[i] as unknown[])?.[0]
-          if (typeof name !== "string") continue
-          const image = await decoded(page, name)
-          if (
-            image?.data &&
-            (!best || image.width * image.height > best.width * best.height)
-          )
-            best = image
-        } else if (fn === lib.OPS.paintInlineImageXObject) {
-          const image = (ops.argsArray[i] as Decoded[])?.[0]
-          if (
-            image?.data &&
-            (!best || image.width * image.height > best.width * best.height)
-          )
-            best = image
-        }
-      }
-      const view = page.getViewport({ scale: 1 })
-      const usable =
-        best &&
-        best.width >= view.width * 0.6 &&
-        best.height >= view.height * 0.6
-      const gray = usable ? toGray(best!) : null
-      if (!gray) out.push({ number, png: null })
-      else {
-        const small = shrinkGray(gray, best!.width, best!.height, SCAN_SIDE)
-        out.push({
-          number,
-          png: encodeGrayPng(small.gray, small.width, small.height),
-          width: small.width,
-          height: small.height,
-        })
-      }
-      page.cleanup()
+      if (options.deadline && Date.now() > options.deadline) break
+      const scan = await withTimeout(
+        scanPage(lib, doc, number),
+        PDF_PAGE_MS
+      ).catch((e) => {
+        if (e instanceof BookParseError) return { number, png: null } as Scan
+        throw e
+      })
+      out.push(scan)
+      await options.onPage?.(scan)
     }
     return out
   } finally {

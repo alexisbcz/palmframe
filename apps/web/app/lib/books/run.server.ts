@@ -7,10 +7,13 @@ import {
   BOOK_EXPORTS_BUCKET,
   BOOK_PAGES_BUCKET,
   BOOK_SOURCES_BUCKET,
+  type ChapterRow,
   type JobRow,
   type PageRow,
 } from "./database"
 import {
+  JobClosed,
+  assembleOcr,
   extractSlice,
   finish,
   ocrSlice,
@@ -27,6 +30,7 @@ import { buildDocx } from "./export/docx"
 import { buildEpub, rewriteEpub } from "./export/epub"
 import { buildMarkdown } from "./export/markdown"
 import { buildPdf } from "./export/pdf.server"
+import { LEASE_MS, MAX_CLAIMS, PDF_PARSE_MS, SLICE_MS } from "./limits"
 import { isLanguage, languageOf, type BookFormat } from "./model"
 import { openArchive } from "./parse/archive"
 import { mimeOf } from "./parse/epub"
@@ -36,10 +40,9 @@ import { extractScans, readPdf } from "./parse/pdf.server"
 import { repo, setEnqueue } from "./repo.server"
 import { deliverDue, emitEvent } from "./webhooks.server"
 
-const SLICE_MS = 235_000
-const LEASE_MS = 280_000
 const MAX_SLICES = 2_000
-const SCANS_PER_PASS = 8
+const EXPIRED_UPLOADS = 20
+const UPLOAD_TTL_MS = 24 * 60 * 60 * 1000
 
 const db = () => supabaseAdmin()
 
@@ -72,7 +75,10 @@ async function ingestSlice(
   const format: BookFormat | null = await detectFormat(bytes, book.file_name)
   if (!format) throw new BookParseError("unsupported")
   if (format === "pdf") {
-    const pdf = await readPdf(bytes)
+    const pdf = await readPdf(
+      bytes,
+      Math.min(deadline, Date.now() + PDF_PARSE_MS)
+    )
     const words = pdf.pages.some((p) => p.blocks.length)
     if (!words && !pdf.scans.length) throw new BookParseError("empty")
     const base = {
@@ -100,14 +106,17 @@ async function ingestSlice(
       return "done"
     }
     // Mixed or scanned: every page is kept, so OCR can slot in between them.
-    const typed = pdf.pages.map((p) => ({
-      book_id: book.id,
-      user_id: book.user_id,
-      number: p.number,
-      kind: "text" as const,
-      status: "done" as const,
-      blocks: p.blocks,
-    }))
+    const thin = new Set(pdf.scans)
+    const typed = pdf.pages
+      .filter((p) => !thin.has(p.number))
+      .map((p) => ({
+        book_id: book.id,
+        user_id: book.user_id,
+        number: p.number,
+        kind: "text" as const,
+        status: "done" as const,
+        blocks: p.blocks,
+      }))
     const scans = pdf.scans.map((number) => ({
       book_id: book.id,
       user_id: book.user_id,
@@ -115,7 +124,8 @@ async function ingestSlice(
       kind: "scan" as const,
       // Rows in a bulk insert share their columns, so nothing can be left out.
       status: "pending" as const,
-      blocks: [],
+      // Kept for a page that turns out to be short text and no picture.
+      blocks: pdf.pages.find((p) => p.number === number)?.blocks ?? [],
     }))
     await db().from("book_pages").delete().eq("book_id", book.id)
     const rows: Partial<PageRow>[] = [...typed, ...scans]
@@ -185,34 +195,48 @@ async function extractPdfScans(
   const scans = job.state.scans ?? []
   let cursor = job.state.cursor ?? 0
   const book = await repo.book(job.book_id)
-  while (cursor < scans.length && e.now() < deadline) {
-    const numbers = scans.slice(cursor, cursor + SCANS_PER_PASS)
-    for (const scan of await extractScans(bytes, numbers)) {
-      if (!scan.png) {
-        await db()
-          .from("book_pages")
-          .update({ status: "unreadable" })
+  const page = () => db().from("book_pages")
+  await extractScans(bytes, scans.slice(cursor), {
+    deadline,
+    async onPage(scan) {
+      if (scan.png) {
+        const path = `${book.user_id}/${book.id}/p${scan.number}.png`
+        const up = await db()
+          .storage.from(BOOK_PAGES_BUCKET)
+          .upload(path, scan.png, { contentType: "image/png", upsert: true })
+        if (up.error) throw new Error(up.error.message)
+        await page()
+          .update({ image_path: path, width: scan.width, height: scan.height })
           .eq("book_id", book.id)
           .eq("number", scan.number)
-        continue
-      }
-      const path = `${book.user_id}/${book.id}/p${scan.number}.png`
-      const up = await db()
-        .storage.from(BOOK_PAGES_BUCKET)
-        .upload(path, scan.png, { contentType: "image/png", upsert: true })
-      if (up.error) throw new Error(up.error.message)
-      await db()
-        .from("book_pages")
-        .update({ image_path: path, width: scan.width, height: scan.height })
-        .eq("book_id", book.id)
-        .eq("number", scan.number)
-    }
-    cursor += numbers.length
-    job.state = { ...job.state, cursor }
-    await repo.setJob(job.id, { state: job.state, done: cursor })
-  }
+      } else
+        await page()
+          .update(
+            scan.blank
+              ? { kind: "text", status: "done" }
+              : { status: "unreadable" }
+          )
+          .eq("book_id", book.id)
+          .eq("number", scan.number)
+      // After every page: `done` moving is what tells a claim there's progress.
+      cursor++
+      job.state = { ...job.state, cursor }
+      await repo.setJob(job.id, { state: job.state, done: cursor })
+    },
+  })
   if (cursor < scans.length) return "continue"
-  await repo.setBook(book.id, { status: "needs_ocr" })
+  const { count } = await page()
+    .select("id", { count: "exact", head: true })
+    .eq("book_id", book.id)
+    .eq("kind", "scan")
+    .eq("status", "pending")
+    .not("image_path", "is", null)
+  if (count) await repo.setBook(book.id, { status: "needs_ocr" })
+  else {
+    // Thin pages, but no scans after all: this is an ordinary book.
+    await assembleOcr(e, await repo.book(book.id))
+    await repo.setBook(book.id, { status: "setup" })
+  }
   await finish(e, job, "succeeded")
   return "done"
 }
@@ -223,6 +247,13 @@ const EXPORT_TYPES = {
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   md: "text/markdown; charset=utf-8",
 } as const
+
+async function chapterTexts(chapters: ChapterRow[]) {
+  const out = []
+  for (const c of chapters)
+    out.push({ title: c.title, segments: await repo.chapterSegments(c.id) })
+  return out
+}
 
 async function exportSlice(e: Engine, job: JobRow): Promise<SliceResult> {
   const book = await repo.book(job.book_id)
@@ -238,12 +269,8 @@ async function exportSlice(e: Engine, job: JobRow): Promise<SliceResult> {
     sourceLang: book.source_lang,
     targetLang: book.target_lang,
     bilingual: !!job.params.bilingual,
-    chapters: await Promise.all(
-      chapters.map(async (c) => ({
-        title: c.title,
-        segments: await repo.chapterSegments(c.id),
-      }))
-    ),
+    // One chapter at a time: a book can have two thousand of them.
+    chapters: await chapterTexts(chapters),
     asset: async (path) => (archive?.has(path) ? archive.read(path) : null),
   }
   const bytes =
@@ -285,18 +312,11 @@ const engineFor = async (job: JobRow): Promise<Engine> => {
 }
 
 async function claim(id: string) {
-  const now = new Date()
-  const { data } = await db()
-    .from("book_jobs")
-    .update({
-      status: "running",
-      leased_until: new Date(now.getTime() + LEASE_MS).toISOString(),
-    })
-    .eq("id", id)
-    .in("status", ["queued", "running"])
-    .or(`leased_until.is.null,leased_until.lt.${now.toISOString()}`)
-    .select("*")
-  return data?.[0] ?? null
+  const { data } = await db().rpc("book_claim_job", {
+    p_job: id,
+    p_lease_seconds: LEASE_MS / 1000,
+  })
+  return data?.id ? data : null
 }
 
 export async function runSlice(id: string, origin: string) {
@@ -318,11 +338,18 @@ export async function runSlice(id: string, origin: string) {
     await finish(silent, job, "failed", "too_many_slices")
     return "failed"
   }
+  // Taken over and over with nothing to show: whatever this job is reading is
+  // killing the function before it can report anything. Refunds what's unused.
+  if (job.claims > MAX_CLAIMS) {
+    await finish(silent, job, "failed", "stuck")
+    return "failed"
+  }
   const deadline = Date.now() + SLICE_MS
+  const clock = AbortSignal.timeout(SLICE_MS)
   let step: SliceResult
   let engine = silent
   try {
-    engine = await engineFor(job)
+    engine = { ...(await engineFor(job)), signal: clock }
     step =
       job.kind === "ingest"
         ? await ingestSlice(engine, job, deadline)
@@ -336,11 +363,12 @@ export async function runSlice(id: string, origin: string) {
                 ? await qaSlice(engine, job, deadline)
                 : await exportSlice(engine, job)
   } catch (e) {
+    if (e instanceof JobClosed) return "finished"
     if (e instanceof BookParseError) {
       await finish(engine, job, "failed", e.code)
       return "failed"
     }
-    step = await recoverable(engine, job, e)
+    step = clock.aborted ? "continue" : await recoverable(engine, job, e)
   }
   if (step === "done") return "finished"
   if (step === "wait") return "waiting"
@@ -348,16 +376,35 @@ export async function runSlice(id: string, origin: string) {
     slices: job.slices + 1,
     leased_until: null,
     usage: job.usage,
+    // A slice cut off by the clock isn't proof of progress: only `done` is.
+    ...(!clock.aborted && { claims: 0 }),
     state: { ...job.state, errors: 0 },
   })
   await kick(origin, id)
   return "continued"
 }
 
+// Rows and files from uploads nobody finished.
+export async function expireUploads() {
+  const { data } = await db()
+    .from("book_projects")
+    .select("id, source_path")
+    .eq("status", "uploading")
+    .lt("created_at", new Date(Date.now() - UPLOAD_TTL_MS).toISOString())
+    .limit(EXPIRED_UPLOADS)
+  for (const book of data ?? []) {
+    await db().storage.from(BOOK_SOURCES_BUCKET).remove([book.source_path])
+    await db().from("book_projects").delete().eq("id", book.id)
+  }
+  return data?.length ?? 0
+}
+
 // Runs from pg_cron. Re-kicks anything due whose function died or whose batch
 // needs a look, then gets webhooks moving. Each kick is its own function, so
 // this stays quick however many books are running.
 export async function tick(origin: string) {
+  await db().rpc("book_sweep")
+  await expireUploads()
   const now = new Date().toISOString()
   const { data } = await db()
     .from("book_jobs")

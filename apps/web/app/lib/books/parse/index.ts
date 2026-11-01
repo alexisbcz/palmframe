@@ -1,8 +1,13 @@
 import { sniffKind } from "@/lib/comic-import/sniff"
 
 import { BookParseError } from "../errors"
-import { MAX_SEGMENT_CHARS, MAX_SEGMENTS, MAX_WORDS } from "../limits"
-import { countWords, type BookFormat, type ParsedBook } from "../model"
+import {
+  MAX_CHAPTERS,
+  MAX_SEGMENT_CHARS,
+  MAX_SEGMENTS,
+  MAX_WORDS,
+} from "../limits"
+import { billableWords, type BookFormat, type ParsedBook } from "../model"
 import { stripTags } from "../inline"
 import { decodeText } from "../xml"
 import { openArchive } from "./archive"
@@ -79,9 +84,13 @@ export function assertReadable<T extends ParsedBook>(book: T): T {
     for (const block of chapter.blocks) {
       segments++
       if (block.text.length > MAX_SEGMENT_CHARS) splitLong(chapter, block)
-      words += countWords(stripTags(block.text))
+      words += billableWords(stripTags(block.text))
     }
-  if (segments > MAX_SEGMENTS || words > MAX_WORDS)
+  if (
+    segments > MAX_SEGMENTS ||
+    words > MAX_WORDS ||
+    book.chapters.length > MAX_CHAPTERS
+  )
     throw new BookParseError("too_long")
   if (!words && !book.scans.length) throw new BookParseError("empty")
   return book

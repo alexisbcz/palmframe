@@ -168,11 +168,14 @@ export type JobRow = {
   result: Record<string, unknown> | null
   error: string | null
   slices: number
+  claims: number
+  claim_done: number
   leased_until: string | null
   next_at: string | null
   idempotency_key: string | null
   created_at: string
   finished_at: string | null
+  settled_at: string | null
   updated_at: string
 }
 
@@ -263,6 +266,35 @@ export type BookTables = {
 }
 
 export type BookFunctions = {
+  book_save_page: {
+    Args: {
+      p_job: string
+      p_page: string
+      p_status: string
+      p_blocks: unknown
+      p_confidence: number | null
+      p_attempts: number
+    }
+    Returns: undefined
+  }
+  book_claim_job: {
+    Args: { p_job: string; p_lease_seconds: number }
+    Returns: JobRow | null
+  }
+  book_charge_job: { Args: { p_job: string }; Returns: number | null }
+  book_close_job: {
+    Args: {
+      p_job: string
+      p_status: string
+      p_error: string | null
+      p_result: unknown
+      p_usage: unknown
+      p_rate: number
+      p_flat: number
+    }
+    Returns: number | null
+  }
+  book_sweep: { Args: { p_stale_seconds?: number }; Returns: number }
   book_save_translations: {
     Args: {
       p_job: string

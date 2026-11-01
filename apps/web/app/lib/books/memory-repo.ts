@@ -6,10 +6,15 @@ import type {
   PageRow,
   SegmentRow,
 } from "./database"
-import { MAX_ATTEMPTS, type EngineRepo, type NewIssue } from "./engine"
+import {
+  JobClosed,
+  MAX_ATTEMPTS,
+  type EngineRepo,
+  type NewIssue,
+} from "./engine"
 import type { GlossaryTerm } from "./glossary"
 import { stripTags } from "./inline"
-import { countWords, type ParsedChapter } from "./model"
+import { billableWords, type ParsedChapter } from "./model"
 
 // The engine's repository in memory, for tests. It keeps the database's two
 // promises by hand, so a test can see them hold: `save` only writes pending
@@ -81,11 +86,14 @@ export class MemoryRepo implements EngineRepo {
       result: null,
       error: null,
       slices: 0,
+      claims: 0,
+      claim_done: 0,
       leased_until: null,
       next_at: null,
       idempotency_key: null,
       created_at: "",
       finished_at: null,
+      settled_at: null,
       updated_at: "",
       ...patch,
     } satisfies JobRow as JobRow
@@ -156,6 +164,7 @@ export class MemoryRepo implements EngineRepo {
       throw new Error("Function killed.")
     }
     const job = this.jobs.get(jobId)!
+    if (job.status !== "running") throw new JobClosed(jobId)
     let written = 0
     for (const item of items) {
       const s = this.rows.get(item.id)
@@ -207,20 +216,34 @@ export class MemoryRepo implements EngineRepo {
   async setJob(id: string, patch: Partial<JobRow>) {
     Object.assign(this.jobs.get(id)!, patch)
   }
-  async finishJob(id: string, patch: Partial<JobRow>) {
+  async closeJob(
+    id: string,
+    close: Pick<JobRow, "status" | "error" | "result" | "usage">,
+    rate: number,
+    flat: number
+  ) {
     const job = this.jobs.get(id)!
-    if (job.status !== "queued" && job.status !== "running") return false
-    Object.assign(job, patch)
-    return true
+    if (job.status !== "queued" && job.status !== "running") return null
+    const used =
+      job.payer === "credits"
+        ? Math.min(
+            job.credits_charged,
+            Math.max(flat, Math.ceil(job.billable * rate))
+          )
+        : 0
+    Object.assign(job, {
+      ...close,
+      result: close.result ?? job.result,
+      credits_used: used,
+      leased_until: null,
+      next_at: null,
+    })
+    if (job.payer === "credits" && job.credits_charged > 0)
+      this.settled.set(id, job.credits_charged - used)
+    return used
   }
   async startQa() {
     this.qaStarted++
-  }
-  async settle(job: JobRow, used: number) {
-    if (this.settled.has(job.id)) return 0
-    const back = Math.max(job.credits_charged - used, 0)
-    this.settled.set(job.id, back)
-    return back
   }
   async replaceIssues(chapter: ChapterRow, issues: NewIssue[]) {
     this.issues.set(chapter.id, issues)
@@ -236,8 +259,20 @@ export class MemoryRepo implements EngineRepo {
       .filter((p) => p.book_id === bookId)
       .sort((a, b) => a.number - b.number)
   }
-  async setPage(id: string, patch: Partial<PageRow>) {
-    Object.assign(this.pages.get(id)!, patch)
+  async savePage(
+    jobId: string,
+    pageId: string,
+    patch: Parameters<EngineRepo["savePage"]>[2]
+  ) {
+    const job = this.jobs.get(jobId)!
+    if (job.status !== "running") throw new JobClosed(jobId)
+    const page = this.pages.get(pageId)!
+    if (page.status !== "pending") return
+    Object.assign(page, patch)
+    if (patch.status === "done") {
+      job.done++
+      job.billable++
+    }
   }
   async pageImage(path: string) {
     return this.images.get(path)!
@@ -284,7 +319,7 @@ export class MemoryRepo implements EngineRepo {
         source: b.text,
         tags: b.tags,
         source_hash: sourceHash(b.text),
-        words: does ? countWords(stripTags(b.text)) : 0,
+        words: does ? billableWords(stripTags(b.text)) : 0,
         translatable: does,
         target: null,
         status: does ? "pending" : "fixed",

@@ -370,6 +370,11 @@ export const messages = defineMessages({
       too_many_errors: "The model kept failing. Unused credits were returned.",
       openrouter_credits: "Your OpenRouter account stopped paying.",
       failed: "Something went wrong. Try again.",
+      stuck:
+        "This file kept stopping the reader, so it was given up on. Unused credits were returned.",
+      budget_reached:
+        "This job used all the credits it held. What was translated is saved.",
+      too_slow: "This file took too long to read.",
     },
   },
   fr: {
@@ -749,6 +754,11 @@ export const messages = defineMessages({
         "Le modèle a échoué à répétition. Les crédits inutilisés ont été rendus.",
       openrouter_credits: "Votre compte OpenRouter a cessé de payer.",
       failed: "Une erreur est survenue. Réessayez.",
+      stuck:
+        "Ce fichier bloquait la lecture à répétition : abandon. Les crédits inutilisés ont été rendus.",
+      budget_reached:
+        "Cette tâche a utilisé tous ses crédits. Ce qui est traduit est conservé.",
+      too_slow: "La lecture de ce fichier a pris trop de temps.",
     },
   },
   es: {
@@ -1119,6 +1129,11 @@ export const messages = defineMessages({
         "El modelo falló repetidamente. Se han devuelto los créditos no usados.",
       openrouter_credits: "Tu cuenta de OpenRouter dejó de pagar.",
       failed: "Algo salió mal. Inténtalo de nuevo.",
+      stuck:
+        "Este archivo detenía la lectura una y otra vez y se abandonó. Se han devuelto los créditos no usados.",
+      budget_reached:
+        "Este trabajo usó todos sus créditos. Lo traducido se conserva.",
+      too_slow: "Este archivo tardó demasiado en leerse.",
     },
   },
   de: {
@@ -1495,6 +1510,11 @@ export const messages = defineMessages({
         "Das Modell ist wiederholt ausgefallen. Ungenutzte Credits wurden erstattet.",
       openrouter_credits: "Dein OpenRouter-Konto zahlt nicht mehr.",
       failed: "Etwas ist schiefgegangen. Versuche es erneut.",
+      stuck:
+        "Diese Datei hat das Lesen immer wieder gestoppt und wurde aufgegeben. Ungenutzte Credits wurden erstattet.",
+      budget_reached:
+        "Dieser Auftrag hat alle reservierten Credits verbraucht. Das Übersetzte bleibt erhalten.",
+      too_slow: "Das Lesen dieser Datei hat zu lange gedauert.",
     },
   },
   it: {
@@ -1868,6 +1888,11 @@ export const messages = defineMessages({
         "Il modello ha fallito più volte. I crediti non usati sono stati restituiti.",
       openrouter_credits: "Il tuo account OpenRouter ha smesso di pagare.",
       failed: "Qualcosa è andato storto. Riprova.",
+      stuck:
+        "Questo file bloccava la lettura di continuo ed è stato abbandonato. I crediti non usati sono stati restituiti.",
+      budget_reached:
+        "Questo lavoro ha usato tutti i suoi crediti. Il testo tradotto resta salvato.",
+      too_slow: "La lettura di questo file ha richiesto troppo tempo.",
     },
   },
   ja: {
@@ -2221,6 +2246,11 @@ export const messages = defineMessages({
         "モデルの失敗が続きました。未使用のクレジットは返却しました。",
       openrouter_credits: "OpenRouterアカウントの支払いが止まりました。",
       failed: "問題が発生しました。もう一度お試しください。",
+      stuck:
+        "このファイルで読み込みが繰り返し停止したため中止しました。未使用のクレジットは返却しました。",
+      budget_reached:
+        "このジョブは確保したクレジットを使い切りました。翻訳済みの分は保存されています。",
+      too_slow: "このファイルの読み込みに時間がかかりすぎました。",
     },
   },
 })

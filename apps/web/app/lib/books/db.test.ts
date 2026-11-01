@@ -337,6 +337,7 @@ suite("books in Postgres", () => {
         book_id: bookId,
         user_id: aliceId,
         kind: "export",
+        status: "running",
       })) as { id: string }
       const items = [
         { id: a.id, target: "Un", memory: false },
@@ -380,6 +381,7 @@ suite("books in Postgres", () => {
         book_id: other.id,
         user_id: aliceId,
         kind: "export",
+        status: "running",
       })
       const victim = await addSegment(30)
       const r = await admin.rpc("book_save_translations", {

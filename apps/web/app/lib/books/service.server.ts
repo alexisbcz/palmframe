@@ -27,9 +27,12 @@ import {
 } from "./glossary"
 import { escapeStrayAngles, stripTags } from "./inline"
 import {
+  MAX_ACTIVE_FREE_JOBS_PER_USER,
   MAX_ACTIVE_JOBS_PER_USER,
   MAX_BOOK_BYTES,
   MAX_CHANGES,
+  MAX_FREE_JOBS_PER_HOUR,
+  MAX_GLOSSARY_CHECK,
   MAX_GLOSSARY_IMPORT_BYTES,
   MAX_GLOSSARY_TERMS,
   MAX_WEBHOOKS,
@@ -38,7 +41,7 @@ import {
   BOOK_RATES,
   TERM_KINDS,
   TERM_STATES,
-  countWords,
+  billableWords,
   isLanguage,
   styleSchema,
   uuid,
@@ -49,7 +52,7 @@ import {
   type TranslateMode,
 } from "./model"
 import { formatFromName } from "./parse/index"
-import { ownGlossary, repo } from "./repo.server"
+import { allTerms, ownGlossary, repo } from "./repo.server"
 import { kick } from "./run.server"
 import { WEBHOOK_EVENTS, emitEvent, newSecret } from "./webhooks.server"
 
@@ -68,6 +71,7 @@ export class BookError extends Error {
 
 const QUOTA_REACHED = "P0409"
 const LOCKED = "P0423"
+const SOURCE_FROZEN = "P0424"
 const db = () => supabaseAdmin()
 const DOWNLOAD_SECONDS = 600
 const PAGE_SIZE = 200
@@ -171,32 +175,9 @@ const activeJobs = async (userId: string) => {
     .from("book_jobs")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .in("status", ["queued", "running"])
+    .in("status", ["unpaid", "queued", "running"])
     .neq("kind", "export")
   return count ?? 0
-}
-
-async function spend(actor: Actor, job: string, cost: number, kind: string) {
-  const { data, error } = actor.keyId
-    ? await db().rpc("spend_credits_for_key", {
-        p_user: actor.userId,
-        p_key: actor.keyId,
-        p_cost: cost,
-        p_kind: kind,
-        p_job: job,
-      })
-    : await db().rpc("spend_credits_for", {
-        p_user: actor.userId,
-        p_cost: cost,
-        p_kind: kind,
-        p_job: job,
-      })
-  if (error?.code === "P0402")
-    throw new BookError(402, "insufficient_credits", error.message)
-  if (error?.code === "P0403")
-    throw new BookError(403, "key_credit_limit", error.message)
-  if (error) throw new BookError(500, "charge_failed", error.message)
-  return data as number
 }
 
 interface Start {
@@ -229,8 +210,53 @@ async function replayOf(
   return { job: jobView(data), replayed: true, balance: null }
 }
 
-// Row first, charge second, using the row's id as the charge's key: a crash
-// between the two leaves an unpaid job that never ran.
+// Free work costs us all the same, so it has limits of its own.
+async function assertFreeRoom(actor: Actor) {
+  const rows = (filter: "active" | "hour") => {
+    const query = db()
+      .from("book_jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", actor.userId)
+      .eq("payer", "free")
+    return filter === "active"
+      ? query.in("status", ["queued", "running"])
+      : query.gte(
+          "created_at",
+          new Date(Date.now() - 60 * 60 * 1000).toISOString()
+        )
+  }
+  const [active, hour] = await Promise.all([rows("active"), rows("hour")])
+  if (
+    (active.count ?? 0) >= MAX_ACTIVE_FREE_JOBS_PER_USER ||
+    (hour.count ?? 0) >= MAX_FREE_JOBS_PER_HOUR
+  )
+    throw new BookError(429, "busy")
+}
+
+// A paid job starts `unpaid`, which nothing will claim, and `book_charge_job`
+// charges and releases it in one transaction. So a lost reply can't leave money
+// taken with no job, and the row itself says which way it went.
+async function chargeJob(job: JobRow) {
+  const { data, error } = await db().rpc("book_charge_job", { p_job: job.id })
+  if (!error) return data
+  const dropUnpaid = () =>
+    db().from("book_jobs").delete().eq("id", job.id).eq("status", "unpaid")
+  if (error.code === "P0402" || error.code === "P0403") {
+    await dropUnpaid()
+    throw error.code === "P0402"
+      ? new BookError(402, "insufficient_credits", error.message)
+      : new BookError(403, "key_credit_limit", error.message)
+  }
+  const { data: row } = await db()
+    .from("book_jobs")
+    .select("status")
+    .eq("id", job.id)
+    .maybeSingle()
+  if (row && row.status !== "unpaid") return null
+  await dropUnpaid()
+  throw new BookError(500, "charge_failed", error.message)
+}
+
 async function startJob(
   actor: Actor,
   book: BookRow,
@@ -242,6 +268,7 @@ async function startJob(
       throw new BookError(429, "busy")
   }
   const paid = start.cost > 0
+  if (!paid) await assertFreeRoom(actor)
   const openrouter = paid ? await payingConnection(actor.userId) : null
   const payer = openrouter ? "openrouter" : paid ? "credits" : "free"
   if (paid && !modelAvailable(openrouter))
@@ -253,6 +280,7 @@ async function startJob(
       user_id: actor.userId,
       key_id: actor.keyId ?? null,
       kind: start.kind,
+      status: payer === "credits" ? "unpaid" : "queued",
       payer,
       params: start.params ?? {},
       total: start.total ?? 0,
@@ -263,16 +291,9 @@ async function startJob(
     .single()
   if (error?.code === "23505") throw new BookError(409, "job_running")
   if (error || !job) throw new BookError(500, "failed", error?.message)
-  let balance: number | null = null
-  if (payer === "credits") {
-    try {
-      balance = await spend(actor, job.id, start.cost, `book_${start.kind}`)
-    } catch (e) {
-      await db().from("book_jobs").delete().eq("id", job.id)
-      throw e
-    }
-  }
-  return { job, balance }
+  if (payer !== "credits") return { job, balance: null }
+  const balance = await chargeJob(job)
+  return { job: { ...job, status: "queued" as const }, balance }
 }
 
 async function launch(
@@ -300,6 +321,20 @@ export async function ingest(
     .list(`${actor.userId}/${id}`)
   const file = folder.data?.find((f) => f.name === "source")
   if (!file) throw new BookError(409, "upload_missing")
+  // The size given at the start was only a claim: count what actually arrived.
+  const size = Number(file.metadata?.size)
+  if (size > 0 && size !== book.size_bytes) {
+    const { error } = await db()
+      .from("book_projects")
+      .update({ size_bytes: size })
+      .eq("id", id)
+    if (error?.code === QUOTA_REACHED || error?.code === "23514") {
+      await db().storage.from(BOOK_SOURCES_BUCKET).remove([book.source_path])
+      await db().from("book_projects").delete().eq("id", id)
+      throw new BookError(409, "limit_reached")
+    }
+    if (error) throw new BookError(500, "failed", error.message)
+  }
   const { job } = await startJob(actor, book, origin, {
     kind: "ingest",
     cost: 0,
@@ -548,6 +583,25 @@ export interface SegmentEdit {
 
 const EDITABLE_STATUSES = ["machine", "reviewed", "locked"]
 
+// A translation or OCR job holds a price for the text as it stood. The database
+// refuses too; this gives the common case a clean answer.
+const pricedJobRunning = async (bookId: string) => {
+  const { count } = await db()
+    .from("book_jobs")
+    .select("id", { count: "exact", head: true })
+    .eq("book_id", bookId)
+    .in("kind", ["translate", "ocr"])
+    .in("status", ["unpaid", "queued", "running"])
+  return (count ?? 0) > 0
+}
+
+const creditCap = (value: unknown) => {
+  if (value === undefined || value === null) return undefined
+  if (typeof value !== "number" || !Number.isFinite(value))
+    throw new BookError(400, "invalid")
+  return value
+}
+
 // `version` is what the editor last saw. A newer row isn't overwritten: two
 // tabs, or a person and a running job, can't quietly undo each other.
 export async function editSegment(
@@ -591,10 +645,11 @@ export async function editSegment(
   }
   if (typeof edit.source === "string") {
     if (row.status === "locked") throw new BookError(423, "locked")
+    if (await pricedJobRunning(id)) throw new BookError(409, "job_running")
     const source = escapeStrayAngles(edit.source).slice(0, 40_000)
     patch.source = source
     patch.source_hash = sourceHash(source)
-    patch.words = countWords(stripTags(source))
+    patch.words = billableWords(stripTags(source))
     patch.translatable = translatable(row.kind, source)
     // Corrected text means the old translation no longer answers it.
     if (source !== row.source && row.status !== "fixed") {
@@ -609,6 +664,7 @@ export async function editSegment(
     .select("*")
     .single()
   if (error?.code === LOCKED) throw new BookError(423, "locked")
+  if (error?.code === SOURCE_FROZEN) throw new BookError(409, "job_running")
   if (error || !data) throw new BookError(500, "failed", error?.message)
   return segmentView(data)
 }
@@ -713,6 +769,7 @@ export async function startTranslation(
   }
 ) {
   const book = await getBook(actor, id)
+  const maxCredits = creditCap(options.max_credits)
   const replay = await replayOf(
     actor,
     book,
@@ -741,11 +798,7 @@ export async function startTranslation(
   const quote = await estimate(actor, id, { chapters: chapterIds, requeue })
   if (!quote.segments) throw new BookError(409, "nothing_to_translate")
   const cost = Math.max(1, quote.credits[mode])
-  if (
-    typeof options.max_credits === "number" &&
-    options.max_credits < cost &&
-    !openrouter
-  )
+  if (maxCredits !== undefined && maxCredits < cost && !openrouter)
     throw new BookError(409, "over_budget")
   const started = await startJob(actor, book, origin, {
     kind: "translate",
@@ -788,6 +841,7 @@ export async function startOcr(
   options: { idempotency_key?: string; max_credits?: unknown } = {}
 ) {
   const book = await getBook(actor, id)
+  const maxCredits = creditCap(options.max_credits)
   const replay = await replayOf(actor, book, "ocr", options.idempotency_key)
   if (replay) return replay
   if (book.status !== "needs_ocr") throw new BookError(409, "not_ready")
@@ -800,7 +854,7 @@ export async function startOcr(
     .not("image_path", "is", null)
   const pages = count ?? 0
   const cost = pages * BOOK_RATES.ocr_page
-  if (typeof options.max_credits === "number" && options.max_credits < cost)
+  if (maxCredits !== undefined && maxCredits < cost)
     throw new BookError(409, "over_budget")
   if (!pages) {
     await repo.setBook(id, { status: "setup" })
@@ -846,9 +900,10 @@ export async function startChecks(
 ) {
   const book = await getBook(actor, id)
   const backcheck = options.backcheck === true
+  const chapterCount = (await repo.chapters(id)).length
   const started = await startJob(actor, book, origin, {
     kind: "qa",
-    cost: backcheck ? BOOK_RATES.backcheck : 0,
+    cost: backcheck ? Math.max(1, chapterCount) * BOOK_RATES.backcheck : 0,
     credit: "book_qa",
     params: { backcheck },
   })
@@ -1002,14 +1057,10 @@ async function glossaryOf(actor: Actor, id: string): Promise<GlossaryRow> {
 export async function bookGlossary(actor: Actor, id: string) {
   const book = await getBook(actor, id)
   const glossary = await ownGlossary(book)
-  const terms = must(
-    await db()
-      .from("book_terms")
-      .select("*")
-      .eq("glossary_id", glossary)
-      .order("state", { ascending: false })
-      .order("occurrences", { ascending: false })
-      .limit(MAX_GLOSSARY_TERMS)
+  const terms = await allTerms([glossary])
+  terms.sort(
+    (a, b) =>
+      b.state.localeCompare(a.state) || b.occurrences - a.occurrences
   )
   return { id: glossary, terms: terms.map(termView) }
 }
@@ -1089,14 +1140,8 @@ const termInput = (raw: Record<string, unknown>) => {
 
 export async function listTerms(actor: Actor, glossaryId: string) {
   await glossaryOf(actor, glossaryId)
-  const rows = must(
-    await db()
-      .from("book_terms")
-      .select("*")
-      .eq("glossary_id", glossaryId)
-      .order("source")
-      .limit(MAX_GLOSSARY_TERMS)
-  )
+  const rows = await allTerms([glossaryId])
+  rows.sort((a, b) => a.source.localeCompare(b.source))
   return rows.map(termView)
 }
 
@@ -1223,6 +1268,9 @@ export async function checkBookGlossary(actor: Actor, id: string) {
   const book = await getBook(actor, id)
   const [rows, terms] = await Promise.all([repo.segments(id), repo.terms(book)])
   const translated = rows.filter((s) => s.target?.trim())
+  // Regexes for every term over every line, inside a request.
+  if (terms.length * translated.length > MAX_GLOSSARY_CHECK)
+    throw new BookError(413, "too_long")
   const breaks = translated.flatMap((s) =>
     checkGlossary(
       s.source,
@@ -1320,7 +1368,9 @@ export async function applyChangeSet(
           .eq("id", item.segment_id)
           .eq("book_id", id)
           .eq("version", item.version)
-          .neq("status", "locked")
+          // Only lines already translated: a proposal must not be a way to
+          // get a line done without paying for it.
+          .in("status", ["machine", "reviewed"])
           .select("id")
         return data?.length ?? 0
       })
@@ -1425,7 +1475,7 @@ export const bookCapabilities = () => ({
     per_1000_words_economy: BOOK_RATES.economy,
     ocr_per_page: BOOK_RATES.ocr_page,
     glossary_extraction: BOOK_RATES.extract,
-    extra_back_check: BOOK_RATES.backcheck,
+    back_check_per_chapter: BOOK_RATES.backcheck,
   },
   max_file_bytes: MAX_BOOK_BYTES,
   fake_model: fakeEnabled(),

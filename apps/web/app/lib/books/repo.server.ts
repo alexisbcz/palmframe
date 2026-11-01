@@ -6,10 +6,11 @@ import {
   type BookRow,
   type PageRow,
   type SegmentRow,
+  type TermRow,
 } from "./database"
-import { MAX_ATTEMPTS, type EngineRepo } from "./engine"
+import { JobClosed, MAX_ATTEMPTS, type EngineRepo } from "./engine"
 import { stripTags } from "./inline"
-import { countWords, type ParsedChapter } from "./model"
+import { billableWords, type ParsedChapter } from "./model"
 
 const db = () => supabaseAdmin()
 
@@ -19,6 +20,8 @@ const check = <T>(r: { data: T; error: { message: string } | null }) => {
 }
 
 const PAGE = 1000
+// Raised by the save functions once a job has ended.
+const CLOSED = "P0410"
 
 // PostgREST stops at 1,000 rows, and a book has tens of thousands.
 async function pagedSegments(
@@ -46,7 +49,7 @@ const segmentRows = (
   blocks: ParsedChapter["blocks"]
 ): Partial<SegmentRow>[] =>
   blocks.map((b, position) => {
-    const words = countWords(stripTags(b.text))
+    const words = billableWords(stripTags(b.text))
     const does = translatable(b.kind, b.text)
     return {
       book_id: book.id,
@@ -101,6 +104,23 @@ async function refreshTotals(bookId: string) {
       })
       .eq("id", bookId)
   )
+}
+
+// PostgREST stops at 1,000 rows whatever `limit` asks for, and a glossary that
+// quietly loses terms is a glossary that quietly isn't enforced.
+export async function allTerms(glossaries: string[], state?: TermRow["state"]) {
+  const out: TermRow[] = []
+  for (let from = 0; ; from += PAGE) {
+    let query = db()
+      .from("book_terms")
+      .select("*")
+      .in("glossary_id", glossaries)
+      .order("id")
+    if (state) query = query.eq("state", state)
+    const rows = check(await query.range(from, from + PAGE - 1)) ?? []
+    out.push(...rows)
+    if (rows.length < PAGE) return out
+  }
 }
 
 export const repo: EngineRepo = {
@@ -178,6 +198,7 @@ export const repo: EngineRepo = {
       p_job: jobId,
       p_items: items,
     })
+    if (error?.code === CLOSED) throw new JobClosed(jobId)
     if (error) throw new Error(error.message)
     return data as number
   },
@@ -242,15 +263,7 @@ export const repo: EngineRepo = {
       .maybeSingle()
     const ids = [...book.glossaries, ...(own.data ? [own.data.id] : [])]
     if (!ids.length) return []
-    const rows =
-      check(
-        await db()
-          .from("book_terms")
-          .select("source, target, dnt, case_sensitive")
-          .in("glossary_id", ids)
-          .eq("state", "approved")
-          .limit(PAGE * 5)
-      ) ?? []
+    const rows = await allTerms(ids, "approved")
     return rows.filter((t) => t.dnt || t.target.trim())
   },
   async addSuggestions(book, terms) {
@@ -276,16 +289,18 @@ export const repo: EngineRepo = {
   async setJob(id, patch) {
     check(await db().from("book_jobs").update(patch).eq("id", id))
   },
-  async finishJob(id, patch) {
-    const rows = check(
-      await db()
-        .from("book_jobs")
-        .update(patch)
-        .eq("id", id)
-        .in("status", ["queued", "running"])
-        .select("id")
-    )
-    return !!rows?.length
+  async closeJob(id, close, rate, flat) {
+    const { data, error } = await db().rpc("book_close_job", {
+      p_job: id,
+      p_status: close.status,
+      p_error: close.error,
+      p_result: close.result,
+      p_usage: close.usage,
+      p_rate: rate,
+      p_flat: flat,
+    })
+    if (error) throw new Error(error.message)
+    return data as number | null
   },
   async startQa(job) {
     const chapters = await this.chapters(job.book_id)
@@ -302,15 +317,6 @@ export const repo: EngineRepo = {
       .select("id")
       .single()
     if (!error && data) await enqueue(data.id)
-  },
-  async settle(job, used) {
-    const { data, error } = await db().rpc("settle_credits_for", {
-      p_user: job.user_id,
-      p_job: job.id,
-      p_used: used,
-    })
-    if (error) throw new Error(error.message)
-    return data as number
   },
   async replaceIssues(chapter, issues) {
     check(await db().from("book_issues").delete().eq("chapter_id", chapter.id))
@@ -359,8 +365,17 @@ export const repo: EngineRepo = {
       if (rows.length < PAGE) return out
     }
   },
-  async setPage(id, patch) {
-    check(await db().from("book_pages").update(patch).eq("id", id))
+  async savePage(jobId, pageId, patch) {
+    const { error } = await db().rpc("book_save_page", {
+      p_job: jobId,
+      p_page: pageId,
+      p_status: patch.status,
+      p_blocks: patch.blocks ?? null,
+      p_confidence: patch.confidence ?? null,
+      p_attempts: patch.attempts,
+    })
+    if (error?.code === CLOSED) throw new JobClosed(jobId)
+    if (error) throw new Error(error.message)
   },
   async pageImage(path) {
     const { data, error } = await db()
@@ -374,23 +389,28 @@ export const repo: EngineRepo = {
   },
   async writeBook(book, chapters) {
     check(await db().from("book_chapters").delete().eq("book_id", book.id))
-    for (const [position, chapter] of chapters.entries()) {
-      const row = check(
-        await db()
-          .from("book_chapters")
-          .insert({
+    // Chapters in one insert: a function shouldn't make a round trip per chapter.
+    const rows = check(
+      await db()
+        .from("book_chapters")
+        .insert(
+          chapters.map((chapter, position) => ({
             book_id: book.id,
             user_id: book.user_id,
             position,
             title: chapter.title.slice(0, 500),
             href: chapter.href ?? null,
             segments: chapter.blocks.length,
-          })
-          .select("id")
-          .single()
+          }))
+        )
+        .select("id, position")
+    )
+    const ids = new Map(rows.map((r) => [r.position, r.id]))
+    await insertSegments(
+      chapters.flatMap((chapter, position) =>
+        segmentRows(book, ids.get(position)!, chapter.blocks)
       )
-      await insertSegments(segmentRows(book, row.id, chapter.blocks))
-    }
+    )
     await refreshTotals(book.id)
   },
   async replaceChapter(book, position, blocks) {

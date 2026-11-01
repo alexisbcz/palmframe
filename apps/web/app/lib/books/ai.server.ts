@@ -205,8 +205,13 @@ function openRouterModel(c: OpenRouterConnection): BookModel {
   }
 }
 
+// Fails closed: only on a developer's machine or under test, and never on any
+// Vercel deployment, previews included, however the flag got there.
 export const fakeEnabled = () =>
-  process.env.BOOKS_AI_FAKE === "1" && process.env.VERCEL_ENV !== "production"
+  process.env.BOOKS_AI_FAKE === "1" &&
+  !process.env.VERCEL &&
+  !process.env.VERCEL_ENV &&
+  (process.env.NODE_ENV === "development" || process.env.NODE_ENV === "test")
 
 export const modelAvailable = (openrouter: OpenRouterConnection | null) =>
   fakeEnabled() || !!openrouter || !!process.env.ANTHROPIC_API_KEY
