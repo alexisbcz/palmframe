@@ -117,8 +117,8 @@ the panels, and a person corrects them before anything is spent.
 2. An image model redraws each panel as a clean anime frame with no lettering.
    The first frame sets the look, and later frames are drawn to match it.
 3. A video model animates each frame, and a speech model voices the lines.
-4. The browser cuts the clips with [Mediabunny](https://mediabunny.dev), mixes
-   the sound, burns in subtitles and saves an MP4.
+4. The browser cuts the clips, mixes the sound, burns in subtitles and saves an
+   MP4.
 
 Everything runs on the person's connected OpenRouter account, so the feature
 needs no key of its own and costs no credits. Shooting shows the price first,
