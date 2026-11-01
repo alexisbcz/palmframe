@@ -854,7 +854,7 @@ export interface Viewer {
   // Public URL of their profile picture, if they set one.
   avatarUrl: string | null
   // Features they turned on in Settings, under Labs.
-  labs: { machines: boolean }
+  labs: { machines: boolean; novels: boolean }
 }
 
 export const COMICS_BUCKET = "comics"

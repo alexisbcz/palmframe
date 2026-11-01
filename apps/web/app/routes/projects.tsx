@@ -37,7 +37,7 @@ import {
 import { Spinner } from "@workspace/ui/components/spinner"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
-import { AccountMenu } from "@/components/account/account-menu"
+import { AccountMenu, useViewer } from "@/components/account/account-menu"
 import { messages } from "@/components/account/account.messages"
 import { Logo } from "@/components/auth/auth-ui"
 import {
@@ -165,6 +165,7 @@ function useRelativeTime() {
 }
 
 export default function Projects({ loaderData }: Route.ComponentProps) {
+  const viewer = useViewer()
   const t = useT(messages)
   const navigation = useNavigation()
   const creating =
@@ -190,12 +191,14 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
       <header className="flex h-12 items-center justify-between gap-2 border-b px-2.5">
         <Logo />
         <div className="flex items-center gap-2">
-          <Link
-            to="/novels"
-            className={buttonVariants({ variant: "ghost", size: "sm" })}
-          >
-            {t("account.novels")}
-          </Link>
+          {viewer?.labs.novels && (
+            <Link
+              to="/novels"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              {t("account.novels")}
+            </Link>
+          )}
           <Link
             to="/catalog"
             className={buttonVariants({ variant: "ghost", size: "sm" })}

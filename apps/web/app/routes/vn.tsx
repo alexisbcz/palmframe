@@ -43,7 +43,7 @@ export default function NovelReader({ loaderData }: Route.ComponentProps) {
       <NovelPlayer
         novel={novel}
         storageKey={slug}
-        onExit={() => navigate("/novels")}
+        onExit={() => navigate("/")}
         onStart={() => {
           if (counted.current || slug === DEMO_SLUG) return
           counted.current = true

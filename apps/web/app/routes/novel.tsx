@@ -12,9 +12,12 @@ export const meta: Route.MetaFunction = ({ loaderData }) => [
   PRIVATE,
 ]
 
-// `/novels/draft` is one local novel for someone signed out.
+// `/novels/draft` is one novel kept in this browser, from before signing in.
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase, viewer, headers } = await getViewer(request)
+  if (!viewer) throw redirect(`/login?next=/novels/${params.id}`, { headers })
+  if (!viewer.labs.novels)
+    throw redirect("/projects?settings=labs", { headers })
   if (params.id === "draft")
     return data(
       {
@@ -27,7 +30,6 @@ export async function loader({ request, params }: Route.LoaderArgs) {
       },
       { headers }
     )
-  if (!viewer) throw redirect(`/login?next=/novels/${params.id}`, { headers })
   const [{ data: row }, credits] = await Promise.all([
     supabase
       .from("comic_novels")

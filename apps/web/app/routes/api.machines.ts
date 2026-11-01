@@ -51,7 +51,11 @@ import type { Route } from "./+types/api.machines"
 
 const id = z.uuid()
 const body = z.discriminatedUnion("intent", [
-  z.object({ intent: z.literal("labs"), on: z.boolean() }),
+  z.object({
+    intent: z.literal("labs"),
+    on: z.boolean(),
+    feature: z.enum(["machines", "novels"]).default("machines"),
+  }),
   z.object({ intent: z.literal("save"), machine: machineInput }),
   z.object({ intent: z.literal("remove"), id }),
   z.object({ intent: z.literal("run"), id, on: z.boolean() }),
@@ -127,11 +131,13 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (r.intent === "labs") {
     const { error } = await supabase.auth.updateUser({
-      data: { labs: { machines: r.on } },
+      // Metadata merges one level deep: `labs` is replaced whole, so it has to
+      // carry the other features along.
+      data: { labs: { ...viewer.labs, [r.feature]: r.on } },
     })
     if (error) return fail(error.message, 500)
     // Off means off: nothing keeps listening or spending in the background.
-    if (!r.on)
+    if (!r.on && r.feature === "machines")
       await supabase
         .from("comic_machines")
         .update({ enabled: false })

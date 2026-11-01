@@ -24,7 +24,9 @@ export async function action({ request }: Route.ActionArgs) {
   if (!r)
     return Response.json({ error: "A prompt is required." }, { status: 400 })
   const { supabase, viewer } = await getViewer(request)
-  if (!viewer && process.env.VERCEL)
+  if (!viewer)
     return Response.json({ error: "Sign in to draw." }, { status: 401 })
+  if (!viewer.labs.novels)
+    return Response.json({ error: "Not found" }, { status: 404 })
   return makeArt(r, request, supabase, viewer)
 }

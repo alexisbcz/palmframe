@@ -42,7 +42,8 @@ export async function action({ request }: Route.ActionArgs) {
   const r = parseWrite(await request.json().catch(() => null))
   if (!r) return error("Nothing to write from.", 400)
   const { supabase, viewer } = await getViewer(request)
-  if (!viewer && process.env.VERCEL) return error("Sign in to write.", 401)
+  if (!viewer) return error("Sign in to write.", 401)
+  if (!viewer.labs.novels) return error("Not found", 404)
   const openrouter = viewer ? await payingConnection(viewer.id) : null
   if (!openrouter && !available())
     return error(

@@ -239,12 +239,14 @@ export function AccountMenu() {
             </Tile>
             {t("account.catalog")}
           </DropdownMenuItem>
-          <DropdownMenuItem id="novels" textValue={t("account.novels")}>
-            <Tile>
-              <HugeiconsIcon icon={Book02Icon} strokeWidth={2} />
-            </Tile>
-            {t("account.novels")}
-          </DropdownMenuItem>
+          {viewer.labs.novels && (
+            <DropdownMenuItem id="novels" textValue={t("account.novels")}>
+              <Tile>
+                <HugeiconsIcon icon={Book02Icon} strokeWidth={2} />
+              </Tile>
+              {t("account.novels")}
+            </DropdownMenuItem>
+          )}
           {viewer.labs.machines && (
             <DropdownMenuItem id="studio" textValue={tm("labs.machines")}>
               <Tile>

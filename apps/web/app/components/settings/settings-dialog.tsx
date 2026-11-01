@@ -211,7 +211,7 @@ export function SettingsDialog() {
     ],
     openrouter: [to("pay"), to("imageModel"), to("textModel"), "key"],
     api: [ta("name"), "MCP", "key", "token"],
-    labs: [tl("labs.machines")],
+    labs: [tl("labs.machines"), tl("labs.novels")],
   }
   const q = fold(query.trim())
   const matches = allowed.filter(

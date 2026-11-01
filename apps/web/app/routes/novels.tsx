@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Link, data, useNavigate } from "react-router"
+import { Link, data, redirect, useNavigate } from "react-router"
 import { cn } from "cn"
 
 import { useT } from "@/i18n/core"
@@ -7,12 +7,7 @@ import { Dial, FocusRing, Key, Knob, Plate } from "@/components/novel/hardware"
 import { messages } from "@/components/novel/novel.messages"
 import "@/components/novel/novel.css"
 import "@/components/novel/player.css"
-import {
-  ApiError,
-  loadDraft,
-  saveDraft,
-  writeRequest,
-} from "@/lib/novel/client"
+import { ApiError, loadDraft, writeRequest } from "@/lib/novel/client"
 import { DEMO_SLUG, demoNovel } from "@/lib/novel/demo"
 import { emptyNovel, type Novel } from "@/lib/novel/model"
 import { fromOutline } from "@/lib/novel/outline"
@@ -34,13 +29,14 @@ export const meta: Route.MetaFunction = () =>
 
 export async function loader({ request }: Route.LoaderArgs) {
   const { supabase, viewer, headers } = await getViewer(request)
-  const { data: novels } = viewer
-    ? await supabase
-        .from("comic_novels")
-        .select("id, title, updated_at")
-        .order("updated_at", { ascending: false })
-    : { data: [] }
-  return data({ novels: novels ?? [], signedIn: !!viewer }, { headers })
+  if (!viewer) throw redirect("/login?next=/novels", { headers })
+  if (!viewer.labs.novels)
+    throw redirect("/projects?settings=labs", { headers })
+  const { data: novels } = await supabase
+    .from("comic_novels")
+    .select("id, title, updated_at")
+    .order("updated_at", { ascending: false })
+  return data({ novels: novels ?? [] }, { headers })
 }
 
 const BOOKS = ["#5e2d26", "#2d4a4e", "#3f3560", "#6a4a1e", "#2e4630", "#4c2740"]
@@ -61,7 +57,7 @@ export default function Novels({ loaderData }: Route.ComponentProps) {
   const { locale } = useLocale()
   const navigate = useNavigate()
   const supabase = useSupabase()
-  const { novels, signedIn } = loaderData
+  const { novels } = loaderData
   const [busy, setBusy] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
   const [premise, setPremise] = React.useState("")
@@ -71,18 +67,13 @@ export default function Novels({ loaderData }: Route.ComponentProps) {
   const [hasDraft, setHasDraft] = React.useState(false)
 
   React.useEffect(() => {
-    if (!signedIn)
-      loadDraft()
-        .then((d) => setHasDraft(!!d))
-        .catch(() => {})
-  }, [signedIn])
+    // A draft made before this needed an account stays reachable.
+    loadDraft()
+      .then((d) => setHasDraft(!!d))
+      .catch(() => {})
+  }, [])
 
   const create = async (novel: Novel) => {
-    if (!signedIn) {
-      await saveDraft(novel)
-      navigate("/novels/draft")
-      return
-    }
     const { data: row, error: failed } = await supabase
       .from("comic_novels")
       .insert({ title: novel.title.slice(0, 120), data: novel })
@@ -290,16 +281,6 @@ export default function Novels({ loaderData }: Route.ComponentProps) {
           {error ? (
             <p role="alert" className="text-sm text-[#ffb5ad] lg:col-span-3">
               {error}
-            </p>
-          ) : null}
-          {!signedIn ? (
-            <p className="text-sm text-[#b5a994] lg:col-span-3">
-              <Link
-                to="/login?next=/novels"
-                className="underline underline-offset-4"
-              >
-                {t("shelf.signIn")}
-              </Link>
             </p>
           ) : null}
         </Plate>

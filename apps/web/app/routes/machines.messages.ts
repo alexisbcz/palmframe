@@ -260,6 +260,10 @@ export const messages = defineMessages({
       machinesHint:
         "Brand kits, ad research, trends and content machines that turn into comics. Turning this off stops every machine.",
       open: "Open Studio",
+      novels: "Visual novels",
+      novelsHint:
+        "Write, stage and score branching visual novels, then export them to Ren'Py. Turning this off closes the editor; published links stay readable.",
+      openNovels: "Open visual novels",
     },
     stances: {
       "far-left": "Far left",
@@ -663,6 +667,10 @@ export const messages = defineMessages({
       machinesHint:
         "Kits de marque, veille publicitaire, tendances et machines à contenu qui deviennent des BD. Désactiver cette option arrête toutes les machines.",
       open: "Ouvrir Studio",
+      novels: "Romans visuels",
+      novelsHint:
+        "Écrivez, mettez en scène et mettez en musique des romans visuels à embranchements, puis exportez-les vers Ren'Py. Désactiver cette option ferme l’éditeur ; les liens publiés restent lisibles.",
+      openNovels: "Ouvrir les romans visuels",
     },
     stances: {
       "far-left": "Extrême gauche",
@@ -1067,6 +1075,10 @@ export const messages = defineMessages({
       machinesHint:
         "Kits de marca, análisis de anuncios, tendencias y máquinas de contenido que se convierten en cómics. Al desactivarlo se detienen todas las máquinas.",
       open: "Abrir Studio",
+      novels: "Novelas visuales",
+      novelsHint:
+        "Escribe, pon en escena y musicaliza novelas visuales ramificadas, y expórtalas a Ren'Py. Al desactivarlo se cierra el editor; los enlaces publicados siguen siendo legibles.",
+      openNovels: "Abrir novelas visuales",
     },
     stances: {
       "far-left": "Extrema izquierda",
@@ -1469,6 +1481,10 @@ export const messages = defineMessages({
       machinesHint:
         "Brand-Kits, Anzeigen-Recherche, Trends und Content-Maschinen, aus denen Comics werden. Beim Ausschalten stoppen alle Maschinen.",
       open: "Studio öffnen",
+      novels: "Visual Novels",
+      novelsHint:
+        "Schreibe, inszeniere und vertone verzweigte Visual Novels und exportiere sie nach Ren'Py. Beim Ausschalten schließt sich der Editor; veröffentlichte Links bleiben lesbar.",
+      openNovels: "Visual Novels öffnen",
     },
     stances: {
       "far-left": "Linksaußen",
@@ -1875,6 +1891,10 @@ export const messages = defineMessages({
       machinesHint:
         "Kit del brand, analisi degli annunci, tendenze e macchine di contenuti che diventano fumetti. Disattivandolo si fermano tutte le macchine.",
       open: "Apri Studio",
+      novels: "Visual novel",
+      novelsHint:
+        "Scrivi, metti in scena e musica visual novel a bivi, poi esportale in Ren'Py. Disattivando si chiude l'editor; i link pubblicati restano leggibili.",
+      openNovels: "Apri le visual novel",
     },
     stances: {
       "far-left": "Estrema sinistra",
@@ -2277,6 +2297,10 @@ export const messages = defineMessages({
       machinesHint:
         "ブランドキット、広告リサーチ、トレンド、コンテンツマシンをコミックにつなげます。オフにするとすべてのマシンが停止します。",
       open: "Studio を開く",
+      novels: "ビジュアルノベル",
+      novelsHint:
+        "分岐するビジュアルノベルを執筆・演出・音楽付けし、Ren'Py に書き出せます。オフにするとエディタは閉じますが、公開済みのリンクは読めます。",
+      openNovels: "ビジュアルノベルを開く",
     },
     stances: {
       "far-left": "極左",
