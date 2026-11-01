@@ -22,10 +22,12 @@ import {
 } from "@/lib/lab/comfy.server"
 import {
   LAB_DEFAULTS,
+  MAX_LORAS,
   civitaiTarget,
   fromCivitai,
   labQuery,
   toRequest,
+  type LabLora,
   type LabRequest,
 } from "@/lib/lab/model"
 import { PRIVATE } from "@/lib/seo"
@@ -43,8 +45,10 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!allowed(request)) throw data("Not found", { status: 404 })
   const url = new URL(request.url)
   const [comfy, past] = await Promise.all([installed(), renders()])
-  const params = Object.fromEntries(url.searchParams)
-  const link = params.civitai
+  const params: Record<string, unknown> = Object.fromEntries(url.searchParams)
+  if (url.searchParams.has("lora"))
+    params.lora = url.searchParams.getAll("lora")
+  const link = url.searchParams.get("civitai")
   let base = LAB_DEFAULTS
   let notice: string | null = null
   let missing: string[] = []
@@ -100,8 +104,8 @@ const TABS: {
     id: "style",
     label: "Style",
     icon: PaintBrush01Icon,
-    title: "Select style",
-    hint: "The LoRA laid over the model",
+    title: "Build a style",
+    hint: "Stack LoRAs over the model, each with its own strength",
   },
   {
     id: "model",
@@ -334,14 +338,16 @@ function Setup({
     if (!open && el?.open) el.close()
   }, [open])
 
-  const styles: Slide[] = [
-    { id: "", label: "No LoRA", image: lastWith(past, (s) => !s.lora) },
-    ...comfy.loras.map((l) => ({
-      id: l,
-      label: pretty(l),
-      image: lastWith(past, (s) => s.lora === l),
-    })),
-  ]
+  const styles: Slide[] = comfy.loras.map((l) => ({
+    id: l,
+    label: pretty(l),
+    image: lastWith(past, (s) => usesLora(s, l)),
+  }))
+  const [browsing, setBrowsing] = React.useState(
+    r.loras[0]?.name ?? comfy.loras[0] ?? ""
+  )
+  const inStack = r.loras.some((l) => l.name === browsing)
+  const stack = (loras: LabLora[]) => set({ loras })
   const models: Slide[] = comfy.models.map((m) => ({
     id: m,
     label: pretty(m),
@@ -354,7 +360,7 @@ function Setup({
     frame: f,
   }))
   const changed: Record<Tab, boolean> = {
-    style: !!r.lora,
+    style: r.loras.length > 0,
     model: r.model !== LAB_DEFAULTS.model,
     format: r.width !== LAB_DEFAULTS.width || r.height !== LAB_DEFAULTS.height,
     render:
@@ -422,32 +428,95 @@ function Setup({
             <p>{pane.hint}</p>
           </hgroup>
           {tab === "style" ? (
-            <Dome
-              label="Style"
-              slides={styles}
-              value={r.lora}
-              onChange={(lora) => set({ lora })}
-            >
-              {r.lora ? (
-                <div className="lab-dial">
-                  <label>
-                    Strength
-                    <input
-                      type="range"
-                      className="lab-range"
-                      min={0}
-                      max={1.5}
-                      step={0.05}
-                      value={r.strength}
-                      onChange={(e) =>
-                        set({ strength: Number(e.target.value) })
-                      }
-                    />
-                    {r.strength.toFixed(2)}
-                  </label>
-                </div>
+            <>
+              {r.loras.length ? (
+                <ol className="lab-stack" aria-label="LoRA stack">
+                  {r.loras.map((l) => {
+                    const image = lastWith(past, (s) => usesLora(s, l.name))
+                    return (
+                      <li key={l.name}>
+                        <button
+                          type="button"
+                          className="lab-stack-thumb"
+                          aria-label={`Show ${pretty(l.name)}`}
+                          style={{ background: swatch(l.name) }}
+                          onClick={() => setBrowsing(l.name)}
+                        >
+                          {image ? <img src={image} alt="" /> : null}
+                        </button>
+                        <label>
+                          <span>{pretty(l.name)}</span>
+                          <input
+                            type="range"
+                            className="lab-range"
+                            aria-label={`${pretty(l.name)} strength`}
+                            min={0}
+                            max={1.5}
+                            step={0.05}
+                            value={l.strength}
+                            onChange={(e) =>
+                              stack(
+                                r.loras.map((x) =>
+                                  x.name === l.name
+                                    ? { ...x, strength: Number(e.target.value) }
+                                    : x
+                                )
+                              )
+                            }
+                          />
+                        </label>
+                        <b>{l.strength.toFixed(2)}</b>
+                        <button
+                          type="button"
+                          className="lab-pill"
+                          data-round
+                          aria-label={`Remove ${pretty(l.name)}`}
+                          onClick={() =>
+                            stack(r.loras.filter((x) => x.name !== l.name))
+                          }
+                        >
+                          <HugeiconsIcon
+                            icon={Cancel01Icon}
+                            strokeWidth={2}
+                            className="size-3.5"
+                          />
+                        </button>
+                      </li>
+                    )
+                  })}
+                </ol>
               ) : null}
-            </Dome>
+              <Dome
+                label="Style"
+                slides={styles}
+                value={browsing}
+                onChange={setBrowsing}
+              >
+                {browsing ? (
+                  <div className="lab-dial">
+                    <button
+                      type="button"
+                      className="lab-pill"
+                      data-on={inStack}
+                      disabled={!inStack && r.loras.length >= MAX_LORAS}
+                      onClick={() =>
+                        stack(
+                          inStack
+                            ? r.loras.filter((x) => x.name !== browsing)
+                            : [...r.loras, { name: browsing, strength: 1 }]
+                        )
+                      }
+                    >
+                      {inStack
+                        ? "In the stack"
+                        : r.loras.length >= MAX_LORAS
+                          ? `Stack is full (${MAX_LORAS})`
+                          : "Add to stack"}
+                    </button>
+                  </div>
+                ) : null}
+              </Dome>
+            </>
           ) : null}
           {tab === "model" ? (
             <Dome
@@ -579,6 +648,9 @@ function Setup({
   )
 }
 
+const usesLora = (s: LabRequest, name: string) =>
+  s.loras.some((l) => l.name === name)
+
 function lastWith(past: Render[], test: (s: LabRequest) => boolean) {
   const found = past.find((p) => test(p.settings))
   return found ? fileUrl(found.file) : undefined
@@ -676,8 +748,9 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
   const shown = past[current]
   const ratio = (s: LabRequest) => `${s.width} / ${s.height}`
   const modelImage = lastWith(past, (s) => s.model === r.model)
-  const styleImage = r.lora
-    ? lastWith(past, (s) => s.lora === r.lora)
+  const first = r.loras[0]?.name
+  const styleImage = first
+    ? lastWith(past, (s) => usesLora(s, first))
     : undefined
 
   return (
@@ -837,7 +910,11 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
           >
             {styleImage ? <img src={styleImage} alt="" /> : null}
             <small>Style</small>
-            <b>{r.lora ? pretty(r.lora) : "None"}</b>
+            <b>
+              {first
+                ? `${r.loras.length > 1 ? `+${r.loras.length - 1} ` : ""}${pretty(first)}`
+                : "None"}
+            </b>
           </button>
           <button
             type="button"

@@ -13,14 +13,21 @@ import { graphRequest, pngPrompt } from "./png"
 test("a link round-trips to the same render", () => {
   const r = toRequest({
     prompt: "a knight",
-    lora: "x.safetensors",
-    strength: "0.8",
+    lora: ["x.safetensors:0.8", "y.safetensors"],
     seed: "702213660962888",
     w: "832",
     h: "1216",
   })
-  const back = toRequest(Object.fromEntries(new URLSearchParams(labQuery(r))))
+  const query = new URLSearchParams(labQuery(r))
+  const back = toRequest({
+    ...Object.fromEntries(query),
+    lora: query.getAll("lora"),
+  })
   expect(back).toEqual(r)
+  expect(r.loras).toEqual([
+    { name: "x.safetensors", strength: 0.8 },
+    { name: "y.safetensors", strength: 1 },
+  ])
   expect(r.seed).toBe(702213660962888)
 })
 
@@ -32,13 +39,40 @@ test("values are bounded and sizes snap", () => {
   expect(r.cfg).toBe(LAB_DEFAULTS.cfg)
 })
 
-test("the LoRA sits between the model and the sampler, only when set", () => {
+test("LoRAs chain between the model and the sampler, in order", () => {
   const plain = workflow(toRequest({ prompt: "x" }))
-  expect(plain["2"]).toBeUndefined()
   expect(plain["13"]!.inputs.model).toEqual(["1", 0])
-  const styled = workflow(toRequest({ prompt: "x", lora: "a.safetensors" }))
-  expect(styled["2"]!.inputs.lora_name).toBe("a.safetensors")
-  expect(styled["13"]!.inputs.model).toEqual(["2", 0])
+  const styled = workflow(toRequest({ prompt: "x", lora: ["a:0.5", "b", "c"] }))
+  expect(styled["20"]!.inputs).toMatchObject({
+    model: ["1", 0],
+    lora_name: "a",
+    strength_model: 0.5,
+  })
+  expect(styled["21"]!.inputs.model).toEqual(["20", 0])
+  expect(styled["22"]!.inputs.model).toEqual(["21", 0])
+  expect(styled["13"]!.inputs.model).toEqual(["22", 0])
+})
+
+test("a stack drops repeats and stops at the limit, and old links still work", () => {
+  const many = toRequest({
+    lora: ["a", "a", "b", "c", "d", "e", "f", "g", "h"],
+  })
+  expect(many.loras.map((l) => l.name)).toEqual(["a", "b", "c", "d", "e", "f"])
+  expect(toRequest({ lora: "a.safetensors", strength: "0.7" }).loras).toEqual([
+    { name: "a.safetensors", strength: 0.7 },
+  ])
+  expect(toRequest({ lora: "" }).loras).toEqual([])
+})
+
+test("a single-LoRA render from before stacks still reads back", () => {
+  const graph = {
+    "1": { inputs: { unet_name: "m" } },
+    "2": { inputs: { model: ["1", 0], lora_name: "a", strength_model: 0.6 } },
+    "7": { inputs: { width: 768, height: 1024 } },
+    "13": { inputs: { model: ["2", 0] } },
+    "14": { inputs: { seed: 1 } },
+  }
+  expect(graphRequest(graph)?.loras).toEqual([{ name: "a", strength: 0.6 }])
 })
 
 test("only Civitai links are read, and only their ids", () => {
@@ -81,14 +115,13 @@ test("Civitai settings fill in, keeping this machine's sampler", () => {
     seed: 5,
     width: 768,
     height: 1024,
-    lora: "flar.safetensors",
-    strength: 0.7,
+    loras: [{ name: "flar.safetensors", strength: 0.7 }],
   })
   expect(missing).toEqual(["turbo.safetensors"])
 })
 
 test("a render's settings read back from its PNG", () => {
-  const r = toRequest({ prompt: "knight é", lora: "a.safetensors", seed: 9 })
+  const r = toRequest({ prompt: "knight é", lora: ["a:0.5", "b"], seed: 9 })
   const text = new TextEncoder().encode(JSON.stringify(workflow(r)))
   const key = new TextEncoder().encode("prompt\0")
   const chunk = (type: string, data: Uint8Array) => {

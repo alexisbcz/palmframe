@@ -1,12 +1,20 @@
 // The local image lab: one render on this machine's ComfyUI, described by plain
 // values so that a URL can carry all of it.
 
+export interface LabLora {
+  name: string
+  strength: number
+}
+
+// Enough to mix styles, before each one costs noticeable memory and time.
+export const MAX_LORAS = 6
+
 export interface LabRequest {
   prompt: string
   negative: string
   model: string
-  lora: string
-  strength: number
+  // Applied in order, each on top of the last.
+  loras: LabLora[]
   seed: number
   width: number
   height: number
@@ -19,8 +27,7 @@ export const LAB_DEFAULTS: LabRequest = {
   prompt: "",
   negative: "worst quality, low quality, blurry, jpeg artifacts, bad anatomy",
   model: "anima-turbo-v1.1.safetensors",
-  lora: "",
-  strength: 1,
+  loras: [],
   seed: 0,
   width: 768,
   height: 1024,
@@ -43,6 +50,36 @@ const side = (value: unknown, fallback: number) =>
 const text = (value: unknown, fallback: string) =>
   typeof value === "string" ? value : fallback
 
+// `file.safetensors:0.8` in a URL, or a bare name at full strength.
+function parseLora(value: string, fallback: number): LabLora {
+  const at = value.lastIndexOf(":")
+  const tail = at > 0 ? Number(value.slice(at + 1)) : NaN
+  return Number.isFinite(tail)
+    ? { name: value.slice(0, at), strength: number(tail, -2, 3, 1) }
+    : { name: value, strength: fallback }
+}
+
+function toLoras(v: Record<string, unknown>, base: LabLora[]) {
+  let found: LabLora[]
+  if (Array.isArray(v.loras))
+    found = v.loras.flatMap((l: Partial<LabLora>) =>
+      typeof l?.name === "string"
+        ? [{ name: l.name, strength: number(l.strength, -2, 3, 1) }]
+        : []
+    )
+  else if (v.lora !== undefined) {
+    const strength = number(v.strength, -2, 3, 1)
+    found = [v.lora]
+      .flat()
+      .filter((l): l is string => typeof l === "string" && !!l)
+      .map((l) => parseLora(l, strength))
+  } else return base
+  const names = new Set<string>()
+  return found
+    .filter((l) => !names.has(l.name) && !!names.add(l.name))
+    .slice(0, MAX_LORAS)
+}
+
 export function toRequest(
   v: Record<string, unknown>,
   base: LabRequest = LAB_DEFAULTS
@@ -51,8 +88,7 @@ export function toRequest(
     prompt: text(v.prompt, base.prompt).slice(0, 8_000),
     negative: text(v.negative, base.negative).slice(0, 8_000),
     model: text(v.model, base.model),
-    lora: text(v.lora, base.lora),
-    strength: number(v.strength, -2, 3, base.strength),
+    loras: toLoras(v, base.loras),
     seed: Math.trunc(number(v.seed, 0, Number.MAX_SAFE_INTEGER, base.seed)),
     width: side(v.w ?? v.width, base.width),
     height: side(v.h ?? v.height, base.height),
@@ -72,8 +108,8 @@ export function labQuery(r: LabRequest) {
   add("prompt", r.prompt, d.prompt)
   add("negative", r.negative, d.negative)
   add("model", r.model, d.model)
-  add("lora", r.lora, d.lora)
-  if (r.lora) add("strength", r.strength, d.strength)
+  for (const l of r.loras)
+    q.append("lora", l.strength === 1 ? l.name : `${l.name}:${l.strength}`)
   add("seed", r.seed, d.seed)
   add("w", r.width, d.width)
   add("h", r.height, d.height)
@@ -84,6 +120,13 @@ export function labQuery(r: LabRequest) {
 }
 
 export function workflow(r: LabRequest) {
+  // Each LoRA loads onto the model the one before it returned.
+  const chain = r.loras.map((l, i) => ({
+    id: String(20 + i),
+    from: i ? String(19 + i) : "1",
+    ...l,
+  }))
+  const tip = [chain.at(-1)?.id ?? "1", 0]
   const graph: Record<
     string,
     { class_type: string; inputs: Record<string, unknown> }
@@ -118,7 +161,7 @@ export function workflow(r: LabRequest) {
     },
     "13": {
       class_type: "CFGZeroStar",
-      inputs: { model: r.lora ? ["2", 0] : ["1", 0] },
+      inputs: { model: tip },
     },
     "14": {
       class_type: "KSampler",
@@ -144,13 +187,13 @@ export function workflow(r: LabRequest) {
       inputs: { images: ["15", 0], filename_prefix: "lab" },
     },
   }
-  if (r.lora)
-    graph["2"] = {
+  for (const l of chain)
+    graph[l.id] = {
       class_type: "LoraLoaderModelOnly",
       inputs: {
-        model: ["1", 0],
-        lora_name: r.lora,
-        strength_model: r.strength,
+        model: [l.from, 0],
+        lora_name: l.name,
+        strength_model: l.strength,
       },
     }
   return graph
@@ -220,7 +263,10 @@ export function fromCivitai(meta: CivitaiMeta, installed: string[]) {
   const loras = metaLoras(meta)
   const match = (name: string) =>
     installed.find((file) => baseName(file) === baseName(name))
-  const usable = loras.find((l) => match(l.name))
+  const usable = loras.flatMap((l) => {
+    const name = match(l.name)
+    return name ? [{ name, strength: l.strength }] : []
+  })
   return {
     values: {
       ...(meta.prompt && { prompt: meta.prompt }),
@@ -228,7 +274,7 @@ export function fromCivitai(meta: CivitaiMeta, installed: string[]) {
       ...(meta.seed !== undefined && { seed: meta.seed }),
       ...(width && { width }),
       ...(height && { height }),
-      ...(usable && { lora: match(usable.name)!, strength: usable.strength }),
+      ...(usable.length && { loras: usable }),
     },
     missing: loras.filter((l) => !match(l.name)).map((l) => l.name),
   }
