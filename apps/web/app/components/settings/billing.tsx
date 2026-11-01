@@ -488,6 +488,7 @@ const KINDS = [
   "novel_outline",
   "novel_scene",
   "novel_score",
+  "dub_lines",
   "translate",
   "panel_check",
   "style_analysis",

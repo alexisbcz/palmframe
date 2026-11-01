@@ -13,7 +13,7 @@ export const TOOL_IDS = [
 
 export type ToolId = (typeof TOOL_IDS)[number]
 
-export const LAB_FEATURES = ["machines", "novels", ...TOOL_IDS] as const
+export const LAB_FEATURES = ["machines", "novels", "dub", ...TOOL_IDS] as const
 
 export type LabFeature = (typeof LAB_FEATURES)[number]
 

@@ -8,6 +8,7 @@ import {
   RadioIcon,
   FolderLibraryIcon,
   Book02Icon,
+  Mic01Icon,
   GridViewIcon,
   LanguageSkillIcon,
   Login03Icon,
@@ -197,6 +198,7 @@ export function AccountMenu() {
           if (key === "studio") navigate("/studio")
           if (key === "novels") navigate("/novels")
           if (key === "tools") navigate("/tools")
+          if (key === "dub") navigate("/dub")
           if (key === "billing") openSettings("billing")
           if (key === "settings") openSettings()
           if (key === "commands")
@@ -258,6 +260,14 @@ export function AccountMenu() {
                 <HugeiconsIcon icon={AiChipIcon} strokeWidth={2} />
               </Tile>
               {ttools("title")}
+            </DropdownMenuItem>
+          )}
+          {viewer.labs.dub && (
+            <DropdownMenuItem id="dub" textValue={tm("labs.dub")}>
+              <Tile>
+                <HugeiconsIcon icon={Mic01Icon} strokeWidth={2} />
+              </Tile>
+              {tm("labs.dub")}
             </DropdownMenuItem>
           )}
           {viewer.labs.machines && (

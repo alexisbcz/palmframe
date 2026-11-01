@@ -1,0 +1,1320 @@
+@import "@fontsource/caveat/400.css";
+@import "@fontsource/caveat/700.css";
+@import "@fontsource/courier-prime/400.css";
+
+/* The Booth: a dubbing stage after the lights go down. The picture glows behind
+   the control-room glass, the rythmo band slides under it, and the paperwork
+   sits on the desk under a lamp. Dark whatever the app's theme, like the room. */
+.dub {
+  --film: #0b0a09;
+  --ink: #ece4d4;
+  --sticks: #15130f;
+  --cue: #e5483a;
+  min-height: 100svh;
+  background:
+    radial-gradient(ellipse 70% 42% at 38% 16%, rgb(255 190 110 / 0.07), transparent 70%),
+    var(--bench);
+}
+.dub select,
+.dub input:not([type="checkbox"]),
+.dub textarea {
+  width: 100%;
+  min-width: 0;
+  border-radius: 3px;
+  border: 1px solid var(--edge-strong);
+  background: rgb(0 0 0 / 0.28);
+  color: inherit;
+  padding: 7px 9px;
+  font-size: 16px;
+}
+@media (min-width: 640px) {
+  .dub select,
+  .dub input:not([type="checkbox"]),
+  .dub textarea {
+    font-size: 14px;
+  }
+}
+.dub small {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--engrave-dim);
+}
+.dub-link {
+  cursor: pointer;
+  border-radius: 3px;
+  background: none;
+  padding: 3px 5px;
+  font-size: 12px;
+  color: var(--engrave);
+  text-decoration: underline;
+  text-decoration-color: rgb(255 255 255 / 0.25);
+  text-underline-offset: 3px;
+  white-space: nowrap;
+}
+.dub-link:hover {
+  color: var(--amber);
+}
+.dub-link.is-armed {
+  color: var(--red);
+  font-weight: 600;
+}
+.dub-link:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.dub-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+}
+.dub-center {
+  display: grid;
+  place-items: center;
+  min-height: 100svh;
+}
+.dub-empty {
+  padding: 20px 8px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--engrave-dim);
+}
+.dub-warn {
+  border-inline-start: 3px solid var(--amber);
+  padding-inline-start: 10px;
+  font-size: 13px;
+  color: var(--amber);
+}
+
+/* Two reels of tape, turning while the Booth works. */
+.dub-reels {
+  position: relative;
+  flex: none;
+  display: inline-block;
+  width: 34px;
+  height: 15px;
+  background:
+    conic-gradient(var(--engrave) 0 18%, transparent 0 33%, var(--engrave) 0 51%, transparent 0 66%, var(--engrave) 0 84%, transparent 0)
+      0 0 / 15px 15px no-repeat,
+    conic-gradient(var(--engrave) 0 18%, transparent 0 33%, var(--engrave) 0 51%, transparent 0 66%, var(--engrave) 0 84%, transparent 0)
+      19px 0 / 15px 15px no-repeat;
+  border-radius: 8px;
+  mask: radial-gradient(circle 7.5px at 7.5px 7.5px, #000 98%, transparent) ,
+        radial-gradient(circle 7.5px at 26.5px 7.5px, #000 98%, transparent);
+  animation: dub-pulse 1.4s ease-in-out infinite;
+}
+@keyframes dub-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+@keyframes dub-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- The plug ---- */
+.dub-plug {
+  display: grid;
+  grid-template-columns: minmax(120px, 280px) minmax(0, 520px);
+  align-items: center;
+  justify-content: center;
+  gap: 48px;
+  min-height: 100svh;
+  padding: 32px 16px;
+}
+.dub-socket {
+  position: relative;
+  justify-self: end;
+  width: 150px;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--plate-hi), var(--plate-lo));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 16px 40px rgb(0 0 0 / 0.5);
+}
+.dub-socket i {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle 4px at 34% 50%, #000 98%, transparent),
+    radial-gradient(circle 4px at 66% 50%, #000 98%, transparent), #d9d0bd;
+  box-shadow: inset 0 3px 7px rgb(0 0 0 / 0.5);
+}
+.dub-socket[data-live="true"] i:first-child {
+  box-shadow:
+    inset 0 3px 7px rgb(0 0 0 / 0.5),
+    0 0 18px rgb(126 224 138 / 0.5);
+}
+.dub-cable {
+  position: absolute;
+  inset-block-start: 58px;
+  inset-inline-end: -46px;
+  width: 80px;
+  height: 22px;
+  border-radius: 4px;
+  background: linear-gradient(#3c3730, #1b1916);
+  transform: rotate(-8deg);
+}
+.dub-plug-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.dub-plug-card h1 {
+  font-size: clamp(38px, 6vw, 62px);
+  line-height: 1;
+}
+.dub-plug-card ol {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: decimal;
+  padding-inline-start: 20px;
+}
+.dub-kicker {
+  color: var(--cue);
+  font-family: var(--readout);
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.dub-download {
+  display: flex;
+  width: fit-content;
+  align-items: center;
+  gap: 8px;
+  margin-block: 8px;
+  color: var(--amber);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.dub-command {
+  display: flex;
+}
+.dub .dub-command input[class],
+.dub .dub-command input:not([type="checkbox"]) {
+  flex: 1;
+  border-end-end-radius: 0;
+  border-start-end-radius: 0;
+  border-inline-end: 0;
+  font-family: var(--readout);
+}
+.dub-command button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--edge-strong);
+  border-start-end-radius: 3px;
+  border-end-end-radius: 3px;
+  background: var(--plate);
+  padding-inline: 12px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.dub-command button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dub-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--engrave);
+}
+.dub-listening {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--readout);
+  font-size: 12px;
+  color: var(--engrave);
+}
+
+/* ---- The lobby ---- */
+.dub-lobby {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: min(1120px, 100%);
+  margin-inline: auto;
+  padding: 20px 16px 32px;
+}
+.dub-lobby-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.dub-lobby-top h1 {
+  font-size: clamp(34px, 6vw, 56px);
+  line-height: 1;
+}
+.dub-lobby-top p {
+  font-size: 14px;
+  color: var(--engrave);
+}
+.dub-back {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: inherit;
+}
+.dub-back:hover {
+  background: rgb(0 0 0 / 0.08);
+}
+.dub-lobby-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: 20px;
+}
+.dub-projector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 440px;
+  padding: 28px 20px;
+  border-radius: 12px;
+  border: 2px dashed var(--edge-strong);
+  background: linear-gradient(170deg, var(--plate), var(--plate-lo));
+  text-align: center;
+  font-size: 14px;
+  transition:
+    border-color 160ms,
+    box-shadow 160ms;
+}
+.dub-projector[data-over="true"] {
+  border-color: var(--amber);
+  box-shadow: inset 0 0 70px rgb(255 182 72 / 0.15);
+}
+.dub-projector h2 {
+  font-size: 28px;
+  line-height: 1.05;
+}
+.dub-projector-reels {
+  display: flex;
+  gap: 14px;
+}
+.dub-projector-reels i {
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, var(--plate-hi) 0 9px, transparent 10px),
+    conic-gradient(#0f0e0c 0 12%, #38322b 0 21%, #0f0e0c 0 33%, #38322b 0 42%, #0f0e0c 0 54%, #38322b 0 63%, #0f0e0c 0 75%, #38322b 0 84%, #0f0e0c 0 96%, #38322b 0);
+  box-shadow:
+    0 0 0 3px #4d463c,
+    0 8px 20px rgb(0 0 0 / 0.5);
+}
+.dub-projector-reels[data-busy="true"] i {
+  animation: dub-spin 2.4s linear infinite;
+}
+.dub-shelf {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dub-shelf ul {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dub-shelf li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 3px solid #3b2b1e;
+  padding-block: 6px;
+}
+.dub-shelf footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 12px;
+  overflow-wrap: anywhere;
+}
+.dub-reel {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 12px;
+  border-radius: 4px;
+  padding: 4px;
+  font-size: 14px;
+}
+.dub-reel:hover {
+  background: rgb(255 255 255 / 0.05);
+}
+.dub-reel time {
+  flex: none;
+  font-family: var(--readout);
+  color: var(--engrave);
+}
+.dub-can {
+  flex: none;
+  display: block;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #111 0 4px, #6f6657 5px 7px, transparent 8px),
+    conic-gradient(from 20deg, #8a8171, #5a5346, #a59b89, #5a5346, #8a8171);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.6);
+}
+
+/* ---- The room ---- */
+.dub-room {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+}
+.dub-slate {
+  flex: none;
+  background: var(--sticks);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 0.5);
+}
+.dub-sticks {
+  height: 11px;
+  background: repeating-linear-gradient(-58deg, #eae6da 0 26px, #171512 26px 52px);
+}
+.dub-slate-body {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 3px 8px;
+}
+.dub-slate-field {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  border-inline-start: 1px solid rgb(255 255 255 / 0.18);
+  padding: 2px 12px;
+  font-family: "Caveat", cursive;
+  font-size: 20px;
+  line-height: 1.1;
+}
+.dub-slate-field span {
+  font-family: var(--label);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--engrave-dim);
+}
+.dub-slate-field b {
+  font-weight: 700;
+}
+.dub .dub-slate-field select {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-family: "Caveat", cursive;
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.dub input.dub-slate-title {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 22px;
+}
+.dub-floor {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 34%);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas: "glass binder" "deck binder";
+  gap: 10px;
+  padding: 10px;
+}
+.dub-glass {
+  grid-area: glass;
+  display: grid;
+  place-items: center;
+  min-height: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #060605;
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.06),
+    inset 0 0 50px rgb(0 0 0 / 0.9);
+}
+.dub-screen {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+.dub-screen video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  cursor: pointer;
+  filter: drop-shadow(0 0 34px rgb(255 240 215 / 0.11));
+}
+.dub-subtitle {
+  position: absolute;
+  inset-inline: 6%;
+  bottom: 6%;
+  text-align: center;
+  font-size: clamp(14px, 1.7vw, 20px);
+  font-weight: 600;
+  line-height: 1.25;
+  text-shadow:
+    0 1px 3px #000,
+    0 0 10px #000;
+  pointer-events: none;
+}
+.dub-onair {
+  position: absolute;
+  inset-block-start: 8px;
+  inset-inline-end: 8px;
+  border-radius: 3px;
+  background: #2b1211;
+  padding: 3px 8px;
+  font-family: var(--label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #6b3532;
+  transition:
+    background-color 120ms,
+    color 120ms,
+    box-shadow 120ms;
+  pointer-events: none;
+}
+.dub-onair[data-on="true"] {
+  background: var(--cue);
+  color: #fff;
+  box-shadow: 0 0 22px rgb(229 72 58 / 0.65);
+}
+.dub-deck {
+  grid-area: deck;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* ---- The band ---- */
+.dub-band {
+  position: relative;
+  height: 112px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--film);
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.08);
+}
+.dub-band:active {
+  cursor: grabbing;
+}
+.dub-sprockets {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(90deg, #2c2822 0 9px, transparent 9px 22px) 0 3px / 100% 7px no-repeat,
+    repeating-linear-gradient(90deg, #2c2822 0 9px, transparent 9px 22px) 0 calc(100% - 3px) / 100% 7px no-repeat;
+}
+.dub-band-wave {
+  position: absolute;
+  inset: 14px 0;
+  width: 100%;
+  height: calc(100% - 28px);
+  pointer-events: none;
+}
+.dub-strip {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  will-change: transform;
+}
+.dub-cue {
+  position: absolute;
+  inset-block: 14px;
+  border-inline: 1px solid color-mix(in oklab, var(--c) 45%, transparent);
+  background: color-mix(in oklab, var(--c) 7%, transparent);
+}
+.dub-cue.is-selected {
+  background: color-mix(in oklab, var(--c) 20%, transparent);
+  box-shadow: inset 0 0 0 1px var(--c);
+}
+.dub-cue-ink {
+  display: block;
+  margin-top: 6px;
+  overflow: visible;
+}
+.dub-cue-ink text {
+  fill: var(--c);
+  font-family: "Caveat", "Noto Sans JP Variable", cursive;
+  font-size: 33px;
+  font-weight: 700;
+}
+.dub-cue-ink[data-draft="true"] text {
+  opacity: 0.45;
+}
+.dub-cue[data-state="stale"] .dub-cue-ink text {
+  fill-opacity: 0.7;
+}
+.dub-cue-name {
+  position: absolute;
+  inset-block-end: 1px;
+  inset-inline-start: 4px;
+  font-family: var(--label);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: color-mix(in oklab, var(--c) 75%, #fff);
+}
+.dub-handle {
+  position: absolute;
+  inset-block: 0;
+  width: 12px;
+  background: var(--c);
+  opacity: 0.8;
+  cursor: ew-resize;
+  touch-action: none;
+}
+.dub-handle[data-side="start"] {
+  left: -6px;
+}
+.dub-handle[data-side="end"] {
+  right: -6px;
+}
+.dub-bar {
+  position: absolute;
+  inset-block: 0;
+  width: 3px;
+  margin-left: -1px;
+  background: var(--cue);
+  box-shadow: 0 0 12px rgb(229 72 58 / 0.9);
+  pointer-events: none;
+}
+.dub-band-code {
+  position: absolute;
+  inset-block-start: 14px;
+  right: 8px;
+  border-radius: 2px;
+  background: rgb(0 0 0 / 0.75);
+  padding: 1px 6px;
+  font-family: var(--readout);
+  font-size: 14px;
+  color: var(--amber);
+  pointer-events: none;
+}
+.dub-band-empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  color: var(--engrave-dim);
+  pointer-events: none;
+}
+.dub-transport {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.dub-play {
+  width: 46px !important;
+}
+.dub-keys {
+  flex: 1;
+  text-align: end;
+}
+.dub-duration {
+  font-family: var(--readout);
+  font-size: 13px;
+  color: var(--engrave);
+}
+
+/* Segmented hardware buttons, used wherever one of a few things is chosen. */
+.dub-filter {
+  display: inline-flex;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.32);
+  padding: 2px;
+}
+.dub-filter button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 3px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--engrave);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.dub-filter button[aria-checked="true"] {
+  background: var(--plate-hi);
+  color: var(--ink);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
+/* ---- The binder ---- */
+.dub-binder {
+  grid-area: binder;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.dub-tabs {
+  display: flex;
+  flex: none;
+  gap: 3px;
+  padding-inline: 10px;
+}
+.dub-tabs button {
+  flex: 1;
+  border-start-start-radius: 8px;
+  border-start-end-radius: 8px;
+  background: #3a3226;
+  padding: 7px 4px 8px;
+  font-family: var(--label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #bdae95;
+  cursor: pointer;
+  transform: translateY(3px);
+  transition:
+    transform 120ms ease-out,
+    background-color 120ms;
+}
+.dub-tabs button[aria-selected="true"] {
+  background: var(--paper);
+  color: var(--paper-ink);
+  transform: none;
+}
+.dub-panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 6px;
+  background: linear-gradient(170deg, var(--plate), var(--plate-lo));
+  box-shadow: 0 10px 28px rgb(0 0 0 / 0.5);
+}
+.dub-paper {
+  --edge-strong: rgb(42 33 24 / 0.3);
+  min-height: 100%;
+  background: linear-gradient(175deg, var(--paper), var(--paper-2));
+  color: var(--paper-ink);
+  padding: 14px;
+  font-size: 14px;
+}
+.dub-paper small {
+  color: var(--paper-mute);
+}
+.dub-paper .dub-link {
+  color: var(--paper-mute);
+  text-decoration-color: rgb(42 33 24 / 0.3);
+}
+.dub-paper .dub-link:hover {
+  color: var(--paper-ink);
+}
+.dub-paper select,
+.dub-paper input:not([type="checkbox"]),
+.dub-paper textarea {
+  background: rgb(255 255 255 / 0.5);
+}
+.dub-restart {
+  position: absolute;
+  inset-block-end: 8px;
+  inset-inline-end: 12px;
+}
+.dub-panel:has(.dub-paper) + .dub-restart {
+  color: #5f523f;
+  background: var(--paper-2);
+}
+.dub-source {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dub-source h2 {
+  font-size: 28px;
+  line-height: 1.05;
+}
+.dub-source h3 {
+  margin-top: 10px;
+  font-weight: 600;
+}
+.dub-source ul {
+  display: flex;
+  flex-direction: column;
+}
+.dub-source li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid rgb(42 33 24 / 0.18);
+  padding: 8px 2px;
+}
+.dub-source em {
+  display: block;
+  font-size: 12px;
+  font-style: normal;
+  color: #8a3d12;
+}
+
+/* The script is typed, like one. */
+.dub-script {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 34px;
+}
+.dub-script-top {
+  position: sticky;
+  top: -14px;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: -14px -14px 0;
+  background: var(--paper);
+  padding: 10px 14px;
+  box-shadow: 0 1px 0 rgb(42 33 24 / 0.15);
+}
+.dub-paper .dub-filter {
+  background: rgb(42 33 24 / 0.12);
+}
+.dub-paper .dub-filter button {
+  color: var(--paper-mute);
+}
+.dub-paper .dub-filter button[aria-checked="true"] {
+  background: var(--paper-ink);
+  color: var(--paper);
+}
+.dub-lines {
+  display: flex;
+  flex-direction: column;
+}
+.dub-line {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 34px;
+  border-bottom: 1px dashed rgb(42 33 24 / 0.22);
+  border-inline-start: 3px solid color-mix(in oklab, var(--c) 75%, #3a2a18);
+  scroll-margin-top: 60px;
+}
+.dub-line.is-open {
+  content-visibility: visible;
+  background: rgb(255 255 255 / 0.38);
+}
+.dub-line[data-recording="true"] {
+  background: rgb(229 72 58 / 0.14);
+}
+.dub-line-head {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  text-align: start;
+  font-family: var(--type);
+  font-size: 13px;
+  cursor: pointer;
+}
+.dub-line-head:hover {
+  background: rgb(42 33 24 / 0.06);
+}
+.dub-line-head time {
+  flex: none;
+  font-size: 11px;
+  color: var(--paper-mute);
+}
+.dub-line-head b {
+  flex: none;
+  max-width: 76px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.dub-line-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dub-line-text i {
+  font-style: normal;
+  color: var(--paper-mute);
+}
+.dub-stamp {
+  display: flex;
+  flex: none;
+  align-items: center;
+}
+.dub-line-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 2px 10px 12px;
+}
+.dub-original {
+  font-size: 13px;
+  color: var(--paper-mute);
+}
+.dub-line-body textarea {
+  font-family: var(--type);
+  line-height: 1.35;
+  resize: vertical;
+}
+.dub-gauge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--paper-mute);
+}
+.dub-gauge[data-long="true"] {
+  color: #a83c16;
+}
+.dub-take-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.dub-takes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.dub-takes button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgb(42 33 24 / 0.3);
+  border-radius: 2px;
+  padding: 2px 7px;
+  font-family: var(--type);
+  font-size: 12px;
+  cursor: pointer;
+}
+.dub-takes button[aria-checked="true"] {
+  background: var(--paper-ink);
+  color: var(--paper);
+}
+.is-warn.is-warn {
+  color: #a83c16;
+}
+.dub-line-keys {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.dub-add {
+  align-self: flex-start;
+  margin: 6px;
+}
+
+/* ---- The cast: index cards pinned to cork ---- */
+.dub-corkboard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 100%;
+  background:
+    radial-gradient(rgb(0 0 0 / 0.14) 1px, transparent 1.4px) 0 0 / 6px 6px,
+    var(--cork);
+  padding: 14px;
+}
+.dub-card {
+  --edge-strong: rgb(42 33 24 / 0.3);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background:
+    linear-gradient(transparent 33px, rgb(229 72 58 / 0.4) 33px 34px, transparent 34px), #f5efdf;
+  padding: 8px 12px 12px;
+  color: var(--paper-ink);
+  box-shadow: 0 3px 9px rgb(0 0 0 / 0.35);
+  font-size: 13px;
+}
+.dub-card small {
+  color: var(--paper-mute);
+}
+.dub-card .dub-link {
+  color: var(--paper-mute);
+}
+.dub-card .dub-filter {
+  background: rgb(42 33 24 / 0.12);
+}
+.dub-card .dub-filter button {
+  color: var(--paper-mute);
+}
+.dub-card .dub-filter button[aria-checked="true"] {
+  background: var(--paper-ink);
+  color: var(--paper);
+}
+.dub-card header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+}
+.dub-card header i {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--c);
+  box-shadow:
+    inset -2px -2px 3px rgb(0 0 0 / 0.3),
+    0 2px 3px rgb(0 0 0 / 0.4);
+}
+.dub .dub-card header input.studio-title {
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 20px;
+}
+.dub-card header small {
+  flex: none;
+}
+.dub-card select,
+.dub-card input:not([type="checkbox"]),
+.dub-card textarea {
+  background: rgb(255 255 255 / 0.6);
+}
+.dub-corkboard > .dub-link {
+  border-radius: 2px;
+  background: #f5efdf;
+  color: var(--paper-ink);
+  padding: 5px 9px;
+  text-decoration: none;
+}
+.dub-card-foot {
+  border-top: 1px dashed rgb(42 33 24 / 0.2);
+  padding-top: 8px;
+}
+.dub-clone {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dub-clone > .dub-link {
+  align-self: flex-start;
+}
+.dub-clone h4 {
+  font-weight: 600;
+}
+.dub-clone ul {
+  display: flex;
+  flex-direction: column;
+}
+.dub-clone li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-top: 1px solid rgb(42 33 24 / 0.12);
+  padding-block: 2px;
+}
+.dub-consent {
+  display: flex;
+  gap: 8px;
+  border-radius: 3px;
+  background: rgb(229 72 58 / 0.1);
+  padding: 7px 8px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  cursor: pointer;
+}
+.dub-consent input {
+  flex: none;
+  margin-top: 2px;
+  accent-color: var(--cue);
+}
+.dub-read {
+  border-inline-start: 3px solid var(--cue);
+  padding-inline-start: 8px;
+}
+.dub-mic-level {
+  display: block;
+  height: 4px;
+  margin-top: 4px;
+  background: rgb(42 33 24 / 0.16);
+}
+.dub-mic-level i {
+  display: block;
+  height: 100%;
+  background: var(--cue);
+  transform-origin: left;
+}
+.dub-audition {
+  flex: 1;
+  min-width: 160px;
+  height: 32px;
+}
+
+/* ---- The desk ---- */
+.dub-desk {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+}
+.dub-stems {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.25);
+  padding: 10px;
+}
+.dub-faders {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.dub-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.dub-group-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 12px;
+}
+.dub-group-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.dub-channel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: 96px;
+  border-top: 3px solid var(--c);
+  padding-top: 6px;
+}
+
+/* ---- The master ---- */
+.dub-master {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+.dub-checks {
+  min-height: 0;
+  border-radius: 3px;
+  box-shadow: 0 3px 9px rgb(0 0 0 / 0.35);
+}
+.dub-checks h3 {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.dub-checks li {
+  font-family: var(--type);
+  font-size: 13px;
+  padding-block: 2px;
+}
+.dub-checks li::before {
+  content: "☐ ";
+}
+.dub-checks li[data-ok="true"]::before {
+  content: "☑ ";
+}
+.dub-lever {
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  font-size: 15px;
+}
+.dub-cans {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.dub-cans li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+/* ---- The ticket ---- */
+.dub-ticket {
+  position: fixed;
+  inset-block-end: 14px;
+  inset-inline-start: 14px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(420px, calc(100vw - 28px));
+  border-radius: 3px;
+  background: var(--paper);
+  padding: 8px 10px;
+  font-family: var(--type);
+  font-size: 13px;
+  color: var(--paper-ink);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.6);
+}
+.dub-ticket .dub-link {
+  color: var(--paper-mute);
+}
+.dub-ticket[data-failed="true"] {
+  background: #f6d9cf;
+}
+.dub-ticket .dub-reels {
+  --engrave: #2a2118;
+}
+.dub-ticket-bar {
+  display: block;
+  flex: none;
+  width: 72px;
+  height: 5px;
+  overflow: hidden;
+  background: rgb(0 0 0 / 0.22);
+}
+.dub-ticket-bar i {
+  display: block;
+  height: 100%;
+  background: var(--cue);
+  transform-origin: left;
+  transition: transform 300ms linear;
+}
+[dir="rtl"] .dub-ticket-bar i {
+  transform-origin: right;
+}
+.dub-projector .dub-ticket-bar {
+  width: min(280px, 80%);
+}
+.dub-toast {
+  position: fixed;
+  inset-block-start: 76px;
+  inset-inline-start: 50%;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100vw - 28px);
+  transform: translateX(-50%);
+  border-radius: 3px;
+  background: #f6d9cf;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #5c1d0b;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.6);
+}
+.dub-toast .dub-link {
+  color: inherit;
+}
+[dir="rtl"] .dub-toast {
+  transform: translateX(50%);
+}
+
+@media (max-width: 960px) {
+  .dub-room {
+    height: auto;
+    min-height: 100svh;
+  }
+  .dub-floor {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    grid-template-areas: "glass" "deck" "binder";
+  }
+  .dub-glass {
+    aspect-ratio: 16 / 9;
+    padding: 4px;
+  }
+  .dub-panel {
+    max-height: 72svh;
+  }
+  .dub-lobby-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dub-projector {
+    min-height: 320px;
+  }
+  .dub-plug {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .dub-socket {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dub-reels,
+  .dub-projector-reels[data-busy="true"] i {
+    animation: none;
+  }
+  .dub-tabs button {
+    transition: none;
+  }
+}
+
+/* Long names need more than the Stage's narrow fader caps. */
+.dub-faders .nv-engraved {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+}
+.dub-group-row > * {
+  min-width: 72px;
+}
+.dub-faders .nv-fader {
+  width: 76px;
+}
+@media (max-width: 639px) {
+  .dub-slate-field.max-sm\:hidden,
+  .dub-filter.max-sm\:hidden {
+    display: none;
+  }
+}

@@ -52,6 +52,7 @@ export const COSTS = {
   novel_outline: 6, // an LLM planning a whole novel
   novel_scene: 3, // an LLM writing one scene's script
   novel_score: 1, // an LLM setting the synthesiser from a description
+  dub_lines: 2, // an LLM adapting up to 40 lines of a dub script
   story_plan: 2, // the story planner's LLM call, per slide
   translate: 2, // a carousel's lettering, into one language
   style_analysis: 4, // a vision model reading a comic's reference pages

@@ -40,6 +40,7 @@ import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
 import { AccountMenu, useViewer } from "@/components/account/account-menu"
 import { messages } from "@/components/account/account.messages"
+import { messages as labsMessages } from "@/routes/machines.messages"
 import { Logo } from "@/components/auth/auth-ui"
 import {
   createDefaultProject,
@@ -172,6 +173,7 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
   const ti = useT(importMessages)
   const [importing, setImporting] = React.useState(false)
   const t = useT(messages)
+  const tl = useT(labsMessages)
   const navigation = useNavigation()
   const creating =
     navigation.state !== "idle" && navigation.formData?.get("intent") === "new"
@@ -202,6 +204,14 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
               className={buttonVariants({ variant: "ghost", size: "sm" })}
             >
               {t("account.novels")}
+            </Link>
+          )}
+          {viewer?.labs.dub && (
+            <Link
+              to="/dub"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              {tl("labs.dub")}
             </Link>
           )}
           <Link

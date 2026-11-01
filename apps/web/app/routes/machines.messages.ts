@@ -254,6 +254,9 @@ export const messages = defineMessages({
       move: "{change}% in {minutes} min",
     },
     labs: {
+      dub: "The Booth",
+      dubHint: "Dub existing episodes on your own Mac, with cloned voices.",
+      openDub: "Open the Booth",
       title: "Labs",
       nav: "Features still being tried out.",
       machines: "Studio",
@@ -661,6 +664,9 @@ export const messages = defineMessages({
       move: "{change} % en {minutes} min",
     },
     labs: {
+      dub: "La Cabine",
+      dubHint: "Doublez des épisodes existants sur votre Mac, avec des voix clonées.",
+      openDub: "Ouvrir la Cabine",
       title: "Labo",
       nav: "Des fonctionnalités encore à l’essai.",
       machines: "Studio",
@@ -1069,6 +1075,9 @@ export const messages = defineMessages({
       move: "{change} % en {minutes} min",
     },
     labs: {
+      dub: "La Cabina",
+      dubHint: "Dobla episodios existentes en tu Mac, con voces clonadas.",
+      openDub: "Abrir la Cabina",
       title: "Labs",
       nav: "Funciones todavía en prueba.",
       machines: "Studio",
@@ -1475,6 +1484,9 @@ export const messages = defineMessages({
       move: "{change} % in {minutes} Min.",
     },
     labs: {
+      dub: "Die Kabine",
+      dubHint: "Synchronisiere vorhandene Folgen auf deinem Mac, mit geklonten Stimmen.",
+      openDub: "Kabine öffnen",
       title: "Labs",
       nav: "Funktionen in der Testphase.",
       machines: "Studio",
@@ -1885,6 +1897,9 @@ export const messages = defineMessages({
       move: "{change}% in {minutes} min",
     },
     labs: {
+      dub: "La Cabina",
+      dubHint: "Doppia episodi esistenti sul tuo Mac, con voci clonate.",
+      openDub: "Apri la Cabina",
       title: "Labs",
       nav: "Funzioni ancora in prova.",
       machines: "Studio",
@@ -2291,6 +2306,9 @@ export const messages = defineMessages({
       move: "{minutes} 分で {change}%",
     },
     labs: {
+      dub: "ブース",
+      dubHint: "既存のエピソードを、クローンした声でお使いのMac上で吹き替えます。",
+      openDub: "ブースを開く",
       title: "ラボ",
       nav: "試験中の機能です。",
       machines: "Studio",

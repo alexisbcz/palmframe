@@ -59,6 +59,13 @@ export function LabsSection({
       to: "/novels",
       open: t("labs.openNovels"),
     },
+    {
+      id: "dub",
+      name: t("labs.dub"),
+      hint: t("labs.dubHint"),
+      to: "/dub",
+      open: t("labs.openDub"),
+    },
   ] as const
 
   const tools = TOOL_IDS.map((id) => ({
