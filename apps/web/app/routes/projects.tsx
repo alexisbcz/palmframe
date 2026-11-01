@@ -206,6 +206,14 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
               {t("account.novels")}
             </Link>
           )}
+          {viewer?.labs.desk && (
+            <Link
+              to="/desk"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
+              {t("account.desk")}
+            </Link>
+          )}
           {viewer?.labs.dub && (
             <Link
               to="/dub"

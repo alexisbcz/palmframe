@@ -217,6 +217,7 @@ export function SettingsDialog() {
     labs: [
       tl("labs.machines"),
       tl("labs.novels"),
+      tl("labs.desk"),
       tl("labs.dub"),
       ...TOOL_IDS.map((id) => tt(`${id}.name`)),
     ],

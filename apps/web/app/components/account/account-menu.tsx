@@ -197,6 +197,7 @@ export function AccountMenu() {
           if (key === "catalog") navigate("/catalog")
           if (key === "studio") navigate("/studio")
           if (key === "novels") navigate("/novels")
+          if (key === "desk") navigate("/desk")
           if (key === "tools") navigate("/tools")
           if (key === "dub") navigate("/dub")
           if (key === "billing") openSettings("billing")
@@ -252,6 +253,14 @@ export function AccountMenu() {
                 <HugeiconsIcon icon={Book02Icon} strokeWidth={2} />
               </Tile>
               {t("account.novels")}
+            </DropdownMenuItem>
+          )}
+          {viewer.labs.desk && (
+            <DropdownMenuItem id="desk" textValue={t("account.desk")}>
+              <Tile>
+                <HugeiconsIcon icon={Book02Icon} strokeWidth={2} />
+              </Tile>
+              {t("account.desk")}
             </DropdownMenuItem>
           )}
           {TOOL_IDS.some((id) => viewer.labs[id]) && (

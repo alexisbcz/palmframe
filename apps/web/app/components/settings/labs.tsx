@@ -60,6 +60,13 @@ export function LabsSection({
       open: t("labs.openNovels"),
     },
     {
+      id: "desk",
+      name: t("labs.desk"),
+      hint: t("labs.deskHint"),
+      to: "/desk",
+      open: t("labs.openDesk"),
+    },
+    {
       id: "dub",
       name: t("labs.dub"),
       hint: t("labs.dubHint"),

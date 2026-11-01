@@ -267,6 +267,10 @@ export const messages = defineMessages({
       novelsHint:
         "Write, stage and score branching visual novels, then export them to Ren'Py. Turning this off closes the editor; published links stay readable.",
       openNovels: "Open visual novels",
+      desk: "The Desk",
+      deskHint:
+        "Write novels, poems and screenplays on a real desk, with style checks after Hemingway, Strunk and others, and export to PDF, EPUB, LaTeX and Final Draft. Turning this off closes the Desk; your manuscripts stay saved.",
+      openDesk: "Open the Desk",
     },
     stances: {
       "far-left": "Far left",
@@ -677,6 +681,10 @@ export const messages = defineMessages({
       novelsHint:
         "Écrivez, mettez en scène et mettez en musique des romans visuels à embranchements, puis exportez-les vers Ren'Py. Désactiver cette option ferme l’éditeur ; les liens publiés restent lisibles.",
       openNovels: "Ouvrir les romans visuels",
+      desk: "Le Bureau",
+      deskHint:
+        "Écrivez romans, poèmes et scénarios sur un vrai bureau, avec des relectures de style d'après Hemingway, Flaubert et d'autres, puis exportez en PDF, EPUB, LaTeX et Final Draft. Désactiver ceci ferme le Bureau ; vos manuscrits restent enregistrés.",
+      openDesk: "Ouvrir le Bureau",
     },
     stances: {
       "far-left": "Extrême gauche",
@@ -1088,6 +1096,10 @@ export const messages = defineMessages({
       novelsHint:
         "Escribe, pon en escena y musicaliza novelas visuales ramificadas, y expórtalas a Ren'Py. Al desactivarlo se cierra el editor; los enlaces publicados siguen siendo legibles.",
       openNovels: "Abrir novelas visuales",
+      desk: "El Escritorio",
+      deskHint:
+        "Escribe novelas, poemas y guiones en un escritorio de verdad, con revisiones de estilo según Hemingway, Strunk y otros, y exporta a PDF, EPUB, LaTeX y Final Draft. Al desactivarlo se cierra el Escritorio; tus manuscritos siguen guardados.",
+      openDesk: "Abrir el Escritorio",
     },
     stances: {
       "far-left": "Extrema izquierda",
@@ -1497,6 +1509,10 @@ export const messages = defineMessages({
       novelsHint:
         "Schreibe, inszeniere und vertone verzweigte Visual Novels und exportiere sie nach Ren'Py. Beim Ausschalten schließt sich der Editor; veröffentlichte Links bleiben lesbar.",
       openNovels: "Visual Novels öffnen",
+      desk: "Der Schreibtisch",
+      deskHint:
+        "Schreibe Romane, Gedichte und Drehbücher an einem echten Schreibtisch, mit Stilprüfungen nach Hemingway, Strunk und anderen, und exportiere als PDF, EPUB, LaTeX und Final Draft. Beim Ausschalten schließt der Schreibtisch; deine Manuskripte bleiben gespeichert.",
+      openDesk: "Schreibtisch öffnen",
     },
     stances: {
       "far-left": "Linksaußen",
@@ -1910,6 +1926,10 @@ export const messages = defineMessages({
       novelsHint:
         "Scrivi, metti in scena e musica visual novel a bivi, poi esportale in Ren'Py. Disattivando si chiude l'editor; i link pubblicati restano leggibili.",
       openNovels: "Apri le visual novel",
+      desk: "La Scrivania",
+      deskHint:
+        "Scrivi romanzi, poesie e sceneggiature su una vera scrivania, con controlli di stile secondo Hemingway, Strunk e altri, ed esporta in PDF, EPUB, LaTeX e Final Draft. Disattivandola la Scrivania si chiude; i tuoi manoscritti restano salvati.",
+      openDesk: "Apri la Scrivania",
     },
     stances: {
       "far-left": "Estrema sinistra",
@@ -2319,6 +2339,10 @@ export const messages = defineMessages({
       novelsHint:
         "分岐するビジュアルノベルを執筆・演出・音楽付けし、Ren'Py に書き出せます。オフにするとエディタは閉じますが、公開済みのリンクは読めます。",
       openNovels: "ビジュアルノベルを開く",
+      desk: "書斎",
+      deskHint:
+        "本物の机の上で小説、詩、脚本を執筆。ヘミングウェイやストランクらに倣った文体チェックを備え、PDF、EPUB、LaTeX、Final Draft に書き出せます。オフにすると書斎は閉じますが、原稿は保存されたままです。",
+      openDesk: "書斎を開く",
     },
     stances: {
       "far-left": "極左",

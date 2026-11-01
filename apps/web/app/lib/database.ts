@@ -20,6 +20,7 @@ import type {
   Source,
 } from "./deepdive/model"
 import type { DetectorState } from "./machines/detect"
+import type { Kind, Manuscript } from "@/lib/desk/model"
 import type { Novel } from "./novel/model"
 import type {
   Item,
@@ -51,6 +52,38 @@ import type {
 export interface Database {
   public: {
     Tables: {
+      comic_manuscripts: {
+        Row: ComicManuscriptRow
+        Insert: {
+          id?: string
+          user_id?: string
+          kind: Kind
+          title?: string
+          words?: number
+          data: Manuscript
+          revision?: number
+        }
+        Update: {
+          title?: string
+          words?: number
+          data?: Manuscript
+          revision?: number
+        }
+        Relationships: []
+      }
+      comic_manuscript_drafts: {
+        Row: ComicManuscriptDraftRow
+        Insert: {
+          id?: string
+          manuscript_id: string
+          user_id?: string
+          label?: string
+          words?: number
+          data: Manuscript
+        }
+        Update: Record<string, never>
+        Relationships: []
+      }
       comic_novels: {
         Row: ComicNovelRow
         Insert: {
@@ -860,6 +893,28 @@ export interface Viewer {
 
 export const COMICS_BUCKET = "comics"
 export const NOVEL_AUDIO_BUCKET = "novel-audio"
+
+export type ComicManuscriptRow = {
+  id: string
+  user_id: string
+  kind: Kind
+  title: string
+  words: number
+  data: Manuscript
+  revision: number
+  created_at: string
+  updated_at: string
+}
+
+export type ComicManuscriptDraftRow = {
+  id: string
+  manuscript_id: string
+  user_id: string
+  label: string
+  words: number
+  data: Manuscript
+  created_at: string
+}
 
 export type ComicNovelRow = {
   id: string
