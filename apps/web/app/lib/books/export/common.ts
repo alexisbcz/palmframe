@@ -49,7 +49,7 @@ export const escapeXml = (s: string) =>
 
 const SAFE_HREF = /^(https?:|mailto:|#)/i
 
-const WRAP: Partial<Record<InlineTag["type"], string>> = {
+export const WRAP: Partial<Record<InlineTag["type"], string>> = {
   b: "strong",
   i: "em",
   u: "u",

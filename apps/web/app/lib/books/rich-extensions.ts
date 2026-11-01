@@ -5,9 +5,9 @@ import Paragraph from "@tiptap/extension-paragraph"
 import Text from "@tiptap/extension-text"
 import { Placeholder, UndoRedo } from "@tiptap/extensions"
 
-import { TAG_STYLES } from "./inline"
+import { TAG_STYLES, addedTag, tagMap } from "./inline"
 import type { InlineTag } from "./model"
-import { TAG_ATOM, TAG_MARK } from "./rich"
+import { ADDED_MARK, TAG_ATOM, TAG_MARK } from "./rich"
 
 const ATOM_LABELS: Partial<Record<InlineTag["type"], string>> = {
   br: "↵",
@@ -20,7 +20,7 @@ const OneBlock = Document.extend({ content: "paragraph" })
 
 function tagFrom(el: HTMLElement, tags: InlineTag[]) {
   const id = el.getAttribute("data-book-tag")
-  const tag = tags.find((t) => t.id === id)
+  const tag = id ? tagMap(tags).get(id) : undefined
   return tag ? { id: tag.id, kind: tag.type } : false
 }
 
@@ -51,6 +51,24 @@ const TagMark = Mark.create<{ tags: InlineTag[] }>({
       "span",
       { "data-book-tag": mark.attrs.id, class: TAG_STYLES[kind] ?? "" },
       0,
+    ]
+  },
+})
+
+const AddedMark = TagMark.extend({
+  name: ADDED_MARK,
+  inclusive: true,
+  parseHTML() {
+    return [
+      {
+        tag: "span[data-book-tag]",
+        // Before the line's own mark, which would otherwise claim these too.
+        priority: 55,
+        getAttrs: (el) => {
+          const id = el.getAttribute("data-book-tag") ?? ""
+          return addedTag(id) ? tagFrom(el, []) : false
+        },
+      },
     ]
   },
 })
@@ -106,5 +124,6 @@ export const bookExtensions = ({
   UndoRedo,
   Placeholder.configure({ placeholder }),
   TagMark.configure({ tags }),
+  AddedMark,
   TagAtom.configure({ tags }),
 ]

@@ -31,7 +31,12 @@ import type {
   SegmentStatus,
   Term,
 } from "@/lib/books/model"
-import { normalize, tagsInSource, tagsToPlace } from "@/lib/books/rich"
+import {
+  carryWholeLine,
+  normalize,
+  tagsInSource,
+  tagsToPlace,
+} from "@/lib/books/rich"
 import type {
   BookStatusData,
   ChapterItem,
@@ -232,7 +237,8 @@ const Row = React.memo(function Row({
     if (latest.current.status === "locked" || text === saved.current)
       return true
     saved.current = text
-    return send({ target: text })
+    const { source, tags } = latest.current
+    return send({ target: carryWholeLine(source, text, tags) })
   }
 
   const reload = async () => {

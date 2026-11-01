@@ -1,17 +1,29 @@
 import * as React from "react"
 import { cn } from "cn"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  TextBoldIcon,
+  TextItalicIcon,
+  TextStrikethroughIcon,
+  TextSubscriptIcon,
+  TextSuperscriptIcon,
+  TextUnderlineIcon,
+} from "@hugeicons/core-free-icons"
 import type { Editor } from "@tiptap/core"
 import { Extension } from "@tiptap/core"
 import { EditorContent, useEditor } from "@tiptap/react"
 import { BubbleMenu } from "@tiptap/react/menus"
 
+import { ADDED_TAGS } from "@/lib/books/inline"
 import type { InlineTag } from "@/lib/books/model"
 import {
+  ADDED_MARK,
   TAG_MARK,
   TAG_ATOM,
   fromDoc,
   toDoc,
   type RichDoc,
+  type WordedTag,
 } from "@/lib/books/rich"
 import { bookExtensions } from "@/lib/books/rich-extensions"
 
@@ -34,24 +46,79 @@ export interface RichFieldKeys {
 
 const text = (editor: Editor) => fromDoc(editor.getJSON() as RichDoc)
 
-const SHORTCUT_TAGS: Record<string, InlineTag["type"]> = {
-  "Mod-b": "b",
-  "Mod-i": "i",
-  "Mod-u": "u",
+const FORMATS = [
+  { type: "b", icon: TextBoldIcon, keys: "Mod-b" },
+  { type: "i", icon: TextItalicIcon, keys: "Mod-i" },
+  { type: "u", icon: TextUnderlineIcon, keys: "Mod-u" },
+  { type: "s", icon: TextStrikethroughIcon, keys: "Mod-Shift-s" },
+  { type: "sup", icon: TextSuperscriptIcon, keys: "Mod-." },
+  { type: "sub", icon: TextSubscriptIcon, keys: "Mod-," },
+] as const
+
+type Format = (typeof FORMATS)[number]["type"]
+
+const hasKind = (
+  marks: readonly { attrs: { kind?: unknown } }[],
+  kind: Format
+) => marks.some((m) => m.attrs.kind === kind)
+
+function hasFormat(editor: Editor, kind: Format) {
+  const { state } = editor
+  const { from, to, empty, $from } = state.selection
+  if (empty) return hasKind(state.storedMarks ?? $from.marks(), kind)
+  let found = false
+  let whole = true
+  state.doc.nodesBetween(from, to, (node) => {
+    if (!node.isText) return
+    found = true
+    if (!hasKind(node.marks, kind)) whole = false
+  })
+  return found && whole
+}
+
+// The original's own bold first, because exports restore its exact styling.
+// Past that, or where it has none, the formatting is simply added.
+function toggleFormat(editor: Editor, kind: Format, source: InlineTag[]) {
+  const { state, view } = editor
+  const { from, to, empty, $from } = state.selection
+  const placed = text(editor)
+  const added = ADDED_TAGS.find((a) => a.type === kind)!
+  const own = source.find(
+    (s) =>
+      s.type === kind && s.id.startsWith("g") && !placed.includes(`<${s.id}>`)
+  )
+  // Typing continues in the added kind, since the original's tags don't grow.
+  const tag = !empty && own ? own : added
+  const type = tag === added ? ADDED_MARK : TAG_MARK
+  const mark = state.schema.marks[type]!.create({ id: tag.id, kind })
+  const on = hasFormat(editor, kind)
+  const tr = state.tr
+  if (empty && on) {
+    for (const m of state.storedMarks ?? $from.marks())
+      if (m.attrs.kind === kind) tr.removeStoredMark(m)
+  } else if (empty) tr.addStoredMark(mark)
+  else if (on)
+    state.doc.nodesBetween(from, to, (node, pos) => {
+      for (const m of node.marks)
+        if (m.attrs.kind === kind)
+          tr.removeMark(
+            Math.max(pos, from),
+            Math.min(pos + node.nodeSize, to),
+            m
+          )
+    })
+  else tr.addMark(from, to, mark)
+  view.dispatch(tr)
+  editor.commands.focus()
 }
 
 function hasTag(editor: Editor, id: string) {
   const { state } = editor
   const { from, to, empty } = state.selection
   if (empty) return false
-  const type = state.schema.marks[TAG_MARK]!
   let whole = true
   state.doc.nodesBetween(from, to, (node) => {
-    if (node.isInline && !type.isInSet(node.marks)) whole = false
-    else if (
-      node.isInline &&
-      !node.marks.some((m) => m.type === type && m.attrs.id === id)
-    )
+    if (node.isInline && !node.marks.some((m) => m.attrs.id === id))
       whole = false
   })
   return whole
@@ -90,27 +157,67 @@ function TagButton({
   disabled,
 }: {
   editor: Editor
-  tag: InlineTag
+  tag: WordedTag
   on?: boolean
   disabled?: boolean
 }) {
   const t = useBookT()
+  const { words } = tag
   return (
     <button
       type="button"
       aria-pressed={on}
+      title={words}
       disabled={disabled}
       // Holds on to the selection the button is about to act on.
       onMouseDown={(e) => e.preventDefault()}
       onClick={() => placeTag(editor, tag)}
       className={cn(
-        "relative rounded-md px-2 py-0.5 text-xs transition-colors duration-150 outline-none after:absolute after:-inset-1 focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50",
+        "relative max-w-full truncate rounded-md px-2 py-0.5 text-xs transition-colors duration-150 outline-none after:absolute after:-inset-1 focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-50",
         on
           ? "bg-foreground text-background"
           : "bg-foreground/10 text-foreground hover:bg-foreground/15"
       )}
     >
       {t(`editor.tags.${tag.type}`)}
+      {words && (
+        <span className="opacity-70">
+          {" "}
+          “{words.length > 24 ? `${words.slice(0, 24).trimEnd()}…` : words}”
+        </span>
+      )}
+    </button>
+  )
+}
+
+function FormatButton({
+  editor,
+  format,
+  source,
+}: {
+  editor: Editor
+  format: (typeof FORMATS)[number]
+  source: InlineTag[]
+}) {
+  const t = useBookT()
+  const label = t(`editor.tags.${format.type}`)
+  const on = hasFormat(editor, format.type)
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      aria-pressed={on}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={() => toggleFormat(editor, format.type, source)}
+      className={cn(
+        "flex size-8 items-center justify-center rounded-md transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-ring/50 [&_svg]:size-4",
+        on
+          ? "bg-foreground text-background"
+          : "text-foreground hover:bg-foreground/10"
+      )}
+    >
+      <HugeiconsIcon icon={format.icon} strokeWidth={2} />
     </button>
   )
 }
@@ -132,8 +239,9 @@ export function RichField({
 }: {
   value: string
   tags: InlineTag[]
-  sourceTags?: InlineTag[]
-  missingTags?: InlineTag[]
+  // Present on a translation, which is what can take formatting.
+  sourceTags?: WordedTag[]
+  missingTags?: WordedTag[]
   terms?: FieldTerm[]
   lang: string
   label: string
@@ -176,16 +284,10 @@ export function RichField({
           "Mod-l": () => call("onLock")(this),
           Escape: () => call("onEscape")(this),
         }
-        for (const [combo, type] of Object.entries(SHORTCUT_TAGS))
-          shortcuts[combo] = () => {
-            const editor = this.editor
-            const tag = current.current.sourceTags
-              ?.filter((s) => s.type === type)
-              .find(
-                (s) =>
-                  hasTag(editor, s.id) || !text(editor).includes(`<${s.id}>`)
-              )
-            if (tag && !editor.state.selection.empty) placeTag(editor, tag)
+        for (const { type, keys } of FORMATS)
+          shortcuts[keys] = () => {
+            const source = current.current.sourceTags
+            if (source) toggleFormat(this.editor, type, source)
             // Taken either way, so the browser's own bold never gets in.
             return true
           }
@@ -232,7 +334,12 @@ export function RichField({
 
   React.useEffect(() => () => current.current.onLeave?.(text(editor)), [editor])
 
-  const pairs = sourceTags?.filter((tag) => tag.id.startsWith("g")) ?? []
+  // Bold and the like have their buttons; these only exist on this line.
+  const pairs =
+    sourceTags?.filter(
+      (tag) =>
+        tag.id.startsWith("g") && !FORMATS.some((f) => f.type === tag.type)
+    ) ?? []
   const missing = missingTags ?? []
   const hasFooter = missing.length > 0 || (terms?.length ?? 0) > 0
   return (
@@ -245,13 +352,21 @@ export function RichField({
       >
         <EditorContent editor={editor} />
       </div>
-      {pairs.length > 0 && (
+      {sourceTags && (
         <BubbleMenu
           editor={editor}
           shouldShow={({ state }) => !state.selection.empty}
           options={{ placement: "top" }}
-          className="z-50 flex gap-1 rounded-lg bg-popover p-1 shadow-md ring-1 ring-foreground/10"
+          className="z-50 flex max-w-[calc(100vw-2rem)] flex-wrap items-center gap-0.5 rounded-lg bg-popover p-1 shadow-md ring-1 ring-foreground/10"
         >
+          {FORMATS.map((format) => (
+            <FormatButton
+              key={format.type}
+              editor={editor}
+              format={format}
+              source={sourceTags}
+            />
+          ))}
           {pairs.map((tag) => (
             <TagButton
               key={tag.id}

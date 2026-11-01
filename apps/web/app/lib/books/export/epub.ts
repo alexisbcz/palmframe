@@ -1,7 +1,7 @@
 import { cloneNode } from "domhandler"
 import { strToU8, zipSync, type Zippable } from "fflate"
 
-import { parseInline, type InlineNode } from "../inline"
+import { addedTag, parseInline, type InlineNode } from "../inline"
 import { isRtl, languageOf } from "../model"
 import { mimeOf, openEpub, readDocument, tocKey } from "../parse/epub"
 import { collectUnits, type Unit } from "../parse/units"
@@ -21,6 +21,7 @@ import {
   type ChildNode,
 } from "../xml"
 import {
+  WRAP,
   escapeXml,
   inlineHtml,
   layoutItems,
@@ -36,6 +37,11 @@ function rebuild(nodes: InlineNode[], inline: Unit["inline"]): ChildNode[] {
   return nodes.flatMap((node): ChildNode[] => {
     if ("text" in node) return [new Text(node.text)]
     const original = inline.get(node.id)
+    const added = addedTag(node.id)
+    if (!original && added)
+      return [
+        new Element(WRAP[added.type]!, {}, rebuild(node.children, inline)),
+      ]
     if (!original) return rebuild(node.children, inline)
     if (!node.children.length) return [cloneNode(original, true)]
     const copy = cloneNode(original, false)

@@ -3,6 +3,7 @@ import { existsSync } from "node:fs"
 import { strFromU8, strToU8, unzipSync } from "fflate"
 
 import type { ExportBook, ExportChapter } from "./export/common"
+import { inlineHtml, inlineRuns } from "./export/common"
 import { buildDocx } from "./export/docx"
 import { buildEpub, rewriteEpub } from "./export/epub"
 import { buildMarkdown } from "./export/markdown"
@@ -84,6 +85,29 @@ describe("EPUB round trip", () => {
     expect(two).toContain("<br/>")
     expect(two).toContain("const code = 1")
     expect(two).toContain('<span class="x">')
+  })
+
+  test("formatting added in the editor reaches the rewritten file", async () => {
+    const source = makeEpub()
+    const book = await bookFrom(await parseEpub(source))
+    const line = book.chapters
+      .flatMap((c) => c.segments)
+      .find((s) => s.kind === "paragraph" && s.target?.trim())!
+    line.target = `${line.target} <g02>ajouté</g02> 1<g05>er</g05>`
+    const page = Object.values(unzipSync(await rewriteEpub(source, book)))
+      .map((f) => strFromU8(f))
+      .join("")
+    expect(page).toContain("<em>ajouté</em>")
+    expect(page).toContain("<sup>er</sup>")
+  })
+
+  test("formatting added in the editor needs no tag on the line", () => {
+    const text = "a <g01>b</g01> <g02>c</g02>"
+    expect(inlineHtml(text, [])).toBe("a <strong>b</strong> <em>c</em>")
+    expect(inlineRuns(text, []).filter((r) => r.bold || r.italic)).toEqual([
+      { bold: true, text: "b" },
+      { italic: true, text: "c" },
+    ])
   })
 
   test("the package stays a valid EPUB", async () => {

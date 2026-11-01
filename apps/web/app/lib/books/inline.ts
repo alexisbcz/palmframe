@@ -41,6 +41,20 @@ export function parseInline(s: string): InlineNode[] {
   return root
 }
 
+// Formatting a person adds that the original line doesn't have. No line needs
+// to declare these, so they survive memory and every export. Parsers count from
+// 1 without a leading zero and can't produce these ids.
+export const ADDED_TAGS: InlineTag[] = [
+  { id: "g01", type: "b" },
+  { id: "g02", type: "i" },
+  { id: "g03", type: "u" },
+  { id: "g04", type: "s" },
+  { id: "g05", type: "sup" },
+  { id: "g06", type: "sub" },
+]
+
+export const addedTag = (id: string) => ADDED_TAGS.find((t) => t.id === id)
+
 export interface TagProblem {
   missing: string[]
   extra: string[]
@@ -61,6 +75,8 @@ function tagCounts(s: string) {
       stack.push(id)
     }
   }
+  // Added on purpose, so never something a translation lost or invented.
+  for (const { id } of ADDED_TAGS) open.delete(id)
   return { open, balanced: balanced && !stack.length }
 }
 
@@ -107,7 +123,8 @@ export const TAG_STYLES: Partial<Record<InlineTag["type"], string>> = {
   a: "underline decoration-foreground/30 underline-offset-2",
 }
 
-export const tagMap = (tags: InlineTag[]) => new Map(tags.map((t) => [t.id, t]))
+export const tagMap = (tags: InlineTag[]) =>
+  new Map([...ADDED_TAGS, ...tags].map((t) => [t.id, t]))
 
 // A builder the parsers share: text in, tagged text and its tag list out.
 export class InlineWriter {
