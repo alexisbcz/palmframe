@@ -1,4 +1,10 @@
-import { allowed, installed, render, startComfy } from "@/lib/lab/comfy.server"
+import {
+  allowed,
+  installed,
+  render,
+  renderFile,
+  startComfy,
+} from "@/lib/lab/comfy.server"
 import { toRequest } from "@/lib/lab/model"
 
 import type { Route } from "./+types/api.lab"
@@ -8,6 +14,18 @@ const fail = (error: string, status: number) =>
 
 export async function loader({ request }: Route.LoaderArgs) {
   if (!allowed(request)) return fail("Not found", 404)
+  const file = new URL(request.url).searchParams.get("file")
+  if (file) {
+    const body = renderFile(file)
+    return body
+      ? new Response(body, {
+          headers: {
+            "content-type": "image/png",
+            "cache-control": "private, max-age=31536000, immutable",
+          },
+        })
+      : fail("Not found", 404)
+  }
   const { running } = await installed()
   return Response.json({ running })
 }
@@ -26,15 +44,7 @@ export async function action({ request }: Route.ActionArgs) {
   const r = toRequest(body)
   if (!r.prompt.trim()) return fail("Write a prompt first.", 400)
   try {
-    const { file, name, ms } = await render(r, request.signal)
-    return new Response(file.body, {
-      headers: {
-        "content-type": file.headers.get("content-type") ?? "image/png",
-        "x-render-ms": String(ms),
-        "x-file": name,
-        "cache-control": "no-store",
-      },
-    })
+    return Response.json(await render(r, request.signal))
   } catch (e) {
     return fail(
       e instanceof Error ? e.message : String(e),

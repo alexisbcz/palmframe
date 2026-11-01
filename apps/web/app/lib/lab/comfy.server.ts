@@ -1,9 +1,13 @@
 import { spawn } from "node:child_process"
-import { existsSync } from "node:fs"
+import { createReadStream, existsSync } from "node:fs"
+import { open, readdir, stat } from "node:fs/promises"
 import { homedir } from "node:os"
 import { join } from "node:path"
 
+import { Readable } from "node:stream"
+
 import { workflow, type CivitaiMeta, type LabRequest } from "./model"
+import { graphRequest, pngPrompt } from "./png"
 
 const COMFY = process.env.COMFY_URL ?? "http://127.0.0.1:8188"
 const COMFY_DIR = process.env.COMFY_DIR ?? join(homedir(), "ComfyUI")
@@ -37,6 +41,49 @@ export async function installed() {
   } catch {
     return { running: false, models: [] as string[], loras: [] as string[] }
   }
+}
+
+const OUTPUT = join(COMFY_DIR, "output")
+const RENDER_FILE = /^lab_\d+_\.png$/
+const MAX_RENDERS = 60
+
+export interface Render {
+  file: string
+  at: number
+  settings: LabRequest
+}
+
+// Past renders, newest first, each with the settings its file carries.
+export async function renders(): Promise<Render[]> {
+  const files = await readdir(OUTPUT).catch(() => [] as string[])
+  const dated = await Promise.all(
+    files
+      .filter((f) => RENDER_FILE.test(f))
+      .map(async (file) => ({
+        file,
+        at: (await stat(join(OUTPUT, file))).mtimeMs,
+      }))
+  )
+  dated.sort((a, b) => b.at - a.at)
+  const found = await Promise.all(
+    dated.slice(0, MAX_RENDERS).map(async (r) => {
+      const handle = await open(join(OUTPUT, r.file))
+      const head = new Uint8Array(256 * 1024)
+      const { bytesRead } = await handle.read(head, 0, head.length, 0)
+      await handle.close()
+      const settings = graphRequest(pngPrompt(head.subarray(0, bytesRead)))
+      return settings ? { ...r, settings } : []
+    })
+  )
+  return found.flat()
+}
+
+// By exact name only, so a request can't walk out of the folder.
+export function renderFile(file: string) {
+  if (!RENDER_FILE.test(file) || !existsSync(join(OUTPUT, file))) return null
+  return Readable.toWeb(
+    createReadStream(join(OUTPUT, file))
+  ) as unknown as ReadableStream
 }
 
 export function startComfy() {
@@ -79,16 +126,8 @@ export async function render(r: LabRequest, signal: AbortSignal) {
       throw new Error(JSON.stringify(h.status.messages?.at(-1)).slice(0, 600))
     const image = h.outputs?.["16"]?.images?.[0]
     if (!image) continue
-    const file = await fetch(
-      `${COMFY}/view?${new URLSearchParams({
-        filename: image.filename,
-        subfolder: image.subfolder,
-        type: image.type,
-      })}`
-    )
     return {
-      file,
-      name: image.filename as string,
+      file: image.filename as string,
       ms: Math.round(performance.now() - t0),
     }
   }

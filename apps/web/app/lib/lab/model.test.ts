@@ -8,6 +8,7 @@ import {
   toRequest,
   workflow,
 } from "./model"
+import { graphRequest, pngPrompt } from "./png"
 
 test("a link round-trips to the same render", () => {
   const r = toRequest({
@@ -84,4 +85,35 @@ test("Civitai settings fill in, keeping this machine's sampler", () => {
     strength: 0.7,
   })
   expect(missing).toEqual(["turbo.safetensors"])
+})
+
+test("a render's settings read back from its PNG", () => {
+  const r = toRequest({ prompt: "knight é", lora: "a.safetensors", seed: 9 })
+  const text = new TextEncoder().encode(JSON.stringify(workflow(r)))
+  const key = new TextEncoder().encode("prompt\0")
+  const chunk = (type: string, data: Uint8Array) => {
+    const out = new Uint8Array(12 + data.length)
+    new DataView(out.buffer).setUint32(0, data.length)
+    out.set(new TextEncoder().encode(type), 4)
+    out.set(data, 8)
+    return out
+  }
+  const data = new Uint8Array(key.length + text.length)
+  data.set(key)
+  data.set(text, key.length)
+  const parts = [
+    new Uint8Array(8),
+    chunk("IHDR", new Uint8Array(13)),
+    chunk("tEXt", data),
+    chunk("IDAT", new Uint8Array(4)),
+  ]
+  const png = new Uint8Array(parts.reduce((n, p) => n + p.length, 0))
+  let at = 0
+  for (const p of parts) {
+    png.set(p, at)
+    at += p.length
+  }
+  expect(graphRequest(pngPrompt(png))).toEqual(r)
+  expect(pngPrompt(png.subarray(0, 40))).toBeNull()
+  expect(graphRequest(null)).toBeNull()
 })
