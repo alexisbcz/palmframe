@@ -143,7 +143,8 @@ describe("EPUB", () => {
     })
     expect(bomb.length).toBeLessThan(2 * 1024 * 1024)
     await rejects(parseEpub(bomb), "expands_too_much")
-  })
+    // Building 400 MB takes a while when the whole suite runs at once.
+  }, 30_000)
 
   test("doesn't let a path climb out of the archive", async () => {
     const book = await parseEpub(
