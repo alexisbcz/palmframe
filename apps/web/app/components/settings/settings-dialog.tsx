@@ -33,6 +33,8 @@ import { useLocale, useT } from "@/i18n/core"
 import type { BillingData } from "@/routes/api.billing"
 import { messages as billingMessages } from "@/routes/pricing.messages"
 
+import { messages as toolMessages } from "@/components/tools/tools.messages"
+import { TOOL_IDS } from "@/lib/tools/catalog"
 import { messages as labsMessages } from "@/routes/machines.messages"
 
 import { BillingPanel, BillingSkeleton } from "./billing"
@@ -97,6 +99,7 @@ export function SettingsDialog() {
   const to = useT(openRouterMessages)
   const ta = useT(apiMessages)
   const tl = useT(labsMessages)
+  const tt = useT(toolMessages)
   const { locale } = useLocale()
   const viewer = useViewer()
   const balance = useBalance()
@@ -211,7 +214,11 @@ export function SettingsDialog() {
     ],
     openrouter: [to("pay"), to("imageModel"), to("textModel"), "key"],
     api: [ta("name"), "MCP", "key", "token"],
-    labs: [tl("labs.machines"), tl("labs.novels")],
+    labs: [
+      tl("labs.machines"),
+      tl("labs.novels"),
+      ...TOOL_IDS.map((id) => tt(`${id}.name`)),
+    ],
   }
   const q = fold(query.trim())
   const matches = allowed.filter(

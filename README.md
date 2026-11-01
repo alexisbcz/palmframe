@@ -56,6 +56,32 @@ Schema changes live in `supabase/migrations`. Create one with
 app owns the other tables in this database, so keep new tables prefixed with
 `comic_`.
 
+### On-device apps
+
+Seven small apps under `/tools` run [Desert Ant Labs](https://desertant.com)
+models in the browser. Each has its own switch under **Settings > Labs**, off by
+default, and the server gates each route on it. No file reaches our servers.
+
+| App            | Route             | Models            |
+| -------------- | ----------------- | ----------------- |
+| Voice cleaner  | `/tools/voice`    | Clear             |
+| Captions       | `/tools/captions` | Voz, Ear          |
+| Redactor       | `/tools/redact`   | Redact            |
+| Image check    | `/tools/images`   | Moderator         |
+| Photo sorter   | `/tools/photos`   | Eye               |
+| Post helper    | `/tools/post`     | Tongue, Gist, Emo |
+| Panel sketcher | `/tools/sketch`   | Shapes            |
+
+Keep every SDK behind a dynamic import of `lib/tools/models.client.ts`. Each one
+fetches a 46MB WebAssembly core on import, and anything the server build reaches
+ends up in the Vercel function.
+
+The models use the Desert Ant Labs Source-Available License, not MIT. It's free
+below 100,000 monthly licenses per platform for each model. It requires the
+visible credit in the Labs settings and the apps' footer, and a mention of the
+license check in the privacy policy. The SDK makes that check when a model
+loads, and it must stay on.
+
 ### Posting to Instagram
 
 The canvas can post carousels and Stories to Instagram through

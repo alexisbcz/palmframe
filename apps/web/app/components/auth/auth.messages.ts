@@ -87,7 +87,7 @@ export const messages = defineMessages({
       privacyP1:
         "We keep your email address, your name and what you make in the editor, to run your account. We never sell or share any of it for advertising.",
       privacyP2:
-        "Supabase stores accounts, projects and images, and Vercel hosts the site, for this service only. When you post to Instagram, the images go through the publishing service that delivers them to Instagram.",
+        "Supabase stores accounts, projects and images, and Vercel hosts the site, for this service only. When you post to Instagram, the images go through the publishing service that delivers them to Instagram. The optional on-device apps run on your device, so your files stay with you. To run them, your browser downloads models from Hugging Face and jsDelivr, and the Desert Ant Labs software requests a monthly license from Desert Ant Labs. That request carries a random install ID, this site's domain, and the model and software versions, never your content.",
       privacyP3:
         "You can ask us to export or delete your data at any time by writing to us.",
     },
@@ -178,7 +178,7 @@ export const messages = defineMessages({
       privacyP1:
         "Nous conservons votre adresse e-mail, votre nom et ce que vous créez dans l’éditeur, pour faire fonctionner votre compte. Rien n’est revendu ni partagé à des fins publicitaires.",
       privacyP2:
-        "Supabase stocke les comptes, les projets et les images, et Vercel héberge le site, dans le cadre de ce service uniquement. Quand vous publiez sur Instagram, les images passent par le service de publication qui les transmet à Instagram.",
+        "Supabase stocke les comptes, les projets et les images, et Vercel héberge le site, dans le cadre de ce service uniquement. Quand vous publiez sur Instagram, les images passent par le service de publication qui les transmet à Instagram. Les applis facultatives sur l’appareil tournent sur votre appareil : vos fichiers restent chez vous. Pour cela, votre navigateur télécharge des modèles depuis Hugging Face et jsDelivr, et le logiciel de Desert Ant Labs demande une licence mensuelle à Desert Ant Labs. Cette demande contient un identifiant d’installation aléatoire, le domaine de ce site et les versions du modèle et du logiciel, jamais vos contenus.",
       privacyP3:
         "Vous pouvez demander l’export ou la suppression de vos données à tout moment en nous écrivant.",
     },
@@ -269,7 +269,7 @@ export const messages = defineMessages({
       privacyP1:
         "Guardamos tu correo, tu nombre y lo que creas en el editor para que tu cuenta funcione. Nunca lo vendemos ni lo compartimos con fines publicitarios.",
       privacyP2:
-        "Supabase guarda las cuentas, los proyectos y las imágenes, y Vercel aloja el sitio, solo para este servicio. Cuando publicas en Instagram, las imágenes pasan por el servicio de publicación que las envía a Instagram.",
+        "Supabase guarda las cuentas, los proyectos y las imágenes, y Vercel aloja el sitio, solo para este servicio. Cuando publicas en Instagram, las imágenes pasan por el servicio de publicación que las envía a Instagram. Las apps opcionales en el dispositivo funcionan en tu dispositivo, así que tus archivos se quedan contigo. Para ello, tu navegador descarga modelos de Hugging Face y jsDelivr, y el software de Desert Ant Labs solicita una licencia mensual a Desert Ant Labs. Esa solicitud lleva un identificador de instalación aleatorio, el dominio de este sitio y las versiones del modelo y del software, nunca tu contenido.",
       privacyP3:
         "Puedes pedirnos en cualquier momento que exportemos o borremos tus datos escribiéndonos.",
     },
@@ -365,7 +365,7 @@ export const messages = defineMessages({
       privacyP1:
         "Wir speichern deine E-Mail-Adresse, deinen Namen und was du im Editor erstellst, damit dein Konto funktioniert. Nichts davon wird verkauft oder für Werbung geteilt.",
       privacyP2:
-        "Supabase speichert Konten, Projekte und Bilder, Vercel hostet die Website, nur für diesen Dienst. Wenn du auf Instagram postest, laufen die Bilder über den Veröffentlichungsdienst, der sie an Instagram übergibt.",
+        "Supabase speichert Konten, Projekte und Bilder, Vercel hostet die Website, nur für diesen Dienst. Wenn du auf Instagram postest, laufen die Bilder über den Veröffentlichungsdienst, der sie an Instagram übergibt. Die optionalen Apps auf dem Gerät laufen auf deinem Gerät, deine Dateien bleiben also bei dir. Dafür lädt dein Browser Modelle von Hugging Face und jsDelivr, und die Software von Desert Ant Labs fordert bei Desert Ant Labs eine Monatslizenz an. Diese Anfrage enthält eine zufällige Installations-ID, die Domain dieser Website sowie die Modell- und Softwareversionen, niemals deine Inhalte.",
       privacyP3:
         "Du kannst jederzeit per Nachricht an uns den Export oder die Löschung deiner Daten verlangen.",
     },
@@ -456,7 +456,7 @@ export const messages = defineMessages({
       privacyP1:
         "Conserviamo la tua email, il tuo nome e ciò che crei nell’editor per far funzionare il tuo account. Non vendiamo né condividiamo nulla a fini pubblicitari.",
       privacyP2:
-        "Supabase conserva account, progetti e immagini, e Vercel ospita il sito, solo per questo servizio. Quando pubblichi su Instagram, le immagini passano dal servizio di pubblicazione che le consegna a Instagram.",
+        "Supabase conserva account, progetti e immagini, e Vercel ospita il sito, solo per questo servizio. Quando pubblichi su Instagram, le immagini passano dal servizio di pubblicazione che le consegna a Instagram. Le app facoltative sul dispositivo funzionano sul tuo dispositivo, quindi i tuoi file restano con te. Per farle funzionare, il browser scarica i modelli da Hugging Face e jsDelivr, e il software di Desert Ant Labs richiede una licenza mensile a Desert Ant Labs. La richiesta contiene un identificativo di installazione casuale, il dominio di questo sito e le versioni del modello e del software, mai i tuoi contenuti.",
       privacyP3:
         "Puoi chiederci in qualsiasi momento di esportare o cancellare i tuoi dati scrivendoci.",
     },
@@ -548,7 +548,7 @@ export const messages = defineMessages({
       privacyP1:
         "当社は、アカウントの運営のため、お客様のメールアドレス、お名前、およびエディターで作成されたコンテンツを保管します。これらを販売したり、広告目的で第三者と共有したりすることは一切ありません。",
       privacyP2:
-        "本サービスの提供のみを目的として、Supabaseがアカウント、プロジェクトおよび画像を保管し、Vercelがサイトをホストします。Instagramに投稿する場合、画像はInstagramへ配信する投稿サービスを経由します。",
+        "本サービスの提供のみを目的として、Supabaseがアカウント、プロジェクトおよび画像を保管し、Vercelがサイトをホストします。Instagramに投稿する場合、画像はInstagramへ配信する投稿サービスを経由します。任意の端末内アプリはお客様の端末で動作するため、ファイルは端末の外に出ません。動作のために、ブラウザは Hugging Face と jsDelivr からモデルをダウンロードし、Desert Ant Labs のソフトウェアは同社に月次ライセンスを要求します。この要求に含まれるのはランダムなインストール ID、このサイトのドメイン、モデルとソフトウェアのバージョンのみで、お客様のコンテンツは含まれません。",
       privacyP3:
         "お客様はいつでも当社にご連絡いただくことで、データのエクスポートまたは削除を請求できます。",
     },

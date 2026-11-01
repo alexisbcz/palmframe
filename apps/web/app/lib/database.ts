@@ -10,6 +10,7 @@ import type { AssetPayload } from "@/components/catalog/model"
 import type { AnimeTables } from "./anime/database"
 import type { BookFunctions, BookTables } from "./books/database"
 import type { StyleAnalysis } from "./comic-import/style"
+import type { Labs } from "./tools/catalog"
 import type { SubscriptionCache } from "./credits"
 import type {
   DeepDiveStatus,
@@ -854,7 +855,7 @@ export interface Viewer {
   // Public URL of their profile picture, if they set one.
   avatarUrl: string | null
   // Features they turned on in Settings, under Labs.
-  labs: { machines: boolean; novels: boolean }
+  labs: Labs
 }
 
 export const COMICS_BUCKET = "comics"

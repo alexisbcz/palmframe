@@ -17,6 +17,7 @@ import {
 } from "@/lib/instagram.server"
 import { lineStopFor, machinesHalted } from "@/lib/machines/control.server"
 import { feedRefusal } from "@/lib/machines/datasets"
+import { LAB_FEATURES } from "@/lib/tools/catalog"
 import { parseWebhook } from "@/lib/machines/discord"
 import {
   carryToDiscord,
@@ -54,7 +55,7 @@ const body = z.discriminatedUnion("intent", [
   z.object({
     intent: z.literal("labs"),
     on: z.boolean(),
-    feature: z.enum(["machines", "novels"]).default("machines"),
+    feature: z.enum(LAB_FEATURES).default("machines"),
   }),
   z.object({ intent: z.literal("save"), machine: machineInput }),
   z.object({ intent: z.literal("remove"), id }),

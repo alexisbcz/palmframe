@@ -6,6 +6,7 @@ import {
 import type { User } from "@supabase/supabase-js"
 
 import type { Database, Viewer } from "./database"
+import { readLabs } from "@/lib/tools/catalog"
 
 export function supabaseEnv() {
   const url = process.env.SUPABASE_URL?.trim()
@@ -55,10 +56,7 @@ export function toViewer(user: User): Viewer {
       )
         ? meta.avatar_url
         : null,
-    labs: {
-      machines: meta.labs?.machines === true,
-      novels: meta.labs?.novels === true,
-    },
+    labs: readLabs(meta.labs),
   }
 }
 

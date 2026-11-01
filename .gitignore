@@ -29,3 +29,6 @@ apps/web/public/comics/private/
 
 # Copied from pdfjs-dist at build time
 apps/web/public/pdfjs/
+
+# Copied from @desert-ant-labs/tongue at build time
+apps/web/public/models/

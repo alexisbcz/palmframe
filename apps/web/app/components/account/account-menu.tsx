@@ -13,6 +13,7 @@ import {
   Login03Icon,
   Logout01Icon,
   CommandIcon,
+  AiChipIcon,
   Moon02Icon,
   Settings01Icon,
   Sun03Icon,
@@ -37,6 +38,8 @@ import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { Flag } from "@/components/flag"
 import { GitHubIcon, REPO } from "@/components/github-button"
 import { messages as toggles } from "@/components/toggles.messages"
+import { messages as toolMessages } from "@/components/tools/tools.messages"
+import { TOOL_IDS } from "@/lib/tools/catalog"
 import { LOCALES, LOCALE_NAMES, isLocale, useLocale, useT } from "@/i18n/core"
 import {
   SETTINGS_SHORTCUT,
@@ -145,6 +148,7 @@ export function AccountMenu() {
   const t = useT(messages)
   const tt = useT(toggles)
   const tm = useT(machineMessages)
+  const ttools = useT(toolMessages)
   const viewer = useViewer()
   const { theme, setTheme } = useTheme()
   const { locale, setLocale } = useLocale()
@@ -192,6 +196,7 @@ export function AccountMenu() {
           if (key === "catalog") navigate("/catalog")
           if (key === "studio") navigate("/studio")
           if (key === "novels") navigate("/novels")
+          if (key === "tools") navigate("/tools")
           if (key === "billing") openSettings("billing")
           if (key === "settings") openSettings()
           if (key === "commands")
@@ -245,6 +250,14 @@ export function AccountMenu() {
                 <HugeiconsIcon icon={Book02Icon} strokeWidth={2} />
               </Tile>
               {t("account.novels")}
+            </DropdownMenuItem>
+          )}
+          {TOOL_IDS.some((id) => viewer.labs[id]) && (
+            <DropdownMenuItem id="tools" textValue={ttools("title")}>
+              <Tile>
+                <HugeiconsIcon icon={AiChipIcon} strokeWidth={2} />
+              </Tile>
+              {ttools("title")}
             </DropdownMenuItem>
           )}
           {viewer.labs.machines && (
