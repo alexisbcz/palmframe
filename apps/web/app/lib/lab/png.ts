@@ -52,6 +52,7 @@ export function graphRequest(graph: Graph | null): LabRequest | null {
     prompt: value(graph?.["5"]?.inputs?.text, ""),
     negative: value(graph?.["6"]?.inputs?.text, ""),
     model: value(graph?.["1"]?.inputs?.unet_name, d.model),
+    clip: value(graph?.["3"]?.inputs?.clip_name, d.clip),
     loras,
     seed: value(sampler.seed, 0),
     width: value(latent.width, d.width),

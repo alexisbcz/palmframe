@@ -1,5 +1,6 @@
 import {
   allowed,
+  cancelRender,
   installed,
   render,
   renderFile,
@@ -41,14 +42,15 @@ export async function action({ request }: Route.ActionArgs) {
     return startComfy()
       ? Response.json({ ok: true })
       : fail("ComfyUI isn't installed in ~/ComfyUI.", 501)
+  if (body.intent === "cancel") {
+    await cancelRender()
+    return Response.json({ ok: true })
+  }
   const r = toRequest(body)
   if (!r.prompt.trim()) return fail("Write a prompt first.", 400)
   try {
-    return Response.json(await render(r, request.signal))
+    return Response.json(await render(r))
   } catch (e) {
-    return fail(
-      e instanceof Error ? e.message : String(e),
-      request.signal.aborted ? 499 : 502
-    )
+    return fail(e instanceof Error ? e.message : String(e), 502)
   }
 }

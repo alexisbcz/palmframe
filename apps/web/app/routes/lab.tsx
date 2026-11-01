@@ -24,6 +24,7 @@ import {
   LAB_DEFAULTS,
   MAX_LORAS,
   civitaiTarget,
+  pairedClip,
   fromCivitai,
   labQuery,
   toRequest,
@@ -326,7 +327,7 @@ function Setup({
   onClose: () => void
   r: LabRequest
   set: (patch: Partial<LabRequest>) => void
-  comfy: { models: string[]; loras: string[] }
+  comfy: { models: string[]; loras: string[]; clips: string[] }
   past: Render[]
 }) {
   const ref = React.useRef<HTMLDialogElement>(null)
@@ -523,7 +524,9 @@ function Setup({
               label="Model"
               slides={models}
               value={r.model}
-              onChange={(model) => set({ model })}
+              onChange={(model) =>
+                set({ model, clip: pairedClip(model, comfy.clips) })
+              }
             />
           ) : null}
           {tab === "format" ? (
@@ -602,6 +605,18 @@ function Setup({
                   />
                 </label>
               </div>
+              <label className="lab-field">
+                <span>Text encoder</span>
+                <select
+                  className="lab-input cursor-pointer"
+                  value={r.clip}
+                  onChange={(e) => set({ clip: e.target.value })}
+                >
+                  {[...new Set([r.clip, ...comfy.clips])].map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </label>
               <label className="lab-field">
                 <span>Negative prompt</span>
                 <textarea
@@ -743,6 +758,21 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
       setBusy(false)
     }
   }
+
+  // `go=1` renders on arrival, for a link opened from this machine. Another
+  // site linking here sets a referrer and only gets the prefilled page.
+  const launched = React.useRef(false)
+  React.useEffect(() => {
+    const go = new URL(
+      arrival.current ?? "",
+      window.location.href
+    ).searchParams.has("go")
+    if (launched.current || !go || document.referrer || !comfy.running) return
+    launched.current = true
+    if (initial.prompt.trim()) void generate()
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const canGo = comfy.running && !!r.prompt.trim()
   const shown = past[current]
@@ -951,7 +981,14 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
             type="button"
             className="lab-go"
             data-busy
-            onClick={() => abort.current?.abort()}
+            onClick={() => {
+              abort.current?.abort()
+              void fetch("/api/lab", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ intent: "cancel" }),
+              })
+            }}
           >
             <b>CANCEL</b>
             <small>{(elapsed / 1000).toFixed(0)}s</small>

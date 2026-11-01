@@ -13,6 +13,8 @@ export interface LabRequest {
   prompt: string
   negative: string
   model: string
+  // Some checkpoints ship a tuned text encoder of their own.
+  clip: string
   // Applied in order, each on top of the last.
   loras: LabLora[]
   seed: number
@@ -27,6 +29,7 @@ export const LAB_DEFAULTS: LabRequest = {
   prompt: "",
   negative: "worst quality, low quality, blurry, jpeg artifacts, bad anatomy",
   model: "anima-turbo-v1.1.safetensors",
+  clip: "qwen_3_06b_base.safetensors",
   loras: [],
   seed: 0,
   width: 768,
@@ -34,6 +37,12 @@ export const LAB_DEFAULTS: LabRequest = {
   steps: 12,
   cfg: 1,
   sampler: "er_sde",
+}
+
+// Civitai names a checkpoint's encoder `<model>_txt.safetensors`.
+export function pairedClip(model: string, clips: string[]) {
+  const pair = model.replace(/\.safetensors$/i, "_txt.safetensors")
+  return clips.includes(pair) ? pair : LAB_DEFAULTS.clip
 }
 
 const number = (value: unknown, min: number, max: number, fallback: number) => {
@@ -88,6 +97,7 @@ export function toRequest(
     prompt: text(v.prompt, base.prompt).slice(0, 8_000),
     negative: text(v.negative, base.negative).slice(0, 8_000),
     model: text(v.model, base.model),
+    clip: text(v.clip, base.clip),
     loras: toLoras(v, base.loras),
     seed: Math.trunc(number(v.seed, 0, Number.MAX_SAFE_INTEGER, base.seed)),
     width: side(v.w ?? v.width, base.width),
@@ -108,6 +118,7 @@ export function labQuery(r: LabRequest) {
   add("prompt", r.prompt, d.prompt)
   add("negative", r.negative, d.negative)
   add("model", r.model, d.model)
+  add("clip", r.clip, d.clip)
   for (const l of r.loras)
     q.append("lora", l.strength === 1 ? l.name : `${l.name}:${l.strength}`)
   add("seed", r.seed, d.seed)
@@ -138,7 +149,7 @@ export function workflow(r: LabRequest) {
     "3": {
       class_type: "CLIPLoader",
       inputs: {
-        clip_name: "qwen_3_06b_base.safetensors",
+        clip_name: r.clip,
         type: "stable_diffusion",
         device: "default",
       },

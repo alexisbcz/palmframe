@@ -11,7 +11,8 @@ import { graphRequest, pngPrompt } from "./png"
 
 const COMFY = process.env.COMFY_URL ?? "http://127.0.0.1:8188"
 const COMFY_DIR = process.env.COMFY_DIR ?? join(homedir(), "ComfyUI")
-const RENDER_MS = 300_000
+// Base models at full steps take minutes on a laptop.
+const RENDER_MS = 1_200_000
 
 // Local means served to this machine. The lab can start processes and spends
 // the laptop's GPU, so it stays off any deployment, and a page on another site
@@ -33,13 +34,15 @@ async function list(folder: string) {
 
 export async function installed() {
   try {
-    const [models, loras] = await Promise.all([
+    const [models, loras, clips] = await Promise.all([
       list("diffusion_models"),
       list("loras"),
+      list("text_encoders"),
     ])
-    return { running: true, models, loras }
+    return { running: true, models, loras, clips }
   } catch {
-    return { running: false, models: [] as string[], loras: [] as string[] }
+    const none: string[] = []
+    return { running: false, models: none, loras: none, clips: none }
   }
 }
 
@@ -97,7 +100,18 @@ export function startComfy() {
   return true
 }
 
-export async function render(r: LabRequest, signal: AbortSignal) {
+// Only Cancel stops a render. A reload drops the page's request, and minutes of
+// GPU time shouldn't go with it: the image still lands in the output folder.
+export async function cancelRender() {
+  await fetch(`${COMFY}/queue`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ clear: true }),
+  }).catch(() => {})
+  await fetch(`${COMFY}/interrupt`, { method: "POST" }).catch(() => {})
+}
+
+export async function render(r: LabRequest) {
   const t0 = performance.now()
   const queued = await fetch(`${COMFY}/prompt`, {
     method: "POST",
@@ -111,14 +125,6 @@ export async function render(r: LabRequest, signal: AbortSignal) {
     )
   const id = body.prompt_id as string
   while (performance.now() - t0 < RENDER_MS) {
-    if (signal.aborted) {
-      await fetch(`${COMFY}/queue`, {
-        method: "POST",
-        body: JSON.stringify({ delete: [id] }),
-      }).catch(() => {})
-      await fetch(`${COMFY}/interrupt`, { method: "POST" }).catch(() => {})
-      throw new Error("Cancelled")
-    }
     await new Promise((resolve) => setTimeout(resolve, 300))
     const h = (await (await fetch(`${COMFY}/history/${id}`)).json())[id]
     if (!h) continue

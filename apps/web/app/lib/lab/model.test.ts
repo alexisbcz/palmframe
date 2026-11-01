@@ -4,6 +4,7 @@ import {
   LAB_DEFAULTS,
   civitaiTarget,
   fromCivitai,
+  pairedClip,
   labQuery,
   toRequest,
   workflow,
@@ -149,4 +150,12 @@ test("a render's settings read back from its PNG", () => {
   expect(graphRequest(pngPrompt(png))).toEqual(r)
   expect(pngPrompt(png.subarray(0, 40))).toBeNull()
   expect(graphRequest(null)).toBeNull()
+})
+
+test("a model takes its own text encoder when one is installed", () => {
+  const clips = [LAB_DEFAULTS.clip, "rimix_txt.safetensors"]
+  expect(pairedClip("rimix.safetensors", clips)).toBe("rimix_txt.safetensors")
+  expect(pairedClip("other.safetensors", clips)).toBe(LAB_DEFAULTS.clip)
+  const r = toRequest({ prompt: "x", clip: "rimix_txt.safetensors" })
+  expect(workflow(r)["3"]!.inputs.clip_name).toBe("rimix_txt.safetensors")
 })
