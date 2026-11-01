@@ -1,0 +1,1141 @@
+@import "@fontsource/share-tech-mono/400.css";
+
+/* The Stage: a workshop built of things, not panels. Every surface says what
+   it's made of: anodised plate, bakelite, paper, cork. It stays dark whatever
+   the app's theme, the way a studio does. */
+.nv {
+  --bench: #12100d;
+  --bench-2: #1a1713;
+  --plate: #2a2622;
+  --plate-hi: #3a352f;
+  --plate-lo: #1e1b18;
+  --edge: rgb(255 255 255 / 0.09);
+  --edge-strong: rgb(255 255 255 / 0.16);
+  --shade: rgb(0 0 0 / 0.55);
+  --engrave: #b5a994;
+  --engrave-dim: #7f7566;
+  --ink-on-plate: #ece4d4;
+  --amber: #ffb648;
+  --amber-dim: #8a5a1c;
+  --red: #e5483a;
+  --green: #7ee08a;
+  --paper: #efe6d2;
+  --paper-2: #e3d8bf;
+  --paper-ink: #2a2118;
+  --paper-mute: #7c6d58;
+  --cork: #a9784e;
+  --label: "Archivo Variable", "Inter Variable", sans-serif;
+  --readout: "Share Tech Mono", ui-monospace, monospace;
+  --type: "Courier Prime", "Courier New", monospace;
+  color: var(--ink-on-plate);
+  background: var(--bench);
+  font-family: "Inter Variable", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.nv ::selection {
+  background: rgb(255 182 72 / 0.35);
+}
+.nv *:focus-visible {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+
+/* An engraved label, filled with paint. */
+.nv-engraved {
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--engrave);
+  text-shadow:
+    0 -1px 0 rgb(0 0 0 / 0.7),
+    0 1px 0 rgb(255 255 255 / 0.05);
+  line-height: 1.15;
+}
+.nv-readout {
+  font-family: var(--readout);
+  color: var(--amber);
+  text-shadow: 0 0 8px rgb(255 182 72 / 0.45);
+  background: linear-gradient(#0b0906, #15100a);
+  border-radius: 3px;
+  padding: 2px 7px;
+  box-shadow:
+    inset 0 1px 3px #000,
+    0 1px 0 var(--edge);
+  font-size: 14px;
+  line-height: 1.35;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.nv-title {
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* A bolted plate. */
+.nv-plate {
+  position: relative;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(
+      92deg,
+      rgb(255 255 255 / 0.012) 0 1px,
+      transparent 1px 3px
+    ),
+    linear-gradient(180deg, var(--plate-hi), var(--plate) 14%, var(--plate-lo));
+  box-shadow:
+    inset 0 1px 0 var(--edge-strong),
+    inset 0 -1px 0 rgb(0 0 0 / 0.5),
+    0 0 0 1px rgb(0 0 0 / 0.6),
+    0 6px 16px -6px rgb(0 0 0 / 0.8);
+}
+.nv-plate-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px 8px;
+  border-bottom: 1px solid rgb(0 0 0 / 0.45);
+  box-shadow: 0 1px 0 var(--edge);
+}
+.nv-screw {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background:
+    linear-gradient(
+      var(--r, 35deg),
+      transparent 42%,
+      rgb(0 0 0 / 0.85) 42% 58%,
+      transparent 58%
+    ),
+    radial-gradient(circle at 35% 30%, #8e8778, #4a4640 65%, #2a2723);
+  box-shadow:
+    0 1px 1px rgb(255 255 255 / 0.1),
+    0 -1px 1px rgb(0 0 0 / 0.6);
+}
+
+/* Mechanical key: a cap that travels. */
+.nv-key {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 5px;
+  border: 0;
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-on-plate);
+  background: linear-gradient(180deg, #4a443c, #38332d 45%, #2c2823);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    inset 0 -2px 0 rgb(0 0 0 / 0.35),
+    0 0 0 1px #000,
+    0 3px 0 #0a0807,
+    0 5px 8px rgb(0 0 0 / 0.5);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  transition:
+    transform 70ms ease-out,
+    box-shadow 70ms ease-out,
+    background 120ms;
+}
+.nv-key:hover {
+  background: linear-gradient(180deg, #554e45, #403a33 45%, #322d28);
+}
+.nv-key:active,
+.nv-key[aria-pressed="true"],
+.nv-key[aria-current="page"] {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.08),
+    inset 0 2px 4px rgb(0 0 0 / 0.5),
+    0 0 0 1px #000,
+    0 0 0 #0a0807;
+}
+.nv-key[aria-pressed="true"],
+.nv-key[aria-current="page"] {
+  color: var(--amber);
+  text-shadow: 0 0 10px rgb(255 182 72 / 0.55);
+  background: linear-gradient(180deg, #2c2823, #38332d);
+}
+.nv-key:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.nv-key[data-tone="fire"] {
+  color: #2a1503;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.3);
+  background: linear-gradient(180deg, #ffcf7f, #f7a938 55%, #d9861c);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.55),
+    inset 0 -2px 0 rgb(120 60 0 / 0.5),
+    0 0 0 1px #000,
+    0 3px 0 #5e3a0b,
+    0 5px 12px rgb(255 160 40 / 0.25);
+}
+.nv-key[data-tone="fire"]:active {
+  box-shadow:
+    inset 0 2px 4px rgb(120 60 0 / 0.5),
+    0 0 0 1px #000;
+}
+.nv-key[data-tone="danger"] {
+  color: #ffb5ad;
+}
+.nv-key[data-size="icon"] {
+  width: 34px;
+  padding: 0;
+}
+.nv-led {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #5a5148, #231f1b);
+  box-shadow:
+    inset 0 0 2px #000,
+    0 1px 0 var(--edge);
+}
+.nv-led[data-on="true"] {
+  background: radial-gradient(
+    circle at 35% 30%,
+    #fff1cc,
+    var(--c, var(--amber)) 55%
+  );
+  box-shadow:
+    0 0 8px var(--c, var(--amber)),
+    0 0 2px var(--c, var(--amber));
+}
+
+/* Rotary knob. Knurled skirt, machined cap, a pointer you can read from the
+   far side of the room. */
+.nv-knob {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.nv-knob-body {
+  position: relative;
+  width: var(--s, 64px);
+  height: var(--s, 64px);
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+}
+.nv-knob-body:active {
+  cursor: grabbing;
+}
+.nv-knob-scale {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+.nv-knob-skirt {
+  position: absolute;
+  inset: 13%;
+  border-radius: 50%;
+  transform: rotate(var(--a, 0deg));
+  background: repeating-conic-gradient(#0c0a08 0 3deg, #4a443c 3deg 6deg);
+  box-shadow:
+    0 4px 7px rgb(0 0 0 / 0.75),
+    0 1px 1px rgb(0 0 0 / 0.9);
+}
+.nv-knob-cap {
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+  transform: rotate(var(--a, 0deg));
+  background: conic-gradient(
+    from 20deg,
+    #6d675e,
+    #2e2a26 12%,
+    #7a7469 26%,
+    #2f2b27 39%,
+    #6f6a60 52%,
+    #2c2925 66%,
+    #76705f 80%,
+    #2e2a26 92%,
+    #6d675e
+  );
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255 / 0.4),
+    inset 0 -1px 2px rgb(0 0 0 / 0.7);
+}
+.nv-knob-cap::after {
+  content: "";
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 5%;
+  width: 3px;
+  height: 34%;
+  margin-inline-start: -1.5px;
+  border-radius: 2px;
+  background: var(--amber);
+  box-shadow: 0 0 6px rgb(255 182 72 / 0.6);
+}
+
+/* A mode dial: every position engraved around the knob. */
+.nv-dial {
+  position: relative;
+  width: var(--dial, 150px);
+  height: var(--dial, 150px);
+  flex: none;
+}
+.nv-dial-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  background: none;
+  border: 0;
+  padding: 2px 3px;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--engrave-dim);
+  transition: color 120ms;
+}
+.nv-dial-label:hover {
+  color: var(--ink-on-plate);
+}
+.nv-dial-label[aria-checked="true"] {
+  color: var(--amber);
+  text-shadow: 0 0 8px rgb(255 182 72 / 0.5);
+}
+.nv-dial .nv-knob-body {
+  position: absolute;
+  inset: 28%;
+  width: auto;
+  height: auto;
+}
+
+/* Fader in a machined slot. */
+.nv-fader {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 44px;
+}
+.nv-fader-track {
+  position: relative;
+  width: 44px;
+  height: var(--h, 150px);
+  margin-bottom: 12px;
+  touch-action: none;
+  cursor: ns-resize;
+  background: repeating-linear-gradient(
+      0deg,
+      var(--engrave-dim) 0 1px,
+      transparent 1px 10%
+    )
+    center / 28px 100% no-repeat;
+}
+.nv-fader-track::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(50% - 3px);
+  width: 6px;
+  border-radius: 3px;
+  background: #050403;
+  box-shadow:
+    inset 0 1px 2px #000,
+    0 1px 0 var(--edge);
+}
+.nv-fader-fill {
+  position: absolute;
+  bottom: 0;
+  inset-inline-start: calc(50% - 1px);
+  width: 2px;
+  background: var(--amber);
+  opacity: 0.8;
+  box-shadow: 0 0 6px var(--amber);
+}
+.nv-fader-cap {
+  position: absolute;
+  inset-inline-start: 4px;
+  width: 36px;
+  height: 24px;
+  margin-bottom: -12px;
+  border-radius: 3px;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 46%,
+      var(--amber) 46% 54%,
+      transparent 54%
+    ),
+    repeating-linear-gradient(
+      180deg,
+      rgb(255 255 255 / 0.13) 0 1px,
+      rgb(0 0 0 / 0.2) 1px 3px
+    ),
+    linear-gradient(180deg, #57514a, #2c2824);
+  box-shadow:
+    0 0 0 1px #000,
+    0 4px 6px rgb(0 0 0 / 0.7),
+    inset 0 1px 0 rgb(255 255 255 / 0.3);
+}
+
+/* Lens ring. Drag it and it spins, with weight. */
+.nv-ring {
+  position: relative;
+  height: 58px;
+  border-radius: 6px;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: ew-resize;
+  user-select: none;
+  background: #0d0b09;
+  box-shadow:
+    inset 0 0 0 1px #000,
+    inset 0 2px 6px #000,
+    0 1px 0 var(--edge);
+}
+.nv-ring-band {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    #070605 0 3px,
+    #3a352e 3px 5px,
+    #1a1714 5px 8px
+  );
+  background-position-x: var(--ring, 0px);
+  mask-image: linear-gradient(
+    180deg,
+    #000 0 14px,
+    transparent 14px 44px,
+    #000 44px
+  );
+}
+.nv-ring-track {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 50%;
+  display: flex;
+  align-items: center;
+  will-change: transform;
+}
+.nv-ring-mark {
+  flex: none;
+  width: var(--mark, 96px);
+  text-align: center;
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #cfc5b3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nv-ring-mark[data-on="true"] {
+  color: var(--amber);
+}
+.nv-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    rgb(0 0 0 / 0.95),
+    rgb(0 0 0 / 0.1) 30%,
+    rgb(255 255 255 / 0.06) 50%,
+    rgb(0 0 0 / 0.1) 70%,
+    rgb(0 0 0 / 0.95)
+  );
+}
+.nv-ring::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  inset-inline-start: calc(50% - 5px);
+  border-inline: 5px solid transparent;
+  border-top: 7px solid var(--amber);
+  filter: drop-shadow(0 0 4px var(--amber));
+}
+
+/* Bat-handle toggle. */
+.nv-toggle {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.nv-toggle-well {
+  position: relative;
+  width: 26px;
+  height: 40px;
+  border-radius: 13px;
+  background: radial-gradient(
+    circle,
+    #050403 42%,
+    #2d2925 44%,
+    #4c463e 62%,
+    #24211d
+  );
+  box-shadow:
+    0 1px 2px #000,
+    inset 0 1px 0 var(--edge-strong);
+}
+.nv-toggle-bat {
+  position: absolute;
+  inset-inline-start: 8px;
+  top: 3px;
+  width: 10px;
+  height: 22px;
+  border-radius: 5px 5px 3px 3px;
+  background: linear-gradient(90deg, #6f6a62, #f1ece0 40%, #8f897e);
+  box-shadow: 0 4px 3px rgb(0 0 0 / 0.65);
+  transform-origin: 50% 100%;
+  transition: transform 90ms cubic-bezier(0.3, 1.6, 0.6, 1);
+}
+.nv-toggle[aria-checked="false"] .nv-toggle-bat {
+  transform: translateY(15px) rotate(180deg);
+  transform-origin: 50% 0%;
+}
+
+/* VU meter. */
+.nv-vu {
+  position: relative;
+  width: var(--w, 120px);
+  aspect-ratio: 2 / 1.15;
+  overflow: hidden;
+  border-radius: 4px;
+  background: radial-gradient(
+    120% 140% at 50% 110%,
+    #ffd98f,
+    #f2c26b 60%,
+    #b98a3c
+  );
+  box-shadow:
+    inset 0 0 0 1px #000,
+    inset 0 2px 7px rgb(0 0 0 / 0.65),
+    0 1px 0 var(--edge);
+}
+.nv-vu svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.nv-vu-needle {
+  transform-origin: 60px 74px;
+  transform: rotate(var(--n, -40deg));
+}
+
+/* Bench and frame. */
+.nv-bench {
+  background:
+    radial-gradient(
+      1200px 500px at 50% -120px,
+      rgb(255 190 110 / 0.09),
+      transparent 70%
+    ),
+    linear-gradient(180deg, var(--bench-2), var(--bench));
+}
+.nv-rail {
+  background: linear-gradient(180deg, #2f2a25, #1d1a17);
+  box-shadow:
+    inset 0 1px 0 var(--edge-strong),
+    0 1px 0 #000,
+    0 8px 18px -8px #000;
+  z-index: 10;
+}
+.nv-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #4a443c transparent;
+}
+
+/* Paper. */
+.nv-paper {
+  color: var(--paper-ink);
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 27px,
+      rgb(80 60 30 / 0.07) 27px 28px
+    ),
+    linear-gradient(
+      90deg,
+      rgb(120 90 50 / 0.1),
+      transparent 6%,
+      transparent 94%,
+      rgb(120 90 50 / 0.08)
+    ),
+    var(--paper);
+  font-family: var(--type);
+}
+.nv-paper input,
+.nv-paper textarea,
+.nv-paper select {
+  font-family: var(--type);
+  color: var(--paper-ink);
+}
+.nv-field {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 4px;
+  padding: 7px 9px;
+  background: #0f0d0a;
+  color: var(--ink-on-plate);
+  font-size: 14px;
+  box-shadow:
+    inset 0 1px 3px #000,
+    0 1px 0 var(--edge);
+}
+.nv-field::placeholder {
+  color: var(--engrave-dim);
+}
+select.nv-field {
+  cursor: pointer;
+}
+
+/* Tape-on-paper tags and script cues. */
+.nv-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--paper-ink);
+  background: var(--tape, #e7c66b);
+  box-shadow: 0 1px 2px rgb(60 40 10 / 0.35);
+  rotate: var(--tilt, 0deg);
+}
+
+/* The cue tray: tokens lying in a recess. */
+.nv-token {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 58px;
+  height: 44px;
+  flex: none;
+  border: 0;
+  border-radius: 6px;
+  color: var(--ink-on-plate);
+  background: linear-gradient(170deg, #4a4239, #2d2822);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.17),
+    0 2px 0 #0b0907,
+    0 4px 6px rgb(0 0 0 / 0.55);
+  cursor: pointer;
+  transition:
+    transform 90ms ease-out,
+    box-shadow 90ms ease-out;
+}
+.nv-token:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.2),
+    0 4px 0 #0b0907,
+    0 8px 10px rgb(0 0 0 / 0.5);
+}
+.nv-token:active {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.1),
+    0 0 0 #0b0907;
+}
+.nv-token span {
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 700;
+  font-size: 10px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--engrave);
+  max-width: 58px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nv-tray {
+  background: linear-gradient(180deg, #0c0a08, #161310);
+  box-shadow:
+    inset 0 3px 8px #000,
+    inset 0 -1px 0 var(--edge);
+}
+
+/* The field monitor. */
+.nv-monitor {
+  border-radius: 12px;
+  padding: 14px 14px 12px;
+  background: linear-gradient(180deg, #33302b, #1b1916);
+  box-shadow:
+    inset 0 1px 0 var(--edge-strong),
+    0 0 0 1px #000,
+    0 18px 40px -14px #000;
+}
+.nv-screen {
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #000;
+  box-shadow:
+    0 0 0 2px #000,
+    0 0 0 3px rgb(255 255 255 / 0.08);
+}
+
+/* The corkboard. */
+.nv-cork {
+  background-color: var(--cork);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='360'%3E%3Cfilter id='c'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 .2 0 0 0 0 .1 0 0 0 0 .03 1.6 0 0 0 -.62'/%3E%3C/filter%3E%3Crect width='360' height='360' filter='url(%23c)'/%3E%3C/svg%3E");
+  box-shadow: inset 0 0 90px rgb(40 20 5 / 0.6);
+}
+.nv-card {
+  position: absolute;
+  width: 206px;
+  border-radius: 2px;
+  color: var(--paper-ink);
+  background:
+    linear-gradient(
+      transparent 33px,
+      rgb(216 80 70 / 0.5) 33px 34px,
+      transparent 34px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 21px,
+      rgb(80 110 160 / 0.2) 21px 22px
+    ),
+    var(--card, var(--paper));
+  box-shadow:
+    0 1px 1px rgb(40 20 5 / 0.5),
+    0 10px 18px -8px rgb(30 15 0 / 0.75);
+  touch-action: none;
+  cursor: grab;
+  font-family: var(--type);
+  transition: box-shadow 120ms;
+}
+.nv-card[data-selected="true"] {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+  box-shadow:
+    0 2px 2px rgb(40 20 5 / 0.5),
+    0 22px 28px -10px rgb(30 15 0 / 0.85);
+}
+.nv-pin {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    #ffa698,
+    var(--red) 45%,
+    #7d1c13
+  );
+  box-shadow: 1px 4px 4px rgb(30 15 0 / 0.65);
+}
+
+/* Actor polaroids and set slides. */
+.nv-print {
+  background: #f4efe4;
+  padding: 7px 7px 26px;
+  color: var(--paper-ink);
+  box-shadow:
+    0 1px 1px rgb(0 0 0 / 0.5),
+    0 10px 18px -8px #000;
+  rotate: var(--tilt, 0deg);
+  transition:
+    rotate 140ms ease-out,
+    translate 140ms ease-out;
+  position: relative;
+}
+.nv-print:hover {
+  rotate: 0deg;
+  translate: 0 -3px;
+}
+.nv-slide {
+  background: #dcd3c1;
+  padding: 10px;
+  color: var(--paper-ink);
+  box-shadow:
+    0 1px 0 #fff4 inset,
+    0 2px 2px #0007,
+    0 10px 16px -8px #000;
+  position: relative;
+}
+.nv-checker {
+  background-color: #9b9389;
+  background-image:
+    linear-gradient(45deg, #6b645b 25%, transparent 25% 75%, #6b645b 75%),
+    linear-gradient(45deg, #6b645b 25%, transparent 25% 75%, #6b645b 75%);
+  background-size: 16px 16px;
+  background-position:
+    0 0,
+    8px 8px;
+}
+
+/* A cassette. */
+.nv-tape {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border: 0;
+  padding: 7%;
+  cursor: pointer;
+  border-radius: 7px;
+  background: linear-gradient(170deg, #322d28, #1a1714);
+  box-shadow:
+    inset 0 1px 0 var(--edge-strong),
+    0 0 0 1px #000,
+    0 8px 12px -6px #000;
+  text-align: start;
+}
+.nv-tape[aria-pressed="true"] {
+  box-shadow:
+    inset 0 1px 0 var(--edge-strong),
+    0 0 0 2px var(--amber),
+    0 8px 12px -6px #000;
+}
+.nv-tape-label {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  padding: 5% 7%;
+  color: var(--paper-ink);
+  background: linear-gradient(var(--c, #e7c66b) 0 24%, var(--paper) 24%);
+}
+.nv-tape-name {
+  display: block;
+  font-family: var(--type);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nv-tape-hole {
+  position: absolute;
+  bottom: 21%;
+  width: 17%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: repeating-conic-gradient(#ddd 0 30deg, #111 30deg 60deg);
+  mask: radial-gradient(circle, transparent 34%, #000 36%);
+  box-shadow: 0 0 0 2px #000;
+}
+.nv-tape[data-spin="true"] .nv-tape-hole {
+  animation: nv-spin 1.7s linear infinite;
+}
+@keyframes nv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* A film canister, for art style in the Darkroom. */
+.nv-can {
+  position: relative;
+  flex: none;
+  width: 92px;
+  height: 118px;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  transition: translate 150ms ease-out;
+}
+.nv-can:hover,
+.nv-can[aria-checked="true"] {
+  translate: 0 -5px;
+}
+.nv-can-cap {
+  position: absolute;
+  inset-inline: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: linear-gradient(
+    90deg,
+    #15130f,
+    #6b665d 35%,
+    #2a2723 70%,
+    #121110
+  );
+}
+.nv-can-body {
+  position: absolute;
+  inset-inline: 4px;
+  top: 9px;
+  bottom: 9px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--can, #d94f30);
+  box-shadow:
+    inset 12px 0 12px -7px rgb(0 0 0 / 0.55),
+    inset -14px 0 12px -7px rgb(0 0 0 / 0.7),
+    inset 26px 0 16px -16px rgb(255 255 255 / 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+}
+.nv-can-name {
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 800;
+  font-size: 12.5px;
+  line-height: 1.02;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff7e6;
+  text-align: center;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+}
+.nv-can[aria-checked="true"] .nv-can-body {
+  box-shadow:
+    inset 12px 0 12px -7px rgb(0 0 0 / 0.55),
+    inset -14px 0 12px -7px rgb(0 0 0 / 0.7),
+    0 0 0 2px var(--amber);
+}
+
+/* Stomp pedals for weather and grade. */
+.nv-pedal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 92px;
+  height: 128px;
+  flex: none;
+  padding: 10px 6px 8px;
+  border: 0;
+  border-radius: 7px;
+  cursor: pointer;
+  color: #161210;
+  background: linear-gradient(
+    165deg,
+    color-mix(in oklab, var(--pedal, #7ea7c2), #fff 18%),
+    var(--pedal, #7ea7c2) 45%,
+    color-mix(in oklab, var(--pedal, #7ea7c2), #000 30%)
+  );
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.5),
+    0 0 0 1px #000,
+    0 4px 0 #0b0907,
+    0 8px 12px rgb(0 0 0 / 0.5);
+  transition:
+    translate 70ms ease-out,
+    box-shadow 70ms ease-out;
+}
+.nv-pedal:active,
+.nv-pedal[aria-checked="true"] {
+  translate: 0 3px;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.35),
+    0 0 0 1px #000,
+    0 1px 0 #0b0907;
+}
+.nv-pedal[aria-checked="true"] {
+  outline: 2px solid var(--amber);
+  outline-offset: 2px;
+}
+.nv-pedal-name {
+  font-family: var(--label);
+  font-stretch: 75%;
+  font-weight: 800;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.nv-pedal-stomp {
+  margin-top: auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 32%, #f2ece0, #8f897e 55%, #4a453f);
+  box-shadow:
+    0 0 0 3px rgb(0 0 0 / 0.35),
+    0 3px 4px rgb(0 0 0 / 0.5);
+}
+
+/* Patch-bay row on the switchboard. */
+.nv-jack {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border-radius: 50%;
+  background: radial-gradient(circle, #000 36%, #6b655b 40%, #2c2925 72%);
+  box-shadow: 0 1px 0 var(--edge);
+}
+
+.nv-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.4),
+    0 0 0 1px #000;
+}
+.nv-swatch[aria-checked="true"] {
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.4),
+    0 0 0 2px var(--amber);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nv-tape[data-spin="true"] .nv-tape-hole {
+    animation: none;
+  }
+  .nv-key,
+  .nv-token,
+  .nv-pedal,
+  .nv-print,
+  .nv-toggle-bat {
+    transition: none;
+  }
+}
+
+/* The Darkroom: a camera rig on a bench under a safelight. */
+.nv-darkroom {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  background:
+    radial-gradient(
+      900px 480px at 50% -10%,
+      rgb(190 40 25 / 0.2),
+      transparent 70%
+    ),
+    #0b0806;
+  animation: nv-rise 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+@keyframes nv-rise {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+}
+.nv-shutter {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  background: radial-gradient(circle at 38% 30%, #ff9d7c, #e5483a 52%, #8e2017);
+  box-shadow:
+    0 0 0 5px #17140f,
+    0 0 0 7px #58524a,
+    0 0 0 8px #000,
+    inset 0 2px 2px rgb(255 255 255 / 0.5),
+    inset 0 -4px 8px rgb(60 0 0 / 0.6),
+    0 8px 14px rgb(0 0 0 / 0.6);
+  transition:
+    scale 80ms ease-out,
+    box-shadow 80ms ease-out;
+}
+.nv-shutter:active:not(:disabled) {
+  scale: 0.94;
+}
+.nv-shutter:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.3) brightness(0.65);
+}
+.nv-shutter[data-busy="true"] {
+  animation: nv-pulse 900ms ease-in-out infinite;
+}
+@keyframes nv-pulse {
+  50% {
+    filter: brightness(1.3);
+  }
+}
+.nv-develop {
+  animation: nv-develop 1200ms ease-out both;
+}
+@keyframes nv-develop {
+  from {
+    filter: blur(14px) sepia(1) brightness(0.45);
+  }
+}
+.nv-spine {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 260px;
+  padding: 16px 14px;
+  border-radius: 3px 6px 6px 3px;
+  color: #f4ecdc;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(0 0 0 / 0.5),
+      transparent 7%,
+      rgb(255 255 255 / 0.1) 9%,
+      transparent 12%
+    ),
+    var(--book, #5e2d26);
+  box-shadow:
+    0 1px 0 rgb(255 255 255 / 0.18) inset,
+    0 14px 20px -12px #000,
+    0 0 0 1px #000;
+  transition:
+    translate 150ms ease-out,
+    rotate 150ms ease-out;
+  overflow: hidden;
+}
+.nv-spine:hover,
+.nv-spine:focus-within {
+  translate: 0 -6px;
+}
+.nv-shelf-board {
+  height: 18px;
+  margin-top: -2px;
+  border-radius: 2px;
+  background: linear-gradient(#5b3f27, #3a2717 55%, #20150c);
+  box-shadow:
+    0 10px 18px -6px #000,
+    inset 0 1px 0 rgb(255 255 255 / 0.15);
+}

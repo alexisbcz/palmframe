@@ -18,6 +18,7 @@ import type {
   Source,
 } from "./deepdive/model"
 import type { DetectorState } from "./machines/detect"
+import type { Novel } from "./novel/model"
 import type {
   Item,
   DismissReason,
@@ -48,6 +49,46 @@ import type {
 export interface Database {
   public: {
     Tables: {
+      comic_novels: {
+        Row: ComicNovelRow
+        Insert: {
+          id?: string
+          user_id?: string
+          title?: string
+          data: Novel
+          cover?: string | null
+          revision?: number
+        }
+        Update: {
+          title?: string
+          data?: Novel
+          cover?: string | null
+          revision?: number
+        }
+        Relationships: []
+      }
+      comic_novel_releases: {
+        Row: ComicNovelReleaseRow
+        Insert: {
+          novel_id: string
+          user_id?: string
+          slug: string
+          title?: string
+          synopsis?: string
+          cover?: string | null
+          data: Novel
+          published_at?: string
+        }
+        Update: {
+          slug?: string
+          title?: string
+          synopsis?: string
+          cover?: string | null
+          data?: Novel
+          published_at?: string
+        }
+        Relationships: []
+      }
       comic_projects: {
         Row: ComicProjectRow
         Insert: {
@@ -815,6 +856,30 @@ export interface Viewer {
 }
 
 export const COMICS_BUCKET = "comics"
+export const NOVEL_AUDIO_BUCKET = "novel-audio"
+
+export type ComicNovelRow = {
+  id: string
+  user_id: string
+  title: string
+  data: Novel
+  cover: string | null
+  revision: number
+  created_at: string
+  updated_at: string
+}
+
+export type ComicNovelReleaseRow = {
+  novel_id: string
+  user_id: string
+  slug: string
+  title: string
+  synopsis: string
+  cover: string | null
+  data: Novel
+  plays: number
+  published_at: string
+}
 export const COMIC_STYLES_BUCKET = "comic-style-refs"
 export const MACHINE_IMAGES_BUCKET = "machine-images"
 
