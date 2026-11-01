@@ -17,6 +17,7 @@ import {
   LibraryIcon,
   MoreHorizontalIcon,
   PlusSignIcon,
+  Upload01Icon,
 } from "@hugeicons/core-free-icons"
 
 import {
@@ -44,6 +45,8 @@ import {
   createDefaultProject,
   toProject,
 } from "@/components/comic-canvas/model"
+import { ComicImportDialog } from "@/components/comic-canvas/comic-import-dialog"
+import { messages as importMessages } from "@/components/comic-canvas/comic-import.messages"
 import {
   ManageSeries,
   SeriesPicker,
@@ -166,6 +169,8 @@ function useRelativeTime() {
 
 export default function Projects({ loaderData }: Route.ComponentProps) {
   const viewer = useViewer()
+  const ti = useT(importMessages)
+  const [importing, setImporting] = React.useState(false)
   const t = useT(messages)
   const navigation = useNavigation()
   const creating =
@@ -212,6 +217,10 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <h1 className="studio-title text-4xl">{t("projects.title")}</h1>
           <div className="flex items-center gap-2">
+            <Button variant="ghost" onPress={() => setImporting(true)}>
+              <HugeiconsIcon icon={Upload01Icon} strokeWidth={2} />
+              {ti("open")}
+            </Button>
             <Button variant="ghost" onPress={() => setNaming(true)}>
               <HugeiconsIcon icon={LibraryIcon} strokeWidth={2} />
               {ts("newSeries")}
@@ -275,6 +284,13 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
           </div>
         )}
       </main>
+      {importing && viewer && (
+        <ComicImportDialog
+          userId={viewer.id}
+          onClose={() => setImporting(false)}
+          onDone={() => void revalidator.revalidate()}
+        />
+      )}
       {naming && (
         <SeriesPicker
           onDone={() => {

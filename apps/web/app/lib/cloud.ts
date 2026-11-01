@@ -20,21 +20,34 @@ async function sha256(blob: Blob) {
 // Data URL -> public URL, shared by every save in this tab.
 const uploaded = new Map<string, Promise<string>>()
 
+// Stores an image under its content hash and returns its URL.
+export async function uploadImageBlob(
+  supabase: Supabase,
+  userId: string,
+  blob: Blob
+) {
+  const path = `${userId}/images/${await sha256(blob)}.${EXT[blob.type] ?? "png"}`
+  const bucket = supabase.storage.from(COMICS_BUCKET)
+  const { error } = await bucket.upload(path, blob, {
+    contentType: blob.type,
+    cacheControl: "31536000",
+  })
+  // Same hash, same bytes: an existing file is the one we wanted.
+  if (error && !/exists|duplicate/i.test(error.message)) throw error
+  return bucket.getPublicUrl(path).data.publicUrl
+}
+
 // Stores an inline image once, under its content hash, and returns its URL.
-export function uploadDataUrl(supabase: Supabase, userId: string, dataUrl: string) {
+export function uploadDataUrl(
+  supabase: Supabase,
+  userId: string,
+  dataUrl: string
+) {
   let pending = uploaded.get(dataUrl)
   if (!pending) {
     pending = (async () => {
       const blob = await (await fetch(dataUrl)).blob()
-      const path = `${userId}/images/${await sha256(blob)}.${EXT[blob.type] ?? "png"}`
-      const bucket = supabase.storage.from(COMICS_BUCKET)
-      const { error } = await bucket.upload(path, blob, {
-        contentType: blob.type,
-        cacheControl: "31536000",
-      })
-      // Same hash, same bytes: an existing file is the one we wanted.
-      if (error && !/exists|duplicate/i.test(error.message)) throw error
-      return bucket.getPublicUrl(path).data.publicUrl
+      return uploadImageBlob(supabase, userId, blob)
     })()
     pending.catch(() => uploaded.delete(dataUrl))
     uploaded.set(dataUrl, pending)
