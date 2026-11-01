@@ -254,9 +254,9 @@ describe("blocker 3: hostile files", () => {
   })
 
   test("a hung step becomes too_slow instead of hanging", async () => {
-    await expect(
-      withTimeout(new Promise(() => {}), 10)
-    ).rejects.toMatchObject({ code: "too_slow" })
+    await expect(withTimeout(new Promise(() => {}), 10)).rejects.toMatchObject({
+      code: "too_slow",
+    })
   })
 
   test("scan offsets are handed over page by page, and a deadline stops cleanly", async () => {

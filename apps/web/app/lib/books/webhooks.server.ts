@@ -26,18 +26,11 @@ export function signature(secret: string, timestamp: number, body: string) {
 
 const backoff = (attempt: number) => 60_000 * 4 ** Math.min(attempt, 5)
 
-async function deliver(row: DeliveryRow) {
-  const db = supabaseAdmin()
-  const { data: hook } = await db
-    .from("book_webhooks")
-    .select("url, secret")
-    .eq("id", row.webhook_id)
-    .maybeSingle()
-  if (!hook) return
-  // Claimed before sending, on the attempt count, so the tick and a job ending
-  // can't both send it. A crash here retries at the backoff: at least once.
+// Claimed before sending, on the attempt count, so the tick and a job ending
+// can't both send it. A crash after this retries at the backoff: at least once.
+export async function claimDelivery(row: DeliveryRow) {
   const attempts = row.attempts + 1
-  const { data: claimed } = await db
+  const { data } = await supabaseAdmin()
     .from("book_webhook_deliveries")
     .update({
       attempts,
@@ -47,7 +40,18 @@ async function deliver(row: DeliveryRow) {
     .eq("status", "pending")
     .eq("attempts", row.attempts)
     .select("id")
-  if (!claimed?.length) return
+  return !!data?.length
+}
+
+async function deliver(row: DeliveryRow) {
+  const db = supabaseAdmin()
+  const { data: hook } = await db
+    .from("book_webhooks")
+    .select("url, secret")
+    .eq("id", row.webhook_id)
+    .maybeSingle()
+  if (!hook) return
+  if (!(await claimDelivery(row))) return
   const body = JSON.stringify({
     id: row.id,
     type: row.event,
@@ -81,7 +85,7 @@ async function deliver(row: DeliveryRow) {
       response_status: status || null,
       status: ok
         ? "delivered"
-        : attempts >= MAX_ATTEMPTS
+        : row.attempts + 1 >= MAX_ATTEMPTS
           ? "failed"
           : "pending",
     })

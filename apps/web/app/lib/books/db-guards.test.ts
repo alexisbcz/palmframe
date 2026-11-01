@@ -12,7 +12,8 @@ import { BOOK_RATES } from "./model"
 // service code reads those.
 const url = process.env.BOOKS_TEST_SUPABASE_URL
 const secret = process.env.BOOKS_TEST_SUPABASE_SECRET
-const suite = url && secret && process.env.SUPABASE_URL ? describe : describe.skip
+const suite =
+  url && secret && process.env.SUPABASE_URL ? describe : describe.skip
 
 // Nothing listens here: a kick fails at once, and the job stays where it is.
 const ORIGIN = "http://127.0.0.1:9"
@@ -293,14 +294,21 @@ suite("book guards in Postgres", () => {
         admin.rpc("book_claim_job", { p_job: job.id, p_lease_seconds: 300 })
       expect((await claim()).data?.claims).toBe(1)
       expect((await claim()).data?.id ?? null).toBe(null)
-      await admin.from("book_jobs").update({ leased_until: null }).eq("id", job.id)
+      await admin
+        .from("book_jobs")
+        .update({ leased_until: null })
+        .eq("id", job.id)
       expect((await claim()).data?.claims).toBe(2)
     })
 
     test("real progress starts the count again", async () => {
       const user = await newUser()
       const { book } = await newBook(user)
-      const job = await newJob(user, book.id, { claims: 3, claim_done: 5, done: 6 })
+      const job = await newJob(user, book.id, {
+        claims: 3,
+        claim_done: 5,
+        done: 6,
+      })
       const { data } = await admin.rpc("book_claim_job", {
         p_job: job.id,
         p_lease_seconds: 300,
@@ -408,10 +416,7 @@ suite("book guards in Postgres", () => {
       const { book } = await newBook(user)
       const before = await balance(user)
       const job = await paidJob(user, book.id, 100)
-      await admin
-        .from("book_jobs")
-        .update({ billable: 1000 })
-        .eq("id", job.id)
+      await admin.from("book_jobs").update({ billable: 1000 }).eq("id", job.id)
       expect((await close(job.id, "failed")).data).toBe(12)
       expect(await balance(user)).toBe(before - 12)
       expect((await jobRow(job.id)).settled_at).not.toBe(null)
@@ -425,7 +430,11 @@ suite("book guards in Postgres", () => {
       const job = await paidJob(user, book.id, 100)
       await admin.rpc("book_save_translations", {
         p_job: job.id,
-        p_items: segments.map((s) => ({ id: s.id, target: "x", memory: false })),
+        p_items: segments.map((s) => ({
+          id: s.id,
+          target: "x",
+          memory: false,
+        })),
       })
       expect((await close(job.id)).data).toBe(3)
     })
@@ -632,8 +641,7 @@ suite("book guards in Postgres", () => {
     test("originals have a byte cap per person", async () => {
       const user = await newUser()
       const size = 200 * 1024 * 1024
-      for (let i = 0; i < 10; i++)
-        await newBook(user, 0, { size_bytes: size })
+      for (let i = 0; i < 10; i++) await newBook(user, 0, { size_bytes: size })
       // Ten books at 200 MiB leave 48 MiB of the 2 GiB.
       const { error } = await admin.from("book_projects").insert({
         user_id: user,
@@ -678,6 +686,27 @@ suite("book guards in Postgres", () => {
         .select("id")
         .in("id", [old.id, fresh.id])
       expect(data?.map((b) => b.id)).toEqual([fresh.id])
+    })
+
+    test("only one runner can claim a delivery", async () => {
+      const user = await newUser()
+      const hook = await insert("book_webhooks", {
+        user_id: user,
+        url: "https://127.0.0.1/hook",
+        secret: "s",
+        events: ["job.succeeded"],
+      })
+      const row = await insert("book_webhook_deliveries", {
+        webhook_id: hook.id,
+        user_id: user,
+        event: "job.succeeded",
+        payload: {},
+      })
+      const won = await Promise.all([
+        hooks.claimDelivery(row as never),
+        hooks.claimDelivery(row as never),
+      ])
+      expect(won.filter(Boolean).length).toBe(1)
     })
 
     test("two runners send a webhook once", async () => {

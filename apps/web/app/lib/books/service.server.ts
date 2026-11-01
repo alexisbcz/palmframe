@@ -1059,8 +1059,7 @@ export async function bookGlossary(actor: Actor, id: string) {
   const glossary = await ownGlossary(book)
   const terms = await allTerms([glossary])
   terms.sort(
-    (a, b) =>
-      b.state.localeCompare(a.state) || b.occurrences - a.occurrences
+    (a, b) => b.state.localeCompare(a.state) || b.occurrences - a.occurrences
   )
   return { id: glossary, terms: terms.map(termView) }
 }
