@@ -1,0 +1,235 @@
+// The local image lab: one render on this machine's ComfyUI, described by plain
+// values so that a URL can carry all of it.
+
+export interface LabRequest {
+  prompt: string
+  negative: string
+  model: string
+  lora: string
+  strength: number
+  seed: number
+  width: number
+  height: number
+  steps: number
+  cfg: number
+  sampler: string
+}
+
+export const LAB_DEFAULTS: LabRequest = {
+  prompt: "",
+  negative: "worst quality, low quality, blurry, jpeg artifacts, bad anatomy",
+  model: "anima-turbo-v1.1.safetensors",
+  lora: "",
+  strength: 1,
+  seed: 0,
+  width: 768,
+  height: 1024,
+  steps: 12,
+  cfg: 1,
+  sampler: "er_sde",
+}
+
+const number = (value: unknown, min: number, max: number, fallback: number) => {
+  const n = typeof value === "number" ? value : Number(value ?? NaN)
+  return Number.isFinite(n) && value !== "" && value !== null
+    ? Math.min(max, Math.max(min, n))
+    : fallback
+}
+
+// ComfyUI's latents want multiples of 8; 16 keeps every model happy.
+const side = (value: unknown, fallback: number) =>
+  Math.round(number(value, 256, 2048, fallback) / 16) * 16
+
+const text = (value: unknown, fallback: string) =>
+  typeof value === "string" ? value : fallback
+
+export function toRequest(
+  v: Record<string, unknown>,
+  base: LabRequest = LAB_DEFAULTS
+): LabRequest {
+  return {
+    prompt: text(v.prompt, base.prompt).slice(0, 8_000),
+    negative: text(v.negative, base.negative).slice(0, 8_000),
+    model: text(v.model, base.model),
+    lora: text(v.lora, base.lora),
+    strength: number(v.strength, -2, 3, base.strength),
+    seed: Math.trunc(number(v.seed, 0, Number.MAX_SAFE_INTEGER, base.seed)),
+    width: side(v.w ?? v.width, base.width),
+    height: side(v.h ?? v.height, base.height),
+    steps: Math.trunc(number(v.steps, 1, 80, base.steps)),
+    cfg: number(v.cfg, 0, 20, base.cfg),
+    sampler: text(v.sampler, base.sampler),
+  }
+}
+
+// The link that brings this exact render back. Defaults stay out of it.
+export function labQuery(r: LabRequest) {
+  const q = new URLSearchParams()
+  const add = (key: string, value: string | number, base: string | number) => {
+    if (value !== base) q.set(key, String(value))
+  }
+  const d = LAB_DEFAULTS
+  add("prompt", r.prompt, d.prompt)
+  add("negative", r.negative, d.negative)
+  add("model", r.model, d.model)
+  add("lora", r.lora, d.lora)
+  if (r.lora) add("strength", r.strength, d.strength)
+  add("seed", r.seed, d.seed)
+  add("w", r.width, d.width)
+  add("h", r.height, d.height)
+  add("steps", r.steps, d.steps)
+  add("cfg", r.cfg, d.cfg)
+  add("sampler", r.sampler, d.sampler)
+  return q.toString()
+}
+
+export function workflow(r: LabRequest) {
+  const graph: Record<
+    string,
+    { class_type: string; inputs: Record<string, unknown> }
+  > = {
+    "1": {
+      class_type: "UNETLoader",
+      inputs: { unet_name: r.model, weight_dtype: "default" },
+    },
+    "3": {
+      class_type: "CLIPLoader",
+      inputs: {
+        clip_name: "qwen_3_06b_base.safetensors",
+        type: "stable_diffusion",
+        device: "default",
+      },
+    },
+    "4": {
+      class_type: "VAELoader",
+      inputs: { vae_name: "qwen_image_vae.safetensors" },
+    },
+    "5": {
+      class_type: "CLIPTextEncode",
+      inputs: { clip: ["3", 0], text: r.prompt },
+    },
+    "6": {
+      class_type: "CLIPTextEncode",
+      inputs: { clip: ["3", 0], text: r.negative },
+    },
+    "7": {
+      class_type: "EmptyLatentImage",
+      inputs: { width: r.width, height: r.height, batch_size: 1 },
+    },
+    "13": {
+      class_type: "CFGZeroStar",
+      inputs: { model: r.lora ? ["2", 0] : ["1", 0] },
+    },
+    "14": {
+      class_type: "KSampler",
+      inputs: {
+        model: ["13", 0],
+        positive: ["5", 0],
+        negative: ["6", 0],
+        latent_image: ["7", 0],
+        seed: r.seed,
+        steps: r.steps,
+        cfg: r.cfg,
+        sampler_name: r.sampler,
+        scheduler: "simple",
+        denoise: 1,
+      },
+    },
+    "15": {
+      class_type: "VAEDecode",
+      inputs: { samples: ["14", 0], vae: ["4", 0] },
+    },
+    "16": {
+      class_type: "SaveImage",
+      inputs: { images: ["15", 0], filename_prefix: "lab" },
+    },
+  }
+  if (r.lora)
+    graph["2"] = {
+      class_type: "LoraLoaderModelOnly",
+      inputs: {
+        model: ["1", 0],
+        lora_name: r.lora,
+        strength_model: r.strength,
+      },
+    }
+  return graph
+}
+
+const ID = /^\d{1,12}$/
+
+// Which Civitai page a link points to. Only ever an id, so nothing a visitor
+// types can steer where the server fetches from.
+export function civitaiTarget(link: string) {
+  if (ID.test(link)) return { kind: "image", id: link } as const
+  let url: URL
+  try {
+    url = new URL(link)
+  } catch {
+    return null
+  }
+  if (!/^(www\.)?civitai\.(com|red)$/.test(url.hostname)) return null
+  const version = url.searchParams.get("modelVersionId")
+  if (version && ID.test(version))
+    return { kind: "version", id: version } as const
+  const image = /^\/images\/(\d{1,12})/.exec(url.pathname)?.[1]
+  return image ? ({ kind: "image", id: image } as const) : null
+}
+
+export interface CivitaiMeta {
+  prompt?: string
+  negativePrompt?: string
+  seed?: number
+  Size?: string
+  resources?: { type?: string; name?: string; weight?: number }[]
+  comfy?: unknown
+}
+
+const baseName = (file: string) =>
+  file
+    .replace(/\.safetensors$/i, "")
+    .split(/[\\/]/)
+    .pop()!
+    .toLowerCase()
+
+function metaLoras(meta: CivitaiMeta) {
+  const found = (meta.resources ?? [])
+    .filter((r) => r.type === "lora" && r.name)
+    .map((r) => ({ name: r.name!, strength: r.weight ?? 1 }))
+  let comfy = meta.comfy
+  try {
+    if (typeof comfy === "string") comfy = JSON.parse(comfy)
+  } catch {
+    comfy = null
+  }
+  const nodes = (comfy as { prompt?: Record<string, { inputs?: object }> })
+    ?.prompt
+  for (const node of Object.values(nodes ?? {}))
+    for (const value of Object.values(node.inputs ?? {})) {
+      const lora = value as { on?: boolean; lora?: string; strength?: number }
+      if (lora?.on && typeof lora.lora === "string")
+        found.push({ name: lora.lora, strength: lora.strength ?? 1 })
+    }
+  return found
+}
+
+// Prompt, seed and size carry over. Steps, CFG and sampler don't: an image made
+// on Anima Base at 30 steps would be ruined on Turbo by those numbers.
+export function fromCivitai(meta: CivitaiMeta, installed: string[]) {
+  const [width, height] = (meta.Size ?? "").split("x").map(Number)
+  const loras = metaLoras(meta)
+  const match = (name: string) =>
+    installed.find((file) => baseName(file) === baseName(name))
+  const usable = loras.find((l) => match(l.name))
+  return {
+    values: {
+      ...(meta.prompt && { prompt: meta.prompt }),
+      ...(meta.negativePrompt && { negative: meta.negativePrompt }),
+      ...(meta.seed !== undefined && { seed: meta.seed }),
+      ...(width && { width }),
+      ...(height && { height }),
+      ...(usable && { lora: match(usable.name)!, strength: usable.strength }),
+    },
+    missing: loras.filter((l) => !match(l.name)).map((l) => l.name),
+  }
+}

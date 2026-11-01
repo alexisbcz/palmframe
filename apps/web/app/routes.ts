@@ -17,6 +17,8 @@ export default [
   route("catalog/create", "routes/catalog.create.tsx"),
   route("api/catalog", "routes/api.catalog.ts"),
   route("api/catalog/idea", "routes/api.catalog.idea.ts"),
+  route("lab", "routes/lab.tsx"),
+  route("api/lab", "routes/api.lab.ts"),
   route("novels", "routes/novels.tsx"),
   route("novels/:id", "routes/novel.tsx"),
   route("vn/:slug", "routes/vn.tsx"),

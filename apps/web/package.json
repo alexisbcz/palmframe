@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "react-router dev",
+    "lab": "SUPABASE_URL=http://127.0.0.1:9 SUPABASE_PUBLISHABLE_KEY=local react-router dev",
     "build": "react-router build",
     "start": "react-router-serve ./build/server/index.js",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
