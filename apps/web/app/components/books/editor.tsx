@@ -6,11 +6,13 @@ import {
   KeyboardIcon,
   PencilEdit02Icon,
   SearchIcon,
+  SidebarLeft01Icon,
   SquareLock02Icon,
   SquareUnlock02Icon,
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import { ButtonGroup } from "@workspace/ui/components/button-group"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Input } from "@workspace/ui/components/input"
 import { Kbd } from "@workspace/ui/components/kbd"
@@ -19,11 +21,17 @@ import {
   NativeSelectOption,
 } from "@workspace/ui/components/native-select"
 import { Spinner } from "@workspace/ui/components/spinner"
-import { Textarea } from "@workspace/ui/components/textarea"
 
 import { bookCall } from "@/lib/books/client"
+import { countTerm, termsFor } from "@/lib/books/glossary"
 import { stripTags } from "@/lib/books/inline"
-import type { InlineTag, SegmentKind, SegmentStatus } from "@/lib/books/model"
+import type {
+  InlineTag,
+  SegmentKind,
+  SegmentStatus,
+  Term,
+} from "@/lib/books/model"
+import { normalize, tagsInSource, tagsToPlace } from "@/lib/books/rich"
 import type {
   BookStatusData,
   ChapterItem,
@@ -32,12 +40,19 @@ import type {
 
 import {
   ErrorNote,
+  FIELD_TEXT,
   InlineText,
   errorCode,
   textProps,
   useAction,
   useBookT,
 } from "./shared"
+import type { FieldTerm, RichFieldKeys } from "./rich-field"
+
+// Tiptap only reaches the people who open this tab. Fetched as the panel
+// appears, so the first click on a line doesn't wait for it.
+const loadField = () => import("./rich-field")
+const RichField = React.lazy(loadField)
 
 export interface SegmentItem {
   id: string
@@ -80,14 +95,58 @@ function StatusMark({ status }: { status: SegmentStatus }) {
   )
 }
 
-// Shared by the field and the mirror behind it, so every glyph lines up.
-const FIELD = "px-2 py-1 font-serif text-[15px] leading-relaxed"
-const TAG = /<\/?[gx]\d+\/?>/
+const NO_TAGS: InlineTag[] = []
 
-function splitTags(text: string) {
-  return text
-    .split(/(<\/?[gx]\d+\/?>)/)
-    .map((part, i) => ({ text: part, tag: i % 2 === 1 }))
+const isModified = (e: React.KeyboardEvent) => e.metaKey || e.ctrlKey
+
+// A line at rest. The editor only exists on the line being worked on, because
+// a chapter can run to thousands of them.
+function RestingText({
+  segment,
+  value,
+  lang,
+  label,
+  placeholder,
+  dimmed,
+  onOpen,
+  onKeyDown,
+}: {
+  segment: SegmentItem
+  value: string
+  lang: string
+  label: string
+  placeholder: string
+  dimmed: boolean
+  onOpen: (point: { x: number; y: number } | null) => void
+  onKeyDown: (e: React.KeyboardEvent) => void
+}) {
+  const press = React.useRef<{ x: number; y: number } | null>(null)
+  return (
+    <div
+      role="textbox"
+      aria-label={label}
+      aria-readonly={dimmed || undefined}
+      tabIndex={0}
+      {...textProps(lang)}
+      onPointerDown={(e) => {
+        press.current = { x: e.clientX, y: e.clientY }
+      }}
+      onFocus={() => {
+        onOpen(press.current)
+        press.current = null
+      }}
+      onKeyDown={onKeyDown}
+      className={cn(
+        FIELD_TEXT,
+        "min-h-[calc(1lh+0.5rem)] cursor-text rounded-lg border border-transparent outline-none hover:border-input",
+        "focus-visible:ring-2 focus-visible:ring-ring/50",
+        dimmed && "text-foreground/80",
+        !value && "text-muted-foreground"
+      )}
+    >
+      {value ? <InlineText text={value} tags={segment.tags} /> : placeholder}
+    </div>
+  )
 }
 
 const Row = React.memo(function Row({
@@ -100,6 +159,7 @@ const Row = React.memo(function Row({
   onSelect,
   onSaved,
   onAdvance,
+  terms,
 }: {
   book: Book
   segment: SegmentItem
@@ -110,46 +170,69 @@ const Row = React.memo(function Row({
   onSelect: (id: string, on: boolean) => void
   onSaved: (segment: SegmentItem) => void
   onAdvance: (id: string) => void
+  terms: Term[]
 }) {
   const t = useBookT()
-  const [draft, setDraft] = React.useState(segment.target ?? "")
+  const stored = React.useMemo(
+    () => normalize(segment.target ?? "", segment.tags),
+    [segment.target, segment.tags]
+  )
+  const [draft, setDraft] = React.useState(stored)
   const [editingSource, setEditingSource] = React.useState(false)
   const [sourceDraft, setSourceDraft] = React.useState(segment.source)
+  const point = React.useRef<{ x: number; y: number } | null>(null)
   const [state, setState] = React.useState<"idle" | "saving" | "saved">("idle")
   const [conflict, setConflict] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
-  const area = React.useRef<HTMLTextAreaElement>(null)
-  const dirty = draft !== (segment.target ?? "")
   const locked = segment.status === "locked"
 
-  React.useEffect(() => {
-    setDraft(segment.target ?? "")
-  }, [segment.target])
+  // Saves go one at a time, each with the version the last one returned.
+  // Otherwise saving and locking in quick succession conflicts with itself.
+  const latest = React.useRef(segment)
+  latest.current = segment
+  const queue = React.useRef<Promise<unknown>>(Promise.resolve())
+  const saved = React.useRef(stored)
 
   React.useEffect(() => {
-    if (active && document.activeElement !== area.current)
-      area.current?.focus({ preventScroll: false })
-  }, [active])
+    setDraft(stored)
+    saved.current = stored
+  }, [stored])
 
-  const send = async (edit: Record<string, unknown>) => {
-    setState("saving")
-    setError(null)
-    try {
-      const next = await bookCall<SegmentItem>("edit", {
-        id: book.id,
-        segment: segment.id,
-        edit: { ...edit, version: segment.version },
-      })
-      onSaved(next)
-      setState("saved")
+  const send = (edit: Record<string, unknown>) => {
+    const job = queue.current.then(async () => {
+      setState("saving")
+      setError(null)
+      try {
+        const next = await bookCall<SegmentItem>("edit", {
+          id: book.id,
+          segment: segment.id,
+          edit: { ...edit, version: latest.current.version },
+        })
+        latest.current = next
+        onSaved(next)
+        setState("saved")
+        return true
+      } catch (e) {
+        const code = errorCode(e)
+        if (code === "stale_version") setConflict(true)
+        else setError(code)
+        saved.current = normalize(
+          latest.current.target ?? "",
+          latest.current.tags
+        )
+        setState("idle")
+        return false
+      }
+    })
+    queue.current = job
+    return job
+  }
+
+  const commit = (text: string) => {
+    if (latest.current.status === "locked" || text === saved.current)
       return true
-    } catch (e) {
-      const code = errorCode(e)
-      if (code === "stale_version") setConflict(true)
-      else setError(code)
-      setState("idle")
-      return false
-    }
+    saved.current = text
+    return send({ target: text })
   }
 
   const reload = async () => {
@@ -160,28 +243,88 @@ const Row = React.memo(function Row({
     const fresh = segments.find((s) => s.id === segment.id)
     if (fresh) {
       onSaved(fresh)
-      setDraft(fresh.target ?? "")
+      const text = normalize(fresh.target ?? "", fresh.tags)
+      setDraft(text)
+      saved.current = text
     }
     setConflict(false)
   }
 
-  const toggleLock = () => send({ status: locked ? "reviewed" : "locked" })
-
-  const onKeyDown = async (e: React.KeyboardEvent) => {
-    const mod = e.metaKey || e.ctrlKey
-    if (mod && e.key === "Enter") {
-      e.preventDefault()
-      if (locked) return onAdvance(segment.id)
-      const ok = await send(dirty ? { target: draft } : { status: "reviewed" })
-      if (ok) onAdvance(segment.id)
-    } else if (mod && e.key.toLowerCase() === "l") {
-      e.preventDefault()
-      void toggleLock()
-    } else if (e.key === "Escape") area.current?.blur()
+  const toggleLock = (text = draft) => {
+    commit(text)
+    return send({ status: locked ? "reviewed" : "locked" })
   }
 
+  const review = (text = draft) => {
+    commit(text)
+    return send({ status: "reviewed" })
+  }
+
+  const submit = async (text: string) => {
+    if (latest.current.status === "locked" || !stripTags(text).trim())
+      return onAdvance(segment.id)
+    const changed = text !== saved.current
+    const ok = await (changed ? commit(text) : send({ status: "reviewed" }))
+    if (ok) onAdvance(segment.id)
+  }
+
+  const keys: RichFieldKeys = {
+    onEnter: (text) => {
+      commit(text)
+      onAdvance(segment.id)
+    },
+    onSubmit: submit,
+    onLock: toggleLock,
+    onEscape: (text) => {
+      commit(text)
+      ;(document.activeElement as HTMLElement | null)?.blur()
+    },
+  }
+
+  const onRestingKey = (e: React.KeyboardEvent) => {
+    if (isModified(e) && e.key === "Enter") {
+      e.preventDefault()
+      onAdvance(segment.id)
+    } else if (isModified(e) && e.key.toLowerCase() === "l") {
+      e.preventDefault()
+      void toggleLock()
+    }
+  }
+
+  const fieldTerms = React.useMemo<FieldTerm[]>(() => {
+    if (!active) return []
+    const plain = stripTags(draft)
+    return termsFor(terms, [segment.source], book.source_lang).map((term) => {
+      const text = term.dnt ? term.source : term.target
+      return {
+        source: term.source,
+        text,
+        used: countTerm(text, plain, book.target_lang) > 0,
+      }
+    })
+  }, [active, terms, segment.source, draft, book.source_lang, book.target_lang])
+
   const noText = !segment.translatable
-  const hasTags = TAG.test(draft)
+  const editing = active && !locked && !noText
+  const openRow = (at: { x: number; y: number } | null) => {
+    point.current = at
+    onFocus(segment.id)
+  }
+  const sourceTags = active
+    ? tagsInSource(segment.source, segment.tags)
+    : NO_TAGS
+  const resting = (
+    <RestingText
+      segment={segment}
+      value={draft}
+      lang={book.target_lang}
+      label={t("editor.target")}
+      placeholder={t("editor.pending")}
+      dimmed={locked}
+      onOpen={openRow}
+      onKeyDown={onRestingKey}
+    />
+  )
   return (
     <li
       data-segment={segment.id}
@@ -213,10 +356,13 @@ const Row = React.memo(function Row({
               {t("editor.ocr", { percent: Math.round(segment.ocr * 100) })}
             </span>
           )}
-          {!locked && (
+          {!locked && stripTags(segment.source).trim() && (
             <button
               type="button"
-              onClick={() => setEditingSource((v) => !v)}
+              onClick={() => {
+                setSourceDraft(segment.source)
+                setEditingSource((v) => !v)
+              }}
               aria-label={t("editor.fixSource")}
               title={t("editor.fixSource")}
               className="relative ms-auto rounded opacity-0 outline-none group-hover/row:opacity-100 after:absolute after:-inset-2 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 pointer-coarse:opacity-100"
@@ -231,13 +377,22 @@ const Row = React.memo(function Row({
         </div>
         {editingSource ? (
           <div className="flex flex-col gap-2">
-            <Textarea
-              {...textProps(book.source_lang)}
-              aria-label={t("editor.fixSource")}
-              value={sourceDraft}
-              onChange={(e) => setSourceDraft(e.target.value)}
-              className="font-serif"
-            />
+            <React.Suspense fallback={null}>
+              <RichField
+                value={sourceDraft}
+                tags={segment.tags}
+                lang={book.source_lang}
+                label={t("editor.fixSource")}
+                onChange={setSourceDraft}
+                keys={{
+                  onEnter: () => {},
+                  onSubmit: async (text) => {
+                    if (await send({ source: text })) setEditingSource(false)
+                  },
+                  onEscape: () => setEditingSource(false),
+                }}
+              />
+            </React.Suspense>
             <div className="flex justify-end gap-2">
               <Button
                 size="sm"
@@ -298,11 +453,7 @@ const Row = React.memo(function Row({
                 )}
               >
                 {segment.status !== "reviewed" && !locked && (
-                  <Button
-                    size="xs"
-                    variant="ghost"
-                    onPress={() => send({ status: "reviewed" })}
-                  >
+                  <Button size="xs" variant="ghost" onPress={() => review()}>
                     <HugeiconsIcon
                       icon={CheckmarkBadge01Icon}
                       strokeWidth={2}
@@ -310,7 +461,7 @@ const Row = React.memo(function Row({
                     {t("editor.markReviewed")}
                   </Button>
                 )}
-                <Button size="xs" variant="ghost" onPress={toggleLock}>
+                <Button size="xs" variant="ghost" onPress={() => toggleLock()}>
                   <HugeiconsIcon
                     icon={locked ? SquareUnlock02Icon : SquareLock02Icon}
                     strokeWidth={2}
@@ -325,56 +476,29 @@ const Row = React.memo(function Row({
           <p className="font-serif text-[15px] text-muted-foreground">
             {stripTags(segment.source) || "—"}
           </p>
-        ) : (
-          <div className="grid [&>*]:[grid-area:1/1]">
-            {hasTags && (
-              <div
-                aria-hidden
-                {...textProps(book.target_lang)}
-                className={cn(
-                  FIELD,
-                  "pointer-events-none border border-transparent break-words whitespace-pre-wrap"
-                )}
-              >
-                {splitTags(draft).map((part, i) =>
-                  part.tag ? (
-                    <span key={i} className="text-foreground/25">
-                      {part.text}
-                    </span>
-                  ) : (
-                    part.text
-                  )
-                )}
-                {"\u200b"}
-              </div>
-            )}
-            <Textarea
-              ref={area}
-              {...textProps(book.target_lang)}
-              aria-label={t("editor.target")}
-              rows={1}
+        ) : editing ? (
+          <React.Suspense fallback={resting}>
+            <RichField
               value={draft}
-              readOnly={locked}
+              tags={segment.tags}
+              sourceTags={sourceTags}
+              missingTags={tagsToPlace(segment.source, draft, segment.tags)}
+              terms={fieldTerms}
+              lang={book.target_lang}
+              label={t("editor.target")}
               placeholder={t("editor.pending")}
-              onChange={(e) => {
-                setDraft(e.target.value)
+              point={point.current}
+              keys={keys}
+              onChange={(text) => {
+                setDraft(text)
                 setState("idle")
               }}
-              onFocus={() => onFocus(segment.id)}
-              onBlur={() => {
-                if (dirty && !locked) void send({ target: draft })
-              }}
-              onKeyDown={onKeyDown}
-              className={cn(
-                FIELD,
-                "min-h-0 resize-none border-transparent bg-transparent md:text-[15px] dark:bg-transparent",
-                "hover:border-input focus-visible:bg-input/20",
-                hasTags &&
-                  "text-transparent caret-foreground selection:text-foreground",
-                locked && !hasTags && "text-foreground/80"
-              )}
+              onBlur={commit}
+              onLeave={commit}
             />
-          </div>
+          </React.Suspense>
+        ) : (
+          resting
         )}
         {conflict && (
           <p className="mt-1 flex flex-wrap items-center gap-2 text-sm text-pink-300">
@@ -408,13 +532,42 @@ function chapterLabel(c: ChapterItem, t: ReturnType<typeof useBookT>) {
   )
 }
 
+const CHAPTERS_ID = "book-chapters"
+const CHAPTERS_KEY = "books.chapters.hidden"
+
+// Remembered per browser. Read before paint, so the list doesn't flash open.
+function useChaptersOpen() {
+  const [open, setOpen] = React.useState(true)
+  React.useLayoutEffect(() => {
+    try {
+      if (localStorage.getItem(CHAPTERS_KEY)) setOpen(false)
+    } catch {
+      // Blocked storage only costs the memory of this choice.
+    }
+  }, [])
+  const toggle = React.useCallback(() => {
+    setOpen((was) => {
+      try {
+        if (was) localStorage.setItem(CHAPTERS_KEY, "1")
+        else localStorage.removeItem(CHAPTERS_KEY)
+      } catch {
+        // As above.
+      }
+      return !was
+    })
+  }, [])
+  return [open, toggle] as const
+}
+
 function Navigator({
   chapters,
   chapter,
+  open,
   onPick,
 }: {
   chapters: ChapterItem[]
   chapter: string | null
+  open: boolean
   onPick: (id: string) => void
 }) {
   const t = useBookT()
@@ -434,9 +587,11 @@ function Navigator({
       </NativeSelect>
       <nav
         aria-label={t("editor.chapters")}
-        className="max-@3xl:hidden sticky top-2 max-h-[calc(100svh-6rem)] overflow-y-auto pe-1"
+        inert={!open}
+        id={CHAPTERS_ID}
+        className="sticky top-2 max-h-[calc(100svh-6rem)] min-w-0 overflow-x-hidden overflow-y-auto @max-3xl:hidden"
       >
-        <ol className="flex flex-col gap-0.5">
+        <ol className="flex w-52 flex-col gap-0.5 pe-1">
           {chapters.map((c) => (
             <li key={c.id}>
               <button
@@ -496,6 +651,8 @@ export function EditorPanel({
   const [next, setNext] = React.useState<number | null>(null)
   const [active, setActive] = React.useState<string | null>(null)
   const [showKeys, setShowKeys] = React.useState(false)
+  const [chaptersOpen, toggleChapters] = useChaptersOpen()
+  const [terms, setTerms] = React.useState<Term[]>([])
   const load = useAction()
   const bulk = useAction()
   const searchBox = React.useRef<HTMLInputElement>(null)
@@ -505,6 +662,20 @@ export function EditorPanel({
     if (!chapter && chapters.length)
       setChapter(chapters.find((c) => c.position > 0)?.id ?? chapters[0]!.id)
   }, [chapters, chapter])
+
+  React.useEffect(() => {
+    void loadField()
+    // Help beside the field, so a failure here just means no suggestions.
+    bookCall<{ terms: Term[] }>("glossary", { id: book.id })
+      .then((r) =>
+        setTerms(
+          r.terms.filter(
+            (term) => term.state === "approved" && (term.dnt || term.target)
+          )
+        )
+      )
+      .catch(() => {})
+  }, [book.id])
 
   const fetchPage = React.useCallback(
     async (cursor: number) => {
@@ -575,7 +746,8 @@ export function EditorPanel({
     const inField =
       e.target instanceof HTMLTextAreaElement ||
       e.target instanceof HTMLInputElement ||
-      e.target instanceof HTMLSelectElement
+      e.target instanceof HTMLSelectElement ||
+      (e.target instanceof HTMLElement && e.target.isContentEditable)
     const alt = e.altKey
     if (alt && e.key === "ArrowDown") {
       e.preventDefault()
@@ -591,6 +763,11 @@ export function EditorPanel({
   React.useEffect(() => {
     const onSlash = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null
+      if ((e.metaKey || e.ctrlKey) && e.key === "\\") {
+        e.preventDefault()
+        toggleChapters()
+        return
+      }
       if (
         e.key !== "/" ||
         e.metaKey ||
@@ -603,7 +780,7 @@ export function EditorPanel({
     }
     window.addEventListener("keydown", onSlash)
     return () => window.removeEventListener("keydown", onSlash)
-  }, [])
+  }, [toggleChapters])
 
   const current = chapters.find((c) => c.id === chapter)
   if (!chapters.length)
@@ -611,10 +788,16 @@ export function EditorPanel({
 
   return (
     <div className="@container" onKeyDown={onKeyDown}>
-      <div className="grid gap-4 @3xl:grid-cols-[13rem_minmax(0,1fr)]">
+      <div
+        className={cn(
+          "grid gap-y-4 transition-[grid-template-columns,column-gap] duration-200 ease-out motion-reduce:transition-none @3xl:grid-cols-[13rem_minmax(0,1fr)] @3xl:gap-x-4",
+          !chaptersOpen && "@3xl:grid-cols-[0rem_minmax(0,1fr)] @3xl:gap-x-0"
+        )}
+      >
         <Navigator
           chapters={chapters}
           chapter={chapter}
+          open={chaptersOpen}
           onPick={(id) => {
             setSearch("")
             setQuery("")
@@ -623,30 +806,54 @@ export function EditorPanel({
         />
         <div className="flex min-w-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label={
+                chaptersOpen
+                  ? t("editor.hideChapters")
+                  : t("editor.showChapters")
+              }
+              aria-expanded={chaptersOpen}
+              aria-controls={CHAPTERS_ID}
+              onPress={toggleChapters}
+              className="@max-3xl:hidden"
+            >
+              <HugeiconsIcon
+                icon={SidebarLeft01Icon}
+                strokeWidth={2}
+                className="rtl:-scale-x-100"
+              />
+            </Button>
             <form
-              className="relative min-w-40 flex-1"
+              className="min-w-40 flex-1"
               onSubmit={(e) => {
                 e.preventDefault()
                 setSearch(query.trim())
               }}
             >
-              <HugeiconsIcon
-                icon={SearchIcon}
-                strokeWidth={2}
-                className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-              />
-              <Input
-                ref={searchBox}
-                type="search"
-                value={query}
-                aria-label={t("editor.search")}
-                placeholder={t("editor.search")}
-                onChange={(e) => {
-                  setQuery(e.target.value)
-                  if (!e.target.value) setSearch("")
-                }}
-                className="ps-8"
-              />
+              <ButtonGroup className="w-full">
+                <Input
+                  ref={searchBox}
+                  type="search"
+                  value={query}
+                  aria-label={t("editor.search")}
+                  placeholder={t("editor.search")}
+                  onChange={(e) => {
+                    setQuery(e.target.value)
+                    if (!e.target.value) setSearch("")
+                  }}
+                  className="min-w-0 flex-1"
+                />
+                <Button
+                  type="submit"
+                  size="icon"
+                  variant="outline"
+                  aria-label={t("editor.search")}
+                >
+                  <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
+                </Button>
+              </ButtonGroup>
             </form>
             <NativeSelect
               aria-label={t("editor.filter")}
@@ -676,7 +883,11 @@ export function EditorPanel({
                   ["next", "Alt ↓"],
                   ["previous", "Alt ↑"],
                   ["review", "⌘ ↵"],
+                  ["line", "↵"],
                   ["lock", "⌘ L"],
+                  ["format", "⌘ I"],
+                  ["lineBreak", "⇧ ↵"],
+                  ["chapters", "⌘ \\"],
                   ["search", "/"],
                 ] as const
               ).map(([key, combo]) => (
@@ -774,6 +985,7 @@ export function EditorPanel({
                     onSelect={onSelect}
                     onSaved={onSaved}
                     onAdvance={onAdvance}
+                    terms={terms}
                   />
                 ))}
               </ol>

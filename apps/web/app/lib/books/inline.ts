@@ -94,6 +94,19 @@ export function escapeStrayAngles(s: string) {
   return out + escapeLoose(s.slice(at))
 }
 
+// How each tag reads on screen, in the editor and everywhere it's only shown.
+export const TAG_STYLES: Partial<Record<InlineTag["type"], string>> = {
+  b: "font-semibold",
+  i: "italic",
+  u: "underline underline-offset-2",
+  s: "line-through",
+  code: "font-mono text-[0.9em]",
+  sup: "align-super text-[0.7em]",
+  noteref: "align-super text-[0.7em] text-brand",
+  sub: "align-sub text-[0.7em]",
+  a: "underline decoration-foreground/30 underline-offset-2",
+}
+
 export const tagMap = (tags: InlineTag[]) => new Map(tags.map((t) => [t.id, t]))
 
 // A builder the parsers share: text in, tagged text and its tag list out.

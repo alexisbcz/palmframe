@@ -4,6 +4,8 @@ export const messages = defineMessages({
   en: {
     brandName: "Studio",
     back: "Back to projects",
+    collapse: "Collapse sidebar",
+    expand: "Expand sidebar",
     balance: "Balance",
     topUp: "Top up",
     nav: {
@@ -137,6 +139,8 @@ export const messages = defineMessages({
   fr: {
     brandName: "Studio",
     back: "Retour aux projets",
+    collapse: "Réduire la barre latérale",
+    expand: "Agrandir la barre latérale",
     balance: "Solde",
     topUp: "Recharger",
     nav: {
@@ -271,6 +275,8 @@ export const messages = defineMessages({
   es: {
     brandName: "Studio",
     back: "Volver a proyectos",
+    collapse: "Contraer la barra lateral",
+    expand: "Expandir la barra lateral",
     balance: "Saldo",
     topUp: "Recargar",
     nav: {
@@ -406,6 +412,8 @@ export const messages = defineMessages({
   de: {
     brandName: "Studio",
     back: "Zurück zu den Projekten",
+    collapse: "Seitenleiste einklappen",
+    expand: "Seitenleiste ausklappen",
     balance: "Guthaben",
     topUp: "Aufladen",
     nav: {
@@ -541,6 +549,8 @@ export const messages = defineMessages({
   it: {
     brandName: "Studio",
     back: "Torna ai progetti",
+    collapse: "Comprimi la barra laterale",
+    expand: "Espandi la barra laterale",
     balance: "Saldo",
     topUp: "Ricarica",
     nav: {
@@ -676,6 +686,8 @@ export const messages = defineMessages({
   ja: {
     brandName: "Studio",
     back: "プロジェクトに戻る",
+    collapse: "サイドバーを折りたたむ",
+    expand: "サイドバーを展開",
     balance: "残高",
     topUp: "チャージ",
     nav: {

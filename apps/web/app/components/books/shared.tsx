@@ -7,7 +7,12 @@ import { Checkbox } from "@workspace/ui/components/checkbox"
 
 import { useLocale, useT } from "@/i18n/core"
 import { BookCallError } from "@/lib/books/client"
-import { parseInline, tagMap, type InlineNode } from "@/lib/books/inline"
+import {
+  TAG_STYLES,
+  parseInline,
+  tagMap,
+  type InlineNode,
+} from "@/lib/books/inline"
 import { LANGUAGES, isRtl, languageOf, type InlineTag } from "@/lib/books/model"
 import { messages } from "@/routes/books.messages"
 
@@ -127,18 +132,6 @@ export const languageOptions = LANGUAGES.map((l) => ({
   label: l.native,
 }))
 
-const SHOWN: Partial<Record<InlineTag["type"], string>> = {
-  b: "font-semibold",
-  i: "italic",
-  u: "underline underline-offset-2",
-  s: "line-through",
-  code: "font-mono text-[0.9em]",
-  sup: "align-super text-[0.7em]",
-  noteref: "align-super text-[0.7em] text-brand",
-  sub: "align-sub text-[0.7em]",
-  a: "underline decoration-foreground/30 underline-offset-2",
-}
-
 // A book's own markup, rendered as text: nothing from a file ever becomes HTML.
 export function InlineText({
   text,
@@ -154,7 +147,7 @@ export function InlineText({
       const tag = map.get(node.id)
       if (tag?.type === "br") return <br key={i} />
       return (
-        <span key={i} className={tag ? SHOWN[tag.type] : undefined}>
+        <span key={i} className={tag ? TAG_STYLES[tag.type] : undefined}>
           {render(node.children)}
         </span>
       )
@@ -198,6 +191,11 @@ export function LabeledCheckbox({
     </span>
   )
 }
+
+// The line of text in its resting state and in the editor share these, so a
+// click lands on the same letter once the editor has taken over.
+export const FIELD_TEXT =
+  "px-2 py-1 font-serif text-base leading-relaxed [overflow-wrap:anywhere] whitespace-pre-wrap md:text-[15px]"
 
 export const textProps = (lang: string) => ({
   lang: lang === "nb" ? "no" : lang,

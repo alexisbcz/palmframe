@@ -19,6 +19,7 @@ import {
   PaintBoardIcon,
   RadioIcon,
   ShoppingBag01Icon,
+  SidebarLeft01Icon,
   Video01Icon,
 } from "@hugeicons/core-free-icons"
 
@@ -59,7 +60,10 @@ export async function loader({ request }: Route.LoaderArgs) {
       .not("project_id", "is", null)
       .then((r) => r.count ?? 0),
   ])
-  return { progress: { brands, boards, machines, comics } }
+  const rail = /(?:^|;\s*)studio_rail=1(?:;|$)/.test(
+    request.headers.get("cookie") ?? ""
+  )
+  return { progress: { brands, boards, machines, comics }, rail }
 }
 
 export type StudioData = Awaited<ReturnType<typeof loader>>
@@ -78,6 +82,17 @@ const NAV = [
   { to: "/studio/books", key: "books", icon: BookOpen02Icon },
   { to: "/machines", key: "machines", icon: RadioIcon },
 ] as const
+
+// In a cookie, so the server renders the sidebar as it was left.
+function useRail(initial: boolean) {
+  const [rail, setRail] = React.useState(initial)
+  const toggle = () => {
+    const next = !rail
+    setRail(next)
+    document.cookie = `studio_rail=${next ? 1 : 0}; path=/; max-age=31536000; samesite=lax`
+  }
+  return [rail, toggle] as const
+}
 
 function GetStarted({ progress }: { progress: StudioData["progress"] }) {
   const t = useT(messages)
@@ -147,14 +162,53 @@ function Balance() {
 
 export default function Studio({ loaderData }: Route.ComponentProps) {
   const t = useT(messages)
+  const [rail, toggleRail] = useRail(loaderData.rail)
+  const railLabel = rail ? t("expand") : t("collapse")
   return (
     <div className="dark studio flex min-h-svh flex-col gap-2 p-2 md:h-svh md:flex-row">
-      <aside className="flex min-w-0 shrink-0 flex-col gap-3 rounded-2xl bg-card p-3 md:w-64">
-        <div className="flex items-center justify-between gap-2 px-1">
-          <Link to="/studio" className="studio-title -my-2 py-2 text-xl">
+      <aside
+        className={cn(
+          "flex min-w-0 shrink-0 flex-col gap-3 overflow-hidden rounded-2xl bg-card p-3 transition-[width] duration-200 ease-out motion-reduce:transition-none",
+          rail ? "md:w-16" : "md:w-64"
+        )}
+      >
+        <div
+          className={cn(
+            "flex items-center justify-between gap-2 px-1",
+            rail && "md:flex-col-reverse md:px-0"
+          )}
+        >
+          <Link
+            to="/studio"
+            className={cn(
+              "studio-title -my-2 py-2 text-xl",
+              rail && "md:hidden"
+            )}
+          >
             {t("brandName")}
           </Link>
-          <AccountMenu />
+          <div
+            className={cn(
+              "flex items-center gap-1",
+              rail && "md:flex-col-reverse md:gap-2"
+            )}
+          >
+            <Button
+              size="icon-sm"
+              variant="ghost"
+              aria-label={railLabel}
+              aria-expanded={!rail}
+              onPress={toggleRail}
+              className="max-md:hidden"
+            >
+              <HugeiconsIcon
+                icon={SidebarLeft01Icon}
+                strokeWidth={2}
+                className="rtl:-scale-x-100"
+              />
+            </Button>
+            <AccountMenu />
+          </div>
         </div>
         <nav
           aria-label={t("brandName")}
@@ -165,6 +219,7 @@ export default function Studio({ loaderData }: Route.ComponentProps) {
               key={n.to}
               to={n.to}
               end={"end" in n}
+              title={rail ? t(`nav.${n.key}`) : undefined}
               className={({ isActive }) =>
                 cn(
                   "flex shrink-0 items-center gap-2.5 rounded-lg px-1.5 py-1.5 text-sm whitespace-nowrap outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
@@ -177,22 +232,33 @@ export default function Studio({ loaderData }: Route.ComponentProps) {
               <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-foreground ring-1 ring-foreground/15 [&_svg]:size-4">
                 <HugeiconsIcon icon={n.icon} strokeWidth={2} />
               </span>
-              {t(`nav.${n.key}`)}
+              <span className={cn(rail && "md:sr-only")}>
+                {t(`nav.${n.key}`)}
+              </span>
             </NavLink>
           ))}
         </nav>
-        <Balance />
-        <GetStarted progress={loaderData.progress} />
+        {!rail && (
+          <>
+            <Balance />
+            <GetStarted progress={loaderData.progress} />
+          </>
+        )}
         <Link
           to="/projects"
-          className="flex items-center gap-2 px-1.5 py-2 text-sm text-muted-foreground hover:text-foreground max-md:hidden"
+          aria-label={t("back")}
+          title={rail ? t("back") : undefined}
+          className={cn(
+            "flex items-center gap-2 px-1.5 py-2 text-sm text-muted-foreground hover:text-foreground max-md:hidden",
+            rail && "justify-center"
+          )}
         >
           <HugeiconsIcon
             icon={ArrowLeft01Icon}
             strokeWidth={2}
             className="size-4 rtl:rotate-180"
           />
-          {t("back")}
+          <span className={cn(rail && "sr-only")}>{t("back")}</span>
         </Link>
       </aside>
       <main className="min-w-0 flex-1 overflow-y-auto rounded-2xl bg-background">
