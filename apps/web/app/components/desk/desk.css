@@ -69,6 +69,13 @@
   display: none;
 }
 
+/* Paper has no outline. The caret says where you are. */
+.dk .dk-pm:focus-visible,
+.dk .dk-work-title:focus-visible,
+.dk .dk-part-title:focus-visible {
+  outline: 0;
+}
+
 /* Layout ------------------------------------------------------------------ */
 .dk-layout {
   position: fixed;
@@ -246,11 +253,13 @@
 .dk-b {
   font-weight: 500;
 }
+/* Asterisks exist only on the line being written. */
 .dk-mk {
-  color: rgb(92 79 64 / 0.34);
+  font-size: 0;
 }
 .dk-cur .dk-mk {
-  color: rgb(92 79 64 / 0.7);
+  font-size: inherit;
+  color: rgb(92 79 64 / 0.6);
 }
 .dk-hide {
   font-size: 0;
@@ -1512,6 +1521,270 @@ textarea.dk-field.font-mono {
   text-underline-offset: 2px;
 }
 
+/* The menu: a card slip. */
+.dk-menu {
+  position: fixed;
+  z-index: 48;
+  width: 256px;
+  max-height: calc(100vh - 16px);
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 6px 0;
+  background: var(--fibre), #f7f0df;
+  background-blend-mode: multiply;
+  color: var(--ink);
+  border-radius: 2px;
+  box-shadow:
+    0 0 0 0.5px rgb(90 70 40 / 0.45),
+    0 1px 1px rgb(20 10 2 / 0.35),
+    0 18px 34px -10px rgb(10 5 0 / 0.75);
+  animation: dk-rise 0.12s cubic-bezier(0.2, 0.8, 0.3, 1);
+  transform-origin: 0 0;
+}
+@keyframes dk-rise {
+  from {
+    opacity: 0;
+    translate: 0 -3px;
+    scale: 0.97;
+  }
+}
+.dk-menu hr {
+  margin: 4px 12px;
+  border: 0;
+  border-top: 1px dashed rgb(90 70 40 / 0.32);
+}
+.dk-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 3px 12px;
+  text-align: start;
+  font-size: 15.5px;
+  line-height: 1.3;
+}
+.dk-menu-item span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dk .dk-menu-item:focus-visible,
+.dk-menu-item:hover:not(:disabled) {
+  outline: 0;
+  background: rgb(120 84 30 / 0.16);
+}
+.dk-menu-item:disabled {
+  color: rgb(92 79 64 / 0.42);
+}
+.dk-menu-item[aria-checked="true"] {
+  font-weight: 500;
+}
+.dk-menu-item[aria-checked="true"] span::before {
+  content: "• ";
+  color: var(--pencil);
+}
+.dk-menu-item kbd {
+  flex: none;
+  font-family: var(--type);
+  font-size: 10.5px;
+  color: var(--ink-soft);
+}
+.dk-menu-note {
+  margin: -6px 0 5px;
+  padding-block: 8px 5px;
+  background: rgb(180 42 30 / 0.07);
+  border-bottom: 1px dashed rgb(180 42 30 / 0.34);
+}
+.dk-menu-note[data-level="suggestion"] {
+  background: rgb(45 90 132 / 0.07);
+  border-bottom-color: rgb(45 90 132 / 0.3);
+}
+.dk-menu-note p {
+  padding: 0 12px 5px;
+  font-family: var(--hand);
+  font-size: 18.5px;
+  line-height: 1.08;
+  color: #7c1d12;
+}
+.dk-menu-note[data-level="suggestion"] p {
+  color: #2d5a84;
+}
+.dk-menu-head {
+  padding: 2px 12px;
+  font-family: var(--type);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.dk-menu-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1px 3px;
+  padding: 2px 9px 4px;
+}
+.dk-menu-chips button {
+  padding: 0 4px;
+  font-size: 16px;
+}
+.dk-menu-chips button[data-kind="slant"] {
+  font-style: italic;
+  color: var(--ink-soft);
+}
+.dk .dk-menu-chips button:focus-visible,
+.dk-menu-chips button:hover {
+  outline: 0;
+  background: rgb(120 84 30 / 0.16);
+}
+.dk-menu-foot {
+  margin-top: 5px;
+  padding: 4px 12px 1px;
+  border-top: 1px dashed rgb(90 70 40 / 0.32);
+  font-size: 11.5px;
+  line-height: 1.2;
+  color: var(--ink-soft);
+}
+
+/* Over a selection: a stitched strip of leather. */
+.dk-bubble {
+  position: fixed;
+  z-index: 47;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 6px;
+  transform: translate(-50%, -100%);
+  border-radius: 5px;
+  color: #efe3c6;
+  background: var(--grain), linear-gradient(175deg, #33261a, #1e150d);
+  background-blend-mode: overlay, normal;
+  box-shadow:
+    inset 0 1px 0 rgb(255 230 180 / 0.18),
+    inset 0 0 0 2px #1a110a,
+    inset 0 0 0 2.5px rgb(214 180 110 / 0.3),
+    0 12px 22px -8px rgb(5 2 0 / 0.85);
+  animation: dk-rise 0.13s cubic-bezier(0.2, 0.8, 0.3, 1);
+  white-space: nowrap;
+  max-width: calc(100vw - 16px);
+}
+.dk-bubble[data-below] {
+  transform: translate(-50%, 0);
+}
+.dk-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: calc(50% - 5px);
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  background: #1e150d;
+}
+.dk-bubble[data-below]::after {
+  display: none;
+}
+.dk-bubble button {
+  min-width: 28px;
+  height: 27px;
+  padding-inline: 7px;
+  border-radius: 3px;
+  font-size: 14.5px;
+  transition: background 0.1s;
+}
+.dk-bubble button:hover:not(:disabled) {
+  background: rgb(255 230 180 / 0.14);
+}
+.dk-bubble button:disabled {
+  opacity: 0.4;
+}
+.dk-bubble button[data-on] {
+  color: #1e150d;
+  background: linear-gradient(#f0d9a0, #c79f58);
+}
+.dk .dk-bubble-el {
+  font-family: var(--type);
+  font-size: 11px;
+}
+.dk-bubble-rule {
+  width: 1px;
+  height: 16px;
+  margin-inline: 4px;
+  background: rgb(214 180 110 / 0.3);
+}
+.dk-bubble-count {
+  margin-inline: 6px 4px;
+  font-family: var(--type);
+  font-size: 10px;
+  color: #bda877;
+}
+
+/* A brass pin in the margin of the line under the pointer. */
+.dk-handle {
+  position: absolute;
+  inset-inline-start: 12px;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #f6e4b4, #c49a52 52%, #7a5522);
+  box-shadow:
+    0 1px 2px rgb(30 15 5 / 0.6),
+    inset 0 -1px 1px rgb(80 50 15 / 0.5);
+  opacity: 0.62;
+  transition:
+    opacity 0.12s,
+    transform 0.12s;
+}
+.dk-handle::after {
+  content: "⋮";
+  position: absolute;
+  inset: 0;
+  line-height: 21px;
+  text-align: center;
+  font-size: 14px;
+  color: #3a2810;
+}
+.dk-handle:hover {
+  opacity: 1;
+  transform: scale(1.08);
+}
+
+/* Pencilled just above a line. */
+.dk-hint {
+  position: fixed;
+  z-index: 44;
+  transform: translateY(-100%) rotate(-0.4deg);
+  padding: 1px 8px 2px;
+  pointer-events: none;
+  background: var(--fibre), #f8efd4;
+  background-blend-mode: multiply;
+  color: #2d5a84;
+  font-family: var(--hand);
+  font-size: 18px;
+  line-height: 1.15;
+  white-space: nowrap;
+  box-shadow:
+    0 1px 1px rgb(20 10 2 / 0.3),
+    0 5px 10px -3px rgb(20 10 2 / 0.5);
+  animation: dk-rise 0.14s ease-out;
+}
+.dk-hint-fixed {
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+  color: #7c1d12;
+}
+.dk-hint-fixed button {
+  font-family: var(--serif);
+  font-size: 14px;
+  text-decoration: underline;
+}
+
 /* Find ---------------------------------------------------------------------- */
 .dk-find {
   position: fixed;
@@ -1760,6 +2033,9 @@ textarea.dk-field.font-mono {
   }
 }
 @media (max-width: 1023px) {
+  .dk-handle {
+    display: none;
+  }
   .dk.fixed {
     overflow-y: auto;
   }

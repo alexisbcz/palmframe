@@ -71,6 +71,13 @@ test("finds rhymes", () => {
   expect(words).not.toContain("river")
 })
 
+test("real words rhyme first", () => {
+  const top = rhymesFor("tide", 8).map((h) => h.word)
+  expect(top).toContain("side")
+  expect(top).not.toContain("eid")
+  expect(top).not.toContain("i'd")
+})
+
 test("holds a haiku to 5-7-5", () => {
   const form = formById("haiku")
   expect(

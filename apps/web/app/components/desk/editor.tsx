@@ -2,7 +2,7 @@ import * as React from "react"
 import { baseKeymap } from "@tiptap/pm/commands"
 import { history, redo, undo } from "@tiptap/pm/history"
 import { keymap } from "@tiptap/pm/keymap"
-import { Node, Schema } from "@tiptap/pm/model"
+import { Fragment, Node, Schema, Slice } from "@tiptap/pm/model"
 import {
   EditorState,
   Plugin,
@@ -395,7 +395,12 @@ const rewrite = (raw: string, to: Element) => {
   if (to === "character") return `@${bare}`
   if (to === "parenthetical") return `(${bare})`
   if (to === "transition") return `>${bare}`
-  if (to === "action") return bare && /^[A-Z ]+$/.test(bare) ? `!${bare}` : bare
+  // Plain text that Fountain would read as something else has to be forced.
+  if (to === "action")
+    return /^[\p{Lu}0-9 ]+$/u.test(bare) ||
+      /^(?:INT|EXT|EST|I\/E)[. ]/i.test(bare)
+      ? `!${bare}`
+      : bare
   return bare
 }
 
@@ -492,7 +497,26 @@ function scriptKeys(getCtx: () => Context) {
     )
     return true
   }
+  const set =
+    (to: Element) =>
+    (state: EditorState, dispatch?: (t: Transaction) => void) => {
+      if (!active(state)) return false
+      if (dispatch)
+        replaceLine(
+          state,
+          dispatch,
+          rewrite(state.selection.$from.parent.textContent, to)
+        )
+      return true
+    }
   return keymap({
+    // Final Draft's own numbers.
+    "Mod-1": set("scene"),
+    "Mod-2": set("action"),
+    "Mod-3": set("character"),
+    "Mod-4": set("parenthetical"),
+    "Mod-5": set("dialogue"),
+    "Mod-6": set("transition"),
     Tab: tab(1),
     "Shift-Tab": tab(-1),
     Enter: enter,
@@ -533,7 +557,29 @@ function smart(state: EditorState, from: number, text: string) {
   return null
 }
 
+export interface MenuAnchor {
+  x: number
+  y: number
+  word: string
+  from: number
+  to: number
+  selected: string
+  line: number
+  type: Element | null
+  alert: number | null
+}
+
 export interface EditorHandle {
+  undo(): void
+  redo(): void
+  caretTo(line: number): void
+  insertLine(text: string): void
+  clip(action: "cut" | "copy"): void
+  paste(): Promise<void>
+  selectLine(): void
+  setElement(to: Element): void
+  replaceSpan(from: number, to: number, text: string): void
+  anchor(): MenuAnchor | null
   focus(): void
   jump(offset: number): void
   replaceRange(start: number, end: number, text: string): void
@@ -565,7 +611,19 @@ interface Props {
     rect: DOMRect | null
   }): void
   onKey(key: string): void
-  onSceneLine?(line: number): void
+  onMenu(anchor: MenuAnchor): void
+  onSelection(info: { text: string; rect: DOMRect } | null): void
+  onHoverAlert(index: number | null, rect: DOMRect | null): void
+  onHoverLine(
+    info: {
+      line: number
+      top: number
+      height: number
+      text: string
+      type: Element | null
+      rect: DOMRect
+    } | null
+  ): void
 }
 
 export const Editor = React.forwardRef<EditorHandle, Props>(
@@ -575,6 +633,7 @@ export const Editor = React.forwardRef<EditorHandle, Props>(
     const latest = React.useRef(props)
     latest.current = props
     const states = React.useRef(new Map<string, EditorState>())
+    const dragging = React.useRef(false)
 
     const ctx = (): Context => {
       const p = latest.current
@@ -669,8 +728,15 @@ export const Editor = React.forwardRef<EditorHandle, Props>(
             latest.current.onChange(body, added)
           }
           if (tr.selectionSet || tr.docChanged) reportCaret(v)
+          if (!dragging.current) reportSelection(v)
         },
         handleKeyDown(_, e) {
+          if (e.key === "ContextMenu" || (e.key === "F10" && e.shiftKey)) {
+            e.preventDefault()
+            const a = anchorOf(v)
+            if (a) latest.current.onMenu(a)
+            return true
+          }
           if (e.key.length === 1 || e.key === "Enter" || e.key === "Backspace")
             if (!e.metaKey && !e.ctrlKey) latest.current.onKey(e.key)
           return false
@@ -686,6 +752,66 @@ export const Editor = React.forwardRef<EditorHandle, Props>(
           reportCaret(v, e.target as HTMLElement)
           return false
         },
+        handleDOMEvents: {
+          mousedown() {
+            dragging.current = true
+            latest.current.onSelection(null)
+            const up = () => {
+              dragging.current = false
+              window.removeEventListener("mouseup", up)
+              // After the browser settles the selection.
+              requestAnimationFrame(() => reportSelection(v))
+            }
+            window.addEventListener("mouseup", up)
+            return false
+          },
+          contextmenu(_, e) {
+            // Shift keeps the browser's own menu, for spelling and extensions.
+            if (e.shiftKey) return false
+            e.preventDefault()
+            const at = v.posAtCoords({ left: e.clientX, top: e.clientY })
+            const { from, to } = v.state.selection
+            if (at && (at.pos < from || at.pos > to || from === to))
+              v.dispatch(
+                v.state.tr.setSelection(
+                  TextSelection.create(v.state.doc, at.pos)
+                )
+              )
+            const a = anchorOf(v, e.target as HTMLElement)
+            if (a) latest.current.onMenu({ ...a, x: e.clientX, y: e.clientY })
+            return true
+          },
+          mouseover(_, e) {
+            const el = e.target as HTMLElement
+            const mark = el.closest?.("[data-alert]") as HTMLElement | null
+            if (mark && mark.classList.contains("dk-mark"))
+              latest.current.onHoverAlert(
+                Number(mark.dataset.alert),
+                mark.getBoundingClientRect()
+              )
+            else latest.current.onHoverAlert(null, null)
+            const line = el.closest?.(".dk-line") as HTMLElement | null
+            if (line) {
+              const index = [...v.dom.children].indexOf(line)
+              const r = line.getBoundingClientRect()
+              const sheet = (
+                line.closest(".dk-sheet") as HTMLElement
+              ).getBoundingClientRect()
+              const script = key.getState(v.state)?.script[index]
+              latest.current.onHoverLine({
+                line: index,
+                top: r.top - sheet.top,
+                height: r.height,
+                text: line.textContent ?? "",
+                type: script
+                  ? effectiveType(key.getState(v.state)!.script, index)
+                  : null,
+                rect: r,
+              })
+            }
+            return false
+          },
+        },
       })
       view.current = v
       return () => {
@@ -695,6 +821,53 @@ export const Editor = React.forwardRef<EditorHandle, Props>(
       // The view lives as long as the component; props reach it through `latest`.
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
+
+    const reportSelection = (v: EditorView) => {
+      const { from, to, empty } = v.state.selection
+      if (empty || !v.hasFocus()) {
+        latest.current.onSelection(null)
+        return
+      }
+      const a = v.coordsAtPos(from)
+      const b = v.coordsAtPos(to)
+      latest.current.onSelection({
+        text: v.state.doc.textBetween(from, to, "\n"),
+        rect: new DOMRect(
+          Math.min(a.left, b.left),
+          a.top,
+          Math.abs(b.right - a.left),
+          b.bottom - a.top
+        ),
+      })
+    }
+
+    const anchorOf = (
+      v: EditorView,
+      target?: HTMLElement
+    ): MenuAnchor | null => {
+      const { from, to, $from } = v.state.selection
+      const text = $from.parent.textContent
+      const at = $from.parentOffset
+      const left = /[\p{L}'’-]*$/u.exec(text.slice(0, at))?.[0] ?? ""
+      const right = /^[\p{L}'’-]*/u.exec(text.slice(at))?.[0] ?? ""
+      const c = v.coordsAtPos(from)
+      const mark = target?.closest?.("[data-alert]") as HTMLElement | null
+      const plugin = key.getState(v.state)
+      const index = $from.index(0)
+      return {
+        x: c.left,
+        y: c.bottom,
+        word: left + right,
+        from: from === to ? from - left.length : from,
+        to: from === to ? from + right.length : to,
+        selected: v.state.doc.textBetween(from, to, "\n"),
+        line: index,
+        type: plugin?.script[index]
+          ? effectiveType(plugin.script, index)
+          : null,
+        alert: mark ? Number(mark.dataset.alert) : null,
+      }
+    }
 
     const reportCaret = (v: EditorView, target?: HTMLElement) => {
       const { from } = v.state.selection
@@ -774,6 +947,96 @@ export const Editor = React.forwardRef<EditorHandle, Props>(
       ref,
       () => ({
         focus: () => view.current?.focus(),
+        undo() {
+          const v = view.current
+          if (v) undo(v.state, v.dispatch)
+          v?.focus()
+        },
+        redo() {
+          const v = view.current
+          if (v) redo(v.state, v.dispatch)
+          v?.focus()
+        },
+        caretTo(line) {
+          const v = view.current
+          if (!v) return
+          const pos = lineStarts(v.state.doc)[line]
+          if (pos === undefined) return
+          v.dispatch(
+            v.state.tr.setSelection(TextSelection.create(v.state.doc, pos))
+          )
+          v.focus()
+        },
+        insertLine(text) {
+          const v = view.current
+          if (!v) return
+          const pos = v.state.selection.$from.after(1)
+          const tr = v.state.tr.insert(pos, [
+            schema.node("line", null, schema.text(text)),
+            schema.node("line"),
+          ])
+          v.dispatch(
+            tr
+              .setSelection(TextSelection.create(tr.doc, pos + text.length + 3))
+              .scrollIntoView()
+          )
+          v.focus()
+        },
+        clip(action) {
+          view.current?.focus()
+          document.execCommand(action)
+        },
+        async paste() {
+          const v = view.current
+          if (!v) return
+          const text = await navigator.clipboard.readText()
+          v.focus()
+          if (!text) return
+          const { from, to } = v.state.selection
+          const lines = text
+            .replace(/\r\n?/g, "\n")
+            .replace(/\n$/, "")
+            .split("\n")
+          const nodes = lines.map((l) =>
+            schema.node("line", null, l ? schema.text(l) : undefined)
+          )
+          v.dispatch(
+            v.state.tr
+              .replaceRange(from, to, new Slice(Fragment.from(nodes), 1, 1))
+              .scrollIntoView()
+          )
+        },
+        selectLine() {
+          const v = view.current
+          if (!v) return
+          const { $from } = v.state.selection
+          v.dispatch(
+            v.state.tr.setSelection(
+              TextSelection.create(v.state.doc, $from.start(1), $from.end(1))
+            )
+          )
+          v.focus()
+        },
+        setElement(to) {
+          const v = view.current
+          if (!v) return
+          replaceLine(
+            v.state,
+            v.dispatch,
+            rewrite(v.state.selection.$from.parent.textContent, to)
+          )
+          v.focus()
+        },
+        replaceSpan(from, to, text) {
+          const v = view.current
+          if (!v) return
+          v.dispatch(v.state.tr.insertText(text, from, to))
+          v.focus()
+        },
+        anchor() {
+          const v = view.current
+          return v ? anchorOf(v) : null
+        },
         jump(offset) {
           const v = view.current
           if (!v) return

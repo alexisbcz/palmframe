@@ -359,11 +359,28 @@ export function rhymesFor(word: string, limit = 80): RhymeHit[] {
         slant.push(...list.slice(0, 6).map(make("slant")))
       if (slant.length > limit) break
     }
-  // Short common words surface first: dictionary order is alphabetical, so the
-  // word length stands in for commonness.
+  // The dictionary is full of names and oddities and has no frequencies, so
+  // words spelled like the original come first: tide finds side before eid.
+  const shared = (w: string) => {
+    let n = 0
+    while (
+      n < w.length &&
+      n < self.length &&
+      w[w.length - 1 - n] === self[self.length - 1 - n]
+    )
+      n++
+    return n
+  }
+  const usable = (h: RhymeHit) =>
+    h.word.length > 2 && !h.word.includes("'") && !self.endsWith(h.word)
   const rank = (a: RhymeHit, b: RhymeHit) =>
-    a.syllables - b.syllables || a.word.length - b.word.length
-  return [...perfect.sort(rank), ...slant.sort(rank)].slice(0, limit)
+    Math.min(shared(b.word), 3) - Math.min(shared(a.word), 3) ||
+    a.syllables - b.syllables ||
+    a.word.length - b.word.length
+  return [
+    ...perfect.filter(usable).sort(rank),
+    ...slant.filter(usable).sort(rank),
+  ].slice(0, limit)
 }
 
 // Forms ----------------------------------------------------------------------

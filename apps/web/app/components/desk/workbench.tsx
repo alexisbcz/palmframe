@@ -3,7 +3,13 @@ import { Link } from "react-router"
 
 import { useT } from "@/i18n/core"
 import { saveManuscript, type Saved } from "@/lib/desk/client"
-import { castOf, paginate, parseScript, scenesOf } from "@/lib/desk/fountain"
+import {
+  castOf,
+  paginate,
+  parseScript,
+  scenesOf,
+  type Element,
+} from "@/lib/desk/fountain"
 import { lintBody } from "@/lib/desk/lint"
 import {
   countWords,
@@ -15,7 +21,13 @@ import {
   type Manuscript,
   type Part,
 } from "@/lib/desk/model"
-import { formById, hasDictionary, loadDictionary } from "@/lib/desk/poetry"
+import {
+  formById,
+  hasDictionary,
+  loadDictionary,
+  scan,
+  syllableCount,
+} from "@/lib/desk/poetry"
 import { carriage, strike, thud } from "@/lib/desk/sound"
 import { READABILITY, textStats, type Alert } from "@/lib/desk/vale/vale"
 import { useSupabase } from "@/lib/supabase.browser"
@@ -24,12 +36,28 @@ import { Bindery } from "./bindery"
 import { Corkboard, Cards } from "./cards"
 import "./desk.css"
 import { messages } from "./desk.messages"
-import { Editor, type EditorHandle, type Find, type Tools } from "./editor"
+import {
+  Editor,
+  type EditorHandle,
+  type Find,
+  type MenuAnchor,
+  type Tools,
+} from "./editor"
 import { Folder, type FolderTab } from "./folder"
 import { Rail } from "./instruments"
+import { Bubble, ContextMenu, type MenuActions } from "./menus"
 import { DeskScene, useLight, type Sheet } from "./view"
 
 type Status = "saved" | "dirty" | "saving" | Saved
+
+interface HoveredLine {
+  line: number
+  top: number
+  height: number
+  text: string
+  type: Element | null
+  rect: DOMRect
+}
 
 const backupKey = (id: string) => `palmframe-desk-${id}`
 
@@ -88,6 +116,21 @@ export function Workbench({
       // Unreadable or blocked: nothing to offer.
     }
   }, [id, initial])
+
+  const [pasteBlocked, setPasteBlocked] = React.useState(false)
+  const [menu, setMenu] = React.useState<MenuAnchor | null>(null)
+  const [selection, setSelection] = React.useState<{
+    text: string
+    rect: DOMRect
+  } | null>(null)
+  const [line, setLine] = React.useState<HoveredLine | null>(null)
+  const [hint, setHint] = React.useState<{
+    text: string
+    rect: DOMRect
+  } | null>(null)
+  const hoverTimer = React.useRef(0)
+  const hintTimer = React.useRef(0)
+  const onSlip = React.useRef(false)
 
   const editor = React.useRef<EditorHandle>(null)
   const paperRef = React.useRef<HTMLDivElement>(null)
@@ -307,6 +350,8 @@ export function Workbench({
 
   const onKey = React.useCallback(
     (key: string) => {
+      window.clearTimeout(hintTimer.current)
+      setHint(null)
       if (!tools.sound) return
       if (key === "Enter") carriage()
       else strike(key)
@@ -345,6 +390,118 @@ export function Workbench({
       accepted: [...new Set([...d.accepted, a.match.trim().toLowerCase()])],
     }))
     setSlip(null)
+  }
+
+  // Flagged words open their note on hover, after a beat, and it stays while the
+  // pointer crosses over to it.
+  const alertsRef = React.useRef(alerts)
+  alertsRef.current = alerts
+  const onHoverAlert = React.useCallback(
+    (index: number | null, rect: DOMRect | null) => {
+      window.clearTimeout(hoverTimer.current)
+      hoverTimer.current = window.setTimeout(
+        () => {
+          if (index === null) {
+            if (!onSlip.current) setSlip(null)
+            return
+          }
+          const a = alertsRef.current[index]
+          if (a && rect) setSlip({ alert: a, rect })
+        },
+        index === null ? 320 : 240
+      )
+    },
+    []
+  )
+
+  const facts = React.useRef({
+    cast,
+    scenes,
+    kind: m.kind,
+    language: m.language,
+  })
+  facts.current = { cast, scenes, kind: m.kind, language: m.language }
+
+  const describeLine = React.useCallback(
+    (l: HoveredLine) => {
+      const { cast, scenes, kind, language } = facts.current
+      if (kind === "poetry" && l.text.trim()) {
+        const s = language === "en" ? scan(l.text) : null
+        const heard = s?.meter
+          ? `${t(`meters.${s.meter}`)} ${t(`feet.f${Math.min(s.feet, 8)}` as "feet.f5")}`
+          : ""
+        return [
+          t("hint.syllables", { count: syllableCount(l.text, language) }),
+          heard,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      }
+      if (l.type === "character") {
+        const name = l.text
+          .replace(/^@/, "")
+          .replace(/\s*\(.*$/, "")
+          .trim()
+          .toUpperCase()
+        const c = cast.find((x) => x.name === name)
+        return c
+          ? t("report.lines", { speeches: c.speeches, scenes: c.scenes })
+          : null
+      }
+      if (l.type === "scene") {
+        const s = scenes.find((x) => x.line === l.line)
+        return s?.characters.length ? s.characters.join(", ") : null
+      }
+      return null
+    },
+    [t]
+  )
+
+  const onHoverLine = React.useCallback(
+    (l: HoveredLine | null) => {
+      setLine(l)
+      window.clearTimeout(hintTimer.current)
+      setHint(null)
+      if (!l) return
+      hintTimer.current = window.setTimeout(() => {
+        const text = describeLine(l)
+        if (text) setHint({ text, rect: l.rect })
+      }, 700)
+    },
+    [describeLine]
+  )
+
+  const closeMenu = React.useCallback(() => {
+    setMenu(null)
+    editor.current?.focus()
+  }, [])
+
+  const menuActions: MenuActions = {
+    undo: () => editor.current?.undo(),
+    redo: () => editor.current?.redo(),
+    cut: () => editor.current?.clip("cut"),
+    copy: () => editor.current?.clip("copy"),
+    paste: () =>
+      void editor.current?.paste().catch(() => setPasteBlocked(true)),
+    selectLine: () => editor.current?.selectLine(),
+    mark: (mark) => editor.current?.wrap(mark),
+    sceneBreak: () => editor.current?.insertLine("***"),
+    find: (word) => {
+      setFind({ query: word, index: 0 })
+      editor.current?.nextHit(word)
+    },
+    setElement: (to) => editor.current?.setElement(to),
+    rhymes: () => setTab("verse"),
+    swapWord: (word) => {
+      if (menu) editor.current?.replaceSpan(menu.from, menu.to, word)
+    },
+    applyAlert,
+    acceptAlert,
+    muteRule: (check) =>
+      change((d) => ({
+        ...d,
+        mutedRules: [...new Set([...d.mutedRules, check])],
+      })),
   }
 
   const sheets = React.useCallback((): Sheet[] => {
@@ -445,6 +602,7 @@ export function Workbench({
             <div
               ref={paperRef}
               className="dk-sheet"
+              onMouseLeave={() => onHoverLine(null)}
               data-kind={m.kind}
               data-revision={m.revision}
             >
@@ -477,6 +635,20 @@ export function Workbench({
                   }
                 />
               ) : null}
+              {line ? (
+                <button
+                  type="button"
+                  className="dk-handle"
+                  style={{ top: line.top + Math.min(line.height, 26) / 2 - 11 }}
+                  aria-label={t("menu.lineMenu")}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    editor.current?.caretTo(line.line)
+                    const a = editor.current?.anchor()
+                    if (a) setMenu({ ...a, x: e.clientX + 14, y: e.clientY })
+                  }}
+                />
+              ) : null}
               <Editor
                 ref={editor}
                 partId={part.id}
@@ -492,6 +664,10 @@ export function Workbench({
                 ariaLabel={paperTitle}
                 onChange={onChange}
                 onCaret={onCaret}
+                onMenu={setMenu}
+                onSelection={setSelection}
+                onHoverAlert={onHoverAlert}
+                onHoverLine={onHoverLine}
                 onKey={onKey}
               />
             </div>
@@ -550,9 +726,58 @@ export function Workbench({
         />
       </div>
 
-      {slip ? (
+      {pasteBlocked ? (
+        <div className="dk-hint dk-hint-fixed" role="alert">
+          {t("menu.pasteBlocked")}
+          <button type="button" onClick={() => setPasteBlocked(false)}>
+            {t("close")}
+          </button>
+        </div>
+      ) : null}
+
+      {hint && !slip && !menu && !selection ? (
+        <div
+          className="dk-hint"
+          style={{ top: hint.rect.top - 6, insetInlineStart: hint.rect.left }}
+        >
+          {hint.text}
+        </div>
+      ) : null}
+
+      {selection && !menu ? (
+        <Bubble
+          info={selection}
+          kind={m.kind}
+          type={editor.current?.anchor()?.type ?? null}
+          actions={menuActions}
+          onMenu={() => {
+            const a = editor.current?.anchor()
+            if (a) setMenu({ ...a, y: selection.rect.bottom + 8 })
+          }}
+        />
+      ) : null}
+
+      {menu ? (
+        <ContextMenu
+          anchor={menu}
+          kind={m.kind}
+          alert={menu.alert !== null ? (alerts[menu.alert] ?? null) : null}
+          actions={menuActions}
+          onClose={closeMenu}
+        />
+      ) : null}
+
+      {slip && !menu ? (
         <div
           className="dk-slip"
+          onMouseEnter={() => {
+            onSlip.current = true
+            window.clearTimeout(hoverTimer.current)
+          }}
+          onMouseLeave={() => {
+            onSlip.current = false
+            onHoverAlert(null, null)
+          }}
           style={{
             top: Math.max(12, slip.rect.top - 8),
             insetInlineStart: slip.rect.left + slip.rect.width / 2,
