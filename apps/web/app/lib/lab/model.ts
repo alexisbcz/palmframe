@@ -130,6 +130,117 @@ export function labQuery(r: LabRequest) {
   return q.toString()
 }
 
+const stem = (file: string) =>
+  file
+    .replace(/\.safetensors$/i, "")
+    .split(/[\\/]/)
+    .pop()!
+
+const findLora = (name: string, installed: string[]) =>
+  installed.find((f) => stem(f).toLowerCase() === stem(name).toLowerCase())
+
+const tagPattern = () => /<lora:([^:>]+)(?::(-?[\d.]+))?>/gi
+
+// `<lora:name:0.8>` in a prompt applies that LoRA. Models never see the tag.
+export function splitPrompt(text: string, installed: string[]) {
+  const tags: LabLora[] = []
+  const unknown: string[] = []
+  const prompt = text
+    .replace(tagPattern(), (_, name: string, weight?: string) => {
+      const file = findLora(name, installed)
+      if (file) tags.push({ name: file, strength: number(weight, -2, 3, 1) })
+      else unknown.push(name)
+      return " "
+    })
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/\s+,/g, ",")
+    .replace(/,(\s*,)+/g, ",")
+    .replace(/^[\s,]+|[\s,]+$/g, "")
+  return { prompt, tags, unknown }
+}
+
+// A tag sets the strength of a LoRA already in the stack.
+export function mergeLoras(stack: LabLora[], tags: LabLora[]) {
+  const merged = stack.map((l) => tags.find((t) => t.name === l.name) ?? l)
+  for (const t of tags)
+    if (!merged.some((l) => l.name === t.name)) merged.push(t)
+  return merged.slice(0, MAX_LORAS)
+}
+
+export interface PromptPart {
+  text: string
+  lora?: string
+  unknown?: boolean
+}
+
+// The prompt cut into plain text, LoRA tags and their trigger words.
+export function promptParts(
+  text: string,
+  installed: string[],
+  active: string[],
+  words: Record<string, string[]>
+) {
+  const triggers = new Map<string, string>()
+  for (const file of active)
+    for (const word of words[file] ?? [])
+      if (word.trim()) triggers.set(word.toLowerCase(), file)
+  const plain = (chunk: string) => {
+    if (!triggers.size) return [{ text: chunk }]
+    const escaped = [...triggers.keys()]
+      .sort((a, b) => b.length - a.length)
+      .map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    const parts: PromptPart[] = []
+    let last = 0
+    for (const m of chunk.matchAll(
+      new RegExp(
+        `(?<![\\p{L}\\p{N}])(${escaped.join("|")})(?![\\p{L}\\p{N}])`,
+        "giu"
+      )
+    )) {
+      if (m.index > last) parts.push({ text: chunk.slice(last, m.index) })
+      parts.push({ text: m[0], lora: triggers.get(m[0].toLowerCase())! })
+      last = m.index + m[0].length
+    }
+    if (last < chunk.length) parts.push({ text: chunk.slice(last) })
+    return parts
+  }
+  const parts: PromptPart[] = []
+  let last = 0
+  for (const m of text.matchAll(tagPattern())) {
+    if (m.index > last) parts.push(...plain(text.slice(last, m.index)))
+    const file = findLora(m[1]!, installed)
+    parts.push(
+      file ? { text: m[0], lora: file } : { text: m[0], unknown: true }
+    )
+    last = m.index + m[0].length
+  }
+  if (last < text.length) parts.push(...plain(text.slice(last)))
+  return parts
+}
+
+// What's being typed at the caret, if it's a mention: `@sm` or `<lora:sm`.
+export function mentionAt(text: string, caret: number) {
+  const m = /(?:^|[\s,(])(@|<lora:)([^\s,<>:@]*)$/i.exec(text.slice(0, caret))
+  if (!m) return null
+  return { start: caret - m[1]!.length - m[2]!.length, query: m[2]! }
+}
+
+export function insertMention(
+  text: string,
+  start: number,
+  caret: number,
+  file: string,
+  triggers: string[]
+) {
+  const present = text.toLowerCase()
+  const words = triggers.filter((w) => !present.includes(w.toLowerCase()))
+  const insert = `<lora:${stem(file)}:1>${words.length ? ` ${words.join(", ")}` : ""}, `
+  return {
+    text: text.slice(0, start) + insert + text.slice(caret),
+    caret: start + insert.length,
+  }
+}
+
 export function workflow(r: LabRequest) {
   // Each LoRA loads onto the model the one before it returned.
   const chain = r.loras.map((l, i) => ({

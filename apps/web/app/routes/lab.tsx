@@ -17,6 +17,7 @@ import {
   allowed,
   civitaiMeta,
   installed,
+  loraWords,
   renders,
   type Render,
 } from "@/lib/lab/comfy.server"
@@ -24,9 +25,14 @@ import {
   LAB_DEFAULTS,
   MAX_LORAS,
   civitaiTarget,
-  pairedClip,
   fromCivitai,
+  insertMention,
   labQuery,
+  mentionAt,
+  mergeLoras,
+  pairedClip,
+  promptParts,
+  splitPrompt,
   toRequest,
   type LabLora,
   type LabRequest,
@@ -46,6 +52,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!allowed(request)) throw data("Not found", { status: 404 })
   const url = new URL(request.url)
   const [comfy, past] = await Promise.all([installed(), renders()])
+  const words = await loraWords(comfy.loras).catch(() => ({}))
   const params: Record<string, unknown> = Object.fromEntries(url.searchParams)
   if (url.searchParams.has("lora"))
     params.lora = url.searchParams.getAll("lora")
@@ -70,6 +77,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   return {
     comfy,
     past,
+    words: words as Record<string, string[]>,
     missing,
     notice,
     initial: toRequest(params, base),
@@ -148,11 +156,190 @@ const pretty = (file: string) =>
 const fileUrl = (file: string) => `/api/lab?file=${encodeURIComponent(file)}`
 const randomSeed = () => Math.floor(Math.random() * 2 ** 48)
 
-// A colour of its own for anything with no render to show yet.
-function swatch(name: string) {
+function hue(name: string) {
   let h = 7
   for (const c of name) h = (h * 31 + c.charCodeAt(0)) % 360
+  return h
+}
+
+// A colour of its own for anything with no render to show yet.
+function swatch(name: string) {
+  const h = hue(name)
   return `linear-gradient(145deg, oklch(0.5 0.13 ${h}), oklch(0.26 0.09 ${(h + 50) % 360}))`
+}
+
+const tint = (file: string) => ({ "--hue": hue(file) }) as React.CSSProperties
+
+// The prompt: a textarea with clear text over a coloured copy of itself, and a
+// LoRA picker that opens on `@`.
+function PromptEditor({
+  value,
+  onChange,
+  onSubmit,
+  loras,
+  active,
+  words,
+  past,
+}: {
+  value: string
+  onChange: (value: string) => void
+  onSubmit: () => void
+  loras: string[]
+  active: string[]
+  words: Record<string, string[]>
+  past: Render[]
+}) {
+  const area = React.useRef<HTMLTextAreaElement>(null)
+  const mirror = React.useRef<HTMLDivElement>(null)
+  const [caret, setCaret] = React.useState<number | null>(null)
+  const [picked, setPicked] = React.useState(0)
+  const [dismissed, setDismissed] = React.useState(false)
+  const mention = caret === null || dismissed ? null : mentionAt(value, caret)
+  const query = mention?.query.toLowerCase() ?? ""
+  const matches = !mention
+    ? []
+    : loras
+        .filter((l) =>
+          [l, ...(words[l] ?? [])].some((n) => n.toLowerCase().includes(query))
+        )
+        .slice(0, 6)
+  const index = Math.min(picked, Math.max(0, matches.length - 1))
+  const parts = promptParts(value, loras, active, words)
+
+  const track = (e: { currentTarget: HTMLTextAreaElement }) => {
+    setCaret(e.currentTarget.selectionStart)
+    setDismissed(false)
+  }
+  const pick = (file: string) => {
+    if (!mention || caret === null) return
+    const out = insertMention(
+      value,
+      mention.start,
+      caret,
+      file,
+      words[file] ?? []
+    )
+    onChange(out.text)
+    setCaret(null)
+    setPicked(0)
+    requestAnimationFrame(() => {
+      area.current?.focus()
+      area.current?.setSelectionRange(out.caret, out.caret)
+    })
+  }
+
+  return (
+    <div className="lab-editor">
+      {matches.length ? (
+        <ul
+          className="lab-mention"
+          role="listbox"
+          id="lab-mentions"
+          aria-label="LoRAs"
+        >
+          {matches.map((l, i) => {
+            const image = lastWith(past, (s) => usesLora(s, l))
+            return (
+              <li
+                key={l}
+                id={`lab-mention-${i}`}
+                role="option"
+                aria-selected={i === index}
+              >
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  style={tint(l)}
+                  onMouseDown={(e) => {
+                    e.preventDefault()
+                    pick(l)
+                  }}
+                  onMouseEnter={() => setPicked(i)}
+                >
+                  <i style={{ background: swatch(l) }}>
+                    {image ? <img src={image} alt="" /> : null}
+                  </i>
+                  <span>
+                    <b>{pretty(l)}</b>
+                    <small>
+                      {words[l]?.length
+                        ? words[l]!.join(", ")
+                        : "No trigger word needed"}
+                    </small>
+                  </span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      ) : null}
+      <div ref={mirror} className="lab-mirror" aria-hidden>
+        {parts.map((p, i) =>
+          p.lora ? (
+            <mark key={i} style={tint(p.lora)}>
+              {p.text}
+            </mark>
+          ) : p.unknown ? (
+            <mark key={i} data-unknown>
+              {p.text}
+            </mark>
+          ) : (
+            <React.Fragment key={i}>{p.text}</React.Fragment>
+          )
+        )}
+        {"\u200b"}
+      </div>
+      <textarea
+        ref={area}
+        aria-label="Prompt"
+        aria-expanded={matches.length > 0}
+        aria-controls="lab-mentions"
+        aria-activedescendant={
+          matches.length ? `lab-mention-${index}` : undefined
+        }
+        role="combobox"
+        spellCheck={false}
+        placeholder="Describe the shot. Type @ to add a LoRA"
+        value={value}
+        onChange={(e) => {
+          onChange(e.target.value)
+          track(e)
+        }}
+        onSelect={track}
+        onBlur={() => setCaret(null)}
+        onScroll={(e) => {
+          if (mirror.current)
+            mirror.current.scrollTop = e.currentTarget.scrollTop
+        }}
+        onKeyDown={(e) => {
+          if (matches.length) {
+            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+              e.preventDefault()
+              const by = e.key === "ArrowDown" ? 1 : -1
+              setPicked((index + by + matches.length) % matches.length)
+              return
+            }
+            if (
+              (e.key === "Enter" && !e.metaKey && !e.ctrlKey) ||
+              e.key === "Tab"
+            ) {
+              e.preventDefault()
+              pick(matches[index]!)
+              return
+            }
+            if (e.key === "Escape") {
+              setDismissed(true)
+              return
+            }
+          }
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault()
+            onSubmit()
+          }
+        }}
+      />
+    </div>
+  )
 }
 
 interface Slide {
@@ -619,6 +806,19 @@ function Setup({
               </label>
               <label className="lab-field">
                 <span>Negative prompt</span>
+                {r.cfg <= 1 ? (
+                  <p className="lab-warn">
+                    CFG 1 ignores this. Above 1 it takes effect, and each render
+                    takes about twice as long.
+                    <button
+                      type="button"
+                      className="lab-pill"
+                      onClick={() => set({ cfg: 3 })}
+                    >
+                      Use CFG 3
+                    </button>
+                  </p>
+                ) : null}
                 <textarea
                   className="lab-input"
                   value={r.negative}
@@ -672,7 +872,7 @@ function lastWith(past: Render[], test: (s: LabRequest) => boolean) {
 }
 
 export default function Lab({ loaderData }: Route.ComponentProps) {
-  const { comfy, past, missing, notice, initial } = loaderData
+  const { comfy, past, words, missing, notice, initial } = loaderData
   const revalidator = useRevalidator()
   const [r, setR] = React.useState<LabRequest>(initial)
   const [busy, setBusy] = React.useState(false)
@@ -728,6 +928,9 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
     window.location.href = arrival.current ?? "/lab"
   }
 
+  const split = splitPrompt(r.prompt, comfy.loras)
+  const effective = mergeLoras(r.loras, split.tags)
+
   const generate = async () => {
     const seed = r.seed || randomSeed()
     set({ seed })
@@ -735,14 +938,23 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
     setStarted(Date.now())
     setElapsed(0)
     setError(null)
-    setMessage(null)
+    setMessage(
+      split.unknown.length
+        ? `Skipped, not installed: ${split.unknown.join(", ")}.`
+        : null
+    )
     setCurrent(0)
     abort.current = new AbortController()
     try {
       const res = await fetch("/api/lab", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ ...r, seed }),
+        body: JSON.stringify({
+          ...r,
+          seed,
+          prompt: split.prompt,
+          loras: effective,
+        }),
         signal: abort.current.signal,
       })
       if (!res.ok)
@@ -778,7 +990,7 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
   const shown = past[current]
   const ratio = (s: LabRequest) => `${s.width} / ${s.height}`
   const modelImage = lastWith(past, (s) => s.model === r.model)
-  const first = r.loras[0]?.name
+  const first = effective[0]?.name
   const styleImage = first
     ? lastWith(past, (s) => usesLora(s, first))
     : undefined
@@ -886,24 +1098,39 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
 
       <section className="lab-dock" aria-label="Generate">
         <div className="lab-prompt">
-          <textarea
-            aria-label="Prompt"
-            placeholder="Describe the shot"
+          <PromptEditor
             value={r.prompt}
-            onChange={(e) => set({ prompt: e.target.value })}
-            onKeyDown={(e) => {
-              if (
-                e.key === "Enter" &&
-                (e.metaKey || e.ctrlKey) &&
-                canGo &&
-                !busy
-              ) {
-                e.preventDefault()
-                void generate()
-              }
+            onChange={(prompt) => set({ prompt })}
+            onSubmit={() => {
+              if (canGo && !busy) void generate()
             }}
+            loras={comfy.loras}
+            active={effective.map((l) => l.name)}
+            words={words}
+            past={past}
           />
           <div className="lab-chips">
+            {effective.map((l) => (
+              <button
+                key={l.name}
+                type="button"
+                className="lab-pill"
+                data-lora
+                style={tint(l.name)}
+                onClick={() => open("style")}
+              >
+                {pretty(l.name)} {l.strength}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="lab-pill"
+              data-off={r.cfg <= 1}
+              title={r.cfg <= 1 ? "Ignored at CFG 1" : undefined}
+              onClick={() => open("render")}
+            >
+              Negative{r.cfg <= 1 ? " off" : ""}
+            </button>
             <button
               type="button"
               className="lab-pill"
@@ -942,7 +1169,7 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
             <small>Style</small>
             <b>
               {first
-                ? `${r.loras.length > 1 ? `+${r.loras.length - 1} ` : ""}${pretty(first)}`
+                ? `${effective.length > 1 ? `+${effective.length - 1} ` : ""}${pretty(first)}`
                 : "None"}
             </b>
           </button>

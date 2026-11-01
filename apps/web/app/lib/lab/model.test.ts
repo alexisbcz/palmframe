@@ -4,6 +4,11 @@ import {
   LAB_DEFAULTS,
   civitaiTarget,
   fromCivitai,
+  insertMention,
+  mentionAt,
+  mergeLoras,
+  promptParts,
+  splitPrompt,
   pairedClip,
   labQuery,
   toRequest,
@@ -158,4 +163,64 @@ test("a model takes its own text encoder when one is installed", () => {
   expect(pairedClip("other.safetensors", clips)).toBe(LAB_DEFAULTS.clip)
   const r = toRequest({ prompt: "x", clip: "rimix_txt.safetensors" })
   expect(workflow(r)["3"]!.inputs.clip_name).toBe("rimix_txt.safetensors")
+})
+
+const FILES = ["Smooth.safetensors", "flat.safetensors"]
+
+test("LoRA tags leave the prompt and apply the LoRA", () => {
+  const { prompt, tags, unknown } = splitPrompt(
+    "a samurai, <lora:smooth:0.7> Smo0th, <lora:gone:1>, fire",
+    FILES
+  )
+  expect(prompt).toBe("a samurai, Smo0th, fire")
+  expect(tags).toEqual([{ name: "Smooth.safetensors", strength: 0.7 }])
+  expect(unknown).toEqual(["gone"])
+  expect(splitPrompt("<lora:flat>", FILES).tags[0]?.strength).toBe(1)
+})
+
+test("a tag sets the strength of what's stacked and adds what isn't", () => {
+  const a = { name: "a", strength: 1 }
+  expect(
+    mergeLoras(
+      [a],
+      [
+        { name: "a", strength: 0.5 },
+        { name: "b", strength: 1 },
+      ]
+    )
+  ).toEqual([
+    { name: "a", strength: 0.5 },
+    { name: "b", strength: 1 },
+  ])
+})
+
+test("mentions are found at the caret, and not inside words", () => {
+  expect(mentionAt("a knight @smo", 13)).toEqual({ start: 9, query: "smo" })
+  expect(mentionAt("@", 1)).toEqual({ start: 0, query: "" })
+  expect(mentionAt("<lora:fl", 8)).toEqual({ start: 0, query: "fl" })
+  expect(mentionAt("mail@home", 9)).toBeNull()
+  expect(mentionAt("a knight", 8)).toBeNull()
+})
+
+test("picking a mention writes the tag and its trigger words once", () => {
+  const out = insertMention("a @sm", 2, 5, "Smooth.safetensors", ["Smo0th"])
+  expect(out.text).toBe("a <lora:Smooth:1> Smo0th, ")
+  expect(out.caret).toBe(out.text.length)
+  const again = insertMention("Smo0th @", 7, 8, "Smooth.safetensors", [
+    "Smo0th",
+  ])
+  expect(again.text).toBe("Smo0th <lora:Smooth:1>, ")
+})
+
+test("the prompt splits into coloured parts, losing no text", () => {
+  const text = "x <lora:smooth:1> Smo0th y <lora:gone> z"
+  const parts = promptParts(text, FILES, ["Smooth.safetensors"], {
+    "Smooth.safetensors": ["Smo0th"],
+  })
+  expect(parts.map((p) => p.text).join("")).toBe(text)
+  expect(parts.filter((p) => p.lora).map((p) => p.text)).toEqual([
+    "<lora:smooth:1>",
+    "Smo0th",
+  ])
+  expect(parts.find((p) => p.unknown)?.text).toBe("<lora:gone>")
 })

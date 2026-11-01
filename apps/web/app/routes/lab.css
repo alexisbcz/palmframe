@@ -254,20 +254,50 @@
   gap: 8px;
   padding: 8px 10px 4px;
 }
-.lab-prompt textarea {
+/* Clear text over a coloured copy: both must break lines identically. */
+.lab-editor {
+  position: relative;
+}
+.lab-mirror,
+.lab-editor textarea {
   width: 100%;
   min-height: 46px;
   max-height: 22vh;
-  resize: none;
+  padding: 0;
   border: 0;
-  background: none;
-  outline: none;
+  font: inherit;
   font-size: 15px;
   line-height: 1.5;
-  field-sizing: content;
-  scrollbar-width: thin;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow-y: auto;
+  scrollbar-width: none;
 }
-.lab .lab-prompt textarea:focus-visible {
+.lab-mirror {
+  color: var(--ink);
+}
+.lab-mirror mark {
+  border-radius: 4px;
+  color: oklch(0.88 0.13 var(--hue));
+  background: oklch(0.45 0.12 var(--hue) / 0.42);
+  box-shadow: 0 0 0 1px oklch(0.7 0.13 var(--hue) / 0.4);
+}
+.lab-mirror mark[data-unknown] {
+  color: #ffb4a8;
+  background: rgb(229 72 58 / 0.18);
+  box-shadow: 0 0 0 1px rgb(229 72 58 / 0.4);
+  text-decoration: line-through;
+}
+.lab-editor textarea {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  resize: none;
+  color: transparent;
+  caret-color: var(--ink);
+  background: none;
+}
+.lab .lab-editor textarea:focus-visible {
   outline: none;
 }
 .lab-dock:has(textarea:focus-visible) {
@@ -276,8 +306,92 @@
     0 0 0 1px rgb(214 242 75 / 0.32),
     0 24px 60px -18px #000;
 }
-.lab-prompt textarea::placeholder {
+.lab-editor textarea::placeholder {
   color: var(--faint);
+}
+.lab-editor textarea::selection {
+  color: transparent;
+  background: rgb(214 242 75 / 0.3);
+}
+.lab-mention {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  inset-inline-start: -8px;
+  z-index: 12;
+  width: min(420px, calc(100vw - 48px));
+  padding: 6px;
+  border-radius: 18px;
+  list-style: none;
+  background: var(--raise-2);
+  box-shadow:
+    0 0 0 1px var(--line-2),
+    0 24px 50px -12px #000;
+  animation: lab-rise 140ms ease-out both;
+}
+.lab-mention button {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 6px;
+  border-radius: 12px;
+  text-align: start;
+}
+.lab-mention li[aria-selected="true"] button {
+  background: oklch(0.45 0.12 var(--hue) / 0.3);
+  box-shadow: inset 0 0 0 1px oklch(0.7 0.13 var(--hue) / 0.35);
+}
+.lab-mention i {
+  width: 38px;
+  height: 38px;
+  overflow: hidden;
+  border-radius: 10px;
+}
+.lab-mention img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 18%;
+}
+.lab-mention span {
+  min-width: 0;
+}
+.lab-mention b,
+.lab-mention small {
+  display: block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.lab-mention b {
+  font-size: 14px;
+  font-weight: 550;
+  color: oklch(0.9 0.1 var(--hue));
+}
+.lab-mention small {
+  font-size: 12px;
+  color: var(--mute);
+}
+.lab .lab-pill[data-lora] {
+  color: oklch(0.88 0.13 var(--hue));
+  background: oklch(0.45 0.12 var(--hue) / 0.35);
+  box-shadow: inset 0 0 0 1px oklch(0.7 0.13 var(--hue) / 0.35);
+}
+.lab .lab-pill[data-off="true"] {
+  color: var(--faint);
+}
+.lab-warn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #f2dc8a;
+  background: rgb(214 170 40 / 0.12);
 }
 .lab-chips {
   display: flex;

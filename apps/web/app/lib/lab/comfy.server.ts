@@ -1,6 +1,14 @@
 import { spawn } from "node:child_process"
+import { createHash } from "node:crypto"
 import { createReadStream, existsSync } from "node:fs"
-import { open, readdir, stat } from "node:fs/promises"
+import {
+  mkdir,
+  open,
+  readFile,
+  readdir,
+  stat,
+  writeFile,
+} from "node:fs/promises"
 import { homedir } from "node:os"
 import { join } from "node:path"
 
@@ -87,6 +95,45 @@ export function renderFile(file: string) {
   return Readable.toWeb(
     createReadStream(join(OUTPUT, file))
   ) as unknown as ReadableStream
+}
+
+const WORDS_FILE = join(COMFY_DIR, "user", "lab-lora-words.json")
+
+async function fileHash(path: string) {
+  const hash = createHash("sha256")
+  for await (const chunk of createReadStream(path)) hash.update(chunk)
+  return hash.digest("hex")
+}
+
+// What each LoRA is called in a prompt, asked of Civitai by file hash once and
+// kept. A LoRA it doesn't know is remembered as having no words.
+export async function loraWords(loras: string[]) {
+  const known = (await readFile(WORDS_FILE, "utf8")
+    .then(JSON.parse)
+    .catch(() => ({}))) as Record<string, string[]>
+  const missing = loras.filter((l) => !known[l])
+  if (!missing.length) return known
+  await Promise.all(
+    missing.map(async (file) => {
+      try {
+        const hash = await fileHash(join(COMFY_DIR, "models/loras", file))
+        const res = await fetch(
+          `https://civitai.com/api/v1/model-versions/by-hash/${hash}`,
+          { signal: AbortSignal.timeout(6_000) }
+        )
+        if (res.status === 404) known[file] = []
+        else if (res.ok) {
+          const body = (await res.json()) as { trainedWords?: string[] }
+          known[file] = (body.trainedWords ?? []).slice(0, 8)
+        }
+      } catch {
+        // Offline: left out, so the next visit asks again.
+      }
+    })
+  )
+  await mkdir(join(COMFY_DIR, "user"), { recursive: true })
+  await writeFile(WORDS_FILE, JSON.stringify(known, null, 2))
+  return known
 }
 
 export function startComfy() {
