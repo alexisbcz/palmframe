@@ -4,6 +4,7 @@ import {
   NavLink,
   Outlet,
   redirect,
+  useMatches,
   useRouteLoaderData,
 } from "react-router"
 import { cn } from "cn"
@@ -12,6 +13,7 @@ import {
   ArrowLeft01Icon,
   BookOpen02Icon,
   CheckmarkCircle02Icon,
+  FilmRoll01Icon,
   Fire02Icon,
   Home01Icon,
   MegaphoneIcon,
@@ -80,6 +82,7 @@ const NAV = [
   { to: "/studio/product", key: "product", icon: ShoppingBag01Icon },
   { to: "/studio/media", key: "media", icon: NewsIcon },
   { to: "/studio/books", key: "books", icon: BookOpen02Icon },
+  { to: "/studio/anime", key: "anime", icon: FilmRoll01Icon },
   { to: "/machines", key: "machines", icon: RadioIcon },
 ] as const
 
@@ -164,6 +167,10 @@ export default function Studio({ loaderData }: Route.ComponentProps) {
   const t = useT(messages)
   const [rail, toggleRail] = useRail(loaderData.rail)
   const railLabel = rail ? t("expand") : t("collapse")
+  // A workspace that needs the whole pane asks for it from its route.
+  const bleed = useMatches().some(
+    (m) => (m.handle as { bleed?: boolean } | undefined)?.bleed
+  )
   return (
     <div className="dark studio flex min-h-svh flex-col gap-2 p-2 md:h-svh md:flex-row">
       <aside
@@ -262,9 +269,13 @@ export default function Studio({ loaderData }: Route.ComponentProps) {
         </Link>
       </aside>
       <main className="min-w-0 flex-1 overflow-y-auto rounded-2xl bg-background">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 md:px-10">
+        {bleed ? (
           <Outlet />
-        </div>
+        ) : (
+          <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8 md:px-10">
+            <Outlet />
+          </div>
+        )}
       </main>
     </div>
   )

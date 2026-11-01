@@ -7,6 +7,7 @@ import type {
 
 import type { AssetPayload } from "@/components/catalog/model"
 
+import type { AnimeTables } from "./anime/database"
 import type { BookFunctions, BookTables } from "./books/database"
 import type { StyleAnalysis } from "./comic-import/style"
 import type { SubscriptionCache } from "./credits"
@@ -458,7 +459,8 @@ export interface Database {
         Update: Partial<Omit<OpenRouterConnectionRow, "user_id" | "created_at">>
         Relationships: []
       }
-    } & BookTables
+    } & BookTables &
+      AnimeTables
     Views: {}
     Functions: BookFunctions & {
       my_credits: { Args: Record<string, never>; Returns: number }

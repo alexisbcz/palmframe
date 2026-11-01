@@ -210,3 +210,61 @@
   line-height: 1;
   text-transform: uppercase;
 }
+
+/* Comics to anime: near black, with one acid accent saved for shooting. */
+.anime {
+  --anime-accent: oklch(0.92 0.2 115);
+}
+
+.anime-workspace {
+  --anime-accent: oklch(0.92 0.2 115);
+  --background: oklch(0.145 0.003 260);
+  --card: oklch(0.195 0.003 260);
+  background: var(--background);
+}
+
+.anime-generate {
+  display: flex;
+  min-height: 3.5rem;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  border-radius: 1rem;
+  padding: 0.5rem 1.5rem;
+  background: var(--anime-accent, oklch(0.92 0.2 115));
+  color: oklch(0.2 0.03 115);
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: inset 0 -3px 0 oklch(0 0 0 / 22%);
+  transition:
+    filter 150ms ease,
+    transform 100ms ease;
+}
+
+.anime-generate:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.anime-generate:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.anime-generate:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 2px;
+}
+
+.anime-generate:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anime-generate {
+    transition: none;
+  }
+}
