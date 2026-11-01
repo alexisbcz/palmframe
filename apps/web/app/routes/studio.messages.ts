@@ -17,6 +17,7 @@ export const messages = defineMessages({
       product: "Product to comic",
       media: "Media",
       books: "Books",
+      anime: "Anime",
       machines: "Content machines",
     },
     start: {
@@ -152,6 +153,7 @@ export const messages = defineMessages({
       product: "Du produit à la BD",
       media: "Médias",
       books: "Livres",
+      anime: "Anime",
       machines: "Machines à contenu",
     },
     start: {
@@ -288,6 +290,7 @@ export const messages = defineMessages({
       product: "Del producto al cómic",
       media: "Medios",
       books: "Libros",
+      anime: "Anime",
       machines: "Máquinas de contenido",
     },
     start: {
@@ -425,6 +428,7 @@ export const messages = defineMessages({
       product: "Vom Produkt zum Comic",
       media: "Medien",
       books: "Bücher",
+      anime: "Anime",
       machines: "Content-Maschinen",
     },
     start: {
@@ -562,6 +566,7 @@ export const messages = defineMessages({
       product: "Dal prodotto al fumetto",
       media: "Media",
       books: "Libri",
+      anime: "Anime",
       machines: "Macchine di contenuti",
     },
     start: {
@@ -699,6 +704,7 @@ export const messages = defineMessages({
       product: "商品からコミック",
       media: "メディア",
       books: "書籍",
+      anime: "Anime",
       machines: "コンテンツマシン",
     },
     start: {

@@ -107,6 +107,32 @@ Lookups cost credits and refund on failure. Storyboards cost nothing in credits
 when the person's OpenRouter account pays. Run the unit tests with
 `bun test apps/web/app/lib/studio`.
 
+### Comics to anime
+
+Studio's **Anime** section turns a comic into a finished episode. Drop a CBZ, a
+PDF, an archive or loose pages, or start from a saved project. Detection drafts
+the panels, and a person corrects them before anything is spent.
+
+1. A vision model reads the panels and writes the shots, cast and spoken lines.
+2. An image model redraws each panel as a clean anime frame with no lettering.
+   The first frame sets the look, and later frames are drawn to match it.
+3. A video model animates each frame, and a speech model voices the lines.
+4. The browser cuts the clips with [Mediabunny](https://mediabunny.dev), mixes
+   the sound, burns in subtitles and saves an MP4.
+
+Everything runs on the person's connected OpenRouter account, so the feature
+needs no key of its own and costs no credits. Shooting shows the price first,
+and the server refuses a batch that costs more than the person agreed to. An
+uploaded comic needs a rights confirmation and stays in the private `anime`
+bucket.
+
+Episodes run across function calls: `api/anime/work` does a stretch, and
+`anime-tick` wakes unfinished ones once a minute, so a closed tab loses nothing.
+A request that dies while sending a clip fails instead of retrying, because
+sending it twice could bill twice. For local work, `ANIME_AI_FAKE=1` swaps every
+model for `ffmpeg` stand-ins. It never runs on Vercel. Run the unit tests with
+`bun test apps/web/app/lib/anime`.
+
 ### Media
 
 Studio's **Media** section turns a link or a topic into one researched Story,

@@ -6,7 +6,7 @@ import { supabaseAdmin } from "./supabase-admin.server"
 // Bring your own OpenRouter account. A connected key pays for renders, edits
 // and story plans instead of Palmframe credits; the local-only tools
 // (upscale, cut-out, face fix, restyle) still cost credits.
-const API = "https://openrouter.ai/api/v1"
+export const API = "https://openrouter.ai/api/v1"
 
 // GPT Image is what Palmframe comics are drawn with; Sonnet plans stories.
 export const DEFAULT_IMAGE_MODEL = "openai/gpt-image-2"
@@ -96,14 +96,14 @@ export async function disconnect(userId: string) {
   if (error) throw error
 }
 
-const headers = (key: string) => ({
+export const headers = (key: string) => ({
   authorization: `Bearer ${key}`,
   "content-type": "application/json",
   "HTTP-Referer": process.env.APP_URL ?? "https://palmframe.app",
   "X-Title": "Palmframe",
 })
 
-async function fail(res: Response): Promise<never> {
+export async function fail(res: Response): Promise<never> {
   const body = await res.json().catch(() => null)
   const message = body?.error?.message ?? `HTTP ${res.status}`
   throw new OpenRouterError(
