@@ -191,6 +191,12 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
         <Logo />
         <div className="flex items-center gap-2">
           <Link
+            to="/novels"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            {t("account.novels")}
+          </Link>
+          <Link
             to="/catalog"
             className={buttonVariants({ variant: "ghost", size: "sm" })}
           >

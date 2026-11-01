@@ -1,7 +1,7 @@
 import { OFFICIAL, PACKS } from "@/components/catalog/seed"
 import { SITE, absolute } from "@/lib/seo"
 
-const PAGES = ["/", "/catalog", "/docs/api", "/terms", "/privacy"]
+const PAGES = ["/", "/novels", "/vn/the-last-ferry", "/catalog", "/docs/api", "/terms", "/privacy"]
 
 const escape = (s: string) =>
   s

@@ -7,6 +7,7 @@ import {
   CreditCardIcon,
   RadioIcon,
   FolderLibraryIcon,
+  Book02Icon,
   GridViewIcon,
   LanguageSkillIcon,
   Login03Icon,
@@ -190,6 +191,7 @@ export function AccountMenu() {
           if (key === "projects") navigate("/projects")
           if (key === "catalog") navigate("/catalog")
           if (key === "studio") navigate("/studio")
+          if (key === "novels") navigate("/novels")
           if (key === "billing") openSettings("billing")
           if (key === "settings") openSettings()
           if (key === "commands")
@@ -236,6 +238,12 @@ export function AccountMenu() {
               <HugeiconsIcon icon={GridViewIcon} strokeWidth={2} />
             </Tile>
             {t("account.catalog")}
+          </DropdownMenuItem>
+          <DropdownMenuItem id="novels" textValue={t("account.novels")}>
+            <Tile>
+              <HugeiconsIcon icon={Book02Icon} strokeWidth={2} />
+            </Tile>
+            {t("account.novels")}
           </DropdownMenuItem>
           {viewer.labs.machines && (
             <DropdownMenuItem id="studio" textValue={tm("labs.machines")}>

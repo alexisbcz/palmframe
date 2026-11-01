@@ -12,7 +12,11 @@ const STYLE =
 export const imageAvailable = (connection: OpenRouterConnection | null) =>
   !!connection || !!process.env.PRUNA_API_KEY?.trim()
 
-async function withPruna(prompt: string, abort: AbortSignal) {
+export async function withPruna(
+  prompt: string,
+  abort: AbortSignal,
+  aspect = "4:3"
+) {
   const key = process.env.PRUNA_API_KEY!.trim()
   const json = async (res: Response) => {
     if (!res.ok) throw new Error(`Pruna ${res.status}`)
@@ -33,7 +37,7 @@ async function withPruna(prompt: string, abort: AbortSignal) {
         Model: "p-image",
         "Try-Sync": "true",
       },
-      body: JSON.stringify({ input: { prompt, aspect_ratio: "4:3" } }),
+      body: JSON.stringify({ input: { prompt, aspect_ratio: aspect } }),
     })
   )
   while (body.status !== "succeeded") {
