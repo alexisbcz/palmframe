@@ -1,13 +1,14 @@
 import { cn } from "cn"
 import {
   Checkbox as CheckboxPrimitive,
-  composeRenderProps,
   type CheckboxProps,
 } from "react-aria-components"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Tick02Icon } from "@hugeicons/core-free-icons"
 
-function Checkbox({ className, children, ...props }: CheckboxProps) {
+// The box alone: a label inside it would be squeezed into 16 pixels and spill
+// over whatever sits beside it. Put words next to it, as `LabeledCheckbox` does.
+function Checkbox({ className, ...props }: Omit<CheckboxProps, "children">) {
   return (
     <CheckboxPrimitive
       data-slot="checkbox"
@@ -17,21 +18,15 @@ function Checkbox({ className, children, ...props }: CheckboxProps) {
       )}
       {...props}
     >
-      {composeRenderProps(
-        children,
-        (children, { isSelected, isIndeterminate }) => (
-          <>
-            <span
-              data-slot="checkbox-indicator"
-              className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
-            >
-              {(isSelected || isIndeterminate) && (
-                <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
-              )}
-            </span>
-            {children}
-          </>
-        )
+      {({ isSelected, isIndeterminate }) => (
+        <span
+          data-slot="checkbox-indicator"
+          className="grid place-content-center text-current transition-none [&>svg]:size-3.5"
+        >
+          {(isSelected || isIndeterminate) && (
+            <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} />
+          )}
+        </span>
       )}
     </CheckboxPrimitive>
   )

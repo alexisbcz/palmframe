@@ -3,8 +3,6 @@ import { cn } from "cn"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons"
 
-import { Checkbox } from "@workspace/ui/components/checkbox"
-
 import { useLocale, useT } from "@/i18n/core"
 import { BookCallError } from "@/lib/books/client"
 import {
@@ -15,6 +13,8 @@ import {
 } from "@/lib/books/inline"
 import { LANGUAGES, isRtl, languageOf, type InlineTag } from "@/lib/books/model"
 import { messages } from "@/routes/books.messages"
+
+export { LabeledCheckbox } from "@/components/labeled-checkbox"
 
 export const useBookT = () => useT(messages)
 
@@ -153,43 +153,6 @@ export function InlineText({
       )
     })
   return <>{render(parseInline(text))}</>
-}
-
-// The kit's checkbox is the box alone. This pairs it with its words, and the
-// words toggle it too, the way a label should.
-export function LabeledCheckbox({
-  isSelected,
-  onChange,
-  isDisabled,
-  className,
-  children,
-}: {
-  isSelected: boolean
-  onChange: (next: boolean) => void
-  isDisabled?: boolean
-  className?: string
-  children: React.ReactNode
-}) {
-  const id = React.useId()
-  return (
-    <span className={cn("flex items-start gap-2.5 text-sm", className)}>
-      <span className="flex h-lh items-center">
-        <Checkbox
-          aria-labelledby={id}
-          isSelected={isSelected}
-          onChange={onChange}
-          isDisabled={isDisabled}
-        />
-      </span>
-      <span
-        id={id}
-        className="cursor-pointer"
-        onClick={() => !isDisabled && onChange(!isSelected)}
-      >
-        {children}
-      </span>
-    </span>
-  )
 }
 
 // The line of text in its resting state and in the editor share these, so a

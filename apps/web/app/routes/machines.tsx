@@ -33,7 +33,6 @@ import {
   AlertDialogTitle,
 } from "@workspace/ui/components/alert-dialog"
 import { Badge } from "@workspace/ui/components/badge"
-import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { ButtonGroup } from "@workspace/ui/components/button-group"
 import {
@@ -48,6 +47,7 @@ import { Switch } from "@workspace/ui/components/switch"
 import { Textarea } from "@workspace/ui/components/textarea"
 
 import { Field } from "@/components/settings/sections"
+import { LabeledCheckbox } from "@/components/labeled-checkbox"
 import {
   DEFAULT_LOCALE,
   LOCALES,
@@ -877,13 +877,13 @@ function DatasetPicker({
               key={id}
               className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"
             >
-              <Checkbox
+              <LabeledCheckbox
                 isSelected={on}
                 isDisabled={!on && full}
                 onChange={(next) => toggle(id, next)}
               >
                 {t(`datasets.${id}`)}
-              </Checkbox>
+              </LabeledCheckbox>
               {licence && (
                 <a
                   href={licence.url}
@@ -910,13 +910,13 @@ function DatasetPicker({
               key={id}
               className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1"
             >
-              <Checkbox
+              <LabeledCheckbox
                 isSelected={on}
                 isDisabled={!on}
                 onChange={(next) => toggle(id, next)}
               >
                 {t(`datasets.${id}`)}
-              </Checkbox>
+              </LabeledCheckbox>
               <Badge variant="outline">{t("agent.termsUnread")}</Badge>
             </li>
           )
@@ -948,7 +948,7 @@ function RivalPicker({
         {outlets.map((o) => {
           const on = feeds.some((f) => isRival(f, o.id))
           return (
-            <Checkbox
+            <LabeledCheckbox
               key={o.id}
               isSelected={on}
               isDisabled={!on && feeds.length >= MAX_FEEDS}
@@ -961,7 +961,7 @@ function RivalPicker({
               }
             >
               {o.name}
-            </Checkbox>
+            </LabeledCheckbox>
           )
         })}
       </div>
@@ -1210,7 +1210,7 @@ function LineEditor({
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-2">
               {SCRUTINY.map((s) => (
-                <Checkbox
+                <LabeledCheckbox
                   key={s}
                   isSelected={scrutiny.includes(s)}
                   isDisabled={
@@ -1225,7 +1225,7 @@ function LineEditor({
                   }
                 >
                   {t(`scrutiny.${s}`)}
-                </Checkbox>
+                </LabeledCheckbox>
               ))}
             </div>
           </fieldset>
@@ -1768,7 +1768,7 @@ function Filter({
             {media.enabled && (
               <div className="flex flex-wrap gap-x-4 gap-y-2">
                 {formats.map((f) => (
-                  <Checkbox
+                  <LabeledCheckbox
                     key={f}
                     isSelected={media.formats.includes(f)}
                     onChange={(on) =>
@@ -1781,7 +1781,7 @@ function Filter({
                     }
                   >
                     {tMedia(`formats.${f}`)}
-                  </Checkbox>
+                  </LabeledCheckbox>
                 ))}
               </div>
             )}
