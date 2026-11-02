@@ -243,11 +243,20 @@ export const FORMATS = [
   { id: "carousel", label: "Carousel 4:5", width: 1080, height: 1350 },
   { id: "reel", label: "Reel 9:16", width: 1080, height: 1920 },
   { id: "square", label: "Square 1:1", width: 1080, height: 1080 },
+  // One vertical scroll cut into screens, each the largest slice WEBTOON takes.
+  { id: "webtoon", label: "Webtoon", width: 800, height: 1280 },
 ] as const
+
+export type FormatId = (typeof FORMATS)[number]["id"]
 
 export function formatOf(doc: Pick<ComicDoc, "width" | "height">) {
   return FORMATS.find((f) => f.width === doc.width && f.height === doc.height)
 }
+
+// Reads top to bottom as one strip, never sideways, so it has single-column
+// layouts and no right-to-left mode.
+export const isWebtoon = (doc: Pick<ComicDoc, "width" | "height">) =>
+  formatOf(doc)?.id === "webtoon"
 
 export function uid() {
   return Math.random().toString(36).slice(2, 10)
@@ -438,21 +447,27 @@ export const LAYOUTS: {
 
 export const PAGE_MARGIN = 48
 export const PANEL_GUTTER = 24
+// Webtoon panels run edge to edge, and white space paces the scroll. Half a
+// gutter caps each screen, so the gap across a seam matches the gaps inside.
+export const WEBTOON_GUTTER = 120
 
 export function layoutRects(
   cells: Rect[],
   width: number,
   height: number
 ): Rect[] {
-  const m = PAGE_MARGIN
-  const g = PANEL_GUTTER / 2
-  const iw = width - m * 2 + g * 2
-  const ih = height - m * 2 + g * 2
+  const strip = isWebtoon({ width, height })
+  const mx = strip ? 0 : PAGE_MARGIN
+  const my = strip ? WEBTOON_GUTTER / 2 : PAGE_MARGIN
+  const gx = PANEL_GUTTER / 2
+  const gy = (strip ? WEBTOON_GUTTER : PANEL_GUTTER) / 2
+  const iw = width - mx * 2 + gx * 2
+  const ih = height - my * 2 + gy * 2
   return cells.map((c) => ({
-    x: Math.round(m - g + c.x * iw + g),
-    y: Math.round(m - g + c.y * ih + g),
-    width: Math.round(c.width * iw - g * 2),
-    height: Math.round(c.height * ih - g * 2),
+    x: Math.round(mx + c.x * iw),
+    y: Math.round(my + c.y * ih),
+    width: Math.round(c.width * iw - gx * 2),
+    height: Math.round(c.height * ih - gy * 2),
   }))
 }
 
@@ -650,6 +665,26 @@ export function createDefaultProject(): ComicProject {
     height,
     background: "#ffffff",
     pages: [first],
+    look: DEFAULT_LOOK,
+  }
+}
+
+export function createWebtoonProject(): ComicProject {
+  const { width, height } = FORMATS.find((f) => f.id === "webtoon")!
+  return {
+    version: 2,
+    width,
+    height,
+    background: "#ffffff",
+    pages: [
+      {
+        id: uid(),
+        layers: layoutPanels("two-tiers", width, height).map((p) => ({
+          ...p,
+          borderWidth: 0,
+        })),
+      },
+    ],
     look: DEFAULT_LOOK,
   }
 }

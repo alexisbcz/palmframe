@@ -4,6 +4,7 @@ export const messages = defineMessages({
   en: {
     menu: {
       open: "Menu",
+      newWebtoon: "New webtoon",
       newCarousel: "New carousel",
       openProject: "Open project…",
       saveProject: "Save project",
@@ -32,6 +33,7 @@ export const messages = defineMessages({
   fr: {
     menu: {
       open: "Menu",
+      newWebtoon: "Nouveau webtoon",
       newCarousel: "Nouveau carrousel",
       openProject: "Ouvrir un projet…",
       saveProject: "Enregistrer le projet",
@@ -60,6 +62,7 @@ export const messages = defineMessages({
   es: {
     menu: {
       open: "Menú",
+      newWebtoon: "Nuevo webtoon",
       newCarousel: "Nuevo carrusel",
       openProject: "Abrir proyecto…",
       saveProject: "Guardar proyecto",
@@ -88,6 +91,7 @@ export const messages = defineMessages({
   de: {
     menu: {
       open: "Menü",
+      newWebtoon: "Neuer Webtoon",
       newCarousel: "Neues Karussell",
       openProject: "Projekt öffnen…",
       saveProject: "Projekt speichern",
@@ -116,6 +120,7 @@ export const messages = defineMessages({
   it: {
     menu: {
       open: "Menu",
+      newWebtoon: "Nuovo webtoon",
       newCarousel: "Nuovo carosello",
       openProject: "Apri progetto…",
       saveProject: "Salva progetto",
@@ -144,6 +149,7 @@ export const messages = defineMessages({
   ja: {
     menu: {
       open: "メニュー",
+      newWebtoon: "新しいウェブトゥーン",
       newCarousel: "新しいカルーセル",
       openProject: "プロジェクトを開く…",
       saveProject: "プロジェクトを保存",

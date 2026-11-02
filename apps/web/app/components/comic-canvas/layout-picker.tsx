@@ -9,14 +9,15 @@ import { cn } from "@workspace/ui/lib/utils"
 import { useT } from "@/i18n/core"
 
 import {
-  PRESETS,
   placePreset,
   presetRects,
+  presetsFor,
   readingOrder,
+  singleColumn,
   type PagePreset,
 } from "./layouts"
 import { isPresetId, messages } from "./layouts.messages"
-import { formatOf } from "./model"
+import { formatOf, isWebtoon } from "./model"
 import { PanelSplitter } from "./panel-splitter"
 import { messages as splitterMessages } from "./panel-splitter.messages"
 import { roving } from "./roving"
@@ -100,17 +101,20 @@ export function LayoutPicker({
   const { doc } = editor
   const rtl = !!editor.project.rtl
   const format = formatOf(doc)?.id
+  const webtoon = isWebtoon(doc)
   const presets = React.useMemo(
     () =>
-      [...PRESETS].sort(
+      [...presetsFor(doc)].sort(
         (a, b) =>
           Number(!!format && !!b.best?.includes(format)) -
           Number(!!format && !!a.best?.includes(format))
       ),
-    [format]
+    [doc.width, doc.height, format]
   )
   const label = (id: string) => (isPresetId(id) ? t(`presets.${id}`) : id)
-  const saved = editor.project.layouts ?? []
+  const saved = (editor.project.layouts ?? []).filter(
+    (l) => !webtoon || singleColumn(l.cells)
+  )
   const grid = { gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }
 
   return (
@@ -189,18 +193,22 @@ export function LayoutPicker({
       {splitting && (
         <PanelSplitter editor={editor} onClose={() => setSplitting(false)} />
       )}
-      <div className="mt-1 flex items-center gap-2">
-        <Switch
-          size="sm"
-          aria-label={t("rtl")}
-          isSelected={rtl}
-          onChange={(on) =>
-            editor.commitProject((p) => ({ ...p, rtl: on || undefined }))
-          }
-        />
-        <span className="text-xs">{t("rtl")}</span>
-      </div>
-      <p className="text-xs text-muted-foreground">{t("rtlHint")}</p>
+      {!webtoon && (
+        <>
+          <div className="mt-1 flex items-center gap-2">
+            <Switch
+              size="sm"
+              aria-label={t("rtl")}
+              isSelected={rtl}
+              onChange={(on) =>
+                editor.commitProject((p) => ({ ...p, rtl: on || undefined }))
+              }
+            />
+            <span className="text-xs">{t("rtl")}</span>
+          </div>
+          <p className="text-xs text-muted-foreground">{t("rtlHint")}</p>
+        </>
+      )}
     </div>
   )
 }

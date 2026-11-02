@@ -26,6 +26,11 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Dialog,
+  DialogHeader,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
 import { Kbd } from "@workspace/ui/components/kbd"
 import {
   NativeSelect,
@@ -53,10 +58,14 @@ import {
   SliderInput,
   UsedColorsContext,
 } from "./controls"
+import { Strip } from "@/components/reader/reader"
+
+import { reformatted } from "./layouts"
 import {
   FONTS,
   FORMATS,
   formatOf,
+  isWebtoon,
   type BubbleLayer,
   type BubbleShape,
   type FontId,
@@ -808,6 +817,7 @@ function PageInspector({ editor }: { editor: ComicEditor }) {
   const t = useT(messages)
   const { doc } = editor
   const format = formatOf(doc)
+  const [previewing, setPreviewing] = React.useState(false)
   const setPage = (patch: Partial<typeof doc>, key: string) =>
     editor.commit((d) => ({ ...d, ...patch }), `page-${key}`)
 
@@ -829,7 +839,7 @@ function PageInspector({ editor }: { editor: ComicEditor }) {
             value={format?.id ?? "custom"}
             onChange={(e) => {
               const f = FORMATS.find((f) => f.id === e.target.value)
-              if (f) setPage({ width: f.width, height: f.height }, "format")
+              if (f) editor.commitProject((p) => reformatted(p, f))
             }}
           >
             {FORMATS.map((f) => (
@@ -844,6 +854,28 @@ function PageInspector({ editor }: { editor: ComicEditor }) {
             )}
           </NativeSelect>
         </Row>
+        {format && isWebtoon(doc) && (
+          <>
+            <p className="text-xs text-muted-foreground">{t("webtoon.hint")}</p>
+            <Button variant="outline" onPress={() => setPreviewing(true)}>
+              {t("webtoon.preview")}
+            </Button>
+            {previewing && (
+              <Dialog
+                isOpen
+                onOpenChange={(open) => !open && setPreviewing(false)}
+                className="sm:max-w-md"
+              >
+                <DialogHeader>
+                  <DialogTitle>{t("webtoon.preview")}</DialogTitle>
+                </DialogHeader>
+                <div className="-mx-4 max-h-[calc(100svh-10rem)] overflow-y-auto">
+                  <Strip project={editor.project} />
+                </div>
+              </Dialog>
+            )}
+          </>
+        )}
         <Row label={t("rows.size")}>
           <NumberInput
             prefix={t("prefix.width")}

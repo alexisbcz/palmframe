@@ -2,6 +2,7 @@ import { guidePng, loadImage } from "./guide"
 import { PRESETS, presetRects } from "./layouts"
 import {
   createPanel,
+  isWebtoon,
   uid,
   type ComicPage,
   type ComicProject,
@@ -131,11 +132,11 @@ export function coverageSlides(
   project: Pick<ComicProject, "width" | "height" | "rtl">
 ): ComicPage[] {
   const slides: ComicPage[] = []
-  for (let i = 0; i < picks.length; i += SLIDE_LAYOUTS.length) {
-    const group = picks.slice(i, i + SLIDE_LAYOUTS.length)
-    const preset = PRESETS.find(
-      (p) => p.id === SLIDE_LAYOUTS[group.length - 1]
-    )!
+  // A webtoon stops short of the grid: its panels never sit side by side.
+  const layouts = isWebtoon(project) ? SLIDE_LAYOUTS.slice(0, 3) : SLIDE_LAYOUTS
+  for (let i = 0; i < picks.length; i += layouts.length) {
+    const group = picks.slice(i, i + layouts.length)
+    const preset = PRESETS.find((p) => p.id === layouts[group.length - 1])!
     const rects = presetRects(preset, project, project.rtl)
     slides.push({
       id: uid(),

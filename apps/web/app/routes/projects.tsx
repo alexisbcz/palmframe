@@ -44,6 +44,7 @@ import { messages as labsMessages } from "@/routes/machines.messages"
 import { Logo } from "@/components/auth/auth-ui"
 import {
   createDefaultProject,
+  createWebtoonProject,
   toProject,
 } from "@/components/comic-canvas/model"
 import { ComicImportDialog } from "@/components/comic-canvas/comic-import-dialog"
@@ -105,8 +106,18 @@ export async function action({ request }: Route.ActionArgs) {
   const intent = form.get("intent")
   const id = String(form.get("id") ?? "")
 
-  if (intent === "new" || intent === "duplicate") {
-    let insert = { title: "", data: createDefaultProject() }
+  if (
+    intent === "new" ||
+    intent === "new-webtoon" ||
+    intent === "duplicate"
+  ) {
+    let insert = {
+      title: "",
+      data:
+        intent === "new-webtoon"
+          ? createWebtoonProject()
+          : createDefaultProject(),
+    }
     if (intent === "duplicate") {
       const { data: source } = await supabase
         .from("comic_projects")
@@ -126,7 +137,9 @@ export async function action({ request }: Route.ActionArgs) {
       .select("id")
       .single()
     if (error) throw data(error.message, { status: 500, headers })
-    throw redirect(intent === "new" ? `/p/${row.id}` : "/projects", { headers })
+    throw redirect(intent === "duplicate" ? "/projects" : `/p/${row.id}`, {
+      headers,
+    })
   }
 
   if (intent === "delete") {
@@ -177,6 +190,9 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
   const navigation = useNavigation()
   const creating =
     navigation.state !== "idle" && navigation.formData?.get("intent") === "new"
+  const creatingWebtoon =
+    navigation.state !== "idle" &&
+    navigation.formData?.get("intent") === "new-webtoon"
   const { projects, series } = loaderData
   const ts = useT(seriesMessages)
   const revalidator = useRevalidator()
@@ -243,6 +259,22 @@ export default function Projects({ loaderData }: Route.ComponentProps) {
               <HugeiconsIcon icon={LibraryIcon} strokeWidth={2} />
               {ts("newSeries")}
             </Button>
+            <Form method="post">
+              <Button
+                type="submit"
+                name="intent"
+                value="new-webtoon"
+                variant="ghost"
+                isDisabled={creatingWebtoon}
+              >
+                {creatingWebtoon ? (
+                  <Spinner />
+                ) : (
+                  <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
+                )}
+                {t("projects.newWebtoon")}
+              </Button>
+            </Form>
             <Form method="post">
               <Button
                 type="submit"

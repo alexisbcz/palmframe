@@ -7,7 +7,11 @@ import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 
-import { pageDoc, type ComicProject } from "@/components/comic-canvas/model"
+import {
+  isWebtoon,
+  pageDoc,
+  type ComicProject,
+} from "@/components/comic-canvas/model"
 import { letteringOrder } from "@/components/comic-canvas/reading-order"
 import { renderToBlob, type ImageCache } from "@/components/comic-canvas/render"
 import { useT } from "@/i18n/core"
@@ -51,8 +55,96 @@ function useSlides(project: ComicProject) {
   return slides
 }
 
+// A webtoon's screens butted together, so the seams don't show.
+export function Strip({ project }: { project: ComicProject }) {
+  const t = useT(messages)
+  const slides = useSlides(project)
+  const count = project.pages.length
+  return (
+    <div
+      className="mx-auto flex w-full max-w-[800px] flex-col"
+      style={{ background: project.background }}
+    >
+      {project.pages.map((page, i) =>
+        slides[i] ? (
+          <img
+            key={page.id}
+            src={slides[i]}
+            alt={t("slide", {
+              n: i + 1,
+              total: count,
+              text: altText(project, i),
+            })}
+            draggable={false}
+            className="block w-full"
+          />
+        ) : (
+          <Skeleton
+            key={page.id}
+            className="w-full rounded-none"
+            style={{ aspectRatio: `${project.width} / ${project.height}` }}
+          />
+        )
+      )}
+    </div>
+  )
+}
+
+function StripReader({
+  title,
+  project,
+  report,
+}: {
+  title: string
+  project: ComicProject
+  report: string
+}) {
+  const t = useT(messages)
+  return (
+    <main className="flex h-svh flex-col bg-background text-foreground">
+      <header className="flex h-12 shrink-0 items-center px-4">
+        <h1 className="min-w-0 truncate text-sm font-medium">
+          {title || t("untitled")}
+        </h1>
+      </header>
+      <div
+        role="group"
+        aria-label={title || t("untitled")}
+        tabIndex={0}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-y-contain outline-none focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:ring-inset"
+      >
+        <Strip project={project} />
+      </div>
+      <Footer report={report} />
+    </main>
+  )
+}
+
+function reportLink(subject: string, body: string, url: string) {
+  return `mailto:${ABUSE_EMAIL}?subject=${encodeURIComponent(
+    subject
+  )}&body=${encodeURIComponent(`${body}\n\n${url}`)}`
+}
+
+export function Reader(props: {
+  title: string
+  project: ComicProject
+  url: string
+}) {
+  const t = useT(messages)
+  return isWebtoon(props.project) ? (
+    <StripReader
+      title={props.title}
+      project={props.project}
+      report={reportLink(t("reportSubject"), t("reportBody"), props.url)}
+    />
+  ) : (
+    <CarouselReader {...props} />
+  )
+}
+
 // One slide at a time, swiped like the Instagram carousel it came from.
-export function Reader({
+function CarouselReader({
   title,
   project,
   url,
@@ -98,9 +190,7 @@ export function Reader({
     return () => window.removeEventListener("keydown", onKey)
   }, [goTo, index, count, rtl])
 
-  const report = `mailto:${ABUSE_EMAIL}?subject=${encodeURIComponent(
-    t("reportSubject")
-  )}&body=${encodeURIComponent(`${t("reportBody")}\n\n${url}`)}`
+  const report = reportLink(t("reportSubject"), t("reportBody"), url)
 
   return (
     <main className="flex h-svh flex-col bg-background text-foreground">

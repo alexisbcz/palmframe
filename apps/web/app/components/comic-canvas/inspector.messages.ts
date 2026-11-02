@@ -90,9 +90,14 @@ export const messages = defineMessages({
       caption: "Caption",
       message: "Message",
     },
+    webtoon: {
+      hint: "Slides join into one scroll, read top to bottom.",
+      preview: "Preview the scroll",
+    },
     formats: {
       carousel: "Carousel 4:5",
       reel: "Reel 9:16",
+      webtoon: "Webtoon (vertical scroll)",
       square: "Square 1:1",
       custom: "Custom",
     },
@@ -206,9 +211,14 @@ export const messages = defineMessages({
       caption: "Récitatif",
       message: "Message",
     },
+    webtoon: {
+      hint: "Les diapos forment un seul défilement, lu de haut en bas.",
+      preview: "Aperçu du défilement",
+    },
     formats: {
       carousel: "Carrousel 4:5",
       reel: "Reel 9:16",
+      webtoon: "Webtoon (défilement vertical)",
       square: "Carré 1:1",
       custom: "Personnalisé",
     },
@@ -322,9 +332,14 @@ export const messages = defineMessages({
       caption: "Cartucho",
       message: "Mensaje",
     },
+    webtoon: {
+      hint: "Las diapositivas forman un solo scroll, de arriba abajo.",
+      preview: "Vista previa del scroll",
+    },
     formats: {
       carousel: "Carrusel 4:5",
       reel: "Reel 9:16",
+      webtoon: "Webtoon (scroll vertical)",
       square: "Cuadrado 1:1",
       custom: "Personalizado",
     },
@@ -438,9 +453,14 @@ export const messages = defineMessages({
       caption: "Textkasten",
       message: "Nachricht",
     },
+    webtoon: {
+      hint: "Die Slides ergeben eine Scrollstrecke, von oben nach unten.",
+      preview: "Scrollen ansehen",
+    },
     formats: {
       carousel: "Karussell 4:5",
       reel: "Reel 9:16",
+      webtoon: "Webtoon (vertikales Scrollen)",
       square: "Quadrat 1:1",
       custom: "Eigenes",
     },
@@ -554,9 +574,14 @@ export const messages = defineMessages({
       caption: "Didascalia",
       message: "Messaggio",
     },
+    webtoon: {
+      hint: "Le slide formano un unico scorrimento, dall'alto in basso.",
+      preview: "Anteprima dello scorrimento",
+    },
     formats: {
       carousel: "Carosello 4:5",
       reel: "Reel 9:16",
+      webtoon: "Webtoon (scorrimento verticale)",
       square: "Quadrato 1:1",
       custom: "Personalizzato",
     },
@@ -670,9 +695,14 @@ export const messages = defineMessages({
       caption: "ナレーション",
       message: "メッセージ",
     },
+    webtoon: {
+      hint: "スライドはつながり、上から下へ一続きに読まれます。",
+      preview: "スクロールをプレビュー",
+    },
     formats: {
       carousel: "カルーセル 4:5",
       reel: "リール 9:16",
+      webtoon: "ウェブトゥーン（縦スクロール）",
       square: "正方形 1:1",
       custom: "カスタム",
     },

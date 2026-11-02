@@ -65,6 +65,7 @@ import { Inspector } from "./inspector"
 import {
   createBubble,
   createDefaultProject,
+  createWebtoonProject,
   createPanel,
   createText,
   toProject,
@@ -360,6 +361,15 @@ export function ComicCanvasEditor({
                   editor.replaceProject(createDefaultProject())
                   setView((v) => ({ ...v, fit: true }))
                 }
+                if (key === "new-webtoon" && cloud)
+                  submit(
+                    { intent: "new-webtoon" },
+                    { method: "post", action: "/projects" }
+                  )
+                else if (key === "new-webtoon") {
+                  editor.replaceProject(createWebtoonProject())
+                  setView((v) => ({ ...v, fit: true }))
+                }
                 if (key === "catalog") navigate("/catalog")
                 if (key === "open") openProject()
                 if (key === "generate-all") generator.generateAll()
@@ -381,6 +391,10 @@ export function ComicCanvasEditor({
               <DropdownMenuItem id="new">
                 <HugeiconsIcon icon={FileAddIcon} strokeWidth={2} />
                 {t("menu.newCarousel")}
+              </DropdownMenuItem>
+              <DropdownMenuItem id="new-webtoon">
+                <HugeiconsIcon icon={FileAddIcon} strokeWidth={2} />
+                {t("menu.newWebtoon")}
               </DropdownMenuItem>
               <DropdownMenuItem id="open">
                 <HugeiconsIcon icon={FolderOpenIcon} strokeWidth={2} />

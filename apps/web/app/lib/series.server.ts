@@ -1,5 +1,7 @@
 import {
   createDefaultProject,
+  createWebtoonProject,
+  isWebtoon,
   toProject,
   type ComicProject,
 } from "@/components/comic-canvas/model"
@@ -134,11 +136,22 @@ export async function newCarousel(supabase: Supabase, id: string) {
     .eq("id", id)
     .maybeSingle()
   if (!series) throw new SeriesError("No such series.", 404)
+  // A series keeps its format: the next episode of a webtoon is a webtoon.
+  const { data: latest } = await supabase
+    .from("comic_projects")
+    .select("data")
+    .eq("series_id", id)
+    .order("series_position", { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  const shape = latest?.data as { width: number; height: number } | undefined
   const { data, error } = await supabase
     .from("comic_projects")
     .insert({
       data: {
-        ...createDefaultProject(),
+        ...(shape && isWebtoon(shape)
+          ? createWebtoonProject()
+          : createDefaultProject()),
         cast: series.characters,
         world: series.world,
       },

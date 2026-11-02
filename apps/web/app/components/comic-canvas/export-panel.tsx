@@ -34,7 +34,13 @@ import { translatedPage } from "./lettering"
 import { LetteringSection } from "./lettering-section"
 import type { SeriesContext } from "./series"
 import { renderPsd } from "./psd"
-import { renderToBlob, type ImageCache } from "./render"
+import { isWebtoon } from "./model"
+import {
+  MAX_STRIP_HEIGHT,
+  renderStrip,
+  renderToBlob,
+  type ImageCache,
+} from "./render"
 import { roving } from "./roving"
 import type { ComicEditor } from "./use-editor"
 
@@ -312,6 +318,8 @@ function ExportPanel({
   const [status, setStatus] = React.useState<Status>({ step: "idle" })
   const [copied, setCopied] = React.useState(false)
   const [nameEdited, setNameEdited] = React.useState(false)
+  // Not remembered: only a webtoon has the choice.
+  const [joined, setJoined] = React.useState(false)
 
   const count = project.pages.length
   const pages =
@@ -323,6 +331,11 @@ function ExportPanel({
   const scale = settings.dpi ? settings.dpi / CSS_DPI : settings.scale
   const pixelWidth = Math.round(project.width * scale)
   const pixelHeight = Math.round(project.height * scale)
+  const webtoon = isWebtoon(project)
+  const image = settings.format in MIME
+  const stripHeight = pixelHeight * pages.length
+  const stripTooTall = stripHeight > MAX_STRIP_HEIGHT
+  const strip = webtoon && image && joined && pages.length > 1 && !stripTooTall
   const ext = settings.format === "jpeg" ? "jpg" : settings.format
   const fileName =
     settings.format === "cbz"
@@ -337,9 +350,11 @@ function ExportPanel({
   const outName =
     settings.format === "pdf" || settings.format === "cbz"
       ? `${name}.${settings.format}`
-      : pages.length > 1
-        ? `${name}.zip`
-        : `${name}-${String(pages[0]! + 1).padStart(2, "0")}.${ext}`
+      : strip
+        ? `${name}.${ext}`
+        : pages.length > 1
+          ? `${name}.zip`
+          : `${name}-${String(pages[0]! + 1).padStart(2, "0")}.${ext}`
 
   React.useEffect(() => {
     let live = true
@@ -391,6 +406,29 @@ function ExportPanel({
       return blob
     }
     try {
+      if (strip) {
+        setStatus({ step: "rendering", done: 0, total: pages.length })
+        const docs = []
+        for (const n of pages.keys()) {
+          setStatus({ step: "rendering", done: n, total: pages.length })
+          docs.push(await translatedPage(project, pages[n]!, language))
+        }
+        setStatus({ step: "packing" })
+        let out = await renderStrip(
+          docs,
+          images,
+          MIME[format as keyof typeof MIME],
+          scale,
+          quality
+        )
+        if (!out) throw new Error("canvas")
+        if (out.type !== type)
+          throw new Error(t("unsupported", { format: formatName }))
+        if (dpi) out = await withDpi(out, dpi)
+        download(out, outName)
+        setStatus({ step: "done", file: outName, size: out.size })
+        return
+      }
       if (format === "cbz") {
         // Written page by page, so finished pages leave the heap for a Blob.
         const out = await writeCbz({
@@ -455,8 +493,9 @@ function ExportPanel({
     setTimeout(() => setCopied(false), 1500)
   }
 
-  const primary =
-    settings.format === "pdf"
+  const primary = strip
+    ? t("strip.export", { format: formatName })
+    : settings.format === "pdf"
       ? t("exportPdf", { count: pages.length })
       : settings.format === "cbz"
         ? t("exportCbz", { count: pages.length })
@@ -551,6 +590,25 @@ function ExportPanel({
         )}
       </div>
 
+      {webtoon && image && pages.length > 1 && (
+        <div className="flex flex-col gap-2">
+          <Segmented<"screens" | "long">
+            label={t("strip.label")}
+            value={strip ? "long" : "screens"}
+            onChange={(v) => setJoined(v === "long")}
+            options={[
+              { id: "screens", label: t("strip.screens") },
+              { id: "long", label: t("strip.long") },
+            ]}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t(joined && stripTooTall ? "strip.tooTall" : "strip.hint", {
+              max: MAX_STRIP_HEIGHT,
+            })}
+          </p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         <Label
           aside={
@@ -560,7 +618,7 @@ function ExportPanel({
                   height: inches(project.height),
                   pixels: `${pixelWidth} × ${pixelHeight}`,
                 })
-              : `${pixelWidth} × ${pixelHeight} px`
+              : `${pixelWidth} × ${strip ? stripHeight : pixelHeight} px`
           }
         >
           {t("size")}

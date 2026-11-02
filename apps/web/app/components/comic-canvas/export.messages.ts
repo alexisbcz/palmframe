@@ -4,6 +4,14 @@ export const messages = defineMessages({
   en: {
     button: "Export",
     title: "Export",
+    strip: {
+      label: "How to join the slides",
+      screens: "Separate slides",
+      long: "One long image",
+      hint: "Upload sites such as WEBTOON Canvas take separate slides.",
+      tooTall: "Too tall for one image: the limit is {max} px. Lower the size or leave slides out.",
+      export: "Export long {format}",
+    },
     scope: { all: "All slides", current: "This slide" },
     format: "Format",
     formats: {
@@ -52,6 +60,14 @@ export const messages = defineMessages({
   fr: {
     button: "Exporter",
     title: "Exporter",
+    strip: {
+      label: "Assemblage des diapos",
+      screens: "Diapos séparées",
+      long: "Une longue image",
+      hint: "Les sites comme WEBTOON Canvas demandent des diapos séparées.",
+      tooTall: "Trop haut pour une seule image : la limite est de {max} px. Réduisez la taille ou retirez des diapos.",
+      export: "Exporter en long {format}",
+    },
     scope: { all: "Toutes les diapos", current: "Cette diapo" },
     format: "Format",
     formats: {
@@ -101,6 +117,14 @@ export const messages = defineMessages({
   es: {
     button: "Exportar",
     title: "Exportar",
+    strip: {
+      label: "Cómo unir las diapositivas",
+      screens: "Diapositivas separadas",
+      long: "Una imagen larga",
+      hint: "Sitios como WEBTOON Canvas piden diapositivas separadas.",
+      tooTall: "Demasiado alta para una imagen: el límite es {max} px. Reduce el tamaño o quita diapositivas.",
+      export: "Exportar {format} largo",
+    },
     scope: { all: "Todas las diapositivas", current: "Esta diapositiva" },
     format: "Formato",
     formats: {
@@ -150,6 +174,14 @@ export const messages = defineMessages({
   de: {
     button: "Exportieren",
     title: "Exportieren",
+    strip: {
+      label: "Slides zusammenfügen",
+      screens: "Einzelne Slides",
+      long: "Ein langes Bild",
+      hint: "Seiten wie WEBTOON Canvas verlangen einzelne Slides.",
+      tooTall: "Zu hoch für ein Bild: Das Limit liegt bei {max} px. Verringere die Größe oder lasse Slides weg.",
+      export: "Langes {format} exportieren",
+    },
     scope: { all: "Alle Slides", current: "Diese Slide" },
     format: "Format",
     formats: {
@@ -199,6 +231,14 @@ export const messages = defineMessages({
   it: {
     button: "Esporta",
     title: "Esporta",
+    strip: {
+      label: "Come unire le slide",
+      screens: "Slide separate",
+      long: "Un'unica immagine lunga",
+      hint: "Siti come WEBTOON Canvas richiedono slide separate.",
+      tooTall: "Troppo alta per un'immagine: il limite è {max} px. Riduci la dimensione o togli delle slide.",
+      export: "Esporta {format} lungo",
+    },
     scope: { all: "Tutte le slide", current: "Questa slide" },
     format: "Formato",
     formats: {
@@ -248,6 +288,14 @@ export const messages = defineMessages({
   ja: {
     button: "書き出し",
     title: "書き出し",
+    strip: {
+      label: "スライドのつなぎ方",
+      screens: "スライドごと",
+      long: "1枚の縦長画像",
+      hint: "WEBTOON Canvasなどの投稿先にはスライドごとにアップロードします。",
+      tooTall: "1枚の画像には長すぎます。上限は{max} pxです。サイズを下げるかスライドを減らしてください。",
+      export: "縦長{format}を書き出す",
+    },
     scope: { all: "すべてのスライド", current: "このスライド" },
     format: "形式",
     formats: {

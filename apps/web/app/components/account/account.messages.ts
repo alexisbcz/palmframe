@@ -35,6 +35,7 @@ export const messages = defineMessages({
     projects: {
       meta: "My projects",
       title: "My projects",
+      newWebtoon: "New webtoon",
       new: "New carousel",
       empty: "No carousels yet",
       emptyHint:
@@ -90,6 +91,7 @@ export const messages = defineMessages({
     projects: {
       meta: "Mes projets",
       title: "Mes projets",
+      newWebtoon: "Nouveau webtoon",
       new: "Nouveau carrousel",
       empty: "Pas encore de carrousel",
       emptyHint:
@@ -144,6 +146,7 @@ export const messages = defineMessages({
     projects: {
       meta: "Mis proyectos",
       title: "Mis proyectos",
+      newWebtoon: "Nuevo webtoon",
       new: "Nuevo carrusel",
       empty: "Aún no hay carruseles",
       emptyHint:
@@ -199,6 +202,7 @@ export const messages = defineMessages({
     projects: {
       meta: "Meine Projekte",
       title: "Meine Projekte",
+      newWebtoon: "Neuer Webtoon",
       new: "Neues Karussell",
       empty: "Noch keine Karussells",
       emptyHint:
@@ -253,6 +257,7 @@ export const messages = defineMessages({
     projects: {
       meta: "I miei progetti",
       title: "I miei progetti",
+      newWebtoon: "Nuovo webtoon",
       new: "Nuovo carosello",
       empty: "Ancora nessun carosello",
       emptyHint:
@@ -307,6 +312,7 @@ export const messages = defineMessages({
     projects: {
       meta: "マイプロジェクト",
       title: "マイプロジェクト",
+      newWebtoon: "新しいウェブトゥーン",
       new: "新しいカルーセル",
       empty: "カルーセルはまだありません",
       emptyHint:

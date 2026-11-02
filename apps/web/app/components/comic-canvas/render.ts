@@ -17,11 +17,13 @@ export interface RenderOptions {
   editor?: boolean
   // Translated placeholder text for empty and loading panels in the editor.
   labels?: { empty: string; loading: string }
+  // Device pixels down the canvas to draw from, to stack pages on one canvas.
+  offsetY?: number
 }
 
 export function drawDoc(ctx: Ctx, doc: ComicDoc, opts: RenderOptions) {
   ctx.save()
-  ctx.setTransform(opts.scale, 0, 0, opts.scale, 0, 0)
+  ctx.setTransform(opts.scale, 0, 0, opts.scale, 0, opts.offsetY ?? 0)
   ctx.fillStyle = doc.background
   ctx.fillRect(0, 0, doc.width, doc.height)
   for (const layer of doc.layers) {
@@ -554,6 +556,38 @@ export async function renderToBlob(
     canvas.toBlob(resolve, type, quality)
   )
   // Hands the pixels back now rather than whenever the canvas is collected.
+  canvas.width = canvas.height = 0
+  return blob
+}
+
+// Past this WebP can't encode at all and Safari refuses the canvas.
+export const MAX_STRIP_HEIGHT = 16383
+
+// Pages of one size joined top to bottom into a single image.
+export async function renderStrip(
+  docs: ComicDoc[],
+  cache: ImageCache,
+  type: "image/png" | "image/jpeg" | "image/webp",
+  scale = 1,
+  quality = 0.92
+) {
+  const first = docs[0]
+  if (!first) return null
+  await Promise.all(
+    docs.flatMap((doc) => [fontsReady(docText(doc)), loadImages(doc, cache)])
+  )
+  const height = Math.round(first.height * scale)
+  const canvas = document.createElement("canvas")
+  canvas.width = Math.round(first.width * scale)
+  canvas.height = height * docs.length
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return null
+  docs.forEach((doc, i) =>
+    drawDoc(ctx, doc, { scale, images: cache, offsetY: i * height })
+  )
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, type, quality)
+  )
   canvas.width = canvas.height = 0
   return blob
 }
