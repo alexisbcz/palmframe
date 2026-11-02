@@ -96,10 +96,13 @@ Stages and props are built in code, so there is nothing to host. The built-in
 figures and uploaded [VRoid](https://vroid.com/en/studio) models share one
 skeleton, so every pose and expression fits both.
 
-Uploaded `.vrm` and `.glb` files stay in the browser's IndexedDB, because the
-`comics` bucket only takes images. On another device, a figure stands in for an
-uploaded character. The code lives in `apps/web/app/components/comic-canvas/set`,
-and `three` loads only when a set opens.
+Signed in, uploaded `.vrm` and `.glb` files go to the private `comic-models`
+bucket under the owner's ID, so they follow that person across devices, and
+stay in IndexedDB so each browser downloads a model once. Signed out, they stay
+in the browser. Sets on someone else's account can't load them, because a VRoid
+model's licence often forbids sharing it: a figure stands in instead. The code
+lives in `apps/web/app/components/comic-canvas/set`, and `three` loads only when
+a set opens.
 
 ### Posting to Instagram
 

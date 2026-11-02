@@ -2,7 +2,7 @@ import * as THREE from "three"
 import { OrbitControls } from "three/addons/controls/OrbitControls.js"
 import { TransformControls } from "three/addons/controls/TransformControls.js"
 
-import { readModel } from "./assets"
+import type { ModelStore } from "./assets"
 import { buildProp, buildStage } from "./builders"
 import { LIMBS, LIMB_IDS, solveLimb, type LimbId } from "./ik"
 import { BODY_POSES, bodyPose, quatOf } from "./poses"
@@ -207,7 +207,8 @@ export class SetEngine {
 
   constructor(
     private host: HTMLElement,
-    private on: Callbacks
+    private on: Callbacks,
+    private models: ModelStore
   ) {
     this.renderer = new THREE.WebGLRenderer({
       antialias: true,
@@ -413,7 +414,9 @@ export class SetEngine {
         entry.pending = true
         let rig: Rig | null = null
         if (item.model) {
-          const bytes = await readModel(item.model.hash).catch(() => null)
+          const bytes = await this.models
+            .read(item.model.hash)
+            .catch(() => null)
           if (bytes) rig = await loadVrm(bytes).catch(() => null)
           if (!rig) this.on.missing(item.model.name)
         }
@@ -436,7 +439,7 @@ export class SetEngine {
         break
       }
       case "model": {
-        const bytes = await readModel(item.model.hash).catch(() => null)
+        const bytes = await this.models.read(item.model.hash).catch(() => null)
         const model = bytes ? await loadGlb(bytes).catch(() => null) : null
         if (!model) {
           this.on.missing(item.model.name)

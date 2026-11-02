@@ -892,6 +892,7 @@ export interface Viewer {
 }
 
 export const COMICS_BUCKET = "comics"
+export const COMIC_MODELS_BUCKET = "comic-models"
 export const NOVEL_AUDIO_BUCKET = "novel-audio"
 
 export type ComicManuscriptRow = {

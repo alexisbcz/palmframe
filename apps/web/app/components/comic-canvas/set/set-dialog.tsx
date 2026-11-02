@@ -23,6 +23,7 @@ import { Tooltip, TooltipTrigger } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { useT } from "@/i18n/core"
+import { useSupabase } from "@/lib/supabase.browser"
 
 import { pickFile } from "../actions"
 import { ColorInput, Row, SliderInput } from "../controls"
@@ -35,7 +36,7 @@ import {
 } from "../model"
 import type { ComicEditor } from "../use-editor"
 
-import { ModelTooLarge, storeModel } from "./assets"
+import { ModelTooLarge, createModelStore, supabaseModels } from "./assets"
 import { STAGE_MOODS } from "./builders"
 import { SetEngine, poseThumbnails, type Frame, type GizmoMode } from "./engine"
 import {
@@ -130,6 +131,10 @@ export default function SetDialog({
   const [frame, setFrame] = React.useState<Frame | null>(null)
   const [closing, setClosing] = React.useState(false)
   const [dirty, setDirty] = React.useState(false)
+  const supabase = useSupabase()
+  const [models] = React.useState(() =>
+    createModelStore(supabaseModels(supabase))
+  )
   const engineRef = React.useRef<SetEngine | null>(null)
   const hostRef = React.useRef<HTMLDivElement | null>(null)
 
@@ -195,16 +200,20 @@ export default function SetDialog({
     if (!host) return
     let engine: SetEngine
     try {
-      engine = new SetEngine(host, {
-        select: setSelected,
-        transform: (id, patch) => patchItem(id, patch),
-        pose: (id, pose) => patchItem(id, { pose } as Partial<SetItem>),
-        camera: (camera) => {
-          setDirty(true)
-          setHistory((h) => ({ ...h, scene: { ...h.scene, camera } }))
+      engine = new SetEngine(
+        host,
+        {
+          select: setSelected,
+          transform: (id, patch) => patchItem(id, patch),
+          pose: (id, pose) => patchItem(id, { pose } as Partial<SetItem>),
+          camera: (camera) => {
+            setDirty(true)
+            setHistory((h) => ({ ...h, scene: { ...h.scene, camera } }))
+          },
+          missing: (name) => setNotice(t("missing", { name })),
         },
-        missing: (name) => setNotice(t("missing", { name })),
-      })
+        models
+      )
     } catch {
       setBroken(true)
       return
@@ -335,7 +344,8 @@ export default function SetDialog({
     const file = await pickFile(".vrm,.glb,.gltf")
     if (!file) return
     try {
-      const model = await storeModel(file)
+      const { model, synced } = await models.store(file)
+      if (!synced) setNotice(t("notSynced"))
       if (/\.vrm$/i.test(file.name)) {
         addItem({
           ...createActor(FIGURES[0]!, uniqueName(model.name, scene.items)),

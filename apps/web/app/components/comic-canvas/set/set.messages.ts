@@ -82,7 +82,9 @@ export const messages = defineMessages({
     discard: "Close without keeping changes?",
     discardHint: "This set has changes you haven't used on the panel.",
     keep: "Keep editing",
-    missing: "{name} isn't in this browser, so a figure stands in for it.",
+    missing: "{name} couldn't be loaded here, so a figure stands in for it.",
+    notSynced:
+      "Saved in this browser only, so it won't reach your other devices.",
     tooLarge: "That model is over 200 MB.",
     badFile: "That file couldn't be opened as a model.",
     webgl: "This browser can't run 3D scenes.",
@@ -315,7 +317,9 @@ export const messages = defineMessages({
     discardHint:
       "Ce décor a des modifications que vous n'avez pas appliquées à la case.",
     keep: "Continuer",
-    missing: "{name} n'est pas dans ce navigateur : un personnage le remplace.",
+    missing: "{name} n'a pas pu être chargé ici : un personnage le remplace.",
+    notSynced:
+      "Enregistré dans ce navigateur uniquement : il n'apparaîtra pas sur vos autres appareils.",
     tooLarge: "Ce modèle dépasse 200 Mo.",
     badFile: "Ce fichier n'a pas pu être ouvert comme modèle.",
     webgl: "Ce navigateur ne peut pas afficher de scènes 3D.",
@@ -548,8 +552,9 @@ export const messages = defineMessages({
     discardHint:
       "Este escenario tiene cambios que no has aplicado a la viñeta.",
     keep: "Seguir editando",
-    missing:
-      "{name} no está en este navegador, así que una figura lo sustituye.",
+    missing: "{name} no se pudo cargar aquí, así que una figura lo sustituye.",
+    notSynced:
+      "Guardado solo en este navegador: no llegará a tus otros dispositivos.",
     tooLarge: "Ese modelo supera los 200 MB.",
     badFile: "Ese archivo no se pudo abrir como modelo.",
     webgl: "Este navegador no puede mostrar escenas 3D.",
@@ -784,7 +789,9 @@ export const messages = defineMessages({
       "Dieses Set hat Änderungen, die du nicht auf das Panel angewendet hast.",
     keep: "Weiter bearbeiten",
     missing:
-      "{name} ist nicht in diesem Browser, daher steht eine Figur an seiner Stelle.",
+      "{name} konnte hier nicht geladen werden, daher steht eine Figur an seiner Stelle.",
+    notSynced:
+      "Nur in diesem Browser gespeichert: Es erscheint nicht auf deinen anderen Geräten.",
     tooLarge: "Dieses Modell ist größer als 200 MB.",
     badFile: "Diese Datei ließ sich nicht als Modell öffnen.",
     webgl: "Dieser Browser kann keine 3D-Szenen darstellen.",
@@ -1017,7 +1024,9 @@ export const messages = defineMessages({
     discardHint: "Questo set ha modifiche non applicate alla vignetta.",
     keep: "Continua",
     missing:
-      "{name} non è in questo browser, quindi lo sostituisce una figura.",
+      "Impossibile caricare {name} qui, quindi lo sostituisce una figura.",
+    notSynced:
+      "Salvato solo in questo browser: non arriverà sugli altri dispositivi.",
     tooLarge: "Il modello supera i 200 MB.",
     badFile: "Impossibile aprire il file come modello.",
     webgl: "Questo browser non può mostrare scene 3D.",
@@ -1249,7 +1258,8 @@ export const messages = defineMessages({
     discard: "変更を残さずに閉じますか？",
     discardHint: "このセットにはコマに反映していない変更があります。",
     keep: "編集を続ける",
-    missing: "{name} はこのブラウザにないため、人物で代用しています。",
+    missing: "{name} を読み込めなかったため、人物で代用しています。",
+    notSynced: "このブラウザにのみ保存しました。他の端末には同期されません。",
     tooLarge: "このモデルは200MBを超えています。",
     badFile: "このファイルはモデルとして開けませんでした。",
     webgl: "このブラウザでは3Dシーンを表示できません。",
