@@ -67,6 +67,13 @@ export function LabsSection({
       open: t("labs.openDesk"),
     },
     {
+      id: "sites",
+      name: t("labs.sites"),
+      hint: t("labs.sitesHint"),
+      to: "/sites",
+      open: t("labs.openSites"),
+    },
+    {
       id: "dub",
       name: t("labs.dub"),
       hint: t("labs.dubHint"),

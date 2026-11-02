@@ -197,6 +197,38 @@ figures and maps in `apps/web/app/lib/media/assets`, so their numbers are exact.
 Vale runs only where `VALE_TS_ENTRY` points at a built `vale-ts`, because that
 package isn't published. Without it, a run skips the style rules and says so.
 
+### Websites
+
+Frontage is a Labs feature, off until someone turns it on under **Settings >
+Labs**. It builds whole websites at `/sites` and serves them at `/s/:slug`.
+
+- **Starting:** one of the templates in `lib/sites/templates`, or a sentence. A
+  model picks a template and rewrites its copy, slot by slot, so the layout stays
+  as designed.
+- **Editing:** a site is one JSON document (`lib/sites/model.ts`). Elements sit at
+  fixed positions on a 1200-unit stage, and every size is in stage units, so a
+  page scales with its container. Phones get a second layout, worked out by
+  reading order until someone moves an element.
+- **Apps:** forms, a store, bookings, events, a blog with RSS, and lists. What
+  visitors send lands in the site's inbox.
+- **Publishing:** a release is a snapshot, so edits stay private until the next
+  publish, and each publish keeps a version to go back to.
+
+A release is written by its owner, who can reach the table directly, and shown on
+our origin. So `safeHref`, `safeImage` and `color` run as a page is drawn, and
+HTML embeds run in a sandboxed frame with an opaque origin. Visitors' submissions
+go through `api/sites/public/:slug`, which checks them against the release with
+`lib/sites/submit.ts` and works out order totals itself. The functions behind it
+are only open to `service_role`, so that route needs `SUPABASE_SECRET_KEY`.
+
+Sites stay out of search engines until the owner turns that on. Fonts come from
+Bunny Fonts, and only maps and videos an owner adds load anything else.
+
+Orders don't take money. A product can carry a payment link from the owner's own
+processor; otherwise an order is a request the owner follows up on. There are no
+custom domains or member logins yet. For local work, `SITES_AI_FAKE=1` skips the
+model. Run the unit tests with `bun test apps/web/app/lib/sites`.
+
 ### Content machines
 
 Content machines are a Labs feature, off until someone turns them on under

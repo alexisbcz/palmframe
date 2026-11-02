@@ -15,6 +15,7 @@ import {
   Logout01Icon,
   CommandIcon,
   AiChipIcon,
+  Globe02Icon,
   Moon02Icon,
   Settings01Icon,
   Sun03Icon,
@@ -198,6 +199,7 @@ export function AccountMenu() {
           if (key === "studio") navigate("/studio")
           if (key === "novels") navigate("/novels")
           if (key === "desk") navigate("/desk")
+          if (key === "sites") navigate("/sites")
           if (key === "tools") navigate("/tools")
           if (key === "dub") navigate("/dub")
           if (key === "billing") openSettings("billing")
@@ -261,6 +263,14 @@ export function AccountMenu() {
                 <HugeiconsIcon icon={Book02Icon} strokeWidth={2} />
               </Tile>
               {t("account.desk")}
+            </DropdownMenuItem>
+          )}
+          {viewer.labs.sites && (
+            <DropdownMenuItem id="sites" textValue={tm("labs.sites")}>
+              <Tile>
+                <HugeiconsIcon icon={Globe02Icon} strokeWidth={2} />
+              </Tile>
+              {tm("labs.sites")}
             </DropdownMenuItem>
           )}
           {TOOL_IDS.some((id) => viewer.labs[id]) && (

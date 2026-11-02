@@ -21,6 +21,7 @@ import type {
 } from "./deepdive/model"
 import type { DetectorState } from "./machines/detect"
 import type { Kind, Manuscript } from "@/lib/desk/model"
+import type { Site } from "@/lib/sites/model"
 import type { Novel } from "./novel/model"
 import type {
   Item,
@@ -81,6 +82,66 @@ export interface Database {
           words?: number
           data: Manuscript
         }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      comic_sites: {
+        Row: ComicSiteRow
+        Insert: {
+          id?: string
+          user_id?: string
+          name?: string
+          template?: string
+          data: Site
+          revision?: number
+        }
+        Update: { name?: string; data?: Site; revision?: number }
+        Relationships: []
+      }
+      comic_site_releases: {
+        Row: ComicSiteReleaseRow
+        Insert: {
+          site_id: string
+          user_id?: string
+          slug: string
+          title?: string
+          data: Site
+          indexable?: boolean
+          version?: number
+          published_at?: string
+        }
+        Update: {
+          slug?: string
+          title?: string
+          data?: Site
+          indexable?: boolean
+          version?: number
+          published_at?: string
+        }
+        Relationships: []
+      }
+      comic_site_versions: {
+        Row: {
+          id: string
+          site_id: string
+          user_id: string
+          version: number
+          data: Site
+          created_at: string
+        }
+        Insert: { site_id: string; version: number; data: Site }
+        Update: Record<string, never>
+        Relationships: []
+      }
+      comic_site_submissions: {
+        Row: ComicSiteSubmissionRow
+        Insert: Record<string, never>
+        Update: { status?: ComicSiteSubmissionRow["status"] }
+        Relationships: []
+      }
+      comic_site_views: {
+        Row: { site_id: string; day: string; path: string; views: number }
+        Insert: Record<string, never>
         Update: Record<string, never>
         Relationships: []
       }
@@ -498,6 +559,31 @@ export interface Database {
     Views: {}
     Functions: BookFunctions & {
       my_credits: { Args: Record<string, never>; Returns: number }
+      comic_site_release: {
+        Args: { p_slug: string }
+        Returns: {
+          site_id: string
+          slug: string
+          title: string
+          data: Site
+          indexable: boolean
+          published_at: string
+        }[]
+      }
+      comic_site_submit: {
+        Args: {
+          p_slug: string
+          p_kind: string
+          p_data: Record<string, unknown>
+          p_slot?: string | null
+        }
+        Returns: string
+      }
+      comic_site_taken: { Args: { p_slug: string }; Returns: string[] }
+      comic_site_viewed: {
+        Args: { p_slug: string; p_path: string }
+        Returns: undefined
+      }
       comic_asset_stats: {
         Args: Record<string, never>
         Returns: { asset_id: string; saves: number; uses: number }[]
@@ -914,6 +1000,39 @@ export type ComicManuscriptDraftRow = {
   label: string
   words: number
   data: Manuscript
+  created_at: string
+}
+
+export type ComicSiteRow = {
+  id: string
+  user_id: string
+  name: string
+  template: string
+  data: Site
+  revision: number
+  created_at: string
+  updated_at: string
+}
+
+export type ComicSiteReleaseRow = {
+  site_id: string
+  user_id: string
+  slug: string
+  title: string
+  data: Site
+  indexable: boolean
+  version: number
+  published_at: string
+}
+
+export type ComicSiteSubmissionRow = {
+  id: string
+  site_id: string
+  user_id: string
+  kind: "form" | "booking" | "order" | "rsvp" | "newsletter"
+  data: Record<string, unknown>
+  slot: string | null
+  status: "new" | "read" | "done" | "cancelled"
   created_at: string
 }
 

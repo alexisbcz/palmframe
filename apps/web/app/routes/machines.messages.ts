@@ -254,6 +254,9 @@ export const messages = defineMessages({
       move: "{change}% in {minutes} min",
     },
     labs: {
+      sites: "Websites",
+      sitesHint: "Frontage: build and publish full websites with templates, stores, bookings and more. Turning this off closes the builder; published sites stay online.",
+      openSites: "Open Frontage",
       dub: "The Booth",
       dubHint: "Dub existing episodes on your own Mac, with cloned voices.",
       openDub: "Open the Booth",
@@ -668,6 +671,9 @@ export const messages = defineMessages({
       move: "{change} % en {minutes} min",
     },
     labs: {
+      sites: "Sites web",
+      sitesHint: "Frontage : créez et publiez des sites complets avec modèles, boutique, réservations et plus encore. Désactiver cette option ferme l’éditeur ; les sites publiés restent en ligne.",
+      openSites: "Ouvrir Frontage",
       dub: "La Cabine",
       dubHint: "Doublez des épisodes existants sur votre Mac, avec des voix clonées.",
       openDub: "Ouvrir la Cabine",
@@ -1083,6 +1089,9 @@ export const messages = defineMessages({
       move: "{change} % en {minutes} min",
     },
     labs: {
+      sites: "Sitios web",
+      sitesHint: "Frontage: crea y publica sitios completos con plantillas, tienda, reservas y más. Al desactivarlo se cierra el editor; los sitios publicados siguen en línea.",
+      openSites: "Abrir Frontage",
       dub: "La Cabina",
       dubHint: "Dobla episodios existentes en tu Mac, con voces clonadas.",
       openDub: "Abrir la Cabina",
@@ -1496,6 +1505,9 @@ export const messages = defineMessages({
       move: "{change} % in {minutes} Min.",
     },
     labs: {
+      sites: "Websites",
+      sitesHint: "Frontage: Erstelle und veröffentliche komplette Websites mit Vorlagen, Shop, Buchungen und mehr. Beim Ausschalten schließt der Editor; veröffentlichte Websites bleiben online.",
+      openSites: "Frontage öffnen",
       dub: "Die Kabine",
       dubHint: "Synchronisiere vorhandene Folgen auf deinem Mac, mit geklonten Stimmen.",
       openDub: "Kabine öffnen",
@@ -1913,6 +1925,9 @@ export const messages = defineMessages({
       move: "{change}% in {minutes} min",
     },
     labs: {
+      sites: "Siti web",
+      sitesHint: "Frontage: crea e pubblica siti completi con modelli, negozio, prenotazioni e altro. Disattivandolo si chiude l’editor; i siti pubblicati restano online.",
+      openSites: "Apri Frontage",
       dub: "La Cabina",
       dubHint: "Doppia episodi esistenti sul tuo Mac, con voci clonate.",
       openDub: "Apri la Cabina",
@@ -2326,6 +2341,9 @@ export const messages = defineMessages({
       move: "{minutes} 分で {change}%",
     },
     labs: {
+      sites: "ウェブサイト",
+      sitesHint: "Frontage: テンプレート、ストア、予約などを備えたサイトを作成して公開します。オフにするとエディターは閉じますが、公開済みのサイトはオンラインのままです。",
+      openSites: "Frontage を開く",
       dub: "ブース",
       dubHint: "既存のエピソードを、クローンした声でお使いのMac上で吹き替えます。",
       openDub: "ブースを開く",
