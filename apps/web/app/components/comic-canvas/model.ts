@@ -1,5 +1,7 @@
 import type { Locale } from "@/i18n/core"
 
+import type { SavedSet, SetScene } from "./set/scene"
+
 export type ImageFit = "cover" | "contain" | "fill"
 // `message` is a text read on a phone: a rounded chat bubble in sentence case.
 export type BubbleShape = "speech" | "thought" | "shout" | "caption" | "message"
@@ -75,6 +77,10 @@ export interface PanelLayer extends BaseLayer {
   contrast: number
   saturation: number
   grayscale: number
+  // Optional, so comics saved before these effects keep working.
+  hue?: number
+  sepia?: number
+  invert?: number
   // Anima Turbo generation settings, kept on the panel so takes are reproducible.
   // Danbooru tags, kept in Anima's prompt order. `prompt` holds prose.
   tags?: string[]
@@ -108,6 +114,8 @@ export interface PanelLayer extends BaseLayer {
   // A rough sketch directing pose and framing. Only Klein can read one, so
   // a panel with a guide always draws with Klein.
   guide?: LayoutGuide
+  // The 3D scene this panel's shot was staged in, to go back and reshoot it.
+  set?: SetScene
   // The last coverage sheet: this moment from nine cameras, to pick from.
   coverage?: CoverageSheet
   // Lettering a carousel run planned and hasn't placed yet, as script lines.
@@ -541,6 +549,8 @@ export interface ComicProject {
   story?: string
   // Page layouts the user saved from the panel splitter.
   layouts?: SavedLayout[]
+  // 3D sets the user saved to reuse across panels.
+  sets?: SavedSet[]
 }
 
 // A page layout of the user's: cells as in LAYOUTS, stored left to right.
@@ -723,6 +733,7 @@ export function toProject(value: unknown): ComicProject | null {
     rtl?: boolean
     story?: string
     layouts?: unknown
+    sets?: unknown
   } | null
   if (!v || typeof v.width !== "number" || typeof v.height !== "number")
     return null
@@ -751,6 +762,8 @@ export function toProject(value: unknown): ComicProject | null {
       ...(v.rtl === true && { rtl: true }),
       ...(typeof v.story === "string" && { story: v.story }),
       ...(layouts.length > 0 && { layouts }),
+      ...(Array.isArray(v.sets) &&
+        v.sets.length > 0 && { sets: v.sets as SavedSet[] }),
     }
   }
   if (v.version === 1 && Array.isArray(v.layers)) {

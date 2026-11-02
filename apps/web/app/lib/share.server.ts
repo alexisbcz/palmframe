@@ -52,6 +52,9 @@ function readerLayer(l: Layer): Layer {
       contrast: l.contrast,
       saturation: l.saturation,
       grayscale: l.grayscale,
+      hue: l.hue,
+      sepia: l.sepia,
+      invert: l.invert,
     }
   if (l.type === "bubble")
     return {

@@ -109,6 +109,9 @@ function drawPanel(
       `contrast(${l.contrast}%)`,
       `saturate(${l.saturation}%)`,
       l.grayscale ? `grayscale(${l.grayscale}%)` : "",
+      l.sepia ? `sepia(${l.sepia}%)` : "",
+      l.hue ? `hue-rotate(${l.hue}deg)` : "",
+      l.invert ? `invert(${l.invert}%)` : "",
     ].join(" ")
     ctx.save()
     ctx.scale(l.flipX ? -1 : 1, l.flipY ? -1 : 1)

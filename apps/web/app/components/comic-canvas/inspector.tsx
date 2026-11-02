@@ -81,6 +81,7 @@ import { messages } from "./inspector.messages"
 import { DrawnWith } from "./panel-tools"
 import { EditSection } from "./edit-section"
 import { GuideSection } from "./guide-section"
+import { SetSection } from "./set/set-section"
 import { KnifeSection } from "./knife-section"
 import { PostprocessSection } from "./postprocess-tools"
 
@@ -508,6 +509,8 @@ function PanelSections({
 
       <KnifeSection panel={layer} editor={editor} />
 
+      <SetSection panel={layer} editor={editor} />
+
       <GuideSection panel={layer} editor={editor} generator={generator} />
 
       <DrawnWith panel={layer} />
@@ -551,6 +554,27 @@ function PanelSections({
             max={100}
             value={layer.grayscale}
             onChange={(v) => set("grayscale", v)}
+          />
+          <SliderInput
+            label={t("rows.sepia")}
+            min={0}
+            max={100}
+            value={layer.sepia ?? 0}
+            onChange={(v) => set("sepia", v)}
+          />
+          <SliderInput
+            label={t("rows.hue")}
+            min={-180}
+            max={180}
+            value={layer.hue ?? 0}
+            onChange={(v) => set("hue", v)}
+          />
+          <SliderInput
+            label={t("rows.invert")}
+            min={0}
+            max={100}
+            value={layer.invert ?? 0}
+            onChange={(v) => set("invert", v)}
           />
         </Section>
       )}

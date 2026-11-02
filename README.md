@@ -82,6 +82,25 @@ visible credit in the Labs settings and the apps' footer, and a mention of the
 license check in the privacy policy. The SDK makes that check when a model
 loads, and it must stay on.
 
+### 3D sets
+
+Any panel can be staged in 3D: pick **Build in 3D** in the panel's inspector.
+A set holds a stage, posable people, props, lamps, standing images and a camera.
+The white frame shows what the panel will show. **Use as panel image** renders
+the frame in the chosen look (Plain, Toon, Ink or Lines), and **Use as AI guide**
+sends a line drawing to FLUX.2 Klein, which keeps the poses and framing. The set
+stays on the panel, so a shot can be changed and captured again without touching
+its lettering. Saved sets live on the project.
+
+Stages and props are built in code, so there is nothing to host. The built-in
+figures and uploaded [VRoid](https://vroid.com/en/studio) models share one
+skeleton, so every pose and expression fits both.
+
+Uploaded `.vrm` and `.glb` files stay in the browser's IndexedDB, because the
+`comics` bucket only takes images. On another device, a figure stands in for an
+uploaded character. The code lives in `apps/web/app/components/comic-canvas/set`,
+and `three` loads only when a set opens.
+
 ### Posting to Instagram
 
 The canvas can post carousels and Stories to Instagram through
