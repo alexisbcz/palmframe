@@ -8,6 +8,7 @@ import {
   type Manuscript,
   type Part,
   type Status,
+  readable,
 } from "@/lib/desk/model"
 
 import { messages } from "./desk.messages"
@@ -126,7 +127,7 @@ export function Cards({
                   <span className="dk-card-no">{i + 1}</span>
                   <strong>{p.title || `${label} ${i + 1}`}</strong>
                   <span className="dk-card-body">
-                    {p.synopsis || p.body.slice(0, 80) || " "}
+                    {p.synopsis || readable(p.body).slice(0, 80) || " "}
                   </span>
                   <span className="dk-card-foot">
                     {t("cards.words", { count: countWords(p.body) })}

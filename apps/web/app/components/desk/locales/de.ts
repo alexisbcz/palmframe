@@ -105,6 +105,7 @@ export const de: typeof import("./en").en = {
     find: "Suchen",
     focus: "Fokus",
     typewriter: "Scrollen",
+    marks: "Zeichen",
     sound: "Tasten",
     light: "Licht",
     bind: "Binden",

@@ -99,6 +99,7 @@ export const it: typeof import("./en").en = {
     find: "Cerca",
     focus: "Focus",
     typewriter: "Scorri",
+    marks: "Segni",
     sound: "Tasti",
     light: "Luce",
     bind: "Rilega",

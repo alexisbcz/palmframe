@@ -182,9 +182,11 @@ export interface Run {
   bold?: boolean
 }
 
+const MARKED = /(\*\*\*|\*\*|\*)(?=[^\s*])(.+?)(?<=[^\s*])\1/g
+
 export function inlineRuns(line: string): Run[] {
   const out: Run[] = []
-  const re = /(\*\*\*|\*\*|\*)(?=\S)(.+?)(?<=\S)\1/g
+  const re = new RegExp(MARKED)
   let at = 0
   for (let m = re.exec(line); m; m = re.exec(line)) {
     if (m.index > at) out.push({ text: line.slice(at, m.index) })
@@ -202,6 +204,126 @@ export function inlineRuns(line: string): Run[] {
 
 export const isSceneBreak = (line: string) =>
   /^\s*(?:\*\s*\*\s*\*|#|⁂)\s*$/.test(line)
+
+// A span of marked text, as offsets into its line.
+export interface Span {
+  from: number
+  to: number
+  size: number
+}
+
+export function markSpans(line: string): Span[] {
+  if (isSceneBreak(line)) return []
+  return [...line.matchAll(MARKED)].map((m) => ({
+    from: m.index,
+    to: m.index + m[0].length,
+    size: m[1]!.length,
+  }))
+}
+
+// The ranges of a line taken up by asterisks that are formatting, in order.
+export function markersOf(line: string) {
+  return markSpans(line).flatMap(({ from, to, size }) => [
+    { from, to: from + size },
+    { from: to - size, to },
+  ])
+}
+
+interface Letter {
+  ch: string
+  at: number
+  italic: boolean
+  bold: boolean
+}
+
+function lettersOf(line: string) {
+  const spans = markSpans(line)
+  const out: Letter[] = []
+  for (let at = 0; at < line.length; at++) {
+    const s = spans.find((x) => x.from <= at && at < x.to)
+    if (s && (at < s.from + s.size || at >= s.to - s.size)) continue
+    out.push({
+      ch: line[at]!,
+      at,
+      italic: !!s && s.size !== 2,
+      bold: !!s && s.size !== 1,
+    })
+  }
+  return out
+}
+
+// What a reader sees between two offsets of a line.
+export const readableBetween = (line: string, from: number, to: number) =>
+  lettersOf(line)
+    .filter((l) => l.at >= from && l.at < to)
+    .map((l) => l.ch)
+    .join("")
+
+// What a reader sees of a body: the words, without the asterisks around them.
+export const readable = (body: string) =>
+  body
+    .split("\n")
+    .map((l) => readableBetween(l, 0, l.length))
+    .join("\n")
+
+const write = (letters: Letter[]) => {
+  let out = ""
+  for (let i = 0; i < letters.length;) {
+    const { italic, bold } = letters[i]!
+    let end = i
+    while (letters[end]?.italic === italic && letters[end]?.bold === bold) end++
+    const text = letters
+      .slice(i, end)
+      .map((l) => l.ch)
+      .join("")
+    const mark = "*".repeat((italic ? 1 : 0) + (bold ? 2 : 0))
+    // A marker can't sit against a space, so spaces stay outside it.
+    const [, lead, core, tail] = /^(\s*)(.*?)(\s*)$/s.exec(text)!
+    out += core ? `${lead}${mark}${core}${mark}${tail}` : text
+    i = end
+  }
+  return out
+}
+
+// Bold or italic on or off for part of a line, the way a word processor does
+// it: a span can be split, and bold survives italic being taken off. With no
+// selection it acts on the marked span or the word under the caret.
+export function toggleInline(
+  line: string,
+  start: number,
+  end: number,
+  flag: "italic" | "bold"
+) {
+  const letters = lettersOf(line)
+  const seen = (offset: number) => letters.filter((l) => l.at < offset).length
+  const caret = seen(start)
+  let a = caret
+  let b = seen(end)
+  if (a === b) {
+    const span = markSpans(line).find(
+      (s) => s.from + s.size <= start && start <= s.to - s.size
+    )
+    if (span) {
+      a = seen(span.from + span.size)
+      b = seen(span.to - span.size)
+    } else {
+      const text = letters.map((l) => l.ch).join("")
+      a -= /[\p{L}'’-]*$/u.exec(text.slice(0, a))![0].length
+      b += /^[\p{L}'’-]*/u.exec(text.slice(b))![0].length
+    }
+    if (a === b) return null
+  }
+  const on = !letters.slice(a, b).every((l) => l[flag] || !l.ch.trim())
+  const out = write(
+    letters.map((l, i) => (i >= a && i < b ? { ...l, [flag]: on } : l))
+  )
+  const placed = lettersOf(out)
+  const before = (i: number) => placed[i]?.at ?? out.length
+  const after = (i: number) => (i ? placed[i - 1]!.at + 1 : before(0))
+  if (start !== end) return { line: out, start: before(a), end: after(b) }
+  const at = caret >= b ? after(b) : before(Math.max(caret, a))
+  return { line: out, start: at, end: at }
+}
 
 export const proseLines = (body: string) =>
   body.split("\n").filter((l) => l.trim())

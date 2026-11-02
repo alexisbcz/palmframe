@@ -93,6 +93,7 @@ export const ja: typeof import("./en").en = {
     find: "検索",
     focus: "集中",
     typewriter: "スクロール",
+    marks: "記号",
     sound: "打鍵音",
     light: "明かり",
     bind: "製本",

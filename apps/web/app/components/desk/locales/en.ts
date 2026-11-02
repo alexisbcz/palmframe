@@ -91,6 +91,7 @@ export const en = {
     find: "Find",
     focus: "Focus",
     typewriter: "Scroll",
+    marks: "Marks",
     sound: "Keys",
     light: "Light",
     bind: "Bind",

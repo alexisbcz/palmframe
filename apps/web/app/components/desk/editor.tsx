@@ -22,7 +22,14 @@ import {
   type Element,
   type ScriptLine,
 } from "@/lib/desk/fountain"
-import { isSceneBreak, type Kind } from "@/lib/desk/model"
+import {
+  isSceneBreak,
+  markersOf,
+  markSpans,
+  readableBetween,
+  toggleInline,
+  type Kind,
+} from "@/lib/desk/model"
 import {
   alliteration,
   checkForm,
@@ -88,6 +95,7 @@ export interface Tools {
   sound: boolean
   focus: boolean
   typewriter: boolean
+  marks: boolean
 }
 
 export interface Find {
@@ -112,17 +120,12 @@ const key = new PluginKey<{
 }>("desk")
 
 const inlineMarks = (text: string, at: number, out: Decoration[]) => {
-  const re = /(\*\*\*|\*\*|\*)(?=\S)(.+?)(?<=\S)\1/g
-  for (let m = re.exec(text); m; m = re.exec(text)) {
-    const s = at + m.index
-    const n = m[1]!.length
-    const cls = n === 1 ? "dk-i" : n === 2 ? "dk-b" : "dk-i dk-b"
+  for (const { from, to, size } of markSpans(text)) {
+    const cls = size === 1 ? "dk-i" : size === 2 ? "dk-b" : "dk-i dk-b"
     out.push(
-      Decoration.inline(s, s + n, { class: "dk-mk" }),
-      Decoration.inline(s + n, s + m[0].length - n, { class: cls }),
-      Decoration.inline(s + m[0].length - n, s + m[0].length, {
-        class: "dk-mk",
-      })
+      Decoration.inline(at + from, at + from + size, { class: "dk-mk" }),
+      Decoration.inline(at + from + size, at + to - size, { class: cls }),
+      Decoration.inline(at + to - size, at + to, { class: "dk-mk" })
     )
   }
 }
@@ -308,6 +311,27 @@ function buildDecorations(doc: Node, ctx: Context, script: ScriptLine[]) {
   return DecorationSet.create(doc, out)
 }
 
+// Asterisks waiting on both sides of the caret: bold pressed, nothing typed yet.
+function pendingMark(state: EditorState) {
+  const { $from, empty } = state.selection
+  if (!empty) return null
+  const text = $from.parent.textContent
+  const left = /\*+$/.exec(text.slice(0, $from.parentOffset))?.[0].length ?? 0
+  const right = /^\*+/.exec(text.slice($from.parentOffset))?.[0].length ?? 0
+  if (!left || left !== right || left > 3) return null
+  const at = $from.parentOffset
+  if (markersOf(text).some((m) => m.from < at + right && m.to > at - left))
+    return null
+  return { from: $from.pos - left, to: $from.pos + right, size: left }
+}
+
+// With the marks put away the editor treats them as if they weren't there, so
+// the rules below only apply to prose while they're hidden.
+function hiding(state: EditorState) {
+  const c = key.getState(state)?.ctx
+  return c?.kind === "novel" && !c.tools.marks
+}
+
 function caretDecorations(
   state: EditorState,
   ctx: Context,
@@ -319,6 +343,9 @@ function caretDecorations(
   const start = $from.before(1)
   const node = $from.parent
   out.push(Decoration.node(start, start + node.nodeSize, { class: "dk-cur" }))
+  const pending = ctx.kind === "novel" ? pendingMark(state) : null
+  if (pending)
+    out.push(Decoration.inline(pending.from, pending.to, { class: "dk-mk" }))
   if (ctx.kind === "screenplay") {
     // The caret's line shows what it's becoming, before Fountain could tell.
     const l0 = script[index]
@@ -523,25 +550,233 @@ function scriptKeys(getCtx: () => Context) {
   })
 }
 
+// Swaps a line's text, touching only what differs so the caret and undo stay
+// sensible.
+function setLine(tr: Transaction, start: number, from: string, to: string) {
+  let head = 0
+  while (head < from.length && from[head] === to[head]) head++
+  let tail = 0
+  while (
+    tail < from.length - head &&
+    tail < to.length - head &&
+    from[from.length - 1 - tail] === to[to.length - 1 - tail]
+  )
+    tail++
+  const a = start + head
+  const b = start + from.length - tail
+  const text = to.slice(head, to.length - tail)
+  return text ? tr.insertText(text, a, b) : tr.delete(a, b)
+}
+
 function wrapMark(mark: string) {
+  const size = mark.length
   return (state: EditorState, dispatch?: (t: Transaction) => void) => {
-    const { from, to, empty } = state.selection
-    if (empty) return false
-    const text = state.doc.textBetween(from, to)
-    if (text.includes("\n")) return false
+    const { $from, $to } = state.selection
+    if ($from.parent !== $to.parent) return false
+    const line = $from.parent.textContent
+    const start = $from.start(1)
+    const pending = pendingMark(state)
+    const next = pending
+      ? null
+      : toggleInline(
+          line,
+          $from.parentOffset,
+          $to.parentOffset,
+          size === 1 ? "italic" : "bold"
+        )
+    if (next) {
+      if (dispatch) {
+        const tr = setLine(state.tr, start, line, next.line)
+        dispatch(
+          tr.setSelection(
+            TextSelection.create(tr.doc, start + next.start, start + next.end)
+          )
+        )
+      }
+      return true
+    }
+    if (!state.selection.empty) return false
+    // Nothing to format yet: leave a pair open for whatever is typed next.
     if (dispatch) {
-      const n = mark.length
-      const before = state.doc.textBetween(Math.max(from - n, 0), from)
-      const after = state.doc.textBetween(
-        to,
-        Math.min(to + n, state.doc.content.size)
+      const stars = "*".repeat((pending?.size ?? 0) ^ size)
+      const from = pending?.from ?? $from.pos
+      const tr = stars
+        ? state.tr.insertText(stars + stars, from, pending?.to ?? from)
+        : state.tr.delete(from, pending!.to)
+      dispatch(
+        tr.setSelection(TextSelection.create(tr.doc, from + stars.length))
       )
-      if (before === mark && after === mark)
-        dispatch(state.tr.delete(to, to + n).delete(from - n, from))
-      else dispatch(state.tr.insertText(mark, to).insertText(mark, from))
     }
     return true
   }
+}
+
+// The hidden asterisks at a position on one side of the caret. Neighbours are
+// merged, because *a***b** has two markers meeting.
+function markerAt(state: EditorState, pos: number, dir: 1 | -1) {
+  const $pos = state.doc.resolve(pos)
+  const at = $pos.parentOffset
+  const ms = markersOf($pos.parent.textContent)
+  let edge = at
+  for (const m of dir > 0 ? ms : [...ms].reverse()) {
+    if (dir > 0 && m.from === edge) edge = m.to
+    if (dir < 0 && m.to === edge) edge = m.from
+  }
+  return pos + edge - at
+}
+
+// One step along a line with marks, as if only the letters were there. Done
+// here rather than left to the browser, which can stop inside a hidden marker.
+function stepOver(state: EditorState, dir: 1 | -1) {
+  const head = state.selection.$head
+  const text = head.parent.textContent
+  if (!markersOf(text).length) return null
+  const past = markerAt(state, head.pos, dir)
+  const inLine = past - head.start(1)
+  if (dir > 0) {
+    if (inLine < text.length) return past + 1
+    return head.after(1) < state.doc.content.size ? head.after(1) + 1 : past
+  }
+  if (inLine > 0) return past - 1
+  return head.before(1) > 0 ? head.before(1) - 1 : past
+}
+
+// Backspace and Delete take the letter beyond the hidden asterisks, never the
+// asterisks themselves. Option/Ctrl takes the word, leaving the marker in place.
+function eraseOver(
+  state: EditorState,
+  dir: 1 | -1,
+  word: boolean
+): Transaction | "line-edge" | null {
+  const { $from, from } = state.selection
+  const start = $from.start(1)
+  const text = $from.parent.textContent
+  const pending = pendingMark(state)
+  if (pending) return state.tr.delete(pending.from, pending.to)
+  const past = markerAt(state, from, dir)
+  if (!word && past === from) return null
+  const line = past - start
+  if (!word && (dir > 0 ? line === text.length : line === 0)) return "line-edge"
+  const keep = (a: number, b: number) => {
+    const out: [number, number][] = []
+    let at = a
+    for (const m of markersOf(text)) {
+      if (m.to <= a || m.from >= b) continue
+      if (m.from > at) out.push([at, m.from])
+      at = Math.max(at, m.to)
+    }
+    if (at < b) out.push([at, b])
+    return out
+  }
+  let a = line
+  let b = line
+  if (word) {
+    const shown = readableBetween(
+      text,
+      dir > 0 ? line : 0,
+      dir > 0 ? text.length : line
+    )
+    const n = (dir > 0 ? /^\s*\S*/ : /\S*\s*$/).exec(shown)![0].length
+    if (!n) return null
+    for (let left = n; left > 0;) {
+      const next = dir > 0 ? b : a - 1
+      const hidden = markersOf(text).some((m) => m.from <= next && next < m.to)
+      if (dir > 0) b++
+      else a--
+      if (!hidden) left--
+    }
+  } else if (dir > 0) b = line + 1
+  else a = line - 1
+  let tr = state.tr
+  for (const [x, y] of keep(a, b).reverse())
+    tr = tr.delete(start + x, start + y)
+  return tr
+}
+
+// Tidies up after an edit while the marks are hidden, so a stray asterisk never
+// appears out of nowhere: a pair stays whole around what's left of its span, an
+// emptied pair goes, and the caret never rests inside a marker.
+function keepMarksWhole(
+  trs: readonly Transaction[],
+  old: EditorState,
+  state: EditorState
+) {
+  if (!hiding(state)) return null
+  const tr = state.tr
+  const edits = trs.filter((t) => t.docChanged)
+  const undoing = edits.some((t) => t.getMeta("history$"))
+  if (edits.length && !undoing) {
+    const map = (pos: number, assoc: 1 | -1) =>
+      edits.reduce((p, t) => t.mapping.map(p, assoc), pos)
+    const doomed: [number, number, string][] = []
+    old.doc.forEach((node, offset) => {
+      const start = offset + 1
+      const line = node.textContent
+      if (map(offset, -1) === map(offset + node.nodeSize, 1)) return
+      if (line === state.doc.nodeAt(map(offset, 1))?.textContent) return
+      const ms = markersOf(line)
+      for (let i = 0; i < ms.length; i += 2) {
+        const [o, c] = [ms[i]!, ms[i + 1]!]
+        const span = (m: { from: number; to: number }) =>
+          [map(start + m.from, 1), map(start + m.to, -1)] as const
+        const [oa, ob] = span(o)
+        const [ca, cb] = span(c)
+        const openGone = oa >= ob
+        const closeGone = ca >= cb
+        if (openGone && closeGone) continue
+        if (openGone || closeGone) {
+          // Half a pair went with the selection. Whatever is left of the span
+          // stays marked, so the other half comes back beside it.
+          const inner = state.doc.textBetween(openGone ? oa : ob, ca)
+          const lead = /^\s*/.exec(inner)![0].length
+          const tail = /\s*$/.exec(inner)![0].length
+          const stars = line.slice(o.from, o.to)
+          if (lead === inner.length) {
+            if (openGone) doomed.push([ca, cb, ""])
+            else doomed.push([oa, ob, ""])
+          } else if (openGone) doomed.push([oa + lead, oa + lead, stars])
+          else doomed.push([ca - tail, ca - tail, stars])
+        } else if (ob >= ca) doomed.push([oa, cb, ""])
+        else {
+          // A marker can't touch a space, so an edit that leaves one against
+          // it moves the space out instead of breaking the pair.
+          const stars = state.doc.textBetween(oa, ob)
+          const inner = state.doc.textBetween(ob, ca)
+          const lead = /^\s*/.exec(inner)![0]
+          const tail = /\s*$/.exec(inner)![0]
+          if (lead.length === inner.length) doomed.push([oa, cb, inner])
+          else {
+            if (tail) doomed.push([ca - tail.length, cb, stars + tail])
+            if (lead) doomed.push([oa, ob + lead.length, lead + stars])
+          }
+        }
+      }
+    })
+    for (const [a, b, text] of doomed.sort((x, y) => y[0] - x[0]))
+      if (text) tr.insertText(text, a, b)
+      else tr.delete(a, b)
+  }
+  // A pair left open by the bold button goes when the caret walks away.
+  const was = pendingMark(old)
+  if (was && !edits.length && !pendingMark(state)) {
+    const at = old.selection.from
+    if (state.selection.from !== at) tr.delete(was.from, was.to)
+  }
+  const sel = tr.selection
+  if (sel.empty) {
+    const $at = sel.$from
+    const off = $at.parentOffset
+    const m = markersOf($at.parent.textContent).find(
+      (x) => x.from < off && off < x.to
+    )
+    if (m) {
+      const forward = sel.from >= old.selection.from
+      tr.setSelection(
+        TextSelection.create(tr.doc, $at.start(1) + (forward ? m.to : m.from))
+      )
+    }
+  }
+  return tr.docChanged || tr.selectionSet ? tr : null
 }
 
 // Typographer's quotes and dashes as you type, in prose and verse. A script
@@ -696,6 +931,7 @@ export const Editor = React.forwardRef<EditorHandle, Props>(
           }),
           // Apart from the above, so moving the caret redraws only this.
           new Plugin({
+            appendTransaction: keepMarksWhole,
             props: {
               decorations(s) {
                 const v = key.getState(s)
@@ -737,9 +973,76 @@ export const Editor = React.forwardRef<EditorHandle, Props>(
             if (a) latest.current.onMenu(a)
             return true
           }
+          if (hiding(v.state) && !e.isComposing) {
+            const bare = !e.metaKey && !e.ctrlKey && !e.altKey
+            const empty = v.state.selection.empty
+            if (
+              bare &&
+              (empty || e.shiftKey) &&
+              /^Arrow(Left|Right)$/.test(e.key)
+            ) {
+              const to = stepOver(v.state, e.key === "ArrowRight" ? 1 : -1)
+              if (to !== null) {
+                const { doc, selection } = v.state
+                v.dispatch(
+                  v.state.tr.setSelection(
+                    TextSelection.create(
+                      doc,
+                      e.shiftKey ? selection.anchor : to,
+                      to
+                    )
+                  )
+                )
+                latest.current.onKey(e.key)
+                return true
+              }
+            }
+            if (
+              empty &&
+              (e.key === "Backspace" || e.key === "Delete") &&
+              !e.metaKey
+            ) {
+              const dir = e.key === "Delete" ? 1 : -1
+              const word = e.altKey || e.ctrlKey
+              const done = eraseOver(v.state, dir, word)
+              if (done === "line-edge") {
+                // At the edge of the line: join lines as usual, from outside.
+                const { $from } = v.state.selection
+                v.dispatch(
+                  v.state.tr.setSelection(
+                    TextSelection.create(
+                      v.state.doc,
+                      dir > 0 ? $from.end(1) : $from.start(1)
+                    )
+                  )
+                )
+                return false
+              }
+              if (done) {
+                v.dispatch(done.scrollIntoView())
+                latest.current.onKey("Backspace")
+                return true
+              }
+            }
+          }
           if (e.key.length === 1 || e.key === "Enter" || e.key === "Backspace")
             if (!e.metaKey && !e.ctrlKey) latest.current.onKey(e.key)
           return false
+        },
+        clipboardTextSerializer() {
+          // Asterisks are for this editor: what leaves it is what's on the page.
+          const { from, to } = v.state.selection
+          const hide = hiding(v.state)
+          const out: string[] = []
+          v.state.doc.nodesBetween(from, to, (node, pos) => {
+            if (node.type.name !== "line") return true
+            const a = Math.max(from - pos - 1, 0)
+            const b = Math.min(to - pos - 1, node.content.size)
+            const line = node.textContent
+            out.push(hide ? readableBetween(line, a, b) : line.slice(a, b))
+            return false
+          })
+          return out.join("\n")
         },
         handleTextInput(_, from, to, text) {
           if (latest.current.kind === "screenplay") return false
@@ -1150,6 +1453,7 @@ export const Editor = React.forwardRef<EditorHandle, Props>(
         data-kind={props.kind}
         data-focus={props.tools.focus || undefined}
         data-scansion={props.tools.scansion || undefined}
+        data-marks={props.tools.marks || undefined}
         data-empty={!props.body.trim() || undefined}
         data-placeholder={props.placeholder}
       />

@@ -5,7 +5,12 @@ import {
   countWords,
   dayKey,
   emptyManuscript,
+  inlineRuns,
+  markersOf,
+  readable,
+  readableBetween,
   streak,
+  toggleInline,
   toManuscript,
   totalWords,
 } from "./model"
@@ -158,4 +163,89 @@ test("old or damaged rows still open", () => {
   expect(m.parts[0]!.body).toBe("")
   expect(m.cloth).toBe("oxblood")
   expect(toManuscript(null).parts.length).toBe(1)
+})
+
+test("hidden marks are found around their words", () => {
+  const line = "a **bold** and *it*"
+  expect(markersOf(line).map((m) => line.slice(m.from, m.to))).toEqual([
+    "**",
+    "**",
+    "*",
+    "*",
+  ])
+  expect(markersOf("***")).toEqual([])
+  expect(markersOf("5 * 3 * 2")).toEqual([])
+})
+
+test("readable text has no asterisks, and keeps scene breaks", () => {
+  expect(readable("**Salutations** !\n***\n*un* mot")).toBe(
+    "Salutations !\n***\nun mot"
+  )
+  expect(readableBetween("x **bold** y", 5, 12)).toBe("old y")
+})
+
+test("toggling bold and italic works like a word processor", () => {
+  const t = (s: string, a: number, b: number, f: "bold" | "italic") =>
+    toggleInline(s, a, b, f)!.line
+  expect(t("one two", 0, 3, "bold")).toBe("**one** two")
+  expect(t("**one** two", 2, 5, "bold")).toBe("one two")
+  // Taking italic off bold used to eat one star from each side.
+  expect(t("**one**", 2, 5, "italic")).toBe("***one***")
+  expect(t("***one***", 3, 6, "italic")).toBe("**one**")
+  // Part of a span splits it.
+  expect(t("**two words**", 6, 11, "bold")).toBe("**two** words")
+  // Spaces can't touch a marker.
+  expect(t("one two", 0, 4, "bold")).toBe("**one** two")
+  // With no selection: the span under the caret, else the word.
+  expect(t("**two words**", 4, 4, "bold")).toBe("two words")
+  expect(t("one two", 5, 5, "italic")).toBe("one *two*")
+  expect(toggleInline("   ", 1, 1, "bold")).toBeNull()
+})
+
+test("a toggle keeps the selection on the same letters", () => {
+  const r = toggleInline("one two", 4, 7, "bold")!
+  expect(r.line.slice(r.start, r.end)).toBe("two")
+  const c = toggleInline("one two", 5, 5, "bold")!
+  expect(c.line.slice(c.start)).toBe("wo**")
+})
+
+test("toggles change only the letters they were asked to", () => {
+  let seed = 7
+  const rand = (n: number) => (seed = (seed * 48271) % 2147483647) % n
+  const words = ["une", "phrase", "à", "peu", "près", "x", "ça"]
+  const styles = (line: string) =>
+    inlineRuns(line).flatMap((r) =>
+      [...r.text].map((ch) => (ch === " " ? null : [!!r.italic, !!r.bold]))
+    )
+  for (let run = 0; run < 400; run++) {
+    const plain = Array.from(
+      { length: 2 + rand(5) },
+      () => words[rand(7)]
+    ).join(" ")
+    let line = plain
+    for (let step = 0; step < 8; step++) {
+      const flag = rand(2) ? "bold" : "italic"
+      const a = rand(plain.length)
+      const b = a + 1 + rand(plain.length - a)
+      // From letters to offsets in the line as it stands.
+      const offsets = [0]
+      for (let i = 1; i <= line.length; i++)
+        if (readableBetween(line, 0, i).length === offsets.length)
+          offsets.push(i)
+      const before = styles(line)
+      const next = toggleInline(line, offsets[a]!, offsets[b]!, flag)
+      if (!next) continue
+      line = next.line
+      expect(readable(line)).toBe(plain)
+      const after = styles(line)
+      const f = flag === "italic" ? 0 : 1
+      const inside = before.slice(a, b).filter(Boolean) as boolean[][]
+      const on = !inside.every((l) => l[f])
+      after.forEach((l, i) => {
+        if (!l) return
+        if (i >= a && i < b) expect(l[f]).toBe(on)
+        else expect(l).toEqual(before[i]!)
+      })
+    }
+  }
 })

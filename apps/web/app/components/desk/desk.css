@@ -257,7 +257,7 @@
 .dk-mk {
   font-size: 0;
 }
-.dk-cur .dk-mk {
+.dk-editor[data-marks] .dk-mk {
   font-size: inherit;
   color: rgb(92 79 64 / 0.6);
 }

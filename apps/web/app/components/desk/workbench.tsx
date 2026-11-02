@@ -59,6 +59,7 @@ interface HoveredLine {
   rect: DOMRect
 }
 
+const MARKS_KEY = "palmframe-desk-marks"
 const backupKey = (id: string) => `palmframe-desk-${id}`
 
 export function Workbench({
@@ -84,7 +85,26 @@ export function Workbench({
     sound: false,
     focus: false,
     typewriter: false,
+    marks: false,
   })
+  // Showing the asterisks is a way of working, so it follows the person around.
+  React.useEffect(() => {
+    try {
+      if (localStorage.getItem(MARKS_KEY) === "1")
+        setTools((v) => ({ ...v, marks: true }))
+    } catch {
+      // Private window: they stay hidden.
+    }
+  }, [])
+  const changeTools = (patch: Partial<Tools>) => {
+    setTools((v) => ({ ...v, ...patch }))
+    if (patch.marks === undefined) return
+    try {
+      localStorage.setItem(MARKS_KEY, patch.marks ? "1" : "0")
+    } catch {
+      // Private window: it lasts as long as the page.
+    }
+  }
   const [caret, setCaret] = React.useState({ word: "", line: 0, offset: 0 })
   const [slip, setSlip] = React.useState<{
     alert: Alert
@@ -685,7 +705,7 @@ export function Workbench({
               alerts={alerts}
               caret={caret}
               tools={tools}
-              onTools={(patch) => setTools((v) => ({ ...v, ...patch }))}
+              onTools={changeTools}
               change={change}
               patchPart={patchPart}
               onJump={(a) => editor.current?.jump(a.start)}
@@ -719,7 +739,7 @@ export function Workbench({
             setLight(l)
             thud()
           }}
-          onTools={(patch) => setTools((v) => ({ ...v, ...patch }))}
+          onTools={changeTools}
           onBind={() => setBindery(true)}
           onMark={(mark) => editor.current?.wrap(mark)}
           onFind={() => setFind({ query: "", index: 0 })}

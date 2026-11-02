@@ -352,6 +352,13 @@ export function Rail({
         label={t("rail.typewriter")}
         onChange={(typewriter) => onTools({ typewriter })}
       />
+      {m.kind === "novel" ? (
+        <Toggle
+          on={tools.marks}
+          label={t("rail.marks")}
+          onChange={(marks) => onTools({ marks })}
+        />
+      ) : null}
       <Toggle
         on={tools.sound}
         label={t("rail.sound")}
