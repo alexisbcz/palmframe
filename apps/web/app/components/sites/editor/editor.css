@@ -526,19 +526,18 @@
 }
 .fe-segments {
   display: flex;
+  flex-wrap: wrap;
   gap: 2px;
   padding: 3px;
   border-radius: 10px;
   background: var(--raise);
 }
-.fe-segments.fe-wrap {
-  flex-wrap: wrap;
-}
 .fe-segments button {
   display: grid;
   min-width: 32px;
   height: 30px;
-  flex: 1;
+  /* Sized by its label, so a long one wraps to a new row instead of colliding. */
+  flex: 1 1 auto;
   place-items: center;
   padding: 0 8px;
   border-radius: 7px;

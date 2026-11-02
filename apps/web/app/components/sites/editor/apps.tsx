@@ -476,7 +476,7 @@ export function AppsPanel({ ed }: { ed: Editor }) {
   const installed = tab === "content" || hasApp(ed.site, tab as App)
   return (
     <div className="fe-panel-body">
-      <div className="fe-segments fe-wrap" role="tablist">
+      <div className="fe-segments" role="tablist">
         {TABS.map((id) => (
           <button
             key={id}
