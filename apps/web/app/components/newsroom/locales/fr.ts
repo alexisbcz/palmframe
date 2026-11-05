@@ -1,5 +1,6 @@
 export const fr = {
   public: {
+    preview: "Aperçu hors ligne : vous seul voyez cette page.",
     subscribeTitle: "Recevez chaque article par e-mail",
     subscribeText:
       "Les nouveaux articles de {name}, dans votre boîte de réception. Désabonnez-vous en un clic.",
@@ -47,6 +48,7 @@ export const fr = {
     recipients: "{count} destinataires",
   },
   distribute: {
+    simulated: "simulé",
     title: "Publier",
     publish: "Publier",
     published: "Dans votre publication",

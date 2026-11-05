@@ -1,5 +1,6 @@
 export const ja = {
   public: {
+    preview: "オフラインのプレビューです。このページはあなたにしか見えません。",
     subscribeTitle: "すべての記事をメールでお届け",
     subscribeText:
       "{name}の新着記事をメールでお届けします。ワンクリックで配信を停止できます。",
@@ -47,6 +48,7 @@ export const ja = {
     recipients: "受信者{count}人",
   },
   distribute: {
+    simulated: "シミュレーション",
     title: "公開",
     publish: "公開",
     published: "パブリケーションに公開中",

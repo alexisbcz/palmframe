@@ -11,6 +11,7 @@ import { publicationPath } from "@/lib/newsroom/publication"
 import { readPublication } from "@/lib/newsroom/public.server"
 import { templateById } from "@/lib/newsroom/templates"
 import { seo } from "@/lib/seo"
+import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/n"
 
@@ -23,7 +24,7 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
       title: p.name,
       description: p.tagline || p.name,
       path: publicationPath(p.slug),
-      noindex: !p.indexable,
+      noindex: !p.indexable || !p.live,
       ...(image && { image }),
     }),
     {
@@ -36,8 +37,9 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
   ]
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
-  const found = await readPublication(params.slug)
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { viewer } = await getViewer(request)
+  const found = await readPublication(params.slug, viewer?.id)
   if (!found) throw data("Not found", { status: 404 })
   return { publication: found.publication, stories: found.stories }
 }
@@ -51,15 +53,19 @@ export function Masthead({
   slug,
   name,
   tagline,
+  live,
 }: {
   slug: string
   name: string
   tagline: string
+  // Offline: only its owner sees this, as a preview.
+  live?: boolean
 }) {
   const t = useT(messages)
   const { locale } = useLocale()
   return (
     <>
+      {live === false && <p className="np-preview">{t("public.preview")}</p>}
       <header className="np-mast">
         <Link to={publicationPath(slug)}>{name}</Link>
         {tagline && <p>{tagline}</p>}
@@ -109,7 +115,12 @@ export default function Publication({ loaderData }: Route.ComponentProps) {
   return (
     <div className="nr np" style={accentStyle(p.accent)}>
       <div className="np-wrap">
-        <Masthead slug={p.slug} name={p.name} tagline={p.tagline} />
+        <Masthead
+          slug={p.slug}
+          name={p.name}
+          tagline={p.tagline}
+          live={p.live}
+        />
         {lead ? (
           <>
             <div className="np-front">

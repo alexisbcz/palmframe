@@ -1,5 +1,6 @@
 export const en = {
   public: {
+    preview: "Offline preview: only you can see this page.",
     subscribeTitle: "Get every story by email",
     subscribeText:
       "New stories from {name}, in your inbox. Unsubscribe in one click.",
@@ -45,6 +46,7 @@ export const en = {
     recipients: "{count} recipients",
   },
   distribute: {
+    simulated: "simulated",
     title: "Publish",
     publish: "Publish",
     published: "On your publication",

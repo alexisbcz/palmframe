@@ -1,5 +1,6 @@
 export const de = {
   public: {
+    preview: "Offline-Vorschau: Nur du siehst diese Seite.",
     subscribeTitle: "Erhalte jede Story per E-Mail",
     subscribeText:
       "Neue Storys von {name} direkt in dein Postfach. Abmeldung mit einem Klick.",
@@ -48,6 +49,7 @@ export const de = {
     recipients: "{count} Empfänger",
   },
   distribute: {
+    simulated: "simuliert",
     title: "Veröffentlichen",
     publish: "Veröffentlichen",
     published: "In deiner Publikation",

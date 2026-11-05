@@ -107,7 +107,7 @@ export default function Publication({ loaderData }: Route.ComponentProps) {
         <h1>{t("publication.title")}</h1>
         <p>{t("publication.text")}</p>
       </header>
-      <div className="nr-story" style={{ padding: 0 }}>
+      <div className="nr-split">
         <form className="nr-panel nr-form" onSubmit={save}>
           <label>
             <span>{t("publication.name")}</span>

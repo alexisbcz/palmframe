@@ -1402,3 +1402,14 @@ a.nr-card:hover {
   color-scheme: dark;
   font-size: 14px;
 }
+.nr-split {
+  display: grid;
+  grid-template-columns: minmax(0, 560px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .nr-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

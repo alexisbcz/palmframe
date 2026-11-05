@@ -1,5 +1,6 @@
 export const es = {
   public: {
+    preview: "Vista previa sin conexión: solo tú ves esta página.",
     subscribeTitle: "Recibe cada historia por correo",
     subscribeText:
       "Las nuevas historias de {name}, en tu bandeja de entrada. Cancela la suscripción con un clic.",
@@ -47,6 +48,7 @@ export const es = {
     recipients: "{count} destinatarios",
   },
   distribute: {
+    simulated: "simulado",
     title: "Publicar",
     publish: "Publicar",
     published: "En tu publicación",

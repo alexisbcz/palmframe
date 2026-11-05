@@ -4,15 +4,15 @@ import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
 const STORY_LIST = "id, slug, template, title, dek, cover, published_at"
 
-export async function readPublication(slug: string) {
+// Offline publications are shown only to their owner, as a preview.
+export async function readPublication(slug: string, viewerId?: string | null) {
   const admin = supabaseAdmin()
   const { data: pub } = await admin
     .from("comic_newsrooms")
-    .select("id, user_id, slug, name, tagline, accent, indexable")
+    .select("id, user_id, slug, name, tagline, accent, indexable, live")
     .eq("slug", slug)
-    .eq("live", true)
     .maybeSingle()
-  if (!pub) return null
+  if (!pub || (!pub.live && pub.user_id !== viewerId)) return null
   const { data: stories } = await admin
     .from("comic_deep_dives")
     .select(STORY_LIST)
@@ -25,8 +25,12 @@ export async function readPublication(slug: string) {
   return { publication, stories: stories ?? [], owner: pub.user_id }
 }
 
-export async function readPublishedStory(slug: string, storySlug: string) {
-  const found = await readPublication(slug)
+export async function readPublishedStory(
+  slug: string,
+  storySlug: string,
+  viewerId?: string | null
+) {
+  const found = await readPublication(slug, viewerId)
   if (!found) return null
   const { data: story } = await supabaseAdmin()
     .from("comic_deep_dives")

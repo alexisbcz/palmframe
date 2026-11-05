@@ -78,6 +78,8 @@ function PostEditor({
             }
           >
             {t(`distribute.state.${post.status}`)}
+            {post.provider === "zernio-mock" &&
+              ` · ${t("distribute.simulated")}`}
             {post.scheduled_for &&
               ` · ${new Date(post.scheduled_for).toLocaleString()}`}
           </span>

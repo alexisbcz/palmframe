@@ -291,3 +291,11 @@
     flex-direction: column;
   }
 }
+.np-preview {
+  margin: 0 -24px;
+  padding: 8px 24px;
+  background: #1a1a1a;
+  color: #fff;
+  font-size: 13px;
+  text-align: center;
+}

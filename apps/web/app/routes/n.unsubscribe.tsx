@@ -7,14 +7,16 @@ import "@/components/newsroom/publication.css"
 import { useT } from "@/i18n/core"
 import { readPublication } from "@/lib/newsroom/public.server"
 import { PRIVATE } from "@/lib/seo"
+import { getViewer } from "@/lib/supabase.server"
 
 import { Footer, Masthead, accentStyle } from "./n"
 import type { Route } from "./+types/n.unsubscribe"
 
 export const meta: Route.MetaFunction = () => [PRIVATE]
 
-export async function loader({ params }: Route.LoaderArgs) {
-  const found = await readPublication(params.slug)
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { viewer } = await getViewer(request)
+  const found = await readPublication(params.slug, viewer?.id)
   if (!found) throw data("Not found", { status: 404 })
   return { publication: found.publication }
 }

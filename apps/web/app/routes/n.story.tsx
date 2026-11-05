@@ -12,6 +12,7 @@ import { publicationPath } from "@/lib/newsroom/publication"
 import { readPublishedStory } from "@/lib/newsroom/public.server"
 import { templateById } from "@/lib/newsroom/templates"
 import { seo } from "@/lib/seo"
+import { getViewer } from "@/lib/supabase.server"
 
 import { Footer, Masthead, accentStyle } from "./n"
 import type { Route } from "./+types/n.story"
@@ -23,14 +24,15 @@ export const meta: Route.MetaFunction = ({ loaderData }) => {
     title: `${story.title} · ${p.name}`,
     description: story.dek,
     path: publicationPath(p.slug, story.slug!),
-    noindex: !p.indexable,
+    noindex: !p.indexable || !p.live,
     type: "article",
     ...(story.cover?.url && { image: story.cover.url }),
   })
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
-  const found = await readPublishedStory(params.slug, params.story)
+export async function loader({ request, params }: Route.LoaderArgs) {
+  const { viewer } = await getViewer(request)
+  const found = await readPublishedStory(params.slug, params.story, viewer?.id)
   if (!found) throw data("Not found", { status: 404 })
   return found
 }
@@ -53,7 +55,12 @@ export default function PublicStory({ loaderData }: Route.ComponentProps) {
   return (
     <div className="nr np" style={accentStyle(p.accent)}>
       <div className="np-wrap">
-        <Masthead slug={p.slug} name={p.name} tagline={p.tagline} />
+        <Masthead
+          slug={p.slug}
+          name={p.name}
+          tagline={p.tagline}
+          live={p.live}
+        />
         <article className="np-article">
           {story.cover?.url && (
             <Cover
