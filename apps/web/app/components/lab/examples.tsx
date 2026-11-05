@@ -7,8 +7,15 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import {
+  FadeImage,
+  Masonry,
+  tileRatio,
+  useColumnCount,
+} from "@/components/masonry"
+import {
   CIVITAI_BASES,
   EXAMPLE_PERIODS,
+  EXAMPLE_RATINGS,
   EXAMPLE_SORTS,
   civitaiBase,
   fitSize,
@@ -16,9 +23,10 @@ import {
   type CivitaiBase,
   type CivitaiExample,
   type ExampleQuery,
+  type ExampleRating,
   type LabRequest,
 } from "@/lib/lab/model"
-import { useCivitaiExamples } from "@/lib/use-civitai-examples"
+import { useCivitaiExamples, useLoadMore } from "@/lib/use-civitai-examples"
 
 const PERIOD_LABELS: Record<ExampleQuery["period"], string> = {
   Day: "Today",
@@ -27,6 +35,29 @@ const PERIOD_LABELS: Record<ExampleQuery["period"], string> = {
   Year: "This year",
   AllTime: "All time",
 }
+
+const RATING_LABELS: Record<ExampleRating, string> = {
+  None: "Safe",
+  Soft: "Suggestive",
+  Mature: "Mature",
+  X: "Everything",
+  Only: "NSFW only",
+}
+const LEVEL_LABELS: Record<string, string> = {
+  Soft: "Suggestive",
+  Mature: "Mature",
+  X: "Explicit",
+}
+
+// A tile in the grid: an example, or a placeholder shaped like one while a
+// page is on its way.
+type Tile = CivitaiExample | { wait: number }
+const WAIT_SHAPES = [4 / 3, 1, 3 / 2, 5 / 4, 4 / 3, 1]
+const ratioOf = (tile: Tile) =>
+  "wait" in tile
+    ? WAIT_SHAPES[tile.wait % WAIT_SHAPES.length]!
+    : tileRatio(tile.width, tile.height)
+const GAP = 8
 
 // Civitai's gallery for the family of the model on this Mac: pick an image
 // and its prompt becomes the starting point here.
@@ -46,9 +77,12 @@ export function Examples({
     setSort,
     period,
     setPeriod,
+    rating,
+    setRating,
     items,
     loading,
     error,
+    done,
     more,
     retry,
   } = useCivitaiExamples(civitaiBase(model))
@@ -59,104 +93,142 @@ export function Examples({
     () => {
       grid.current?.scrollTo({ top: 0 })
     },
-    [base, sort, period]
+    [base, sort, period, rating]
+  )
+  const columns = useColumnCount(grid, 150, 4, GAP)
+  const sentinel = useLoadMore(grid, picked ? null : more)
+  const tiles = React.useMemo<Tile[]>(
+    () =>
+      loading
+        ? [
+            ...items,
+            ...Array.from(
+              { length: items.length ? columns * 2 : columns * 3 },
+              (_, i) => ({ wait: i })
+            ),
+          ]
+        : items,
+    [items, loading, columns]
   )
 
-  if (picked)
-    return (
-      <Detail
-        example={picked}
-        loras={loras}
-        onBack={() => setPicked(null)}
-        onUse={onUse}
-      />
-    )
-
   return (
-    <div className="lab-examples">
-      <div className="lab-examples-bar">
-        <select
-          className="lab-input"
-          aria-label="Base model"
-          value={base}
-          onChange={(e) => setBase(e.target.value as CivitaiBase)}
-        >
-          {CIVITAI_BASES.map((b) => (
-            <option key={b}>{b}</option>
-          ))}
-        </select>
-        <select
-          className="lab-input"
-          aria-label="Sort"
-          value={sort}
-          onChange={(e) => setSort(e.target.value as ExampleQuery["sort"])}
-        >
-          {EXAMPLE_SORTS.map((s) => (
-            <option key={s}>{s}</option>
-          ))}
-        </select>
-        <select
-          className="lab-input"
-          aria-label="Period"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value as ExampleQuery["period"])}
-        >
-          {EXAMPLE_PERIODS.map((p) => (
-            <option key={p} value={p}>
-              {PERIOD_LABELS[p]}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="lab-examples-grid" ref={grid}>
-        <div className="lab-masonry">
-          {items.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className="lab-example"
-              style={{ aspectRatio: `${item.width} / ${item.height}` }}
-              onClick={() => setPicked(item)}
-              title={item.meta.prompt}
-            >
-              <img src={item.thumb} alt="" loading="lazy" draggable={false} />
-              <span>{item.meta.prompt}</span>
-            </button>
-          ))}
-          {loading
-            ? Array.from({ length: items.length ? 3 : 9 }, (_, i) => (
+    <>
+      {/* Kept mounted under the detail, so going back finds the same scroll. */}
+      <div className="lab-examples" hidden={!!picked}>
+        <div className="lab-examples-bar">
+          <select
+            className="lab-input"
+            aria-label="Base model"
+            value={base}
+            onChange={(e) => setBase(e.target.value as CivitaiBase)}
+          >
+            {CIVITAI_BASES.map((b) => (
+              <option key={b}>{b}</option>
+            ))}
+          </select>
+          <select
+            className="lab-input"
+            aria-label="Sort"
+            value={sort}
+            onChange={(e) => setSort(e.target.value as ExampleQuery["sort"])}
+          >
+            {EXAMPLE_SORTS.map((s) => (
+              <option key={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            className="lab-input"
+            aria-label="Period"
+            value={period}
+            onChange={(e) =>
+              setPeriod(e.target.value as ExampleQuery["period"])
+            }
+          >
+            {EXAMPLE_PERIODS.map((p) => (
+              <option key={p} value={p}>
+                {PERIOD_LABELS[p]}
+              </option>
+            ))}
+          </select>
+          <select
+            className="lab-input"
+            aria-label="Content"
+            data-loose={rating !== "None"}
+            value={rating}
+            onChange={(e) => setRating(e.target.value as ExampleRating)}
+          >
+            {EXAMPLE_RATINGS.map((r) => (
+              <option key={r} value={r}>
+                {RATING_LABELS[r]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="lab-examples-grid" ref={grid} aria-busy={loading}>
+          <Masonry items={tiles} columns={columns} ratio={ratioOf} gap={GAP}>
+            {(tile) =>
+              "wait" in tile ? (
                 <div
-                  key={`wait-${i}`}
+                  key={`wait-${tile.wait}`}
                   className="lab-example"
                   data-wait
-                  style={{ aspectRatio: i % 3 === 1 ? "1" : "3 / 4" }}
+                  aria-hidden
+                  style={{ aspectRatio: `1 / ${ratioOf(tile)}` }}
                 />
-              ))
-            : null}
+              ) : (
+                <button
+                  key={tile.id}
+                  type="button"
+                  className="lab-example"
+                  style={{ aspectRatio: `1 / ${ratioOf(tile)}` }}
+                  onClick={() => setPicked(tile)}
+                  title={tile.meta.prompt}
+                >
+                  <FadeImage
+                    src={tile.thumb}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    draggable={false}
+                  />
+                  {tile.level !== "None" ? (
+                    <b className="lab-example-level">
+                      {LEVEL_LABELS[tile.level] ?? tile.level}
+                    </b>
+                  ) : null}
+                  <span>{tile.meta.prompt}</span>
+                </button>
+              )
+            }
+          </Masonry>
+          <div ref={sentinel} aria-hidden className="h-px" />
+          {error ? (
+            <p className="lab-warn lab-examples-note">
+              {error}
+              <button type="button" className="lab-pill" onClick={retry}>
+                Try again
+              </button>
+            </p>
+          ) : !loading && !items.length ? (
+            <p className="lab-examples-empty">
+              Nothing shared with a prompt in this period. Try a longer one.
+            </p>
+          ) : done ? (
+            <p className="lab-examples-end">
+              That&apos;s everything for these filters.
+            </p>
+          ) : null}
         </div>
-        {error ? (
-          <p className="lab-warn">
-            {error}
-            <button type="button" className="lab-pill" onClick={retry}>
-              Try again
-            </button>
-          </p>
-        ) : !loading && !items.length ? (
-          <p className="lab-examples-empty">
-            Nothing shared with a prompt in this period. Try a longer one.
-          </p>
-        ) : null}
-        {more ? (
-          <button
-            type="button"
-            className="lab-pill lab-examples-more"
-            onClick={more}
-          >
-            Load more
-          </button>
-        ) : null}
       </div>
-    </div>
+      {picked ? (
+        <Detail
+          example={picked}
+          loras={loras}
+          onBack={() => setPicked(null)}
+          onUse={onUse}
+        />
+      ) : null}
+    </>
   )
 }
 
@@ -175,6 +247,10 @@ function Detail({
   const [w, h] = fitSize(example.meta.Size)
   const facts = [
     example.model && ["Model", example.model],
+    example.level !== "None" && [
+      "Rating",
+      LEVEL_LABELS[example.level] ?? example.level,
+    ],
     example.meta.Size && [
       "Size",
       w ? `${example.meta.Size} → ${w}×${h}` : example.meta.Size,

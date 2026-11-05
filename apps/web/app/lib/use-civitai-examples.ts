@@ -1,15 +1,37 @@
 import * as React from "react"
 
-import type { CivitaiBase, CivitaiExample, ExampleQuery } from "./civitai"
+import {
+  EXAMPLE_RATINGS,
+  type CivitaiBase,
+  type CivitaiExample,
+  type ExampleQuery,
+  type ExampleRating,
+} from "./civitai"
 
 type Page = { items: CivitaiExample[]; next: string | null }
 
-// Pages of Civitai's gallery for one base model, sort and period, starting
-// over whenever one of them changes.
+// The rating is a choice someone makes once, so this browser keeps it.
+const RATING_KEY = "palmframe.civitai.rating"
+function storedRating(): ExampleRating {
+  try {
+    const value = localStorage.getItem(RATING_KEY)
+    return EXAMPLE_RATINGS.includes(value as ExampleRating)
+      ? (value as ExampleRating)
+      : "None"
+  } catch {
+    return "None"
+  }
+}
+
+// Pages of Civitai's gallery for one base model, sort, period and rating,
+// starting over whenever one of them changes.
 export function useCivitaiExamples(initialBase: CivitaiBase) {
   const [base, setBase] = React.useState<CivitaiBase>(initialBase)
   const [sort, setSort] = React.useState<ExampleQuery["sort"]>("Most Reactions")
   const [period, setPeriod] = React.useState<ExampleQuery["period"]>("Week")
+  // Only ever mounted after a click, so reading storage here can't mismatch
+  // the server's render.
+  const [rating, setRatingState] = React.useState<ExampleRating>(storedRating)
   const [items, setItems] = React.useState<CivitaiExample[]>([])
   const [next, setNext] = React.useState<string | null>(null)
   const [loading, setLoading] = React.useState(false)
@@ -18,6 +40,13 @@ export function useCivitaiExamples(initialBase: CivitaiBase) {
 
   React.useEffect(() => setBase(initialBase), [initialBase])
 
+  const setRating = React.useCallback((value: ExampleRating) => {
+    setRatingState(value)
+    try {
+      localStorage.setItem(RATING_KEY, value)
+    } catch {}
+  }, [])
+
   const load = React.useCallback(
     async (cursor: string | null) => {
       request.current?.abort()
@@ -25,7 +54,7 @@ export function useCivitaiExamples(initialBase: CivitaiBase) {
       request.current = controller
       setLoading(true)
       setError(null)
-      const q = new URLSearchParams({ base, sort, period })
+      const q = new URLSearchParams({ base, sort, period, rating })
       if (cursor) q.set("cursor", cursor)
       try {
         const res = await fetch(`/api/civitai/examples?${q}`, {
@@ -46,7 +75,7 @@ export function useCivitaiExamples(initialBase: CivitaiBase) {
         if (request.current === controller) setLoading(false)
       }
     },
-    [base, sort, period]
+    [base, sort, period, rating]
   )
 
   React.useEffect(() => {
@@ -63,10 +92,40 @@ export function useCivitaiExamples(initialBase: CivitaiBase) {
     setSort,
     period,
     setPeriod,
+    rating,
+    setRating,
     items,
     loading,
     error,
+    // Civitai has nothing further for these filters.
+    done: !next && !loading && !error && items.length > 0,
     more: next && !loading && !error ? () => void load(next) : null,
     retry: () => void load(items.length ? next : null),
   }
+}
+
+// Calls `onMore` while the end of a scrolling list is within a screen of view,
+// so the next page is there before anyone reaches it. Watching again after
+// every load also catches a page too short to fill the list.
+export function useLoadMore(
+  root: React.RefObject<HTMLElement | null>,
+  onMore: (() => void) | null
+) {
+  const sentinel = React.useRef<HTMLDivElement>(null)
+  const latest = React.useRef(onMore)
+  latest.current = onMore
+  const ready = onMore !== null
+  React.useEffect(() => {
+    const target = sentinel.current
+    if (!ready || !target || !root.current) return
+    const watch = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) latest.current?.()
+      },
+      { root: root.current, rootMargin: "0px 0px 100% 0px" }
+    )
+    watch.observe(target)
+    return () => watch.disconnect()
+  }, [ready, root])
+  return sentinel
 }

@@ -14,19 +14,37 @@ import {
 } from "@workspace/ui/components/native-select"
 import { cn } from "@workspace/ui/lib/utils"
 
+import {
+  FadeImage,
+  Masonry,
+  tileRatio,
+  useColumnCount,
+} from "@/components/masonry"
 import { useT } from "@/i18n/core"
 import {
   CIVITAI_BASES,
   EXAMPLE_PERIODS,
+  EXAMPLE_RATINGS,
   EXAMPLE_SORTS,
   plainPrompt,
   type CivitaiBase,
   type CivitaiExample,
   type ExampleQuery,
+  type ExampleRating,
 } from "@/lib/civitai"
-import { useCivitaiExamples } from "@/lib/use-civitai-examples"
+import { useCivitaiExamples, useLoadMore } from "@/lib/use-civitai-examples"
 
 import { messages } from "./civitai-examples.messages"
+
+// A tile in the grid: an example, or a placeholder shaped like one while a
+// page is on its way.
+type Tile = CivitaiExample | { wait: number }
+const WAIT_SHAPES = [4 / 3, 1, 3 / 2, 5 / 4, 4 / 3, 1]
+const ratioOf = (tile: Tile) =>
+  "wait" in tile
+    ? WAIT_SHAPES[tile.wait % WAIT_SHAPES.length]!
+    : tileRatio(tile.width, tile.height)
+const GAP = 8
 
 // Civitai's gallery inside the composer: browse what a model draws, open one
 // image and start the panel's prompt from the words behind it.
@@ -48,7 +66,22 @@ export function CivitaiExamples({
     () => {
       grid.current?.scrollTo({ top: 0 })
     },
-    [g.base, g.sort, g.period]
+    [g.base, g.sort, g.period, g.rating]
+  )
+  const columns = useColumnCount(grid, 150, 4, GAP)
+  const sentinel = useLoadMore(grid, picked ? null : g.more)
+  const tiles = React.useMemo<Tile[]>(
+    () =>
+      g.loading
+        ? [
+            ...g.items,
+            ...Array.from(
+              { length: g.items.length ? columns * 2 : columns * 3 },
+              (_, i) => ({ wait: i })
+            ),
+          ]
+        : g.items,
+    [g.items, g.loading, columns]
   )
 
   return (
@@ -67,110 +100,130 @@ export function CivitaiExamples({
           <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
         </Button>
       </div>
-      {picked ? (
+      {picked && (
         <Detail example={picked} onBack={() => setPicked(null)} onUse={onUse} />
-      ) : (
-        <>
-          <div className="flex flex-wrap gap-2 pb-2.5">
-            <NativeSelect
-              size="sm"
-              aria-label={t("base")}
-              value={g.base}
-              onChange={(e) => g.setBase(e.target.value as CivitaiBase)}
-            >
-              {CIVITAI_BASES.map((b) => (
-                <NativeSelectOption key={b}>{b}</NativeSelectOption>
-              ))}
-            </NativeSelect>
-            <NativeSelect
-              size="sm"
-              aria-label={t("sort")}
-              value={g.sort}
-              onChange={(e) =>
-                g.setSort(e.target.value as ExampleQuery["sort"])
-              }
-            >
-              {EXAMPLE_SORTS.map((s) => (
-                <NativeSelectOption key={s} value={s}>
-                  {t(`sorts.${s}`)}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-            <NativeSelect
-              size="sm"
-              aria-label={t("period")}
-              value={g.period}
-              onChange={(e) =>
-                g.setPeriod(e.target.value as ExampleQuery["period"])
-              }
-            >
-              {EXAMPLE_PERIODS.map((p) => (
-                <NativeSelectOption key={p} value={p}>
-                  {t(`periods.${p}`)}
-                </NativeSelectOption>
-              ))}
-            </NativeSelect>
-          </div>
-          <div
-            ref={grid}
-            className="-me-1 min-h-0 flex-1 [scrollbar-width:thin] overflow-y-auto pe-1"
+      )}
+      {/* Kept mounted under the detail, so going back finds the same scroll. */}
+      <div className={cn("flex min-h-0 flex-1 flex-col", picked && "hidden")}>
+        <div className="flex flex-wrap gap-2 pb-2.5">
+          <NativeSelect
+            size="sm"
+            aria-label={t("base")}
+            value={g.base}
+            onChange={(e) => g.setBase(e.target.value as CivitaiBase)}
           >
-            <div className="columns-2 gap-2 sm:columns-3">
-              {g.items.map((item) => (
+            {CIVITAI_BASES.map((b) => (
+              <NativeSelectOption key={b}>{b}</NativeSelectOption>
+            ))}
+          </NativeSelect>
+          <NativeSelect
+            size="sm"
+            aria-label={t("sort")}
+            value={g.sort}
+            onChange={(e) => g.setSort(e.target.value as ExampleQuery["sort"])}
+          >
+            {EXAMPLE_SORTS.map((s) => (
+              <NativeSelectOption key={s} value={s}>
+                {t(`sorts.${s}`)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+          <NativeSelect
+            size="sm"
+            aria-label={t("period")}
+            value={g.period}
+            onChange={(e) =>
+              g.setPeriod(e.target.value as ExampleQuery["period"])
+            }
+          >
+            {EXAMPLE_PERIODS.map((p) => (
+              <NativeSelectOption key={p} value={p}>
+                {t(`periods.${p}`)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+          <NativeSelect
+            size="sm"
+            aria-label={t("rating")}
+            value={g.rating}
+            onChange={(e) => g.setRating(e.target.value as ExampleRating)}
+            className={cn(
+              g.rating !== "None" &&
+                "[&_select]:border-destructive/50 [&_select]:text-destructive"
+            )}
+          >
+            {EXAMPLE_RATINGS.map((r) => (
+              <NativeSelectOption key={r} value={r}>
+                {t(`ratings.${r}`)}
+              </NativeSelectOption>
+            ))}
+          </NativeSelect>
+        </div>
+        <div
+          ref={grid}
+          aria-busy={g.loading}
+          className="-me-1 min-h-0 flex-1 [scrollbar-width:thin] overflow-y-auto overscroll-contain pe-1"
+        >
+          <Masonry items={tiles} columns={columns} ratio={ratioOf} gap={GAP}>
+            {(tile) =>
+              "wait" in tile ? (
+                <div
+                  key={`wait-${tile.wait}`}
+                  aria-hidden
+                  className="w-full animate-pulse rounded-lg bg-muted motion-reduce:animate-none"
+                  style={{ aspectRatio: `1 / ${ratioOf(tile)}` }}
+                />
+              ) : (
                 <button
-                  key={item.id}
+                  key={tile.id}
                   type="button"
-                  title={item.meta.prompt}
-                  onClick={() => setPicked(item)}
-                  style={{ aspectRatio: `${item.width} / ${item.height}` }}
-                  className="group/example relative mb-2 block w-full cursor-pointer break-inside-avoid overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  title={tile.meta.prompt}
+                  onClick={() => setPicked(tile)}
+                  style={{ aspectRatio: `1 / ${ratioOf(tile)}` }}
+                  className="group/example relative block w-full shrink-0 cursor-pointer overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10 outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  <img
-                    src={item.thumb}
+                  <FadeImage
+                    src={tile.thumb}
                     alt=""
                     loading="lazy"
+                    decoding="async"
                     draggable={false}
-                    className="size-full object-cover transition-transform duration-300 ease-out group-hover/example:scale-[1.03] motion-reduce:transition-none"
+                    className="size-full object-cover opacity-0 transition-[opacity,scale] duration-300 ease-out group-hover/example:scale-[1.03] data-[shown=true]:opacity-100 motion-reduce:transition-none"
                   />
+                  {tile.level !== "None" && (
+                    <span className="absolute end-1.5 top-1.5 rounded-md bg-black/65 px-1.5 py-0.5 text-[10px] leading-none font-medium text-white backdrop-blur-sm">
+                      {t(`levels.${tile.level as "Soft" | "Mature" | "X"}`)}
+                    </span>
+                  )}
                   <span className="absolute inset-x-0 bottom-0 line-clamp-3 bg-gradient-to-t from-black/85 to-transparent px-2 pt-6 pb-1.5 text-start text-[11px] leading-snug text-white opacity-0 transition-opacity duration-150 group-hover/example:opacity-100 group-focus-visible/example:opacity-100">
-                    {item.meta.prompt}
+                    {tile.meta.prompt}
                   </span>
                 </button>
-              ))}
-              {g.loading &&
-                Array.from({ length: g.items.length ? 3 : 9 }, (_, i) => (
-                  <div
-                    key={`wait-${i}`}
-                    className="mb-2 animate-pulse break-inside-avoid rounded-lg bg-muted motion-reduce:animate-none"
-                    style={{ aspectRatio: i % 3 === 1 ? "1" : "3 / 4" }}
-                  />
-                ))}
-            </div>
-            {g.error ? (
-              <p
-                role="alert"
-                className="flex items-center justify-between gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
-              >
-                <span className="min-w-0 break-words">{g.error}</span>
-                <Button variant="outline" size="sm" onClick={g.retry}>
-                  {t("retry")}
-                </Button>
-              </p>
-            ) : !g.loading && !g.items.length ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">
-                {t("empty")}
-              </p>
-            ) : null}
-            {g.more && (
-              <div className="flex justify-center pt-1 pb-2">
-                <Button variant="outline" size="sm" onClick={g.more}>
-                  {t("more")}
-                </Button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+              )
+            }
+          </Masonry>
+          <div ref={sentinel} aria-hidden className="h-px" />
+          {g.error ? (
+            <p
+              role="alert"
+              className="mt-2 flex items-center justify-between gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+            >
+              <span className="min-w-0 break-words">{g.error}</span>
+              <Button variant="outline" size="sm" onClick={g.retry}>
+                {t("retry")}
+              </Button>
+            </p>
+          ) : !g.loading && !g.items.length ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              {t("empty")}
+            </p>
+          ) : g.done ? (
+            <p className="py-4 text-center text-xs text-muted-foreground">
+              {t("end")}
+            </p>
+          ) : null}
+        </div>
+      </div>
     </div>
   )
 }

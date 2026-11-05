@@ -84,10 +84,27 @@ export const EXAMPLE_PERIODS = [
   "AllTime",
 ] as const
 
+// How explicit the gallery may get. Civitai's levels nest (Mature includes
+// Soft), so each one is a ceiling; "Only" leaves the safe images out.
+export const EXAMPLE_RATINGS = ["None", "Soft", "Mature", "X", "Only"] as const
+export type ExampleRating = (typeof EXAMPLE_RATINGS)[number]
+const LEVELS = ["None", "Soft", "Mature", "X"]
+
+// The value Civitai's `nsfw` parameter takes for a rating.
+export const civitaiNsfw = (rating: ExampleRating) =>
+  rating === "Only" ? "true" : rating
+
+export function allowedLevel(level: string | undefined, rating: ExampleRating) {
+  const rank = LEVELS.indexOf(level ?? "None")
+  if (rank < 0) return false
+  return rating === "Only" ? rank > 0 : rank <= LEVELS.indexOf(rating)
+}
+
 export interface ExampleQuery {
   base: CivitaiBase
   sort: (typeof EXAMPLE_SORTS)[number]
   period: (typeof EXAMPLE_PERIODS)[number]
+  rating: ExampleRating
   cursor: string | null
 }
 
@@ -104,6 +121,7 @@ export function exampleQuery(params: URLSearchParams): ExampleQuery {
     base: oneOf(CIVITAI_BASES, params.get("base"), "Anima"),
     sort: oneOf(EXAMPLE_SORTS, params.get("sort"), "Most Reactions"),
     period: oneOf(EXAMPLE_PERIODS, params.get("period"), "Week"),
+    rating: oneOf(EXAMPLE_RATINGS, params.get("rating"), "None"),
     cursor: cursor && /^[\w:|.-]{1,80}$/.test(cursor) ? cursor : null,
   }
 }
@@ -113,6 +131,8 @@ export interface CivitaiExample {
   thumb: string
   width: number
   height: number
+  // Civitai's level for the image: None, Soft, Mature or X.
+  level: string
   username: string | null
   reactions: number
   model: string | null
@@ -137,12 +157,15 @@ interface CivitaiImage {
 const thumbUrl = (url: string) =>
   url.replace(/\/original=true\//, "/width=450/")
 
-// A gallery entry worth prompting from: safe, from Civitai's image host, and
-// carrying the prompt it was made with.
-export function toExample(image: CivitaiImage): CivitaiExample | null {
+// A gallery entry worth prompting from: within the asked rating, from
+// Civitai's image host, and carrying the prompt it was made with.
+export function toExample(
+  image: CivitaiImage,
+  rating: ExampleRating = "None"
+): CivitaiExample | null {
   const meta = image.meta
   if (!image.id || !image.url || !meta?.prompt) return null
-  if (image.nsfwLevel && image.nsfwLevel !== "None") return null
+  if (!allowedLevel(image.nsfwLevel, rating)) return null
   let host: string
   try {
     host = new URL(image.url).hostname
@@ -159,6 +182,7 @@ export function toExample(image: CivitaiImage): CivitaiExample | null {
     thumb: thumbUrl(image.url),
     width: image.width ?? 1,
     height: image.height ?? 1,
+    level: image.nsfwLevel ?? "None",
     username: image.username ?? null,
     reactions:
       (stats.likeCount ?? 0) +

@@ -254,8 +254,15 @@ test("only listed filters and Civitai-shaped cursors reach Civitai", () => {
     base: "Anima",
     sort: "Newest",
     period: "Day",
+    rating: "None",
     cursor: "feed:633:147691806",
   })
+  expect(exampleQuery(new URLSearchParams({ rating: "Mature" })).rating).toBe(
+    "Mature"
+  )
+  expect(exampleQuery(new URLSearchParams({ rating: "true" })).rating).toBe(
+    "None"
+  )
   expect(exampleQuery(new URLSearchParams({ cursor: "a&b=c" })).cursor).toBe(
     null
   )
@@ -290,6 +297,14 @@ test("examples keep safe, prompted images from Civitai's host", () => {
   ])
   expect(ex.meta).not.toHaveProperty("comfy")
   expect(toExample({ ...image, nsfwLevel: "Mature" })).toBeNull()
+  expect(toExample({ ...image, nsfwLevel: "Mature" }, "Mature")?.level).toBe(
+    "Mature"
+  )
+  expect(toExample({ ...image, nsfwLevel: "X" }, "Mature")).toBeNull()
+  expect(toExample({ ...image, nsfwLevel: "X" }, "X")).not.toBeNull()
+  expect(toExample(image, "Only")).toBeNull()
+  expect(toExample({ ...image, nsfwLevel: "Soft" }, "Only")).not.toBeNull()
+  expect(toExample({ ...image, nsfwLevel: "Blocked" }, "X")).toBeNull()
   expect(toExample({ ...image, meta: { seed: 1 } })).toBeNull()
   expect(toExample({ ...image, url: "https://evil.example/a.jpeg" })).toBeNull()
 })

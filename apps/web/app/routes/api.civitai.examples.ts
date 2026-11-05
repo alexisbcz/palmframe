@@ -3,7 +3,8 @@ import { civitaiExamples } from "@/lib/civitai.server"
 
 import type { Route } from "./+types/api.civitai.examples"
 
-// Civitai's public gallery, filtered to safe images that share their prompt.
+// Civitai's public gallery, filtered to images that share their prompt, safe
+// ones unless the query asks for a looser rating.
 // The same for every visitor, so the CDN keeps each page for a few minutes and
 // Civitai sees one request where many people browse.
 export async function loader({ request }: Route.LoaderArgs) {

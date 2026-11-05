@@ -6,6 +6,7 @@ import { fitSize, metaLoras, type CivitaiMeta } from "../civitai"
 export {
   CIVITAI_BASES,
   EXAMPLE_PERIODS,
+  EXAMPLE_RATINGS,
   EXAMPLE_SORTS,
   civitaiBase,
   exampleQuery,
@@ -16,6 +17,7 @@ export {
   type CivitaiExample,
   type CivitaiMeta,
   type ExampleQuery,
+  type ExampleRating,
 } from "../civitai"
 
 export interface LabLora {
