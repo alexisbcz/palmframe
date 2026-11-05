@@ -24,14 +24,19 @@ export const publicationSchema = z.object({
 
 export type PublicationInput = z.infer<typeof publicationSchema>
 
-export const slugify = (s: string, max = 80) =>
-  s
+export function slugify(s: string, max = 80) {
+  const full = s
     .toLowerCase()
     .normalize("NFKD")
     .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
-    .slice(0, max)
     .replace(/^-+|-+$/g, "")
+  if (full.length <= max) return full
+  // Cut at a word, unless that would leave almost nothing.
+  const cut = full.slice(0, max)
+  const word = cut.lastIndexOf("-")
+  return (word > max / 2 ? cut.slice(0, word) : cut).replace(/-+$/, "")
+}
 
 // A first suggestion for someone who hasn't set one up.
 export function suggestSlug(name: string) {

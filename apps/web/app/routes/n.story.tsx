@@ -117,6 +117,7 @@ export default function PublicStory({ loaderData }: Route.ComponentProps) {
                     template={s.template}
                     title={s.title}
                     image={s.cover?.url}
+                    bare
                   />
                   <h3>{s.title}</h3>
                   <p>{s.dek}</p>

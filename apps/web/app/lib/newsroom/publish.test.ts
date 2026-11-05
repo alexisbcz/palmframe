@@ -93,3 +93,9 @@ describe("newsletter email", () => {
     expect(mail.subject).toBe('Cats & "dogs"')
   })
 })
+
+test("long addresses stop at a word", () => {
+  expect(
+    slugify("Starship reaches orbit and deploys twenty six satellites", 40)
+  ).toBe("starship-reaches-orbit-and-deploys")
+})

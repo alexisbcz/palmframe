@@ -96,7 +96,12 @@ function Card({ slug, s }: { slug: string; s: PublicStory }) {
   return (
     <article className="np-item">
       <Link to={publicationPath(slug, s.slug!)}>
-        <Cover template={s.template} title={s.title} image={s.cover?.url} />
+        <Cover
+          template={s.template}
+          title={s.title}
+          image={s.cover?.url}
+          bare
+        />
         <span className="np-kicker">
           {templateById(s.template) &&
             t(`templates.${s.template!}.tag` as never)}
@@ -130,6 +135,7 @@ export default function Publication({ loaderData }: Route.ComponentProps) {
                     template={lead.template}
                     title={lead.title}
                     image={lead.cover?.url}
+                    bare
                   />
                   <span className="np-kicker">
                     {templateById(lead.template) &&

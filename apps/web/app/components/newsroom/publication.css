@@ -292,8 +292,8 @@
   }
 }
 .np-preview {
-  margin: 0 -24px;
-  padding: 8px 24px;
+  margin: 0 calc(50% - 50vw);
+  padding: 8px 16px;
   background: #1a1a1a;
   color: #fff;
   font-size: 13px;
