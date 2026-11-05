@@ -23,7 +23,78 @@ export const de = {
     unsubFailed:
       "Dieser Link hat nicht funktioniert. Möglicherweise wurde er schon verwendet.",
   },
+  voices: {
+    house: "Vorlagen-Standard",
+    punchy: "Knackig",
+    analytical: "Analytisch",
+    conversational: "Gesprächig",
+    plain: "Einfache Sprache",
+    witty: "Geistreich",
+    formal: "Formell",
+    narrative: "Erzählerisch",
+  },
+  voiceHints: {
+    house: "Die eigene Stimme der Vorlage.",
+    punchy: "Schnell, kurz, überraschende Fakten zuerst.",
+    analytical: "Erst die Belege, dann Abwägungen und Folgewirkungen.",
+    conversational: "Spricht dich direkt an, warm und schlicht.",
+    plain: "Kurze Sätze, die jeder lesen kann.",
+    witty: "Trockener Humor, der aus den Fakten kommt.",
+    formal: "Sachlich, präzise, ohne Umgangssprache.",
+    narrative: "Als Geschichte erzählt, jedes Detail belegt.",
+  },
+  beats: {
+    title: "Ressorts",
+    text: "Wiederkehrende Aufträge. Der Newsroom liefert jeden zum festgelegten Zeitpunkt und kann jede Story, die alle Prüfungen besteht, veröffentlichen, versenden und posten. Storys, die geprüft werden müssen, warten auf dich.",
+    new: "Neues Ressort",
+    empty:
+      "Noch keine Ressorts. Ein Ressort liefert nach Zeitplan eine Story, etwa jeden Montag um 8:00 Uhr einen Überblick.",
+    name: "Name",
+    lead: "Ansatz",
+    schedule: "Zeitplan",
+    cadence: {
+      daily: "Jeden Tag",
+      weekdays: "Werktags",
+      weekly: "Jede Woche",
+    },
+    weekday: "Tag",
+    time: "Uhrzeit",
+    timezone: "Zeitzone",
+    after: "Wenn eine Story alle Prüfungen besteht",
+    autoPublish: "In meiner Publikation veröffentlichen",
+    autoNewsletter: "Als Newsletter versenden",
+    autoSocial: "In sozialen Netzwerken posten",
+    cap: "Wöchentliches Credit-Limit",
+    capHint: "Reicht für {count} Storys pro Woche.",
+    save: "Ressort speichern",
+    saved: "Gespeichert",
+    cancel: "Abbrechen",
+    edit: "Bearbeiten",
+    remove: "Löschen",
+    confirmRemove: "Zum Löschen erneut klicken",
+    runNow: "Jetzt liefern",
+    queued: "Wird innerhalb einer Minute geliefert.",
+    on: "An",
+    off: "Pausiert",
+    next: "Nächste: {when}",
+    never: "Nicht geplant",
+    stories: "Neueste Storys",
+    limit: "Du kannst bis zu 20 Ressorts haben.",
+    needsPublication:
+      "Richte deine Publikation ein, um automatisch zu veröffentlichen.",
+  },
+  formats: {
+    title: "Formate",
+    text: "Verwandle diese Story in andere Medien. Jedes Format wird aus der Recherche angepasst, geprüft und erneut auf Fakten kontrolliert.",
+  },
+  themes: {
+    paper: "Papier",
+    broadsheet: "Broadsheet",
+    midnight: "Mitternacht",
+    zine: "Zine",
+  },
   publication: {
+    theme: "Design",
     title: "Publikation",
     text: "Deine Storys, unter deiner eigenen Adresse gehostet, mit einem Newsletter, den Leser abonnieren können.",
     name: "Name",
@@ -89,6 +160,7 @@ export const de = {
     stories: "Meine Storys",
     templates: "Vorlagen",
     publication: "Publikation",
+    beats: "Ressorts",
     samples: "Titelseite",
     recent: "Storys",
     new: "Neue Story",
@@ -102,6 +174,9 @@ export const de = {
       "Artikel, die der Newsroom aus echten Quellen geschrieben hat, einer pro Vorlage.",
   },
   composer: {
+    voice: "Stimme",
+    language: "Sprache",
+    repeat: "Als Ressort einrichten",
     template: "Vorlage",
     sources: "Quellen",
     length: "Länge",
@@ -154,6 +229,21 @@ export const de = {
       tag: "Porträt",
       blurb:
         "Eine Person oder ein Unternehmen, erzählt über Taten und Aussagen, eigene Beiträge und Kritiker.",
+    },
+    roundup: {
+      tag: "Überblick",
+      blurb:
+        "Fünf bis acht Entwicklungen zu einem Ressort, die wichtigste zuerst, jede in unter 90 Wörtern und mit Quelle. Gemacht für Zeitpläne.",
+    },
+    analysis: {
+      tag: "Analyse",
+      blurb:
+        "Ein klares Argument auf Basis von Belegen, mit dem stärksten Gegenargument und dem, was es widerlegen würde.",
+    },
+    listicle: {
+      tag: "Liste",
+      blurb:
+        "Nummerierte Einträge, die jeweils einen überprüfbaren Fakt enthalten. Keine Füllereinträge.",
     },
     pulse: {
       tag: "Internetkultur",

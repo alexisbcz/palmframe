@@ -3,6 +3,7 @@ import { z } from "zod"
 import { COSTS } from "@/lib/credits"
 import { leadSchema } from "@/lib/deepdive/model"
 import { fail as failDive, kick } from "@/lib/deepdive/run.server"
+import { storyOptions } from "@/lib/newsroom/styles"
 import { TEMPLATE_IDS } from "@/lib/newsroom/templates"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 import { getViewer } from "@/lib/supabase.server"
@@ -19,6 +20,7 @@ const body = z.discriminatedUnion("intent", [
     intent: z.literal("file"),
     lead: leadSchema,
     template: z.enum(TEMPLATE_IDS),
+    options: storyOptions.default({ voice: "house", language: "en" }),
   }),
   z.object({ intent: z.literal("remove"), id: z.uuid() }),
 ])
@@ -67,6 +69,7 @@ export async function action({ request }: Route.ActionArgs) {
       user_id: viewer.id,
       lead: r.lead,
       template: r.template,
+      options: r.options,
       job,
     })
     .select("id")

@@ -299,3 +299,74 @@
   font-size: 13px;
   text-align: center;
 }
+
+/* Themes. Paper is the default above. */
+.nr.np[data-theme="broadsheet"] {
+  --line: #d9d9d9;
+  background: #fff;
+}
+.nr.np[data-theme="broadsheet"] .np-mast a {
+  font-family: var(--serif);
+  font-stretch: 100%;
+  font-variation-settings: "opsz" 144;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+.nr.np[data-theme="broadsheet"] .np-mast {
+  border-bottom-width: 1px;
+  box-shadow: 0 3px 0 -2px var(--ink);
+}
+.nr.np[data-theme="broadsheet"] .nr-cover,
+.nr.np[data-theme="broadsheet"] .np-subscribe {
+  border-radius: 0;
+}
+.nr.np[data-theme="midnight"] {
+  --ink: #ecebe6;
+  --mute: #a3a29c;
+  --faint: #77766f;
+  --line: #2a2a2e;
+  background: #0f0f11;
+}
+.nr.np[data-theme="midnight"] .np-mast {
+  border-bottom-color: var(--ink);
+}
+.nr.np[data-theme="midnight"] .np-subscribe {
+  background: #18181b;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.nr.np[data-theme="midnight"] .np-subscribe input[type="email"] {
+  border-color: #33333a;
+  background: #0f0f11;
+  color: var(--ink);
+}
+.nr.np[data-theme="midnight"] .np-article .np-dek,
+.nr.np[data-theme="midnight"] .nr-prose blockquote {
+  color: #c9c8c2;
+}
+.nr.np[data-theme="midnight"] .nr-prose {
+  color: var(--ink);
+}
+.nr.np[data-theme="zine"] {
+  --line: #111;
+  background: #fffbe8;
+}
+.nr.np[data-theme="zine"] .np-mast {
+  border-bottom: 6px solid var(--np-accent);
+}
+.nr.np[data-theme="zine"] .np-mast a {
+  display: inline-block;
+  padding: 4px 14px;
+  background: var(--ink);
+  color: #fffbe8;
+  transform: rotate(-1.5deg);
+}
+.nr.np[data-theme="zine"] .nr-cover,
+.nr.np[data-theme="zine"] .np-subscribe {
+  border: 2px solid var(--ink);
+  border-radius: 0;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+.nr.np[data-theme="zine"] .np-kicker {
+  font-weight: 700;
+}

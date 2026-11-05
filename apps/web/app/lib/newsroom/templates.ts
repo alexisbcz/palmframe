@@ -10,6 +10,9 @@ export const TEMPLATE_IDS = [
   "feature",
   "profile",
   "pulse",
+  "roundup",
+  "analysis",
+  "listicle",
 ] as const
 
 export type TemplateId = (typeof TEMPLATE_IDS)[number]
@@ -167,6 +170,75 @@ export const TEMPLATES: Template[] = [
     leads: [
       "Why everyone is posting about Mistral's cat model names",
       "The 'quiet cracking' trend on TikTok",
+    ],
+  },
+  {
+    id: "roundup",
+    name: "The Roundup",
+    limits: {
+      minWords: 400,
+      maxWords: 950,
+      minFacts: 8,
+      minDomains: 5,
+      minSocial: 0,
+    },
+    sources: ["news", "web", "x"],
+    minutes: [5, 10],
+    look: {
+      paper: "#eef3ea",
+      ink: "#14261a",
+      accent: "#1f8a4c",
+      face: "condensed",
+    },
+    leads: [
+      "This week in AI: the five developments that mattered",
+      "Today's European tech news",
+    ],
+  },
+  {
+    id: "analysis",
+    name: "Analysis",
+    limits: {
+      minWords: 700,
+      maxWords: 1400,
+      minFacts: 8,
+      minDomains: 4,
+      minSocial: 0,
+    },
+    sources: ["news", "web", "video"],
+    minutes: [6, 12],
+    look: {
+      paper: "#f1ede6",
+      ink: "#22201c",
+      accent: "#7a3cff",
+      face: "serif",
+    },
+    leads: [
+      "Is open-weight AI a business or a loss leader?",
+      "What the EU's new cloud rules mean for American hyperscalers",
+    ],
+  },
+  {
+    id: "listicle",
+    name: "The List",
+    limits: {
+      minWords: 500,
+      maxWords: 1100,
+      minFacts: 8,
+      minDomains: 4,
+      minSocial: 0,
+    },
+    sources: ["web", "news", "social"],
+    minutes: [5, 10],
+    look: {
+      paper: "#ff5a36",
+      ink: "#170a05",
+      accent: "#170a05",
+      face: "grotesk",
+    },
+    leads: [
+      "Seven things to know about the new iPhone's repairability",
+      "Five startups quietly winning in climate software",
     ],
   },
 ]

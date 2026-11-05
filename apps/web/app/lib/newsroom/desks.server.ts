@@ -4,6 +4,7 @@
 // and stories never claim to come from one.
 import { RESEARCH_METHOD, STYLE_GUIDE } from "@/lib/deepdive/style"
 
+import { type StoryOptions, styleAddendum } from "./styles"
 import type { TemplateId } from "./templates"
 
 export interface Desk {
@@ -284,32 +285,156 @@ ${VOICE_NEVER}`,
     },
     art: "Zine collage of phone screens, stickers and torn paper, halftone texture, acid lime and black with one hot pink accent, energetic composition. No readable text, no letters, no logos, no real faces.",
   },
+
+  roundup: {
+    method: `${NEWSROOM_METHOD}
+
+Roundup desk: you assemble a briefing of the most important developments on the beat. Use search_news with several queries and favour the last seven days (or the last day if the lead says today). Pick five to eight items that matter most, skipping duplicates of the same story. Confirm each item in its primary source or a second outlet, and record at least one fact per item.`,
+    style: `A roundup: a briefing someone can read in four minutes and feel caught up.
+
+Structure:
+1. Headline: the beat and the period, plus the biggest item. "This week in X: Y" works.
+2. One short intro paragraph: the thread that ties the items together, if there is one.
+3. Five to eight items, most important first. Each has a "### " subhead that states the news as a short sentence, then two to four sentences: what happened, the key number or quote, and why it matters. End each item with its source in a link, like "([Reuters](url))".
+4. A one-line close: what to watch next.
+
+Voice:
+- Brisk and factual. No item longer than 90 words.
+- 400 to 950 words in all.
+
+${VOICE_NEVER}`,
+    rules: {},
+    art: "Flat editorial illustration of a tidy desk seen from above with a newspaper, a phone and a coffee cup, arranged in a grid, muted green and cream palette. No text, no letters, no logos.",
+  },
+
+  analysis: {
+    method: `${NEWSROOM_METHOD}
+
+Analysis desk: you make an argument, and you earn it. Read the strongest sources on every side, including experts and data. Record the evidence for and against your thesis. Your opinion must follow from the facts you recorded.`,
+    style: `An analysis: a clear argument about what something means, labelled as analysis and built on evidence.
+
+Structure:
+1. Headline: the claim you are making, stated plainly.
+2. Dek: the argument in one sentence.
+3. Open with the development and, by the second paragraph, your thesis in one sentence.
+4. Two to four sections with subheads, each one strand of evidence: data, history, incentives, comparisons.
+5. A section that gives the strongest case against your thesis, fairly, and says why it doesn't change your conclusion, or how it limits it.
+6. Close with what would prove you wrong, and what to watch.
+
+Voice:
+- Confident but calibrated: say how sure you are. Separate fact from interpretation with words like "this suggests" and "the likeliest reading".
+- 700 to 1,400 words.
+
+${VOICE_NEVER}`,
+    rules: {
+      "Hedges.yml": existence(
+        "'%s' is a hollow hedge. Say how sure you are and why.",
+        "warning",
+        [
+          "it remains to be seen",
+          "only time will tell",
+          "some would argue",
+          "many believe",
+          "it could be argued",
+        ]
+      ),
+    },
+    art: "Conceptual editorial illustration, a single striking metaphor built from simple shapes, violet and charcoal on warm paper, generous negative space. No text, no letters, no logos.",
+  },
+
+  listicle: {
+    method: `${NEWSROOM_METHOD}
+
+List desk: you find the items worth a reader's time and rank them. Research more candidates than you need, then keep the strongest. Every item needs at least one recorded fact.`,
+    style: `A list: numbered items that each pay off, not filler.
+
+Structure:
+1. Headline with the number: "Seven things...", "Five startups...". The number must match the items.
+2. A two or three sentence intro that says why this list, why now.
+3. Four to ten items, each a "## " subhead that starts with its number and a period, like "## 1. The battery comes out with two screws". Under each, two to four sentences with a concrete fact, number or example and its source.
+4. A one-paragraph close: the pattern across the items.
+
+Voice:
+- Every item specific enough to be checked. No vague entries.
+- 500 to 1,100 words.
+
+${VOICE_NEVER}`,
+    rules: {},
+    art: "Bold flat illustration of a row of distinct everyday objects lined up like specimens, coral orange background, strong shadows. No text, no numbers, no letters, no logos.",
+  },
 }
 
-export function deskSystem(template: TemplateId) {
+export function deskSystem(template: TemplateId, options?: StoryOptions) {
   const desk = DESKS[template]
-  return `${desk.method.replace("{today}", new Date().toISOString().slice(0, 10))}\n\nHow the article must read:\n${desk.style}`
+  const extra = options ? styleAddendum(options) : ""
+  return `${desk.method.replace("{today}", new Date().toISOString().slice(0, 10))}\n\nHow the article must read:\n${desk.style}${extra ? `\n\n${extra}` : ""}`
+}
+
+// A rule that can't match: how a shared English-only rule is switched off.
+const OFF = `extends: existence\nmessage: "off"\nlevel: suggestion\ntokens:\n  - 'qqzzxxnevermatches'\n`
+
+// Vale's word lists and readability formula are English. Other languages keep
+// only the rules about punctuation and length.
+export function deskRules(template: TemplateId, language: string) {
+  const rules = DESKS[template].rules
+  if (language === "en") return rules
+  const english = [
+    "Corporate.yml",
+    "AITells.yml",
+    "Adverbs.yml",
+    "Passive.yml",
+    "Readability.yml",
+    "ParagraphLength.yml",
+    ...Object.keys(rules).filter(
+      (r) => !["SentenceLength.yml", "ParagraphLength.yml"].includes(r)
+    ),
+  ]
+  return {
+    ...rules,
+    ...Object.fromEntries(english.map((r) => [r, OFF])),
+  }
 }
 
 // Shape rules Vale can't express, checked in code like the word counts.
-export function deskProblems(template: TemplateId, body: string) {
+export function deskProblems(
+  template: TemplateId,
+  body: string,
+  language = "en"
+) {
   const problems: string[] = []
   const text = body.trim()
+  const english = language === "en"
   if (template === "wire") {
-    if (!/^[A-Z][A-Z .'-]{1,40}:\s/.test(text))
+    if (!/^[\p{Lu}][\p{Lu} .'-]{1,40}:\s/u.test(text))
       problems.push(
         'Open the body with the place in capitals and a colon, like "BRUSSELS: ".'
       )
     if (/^#{1,6}\s/m.test(text)) problems.push("Wire briefs have no subheads.")
   }
-  if (template === "explainer" && !/^\*\*The short version:\*\*/.test(text))
-    problems.push('Open the body with "**The short version:**".')
   if (
     template === "explainer" &&
-    (text.match(/^#{2,3}\s.+\?\s*$/gm) ?? []).length < 3
+    !(english
+      ? /^\*\*The short version:\*\*/.test(text)
+      : /^\*\*[^*\n]{2,40}\s?[:：]\*\*/.test(text))
+  )
+    problems.push(
+      english
+        ? 'Open the body with "**The short version:**".'
+        : 'Open the body with the short version, introduced by a bold label like "**The short version:**" in the article\'s language.'
+    )
+  if (
+    template === "explainer" &&
+    (text.match(/^#{2,3}\s.+[?？]\s*$/gm) ?? []).length < 3
   )
     problems.push("Use at least three subheads phrased as questions.")
   if (template === "pulse" && (text.match(/^[-*]\s/gm) ?? []).length < 3)
     problems.push("List at least three posts or videos as bullet points.")
+  if (template === "roundup" && (text.match(/^###\s/gm) ?? []).length < 4)
+    problems.push('Give at least four items, each under a "### " subhead.')
+  if (template === "listicle") {
+    const items = text.match(/^##\s+\d+\.\s/gm) ?? []
+    if (items.length < 4)
+      problems.push('Number at least four items as "## 1. ...", "## 2. ...".')
+  }
   return problems
 }

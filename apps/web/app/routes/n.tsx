@@ -118,7 +118,7 @@ export default function Publication({ loaderData }: Route.ComponentProps) {
   const { publication: p, stories } = loaderData
   const [lead, ...rest] = stories
   return (
-    <div className="nr np" style={accentStyle(p.accent)}>
+    <div className="nr np" data-theme={p.theme} style={accentStyle(p.accent)}>
       <div className="np-wrap">
         <Masthead
           slug={p.slug}

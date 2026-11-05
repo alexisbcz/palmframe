@@ -350,6 +350,8 @@ export interface Database {
           job: string
           machine_id?: string | null
           template?: TemplateId | null
+          options?: Record<string, unknown>
+          beat_id?: string | null
         }
         Update: Partial<Omit<DeepDiveRow, "id" | "user_id" | "lead" | "job">>
         Relationships: []
@@ -815,6 +817,9 @@ export type DeepDiveRow = {
   // Set while the story is on its owner's publication.
   slug: string | null
   published_at: string | null
+  // Voice and language, read with readOptions.
+  options: Record<string, unknown>
+  beat_id: string | null
   created_at: string
   updated_at: string
 }

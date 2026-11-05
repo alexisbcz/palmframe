@@ -19,7 +19,9 @@ export async function action({ request }: Route.ActionArgs) {
   if (request.method !== "POST") return fail("generic", 405)
   const { supabase, viewer } = await getViewer(request)
   if (!viewer) return fail("generic", 401)
-  if (!viewer.labs.machines) return fail("generic", 404)
+  // Studio's Media and the Newsroom both render formats from a Story.
+  if (!viewer.labs.machines && !viewer.labs.newsroom)
+    return fail("generic", 404)
   const body = input.safeParse(await request.json().catch(() => null))
   if (!body.success) return fail("invalid", 400)
   const { deepDiveId, format } = body.data

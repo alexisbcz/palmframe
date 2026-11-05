@@ -138,6 +138,11 @@ export async function action({ request }: Route.ActionArgs) {
     })
     if (error) return fail(error.message, 500)
     // Off means off: nothing keeps listening or spending in the background.
+    if (!r.on && r.feature === "newsroom")
+      await supabaseAdmin()
+        .from("comic_newsroom_beats")
+        .update({ enabled: false })
+        .eq("user_id", viewer.id)
     if (!r.on && r.feature === "machines")
       await supabase
         .from("comic_machines")

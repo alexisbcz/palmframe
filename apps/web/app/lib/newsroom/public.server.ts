@@ -9,7 +9,7 @@ export async function readPublication(slug: string, viewerId?: string | null) {
   const admin = supabaseAdmin()
   const { data: pub } = await admin
     .from("comic_newsrooms")
-    .select("id, user_id, slug, name, tagline, accent, indexable, live")
+    .select("id, user_id, slug, name, tagline, accent, indexable, live, theme")
     .eq("slug", slug)
     .maybeSingle()
   if (!pub || (!pub.live && pub.user_id !== viewerId)) return null

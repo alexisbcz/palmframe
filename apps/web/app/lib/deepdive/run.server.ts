@@ -119,7 +119,7 @@ export async function runSlice(id: string, origin: string) {
           await save(m)
         },
       },
-      newsroomDesk(row.template)
+      newsroomDesk(row.template, row.options)
     )
   } catch (e) {
     console.error("Deep dive failed", id, e)
@@ -136,6 +136,13 @@ export async function runSlice(id: string, origin: string) {
         console.error("Cover failed", id, e)
       )
     await table().update({ status, leased_until: null }).eq("id", id)
+    if (status === "done" && row.beat_id) {
+      // Imported here: beats file stories through this module.
+      const { afterBeat } = await import("@/lib/newsroom/beats.server")
+      await afterBeat(id, origin).catch((e) =>
+        console.error("Beat follow-up failed", id, e)
+      )
+    }
     if (status === "done" && row.machine_id)
       await afterStory(id, row.machine_id, origin).catch((e) =>
         console.error("Story formats failed to start", id, e)

@@ -41,7 +41,7 @@ export default function Unsubscribe({ loaderData }: Route.ComponentProps) {
     setState(res?.ok ? "done" : "failed")
   }
   return (
-    <div className="nr np" style={accentStyle(p.accent)}>
+    <div className="nr np" data-theme={p.theme} style={accentStyle(p.accent)}>
       <div className="np-wrap">
         <Masthead slug={p.slug} name={p.name} tagline={p.tagline} />
         <div className="np-article" style={{ maxWidth: 520 }}>

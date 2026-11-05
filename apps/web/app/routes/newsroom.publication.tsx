@@ -8,6 +8,7 @@ import {
   publicationPath,
   suggestSlug,
 } from "@/lib/newsroom/publication"
+import { THEME_IDS, type ThemeId } from "@/lib/newsroom/styles"
 import { PRIVATE } from "@/lib/seo"
 import { getViewer } from "@/lib/supabase.server"
 
@@ -60,6 +61,7 @@ export default function Publication({ loaderData }: Route.ComponentProps) {
     slug: pub?.slug ?? loaderData.suggestion,
     tagline: pub?.tagline ?? "",
     accent: pub?.accent ?? "#3d7bff",
+    theme: pub?.theme ?? "paper",
     live: pub?.live ?? false,
     indexable: pub?.indexable ?? false,
   })
@@ -149,6 +151,19 @@ export default function Publication({ loaderData }: Route.ComponentProps) {
               maxLength={200}
               onChange={(e) => set("tagline", e.target.value)}
             />
+          </label>
+          <label>
+            <span>{t("publication.theme")}</span>
+            <select
+              value={form.theme}
+              onChange={(e) => set("theme", e.target.value as ThemeId)}
+            >
+              {THEME_IDS.map((x) => (
+                <option key={x} value={x}>
+                  {t(`themes.${x}`)}
+                </option>
+              ))}
+            </select>
           </label>
           <label className="nr-inline">
             <span>{t("publication.accent")}</span>

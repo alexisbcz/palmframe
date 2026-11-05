@@ -15,13 +15,21 @@ import {
   UserIcon,
 } from "@hugeicons/core-free-icons"
 
+import {
+  FormatPanel,
+  type RenditionView,
+} from "@/components/media/format-panel"
 import { Article } from "@/components/newsroom/article"
 import { Distribute } from "@/components/newsroom/distribute"
 import { messages } from "@/components/newsroom/newsroom.messages"
 import { useT } from "@/i18n/core"
 import { PRIVATE } from "@/lib/seo"
 import { templateById } from "@/lib/newsroom/templates"
+import { isOpen } from "@/lib/media/client"
+import { availableFormats } from "@/lib/media/formats"
+import type { FormatId } from "@/lib/media/model"
 import { zernioLive } from "@/lib/newsroom/zernio.server"
+import { messages as mediaMessages } from "./media.messages"
 import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/newsroom.$id"
@@ -32,22 +40,33 @@ const POLL_MS = 3_000
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = await getViewer(request)
-  const [{ data: story }, { data: publication }, { data: posts }] =
-    await Promise.all([
-      supabase
-        .from("comic_deep_dives")
-        .select(
-          "id, lead, status, template, cover, title, dek, body, log, facts, sources, findings, problems, slug, published_at, created_at, updated_at"
-        )
-        .eq("id", params.id)
-        .not("template", "is", null)
-        .maybeSingle(),
-      supabase.from("comic_newsrooms").select("id, slug, live").maybeSingle(),
-      supabase
-        .from("comic_newsroom_posts")
-        .select("platform, text, status, scheduled_for, error, provider")
-        .eq("story_id", params.id),
-    ])
+  const [
+    { data: story },
+    { data: publication },
+    { data: posts },
+    { data: renditions },
+  ] = await Promise.all([
+    supabase
+      .from("comic_deep_dives")
+      .select(
+        "id, lead, status, template, cover, title, dek, body, log, facts, sources, findings, problems, slug, published_at, created_at, updated_at"
+      )
+      .eq("id", params.id)
+      .not("template", "is", null)
+      .maybeSingle(),
+    supabase.from("comic_newsrooms").select("id, slug, live").maybeSingle(),
+    supabase
+      .from("comic_newsroom_posts")
+      .select("platform, text, status, scheduled_for, error, provider")
+      .eq("story_id", params.id),
+    supabase
+      .from("comic_media_renditions")
+      .select(
+        "id, format, status, title, parts, meta, problems, attempts, created_at"
+      )
+      .eq("deep_dive_id", params.id)
+      .order("created_at", { ascending: true }),
+  ])
   if (!story) throw respond(null, { status: 404 })
   const { count: subscribers } = publication
     ? await supabase
@@ -64,6 +83,11 @@ export async function loader({ request, params }: Route.LoaderArgs) {
     posts: posts ?? [],
     subscribers: subscribers ?? 0,
     zernioMock: !zernioLive(),
+    // The latest try of each format wins.
+    renditions: Object.fromEntries(
+      (renditions ?? []).map((r) => [r.format, r])
+    ) as Partial<Record<FormatId, RenditionView>>,
+    formats: availableFormats(),
     story: {
       ...story,
       sources: story.sources.map(({ url, title }) => ({ url, title })),
@@ -108,9 +132,16 @@ export default function NewsroomStory({ loaderData }: Route.ComponentProps) {
   const revalidator = useRevalidator()
   const navigate = useNavigate()
   const open = story.status === "queued" || story.status === "running"
+  const rendering = Object.values(loaderData.renditions).some(
+    (r) => r && isOpen(r.status)
+  )
+  const tm = useT(mediaMessages)
+  const [format, setFormat] = React.useState<FormatId>(
+    loaderData.formats[0] ?? "blog"
+  )
 
   React.useEffect(() => {
-    if (!open) return
+    if (!open && !rendering) return
     const timer = setInterval(() => {
       if (
         revalidator.state === "idle" &&
@@ -119,7 +150,7 @@ export default function NewsroomStory({ loaderData }: Route.ComponentProps) {
         void revalidator.revalidate()
     }, POLL_MS)
     return () => clearInterval(timer)
-  }, [open, revalidator])
+  }, [open, rendering, revalidator])
 
   const [confirming, setConfirming] = React.useState(false)
   const remove = async () => {
@@ -229,6 +260,41 @@ export default function NewsroomStory({ loaderData }: Route.ComponentProps) {
         </span>
       }
       alert={alert}
+      below={
+        story.status === "done" || story.status === "review" ? (
+          <section className="nr-panel nr-formats">
+            <h2>{t("formats.title")}</h2>
+            <p className="nr-muted">{t("formats.text")}</p>
+            <div className="nr-tabs" role="tablist">
+              {loaderData.formats.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  role="tab"
+                  aria-selected={format === f}
+                  className="nr-mini"
+                  onClick={() => setFormat(f)}
+                >
+                  {tm(`formats.${f}`)}
+                  {loaderData.renditions[f] &&
+                    !isOpen(loaderData.renditions[f]!.status) &&
+                    " ✓"}
+                </button>
+              ))}
+            </div>
+            <div className="dark nr-format" role="tabpanel">
+              <FormatPanel
+                key={format}
+                diveId={story.id}
+                diveStatus={story.status}
+                format={format}
+                row={loaderData.renditions[format]}
+                onStarted={() => void revalidator.revalidate()}
+              />
+            </div>
+          </section>
+        ) : null
+      }
       panel={
         story.status !== "failed" ? (
           <Distribute

@@ -2,6 +2,8 @@
 // Shared by server and browser.
 import { z } from "zod"
 
+import { THEME_IDS } from "./styles"
+
 const RESERVED =
   /^(admin|api|app|assets|auth|login|logout|new|newsroom|palmframe|rss|settings|signup|static|www)$/
 
@@ -18,6 +20,7 @@ export const publicationSchema = z.object({
     .toLowerCase()
     .regex(/^#[0-9a-f]{6}$/)
     .default("#3d7bff"),
+  theme: z.enum(THEME_IDS).default("paper"),
   live: z.boolean().default(false),
   indexable: z.boolean().default(false),
 })

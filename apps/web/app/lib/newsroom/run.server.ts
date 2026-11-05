@@ -4,22 +4,44 @@ import { withPruna } from "@/lib/machines/image.server"
 import { generateImage, payingConnection } from "@/lib/openrouter.server"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
-import { DESKS, deskProblems, deskSystem } from "./desks.server"
+import { DESKS, deskProblems, deskRules, deskSystem } from "./desks.server"
+import { readOptions } from "./styles"
 import { templateById } from "./templates"
 
 const COVER_MS = 90_000
 
 // The brief and rules a Newsroom story runs under. Studio's own stories have
 // no template and keep the house style.
-export function newsroomDesk(template: string | null | undefined) {
+export function newsroomDesk(
+  template: string | null | undefined,
+  rawOptions?: unknown
+) {
   const t = templateById(template)
   if (!t) return undefined
+  const options = readOptions(rawOptions)
+  // Japanese has no spaces between words, so length is counted in characters,
+  // about two per English word.
+  const cjk = options.language === "ja"
   const rules: DeskRules = {
-    limits: t.limits,
-    vale: DESKS[t.id].rules,
-    shape: (body) => deskProblems(t.id, body),
+    limits: cjk
+      ? { ...t.limits, minWords: 0, maxWords: Number.MAX_SAFE_INTEGER }
+      : t.limits,
+    vale: deskRules(t.id, options.language),
+    shape: (body) => {
+      const problems = deskProblems(t.id, body, options.language)
+      if (cjk) {
+        const chars = body.replace(/\s/g, "").length
+        if (chars < t.limits.minWords * 2)
+          problems.push(`${chars} characters, need ${t.limits.minWords * 2}.`)
+        if (chars > t.limits.maxWords * 2.5)
+          problems.push(
+            `${chars} characters, cut to ${Math.round(t.limits.maxWords * 2.5)}.`
+          )
+      }
+      return problems
+    },
   }
-  return { name: t.name, system: deskSystem(t.id), rules }
+  return { name: t.name, system: deskSystem(t.id, options), rules }
 }
 
 // The person's OpenRouter account draws it when connected, otherwise our image

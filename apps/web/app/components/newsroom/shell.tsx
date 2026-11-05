@@ -3,6 +3,7 @@ import { Link, NavLink, useNavigate } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
+  Calendar03Icon,
   DashboardSquare01Icon,
   Globe02Icon,
   Home01Icon,
@@ -28,6 +29,12 @@ const NAV = [
   { to: "/newsroom", key: "home", icon: Home01Icon, tone: "a", end: true },
   { to: "/newsroom/stories", key: "stories", icon: News01Icon, tone: "b" },
   { to: "/newsroom/samples", key: "samples", icon: NewspaperIcon, tone: "d" },
+  {
+    to: "/newsroom/beats",
+    key: "beats",
+    icon: Calendar03Icon,
+    tone: "f",
+  },
   {
     to: "/newsroom/publication",
     key: "publication",

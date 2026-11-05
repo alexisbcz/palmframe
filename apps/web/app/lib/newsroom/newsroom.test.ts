@@ -10,9 +10,9 @@ import { TEMPLATE_IDS, TEMPLATES, templateById } from "./templates"
 const words = (n: number) => Array.from({ length: n }, () => "word").join(" ")
 
 describe("templates", () => {
-  test("six, each with a desk", () => {
+  test("each has a desk", () => {
     expect(TEMPLATES.map((t) => t.id)).toEqual([...TEMPLATE_IDS])
-    expect(TEMPLATES).toHaveLength(6)
+    expect(TEMPLATES).toHaveLength(TEMPLATE_IDS.length)
     for (const t of TEMPLATES) {
       expect(DESKS[t.id]).toBeDefined()
       expect(t.limits.minWords).toBeLessThan(t.limits.maxWords)

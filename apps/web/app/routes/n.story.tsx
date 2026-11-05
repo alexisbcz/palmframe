@@ -53,7 +53,7 @@ export default function PublicStory({ loaderData }: Route.ComponentProps) {
   const sources = story.sources.filter((s) => cited.has(s.url))
   const tpl = templateById(story.template)
   return (
-    <div className="nr np" style={accentStyle(p.accent)}>
+    <div className="nr np" data-theme={p.theme} style={accentStyle(p.accent)}>
       <div className="np-wrap">
         <Masthead
           slug={p.slug}

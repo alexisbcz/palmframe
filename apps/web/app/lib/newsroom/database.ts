@@ -11,6 +11,7 @@ export type NewsroomRow = {
   accent: string
   live: boolean
   indexable: boolean
+  theme: "paper" | "broadsheet" | "midnight" | "zine"
   created_at: string
   updated_at: string
 }
@@ -53,6 +54,31 @@ export type PostRow = {
   updated_at: string
 }
 
+export type Cadence = "daily" | "weekdays" | "weekly"
+
+export type BeatRow = {
+  id: string
+  user_id: string
+  name: string
+  lead: string
+  template: string
+  options: Record<string, unknown>
+  cadence: Cadence
+  weekday: number
+  minute_of_day: number
+  timezone: string
+  enabled: boolean
+  auto_publish: boolean
+  auto_newsletter: boolean
+  auto_social: boolean
+  max_credits_per_week: number
+  next_run_at: string | null
+  last_run_at: string | null
+  last_error: string
+  created_at: string
+  updated_at: string
+}
+
 type Table<Row, Required extends keyof Row> = {
   Row: Row
   Insert: Pick<Row, Required> & Partial<Row>
@@ -61,6 +87,7 @@ type Table<Row, Required extends keyof Row> = {
 }
 
 export type NewsroomTables = {
+  comic_newsroom_beats: Table<BeatRow, "user_id" | "name" | "lead" | "template">
   comic_newsrooms: Table<NewsroomRow, "user_id" | "slug" | "name">
   comic_newsroom_subscribers: Table<SubscriberRow, "newsroom_id" | "email">
   comic_newsroom_issues: Table<IssueRow, "newsroom_id" | "story_id" | "subject">

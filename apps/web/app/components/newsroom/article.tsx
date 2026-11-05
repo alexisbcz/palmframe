@@ -103,9 +103,12 @@ export function Article({
   actions,
   alert,
   panel,
+  below,
   back = "/newsroom/stories",
 }: {
   panel?: React.ReactNode
+  // Under the story, in its column: the other formats.
+  below?: React.ReactNode
   back?: string
   story: StoryView
   badge?: React.ReactNode
@@ -268,6 +271,7 @@ export function Article({
           )}
         </section>
       </aside>
+      {below && <div className="nr-below">{below}</div>}
     </div>
   )
 }

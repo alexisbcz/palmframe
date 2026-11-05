@@ -237,6 +237,21 @@ the deep-dive agent above reports and files the story.
   (`lib/newsroom/zernio.server.ts`); live posting still needs the person's
   accounts connected.
 
+- **Styles:** nine templates (adding The Roundup, Analysis and The List), eight
+  voices that sit on top of any template, and eight output languages
+  (`lib/newsroom/styles.ts`). Outside English, Vale keeps only its punctuation
+  and length rules, and Japanese is measured in characters. Publications have
+  four themes.
+- **Beats:** recurring assignments with a schedule in the owner's time zone and a
+  weekly credit cap (`lib/newsroom/beats.server.ts`, `schedule.ts`). The
+  `newsroom-tick` pg_cron job calls `api/newsroom/tick` every minute: it files
+  due beats and restarts any story, Studio's too, whose worker chain broke. A
+  beat's story that passes every check can publish, send the newsletter and post
+  on its own; one that needs review waits for a person. Turning the Newsroom off
+  pauses every beat.
+- **Formats:** a filed story can be rendered into Studio's Media formats from its
+  page, with the same pipeline and checks.
+
 A story is a `comic_deep_dives` row with a `template`, so it costs a deep dive's
 credits and also shows in Studio's Media, where it can be rendered into other
 formats. Run the unit tests with `bun test apps/web/app/lib/newsroom`.
