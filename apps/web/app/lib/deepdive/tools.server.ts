@@ -438,7 +438,12 @@ export function researchTools(
           // The second reader is the costly one, so it reads only clean drafts.
           if (!run.problems.length) {
             logged("factcheck", "Second reader checking every claim")
-            const errors = await factCheck(article, run.sources, signal)
+            const errors = await factCheck(
+              article,
+              run.sources,
+              signal,
+              run.facts
+            )
             run.problems = errors.map(
               (e) => `Fact check: "${e.claim}": ${e.why}`
             )

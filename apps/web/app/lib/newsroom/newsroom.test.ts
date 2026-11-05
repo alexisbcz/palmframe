@@ -114,3 +114,15 @@ describe("samples", () => {
     }
   })
 })
+
+describe("fact-check evidence", () => {
+  test("cited pages come first", async () => {
+    const { evidenceOrder } = await import("@/lib/deepdive/factcheck.server")
+    const src = (url: string) => ({ url, title: url, text: "" })
+    const order = evidenceOrder(
+      [src("https://a"), src("https://b"), src("https://c")],
+      [{ claim: "x", url: "https://c", quote: "" }]
+    ).map((s) => s.url)
+    expect(order).toEqual(["https://c", "https://a", "https://b"])
+  })
+})

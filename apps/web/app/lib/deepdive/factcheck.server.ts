@@ -1,9 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk"
 
-import type { Article, Source } from "./model"
+import type { Article, Fact, Source } from "./model"
 
 const MODEL = "claude-sonnet-5-5"
-const MAX_EVIDENCE = 120_000
+const MAX_EVIDENCE = 240_000
 
 const SYSTEM = `You are a magazine fact-checker. You did not write this article and you get no credit for passing it.
 
@@ -37,12 +37,23 @@ export interface CheckError {
   why: string
 }
 
+// Long runs read more than fits, so the pages behind recorded facts go first:
+// they're what the article stands on. The rest fill what room is left.
+export function evidenceOrder(sources: Source[], facts: Fact[]) {
+  const cited = new Set(facts.map((f) => f.url))
+  return [
+    ...sources.filter((s) => cited.has(s.url)),
+    ...sources.filter((s) => !cited.has(s.url)),
+  ]
+}
+
 export async function factCheck(
   article: Article,
   sources: Source[],
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  facts: Fact[] = []
 ): Promise<CheckError[]> {
-  const evidence = sources
+  const evidence = evidenceOrder(sources, facts)
     .map((s) => `<source url="${s.url}">\n${s.text}\n</source>`)
     .join("\n")
     .slice(0, MAX_EVIDENCE)
