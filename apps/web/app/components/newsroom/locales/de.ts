@@ -13,7 +13,7 @@ export const de = {
     kicker: "KI-Newsroom",
     samples: "Von der Titelseite",
     samplesHint:
-      "Sechs Storys aus dem Newsroom, eine pro Vorlage, aus echten Quellen.",
+      "Artikel, die der Newsroom aus echten Quellen geschrieben hat, einer pro Vorlage.",
   },
   composer: {
     template: "Vorlage",

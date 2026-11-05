@@ -102,7 +102,9 @@ export function Article({
   badge,
   actions,
   alert,
+  back = "/newsroom/stories",
 }: {
+  back?: string
   story: StoryView
   badge?: React.ReactNode
   actions?: React.ReactNode
@@ -147,7 +149,7 @@ export function Article({
   return (
     <div className="nr-story" style={lookStyle(tpl)}>
       <div className="nr-story-bar">
-        <Link to="/newsroom/stories" className="nr-button">
+        <Link to={back} className="nr-button">
           <HugeiconsIcon icon={ArrowLeft01Icon} size={16} strokeWidth={2} />
           {t("story.back")}
         </Link>
@@ -173,6 +175,7 @@ export function Article({
           template={story.template}
           title={story.title}
           image={story.cover}
+          bare
         />
         <div className="nr-paper-body">
           {alert}

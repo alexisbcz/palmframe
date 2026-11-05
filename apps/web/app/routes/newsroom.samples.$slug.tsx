@@ -19,6 +19,7 @@ export default function NewsroomSample({ loaderData }: Route.ComponentProps) {
   return (
     <Article
       story={sample}
+      back="/newsroom/samples"
       badge={<span className="nr-badge">{t("story.sample")}</span>}
     />
   )

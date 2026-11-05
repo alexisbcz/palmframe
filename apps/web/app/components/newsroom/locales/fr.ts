@@ -13,7 +13,7 @@ export const fr = {
     kicker: "Rédaction IA",
     samples: "À la une",
     samplesHint:
-      "Six articles publiés par la Rédaction, un par modèle, à partir de vraies sources.",
+      "Des articles publiés par la Rédaction à partir de vraies sources, un par modèle.",
   },
   composer: {
     template: "Modèle",

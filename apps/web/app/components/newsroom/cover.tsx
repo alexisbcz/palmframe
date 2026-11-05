@@ -19,12 +19,15 @@ export function Cover({
   title,
   image,
   small,
+  bare,
   className,
 }: {
   template: string | null
   title: string
   image?: string | null
   small?: boolean
+  // Masthead only: the story's own header carries the headline.
+  bare?: boolean
   className?: string
 }) {
   const t = templateById(template)
@@ -42,7 +45,7 @@ export function Cover({
           <span>{t?.name ?? "Newsroom"}</span>
           <em>PALMFRAME</em>
         </div>
-        {!small && <h3 className="nr-cover-head">{title}</h3>}
+        {!small && !bare && <h3 className="nr-cover-head">{title}</h3>}
         {small && <h3 className="nr-cover-head">{t?.name}</h3>}
       </div>
     </div>

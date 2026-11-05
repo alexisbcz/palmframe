@@ -13,7 +13,7 @@ export const es = {
     kicker: "Redacción con IA",
     samples: "De la portada",
     samplesHint:
-      "Seis historias publicadas por la Redacción, una por plantilla, a partir de fuentes reales.",
+      "Artículos publicados por la Redacción a partir de fuentes reales, uno por plantilla.",
   },
   composer: {
     template: "Plantilla",

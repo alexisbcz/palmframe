@@ -13,7 +13,7 @@ export const en = {
     kicker: "AI newsroom",
     samples: "From the front page",
     samplesHint:
-      "Six stories filed by the Newsroom, one per template, from real sources.",
+      "Stories filed by the Newsroom from real sources, one per template.",
   },
   composer: {
     template: "Template",
