@@ -68,6 +68,7 @@ export const COSTS = {
   deep_dive: 40, // an agent researching a lead and writing an article
   site_draft: 10, // an LLM choosing a template and writing a whole site
   site_text: 1, // an LLM rewriting one piece of copy
+  newsroom_posts: 2, // an LLM drafting a story's posts for four networks
   media_render: 12, // adapting a Story to one format, with its fact-check
 } as const
 

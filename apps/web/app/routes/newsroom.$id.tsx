@@ -16,10 +16,12 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { Article } from "@/components/newsroom/article"
+import { Distribute } from "@/components/newsroom/distribute"
 import { messages } from "@/components/newsroom/newsroom.messages"
 import { useT } from "@/i18n/core"
 import { PRIVATE } from "@/lib/seo"
 import { templateById } from "@/lib/newsroom/templates"
+import { zernioLive } from "@/lib/newsroom/zernio.server"
 import { getViewer } from "@/lib/supabase.server"
 
 import type { Route } from "./+types/newsroom.$id"
@@ -30,17 +32,38 @@ const POLL_MS = 3_000
 
 export async function loader({ request, params }: Route.LoaderArgs) {
   const { supabase } = await getViewer(request)
-  const { data: story } = await supabase
-    .from("comic_deep_dives")
-    .select(
-      "id, lead, status, template, cover, title, dek, body, log, facts, sources, findings, problems, created_at, updated_at"
-    )
-    .eq("id", params.id)
-    .not("template", "is", null)
-    .maybeSingle()
+  const [{ data: story }, { data: publication }, { data: posts }] =
+    await Promise.all([
+      supabase
+        .from("comic_deep_dives")
+        .select(
+          "id, lead, status, template, cover, title, dek, body, log, facts, sources, findings, problems, slug, published_at, created_at, updated_at"
+        )
+        .eq("id", params.id)
+        .not("template", "is", null)
+        .maybeSingle(),
+      supabase.from("comic_newsrooms").select("id, slug, live").maybeSingle(),
+      supabase
+        .from("comic_newsroom_posts")
+        .select("platform, text, status, scheduled_for, error, provider")
+        .eq("story_id", params.id),
+    ])
   if (!story) throw respond(null, { status: 404 })
+  const { count: subscribers } = publication
+    ? await supabase
+        .from("comic_newsroom_subscribers")
+        .select("id", { count: "exact", head: true })
+        .eq("newsroom_id", publication.id)
+        .eq("status", "subscribed")
+    : { count: 0 }
   // Polled every few seconds, so the pages the agent read stay on the server.
   return {
+    publication: publication
+      ? { slug: publication.slug, live: publication.live }
+      : null,
+    posts: posts ?? [],
+    subscribers: subscribers ?? 0,
+    zernioMock: !zernioLive(),
     story: {
       ...story,
       sources: story.sources.map(({ url, title }) => ({ url, title })),
@@ -206,6 +229,19 @@ export default function NewsroomStory({ loaderData }: Route.ComponentProps) {
         </span>
       }
       alert={alert}
+      panel={
+        story.status !== "failed" ? (
+          <Distribute
+            storyId={story.id}
+            slug={story.slug}
+            publishedAt={story.published_at}
+            publication={loaderData.publication}
+            subscribers={loaderData.subscribers}
+            posts={loaderData.posts}
+            zernioMock={loaderData.zernioMock}
+          />
+        ) : null
+      }
       actions={
         <button
           type="button"

@@ -9,6 +9,7 @@ import type { TemplateId } from "@/lib/newsroom/templates"
 import type { AssetPayload } from "@/components/catalog/model"
 
 import type { AnimeTables } from "./anime/database"
+import type { NewsroomTables } from "./newsroom/database"
 import type { BookFunctions, BookTables } from "./books/database"
 import type { StyleAnalysis } from "./comic-import/style"
 import type { Labs } from "./tools/catalog"
@@ -557,7 +558,8 @@ export interface Database {
         Relationships: []
       }
     } & BookTables &
-      AnimeTables
+      AnimeTables &
+      NewsroomTables
     Views: {}
     Functions: BookFunctions & {
       my_credits: { Args: Record<string, never>; Returns: number }
@@ -810,6 +812,9 @@ export type DeepDiveRow = {
   // Newsroom stories follow a template; Studio's have none.
   template: TemplateId | null
   cover: { scene?: string; url?: string }
+  // Set while the story is on its owner's publication.
+  slug: string | null
+  published_at: string | null
   created_at: string
   updated_at: string
 }

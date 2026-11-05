@@ -4,6 +4,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   Add01Icon,
   DashboardSquare01Icon,
+  Globe02Icon,
   Home01Icon,
   News01Icon,
   NewspaperIcon,
@@ -27,6 +28,12 @@ const NAV = [
   { to: "/newsroom", key: "home", icon: Home01Icon, tone: "a", end: true },
   { to: "/newsroom/stories", key: "stories", icon: News01Icon, tone: "b" },
   { to: "/newsroom/samples", key: "samples", icon: NewspaperIcon, tone: "d" },
+  {
+    to: "/newsroom/publication",
+    key: "publication",
+    icon: Globe02Icon,
+    tone: "e",
+  },
   {
     to: "/newsroom/templates",
     key: "templates",

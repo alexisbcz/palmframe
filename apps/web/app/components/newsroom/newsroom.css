@@ -1258,3 +1258,147 @@ a.nr-card:hover {
   height: 100%;
   aspect-ratio: auto;
 }
+
+/* Publishing: settings form and a story's distribution panel */
+.nr-nav i[data-tone="e"] {
+  background: linear-gradient(160deg, #6ee7b7, #059669);
+}
+.nr-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-self: start;
+}
+.nr-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--mute);
+}
+.nr-form label.nr-inline {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 14px;
+}
+.nr-form small {
+  color: var(--faint);
+  font-size: 12px;
+}
+.nr-form small[data-error] {
+  color: #fca5a5;
+}
+.nr-form input:not([type="checkbox"]):not([type="color"]),
+.nr-when input,
+.nr-post textarea {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--raise);
+  color: var(--ink);
+  font-size: 16px;
+}
+.nr-form input[type="color"] {
+  width: 44px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  background: none;
+}
+.nr-prefix {
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  border-radius: 10px;
+  background: var(--raise);
+}
+.nr-prefix em {
+  padding-left: 12px;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 13px;
+  font-style: normal;
+  white-space: nowrap;
+}
+.nr-form .nr-prefix input {
+  min-width: 0;
+  flex: 1;
+  border: 0 !important;
+  padding-left: 2px !important;
+}
+.nr-muted {
+  color: var(--mute);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.nr-link {
+  color: #a9c3ff;
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.nr-distribute {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.nr-distribute h3 {
+  margin-top: 8px;
+  color: var(--mute);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  text-transform: uppercase;
+}
+.nr-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.nr-post {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.nr-post-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.nr-post-head small {
+  margin-left: auto;
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 11px;
+}
+.nr-post-head small[data-error] {
+  color: #fca5a5;
+}
+.nr-post textarea {
+  height: auto;
+  padding: 10px 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  resize: vertical;
+}
+.nr-post[data-locked] textarea {
+  opacity: 0.7;
+}
+.nr-when {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--mute);
+  font-size: 12px;
+}
+.nr-when input {
+  color-scheme: dark;
+  font-size: 14px;
+}

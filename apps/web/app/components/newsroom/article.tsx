@@ -102,8 +102,10 @@ export function Article({
   badge,
   actions,
   alert,
+  panel,
   back = "/newsroom/stories",
 }: {
+  panel?: React.ReactNode
   back?: string
   story: StoryView
   badge?: React.ReactNode
@@ -199,6 +201,7 @@ export function Article({
         </div>
       </article>
       <aside className="nr-aside">
+        {panel}
         <section className="nr-panel">
           <h2>{t("story.lead")}</h2>
           <p style={{ fontSize: 13, overflowWrap: "anywhere" }}>{story.lead}</p>

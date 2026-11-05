@@ -222,6 +222,21 @@ the deep-dive agent above reports and files the story.
 - **Front page:** `lib/newsroom/samples.json` holds one real story per template,
   with sources and fact ledger, and `public/newsroom` their covers.
 
+- **Publication:** each person sets one up under Newsroom > Publication and
+  publishes filed stories to it. It's served at `/n/:slug`, with story pages,
+  sources, RSS and a subscribe form, and stays offline until they switch it on.
+  Readers' requests go through `api/newsroom/public/:slug` with the server key.
+- **Newsletter:** sending a published story writes an issue. Mail goes out
+  through Resend once `RESEND_API_KEY` and `NEWSROOM_MAIL_FROM` are set (untested
+  until then); without them the issue is held. `lib/newsroom/mail.ts` renders it,
+  with a one-click unsubscribe header. Subscribing is single opt-in for now:
+  add a confirmation email along with Resend.
+- **Social posts:** a model drafts LinkedIn, X, Bluesky and Facebook posts from
+  the story, checked against each network's length, with the story's link added
+  by code. Scheduling goes to Zernio, mocked unless `NEWSROOM_ZERNIO_LIVE=1`
+  (`lib/newsroom/zernio.server.ts`); live posting still needs the person's
+  accounts connected.
+
 A story is a `comic_deep_dives` row with a `template`, so it costs a deep dive's
 credits and also shows in Studio's Media, where it can be rendered into other
 formats. Run the unit tests with `bun test apps/web/app/lib/newsroom`.
