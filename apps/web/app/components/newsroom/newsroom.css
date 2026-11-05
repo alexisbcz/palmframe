@@ -1582,3 +1582,13 @@ a.nr-card:hover {
     grid-column: 1 / -1;
   }
 }
+
+/* Forms and beat lists take the page's width, not their content's. */
+.nr-page > .nr-form {
+  width: 100%;
+  max-width: 820px;
+  align-self: stretch;
+}
+.nr-beats {
+  width: 100%;
+}
