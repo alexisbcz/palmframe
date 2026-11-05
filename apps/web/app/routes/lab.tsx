@@ -8,6 +8,7 @@ import {
   CropIcon,
   CpuIcon,
   Download04Icon,
+  Image02Icon,
   Link01Icon,
   PaintBrush01Icon,
   SlidersHorizontalIcon,
@@ -38,6 +39,7 @@ import {
   type LabRequest,
 } from "@/lib/lab/model"
 import { PRIVATE } from "@/lib/seo"
+import { Examples } from "@/components/lab/examples"
 
 import type { Route } from "./+types/lab"
 import "./lab.css"
@@ -101,7 +103,7 @@ const SAMPLERS = [
   "res_multistep",
 ]
 
-type Tab = "style" | "model" | "format" | "render" | "import"
+type Tab = "style" | "model" | "format" | "render" | "examples" | "import"
 const TABS: {
   id: Tab
   label: string
@@ -136,6 +138,13 @@ const TABS: {
     icon: SlidersHorizontalIcon,
     title: "Render settings",
     hint: "Sampling, seed and what to avoid",
+  },
+  {
+    id: "examples",
+    label: "Examples",
+    icon: Image02Icon,
+    title: "Prompt from an example",
+    hint: "Civitai images made with this model, with the prompts behind them",
   },
   {
     id: "import",
@@ -507,6 +516,7 @@ function Setup({
   set,
   comfy,
   past,
+  onUse,
 }: {
   open: boolean
   tab: Tab
@@ -516,6 +526,7 @@ function Setup({
   set: (patch: Partial<LabRequest>) => void
   comfy: { models: string[]; loras: string[]; clips: string[] }
   past: Render[]
+  onUse: (values: Partial<LabRequest>, missing: string[]) => void
 }) {
   const ref = React.useRef<HTMLDialogElement>(null)
   const navigate = useNavigate()
@@ -555,6 +566,7 @@ function Setup({
       r.steps !== LAB_DEFAULTS.steps ||
       r.cfg !== LAB_DEFAULTS.cfg ||
       r.sampler !== LAB_DEFAULTS.sampler,
+    examples: false,
     import: false,
   }
   const pane = TABS.find((t) => t.id === tab)!
@@ -826,6 +838,9 @@ function Setup({
                 />
               </label>
             </div>
+          ) : null}
+          {tab === "examples" && open ? (
+            <Examples model={r.model} loras={comfy.loras} onUse={onUse} />
           ) : null}
           {tab === "import" ? (
             <form
@@ -1148,10 +1163,10 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
             <button
               type="button"
               className="lab-pill"
-              onClick={() => open("import")}
+              onClick={() => open("examples")}
             >
               <HugeiconsIcon
-                icon={Link01Icon}
+                icon={Image02Icon}
                 strokeWidth={2}
                 className="size-3.5"
               />
@@ -1242,6 +1257,14 @@ export default function Lab({ loaderData }: Route.ComponentProps) {
         set={set}
         comfy={comfy}
         past={past}
+        onUse={(values, gone) => {
+          set(values)
+          setError(null)
+          setMessage(
+            `Prompt from Civitai.${gone.length ? ` Not installed here: ${gone.join(", ")}.` : ""}`
+          )
+          setSetup(null)
+        }}
       />
     </div>
   )

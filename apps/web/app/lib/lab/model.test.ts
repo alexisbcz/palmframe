@@ -2,7 +2,11 @@ import { expect, test } from "bun:test"
 
 import {
   LAB_DEFAULTS,
+  civitaiBase,
   civitaiTarget,
+  exampleQuery,
+  fitSize,
+  toExample,
   fromCivitai,
   insertMention,
   mentionAt,
@@ -223,4 +227,69 @@ test("the prompt splits into coloured parts, losing no text", () => {
     "Smo0th",
   ])
   expect(parts.find((p) => p.unknown)?.text).toBe("<lora:gone>")
+})
+
+test("an example's size keeps its shape at about a megapixel", () => {
+  expect(fitSize("832x1216")).toEqual([832, 1216])
+  expect(fitSize("2304x4080")).toEqual([768, 1360])
+  expect(fitSize("nonsense")).toEqual([])
+})
+
+test("the gallery follows the model on this Mac", () => {
+  expect(civitaiBase("anima-turbo-v1.1.safetensors")).toBe("Anima")
+  expect(civitaiBase("flux-2-klein-4b.safetensors")).toBe("Flux.2 Klein 4B")
+  expect(civitaiBase("flux-2-klein-9b.safetensors")).toBe("Flux.2 Klein 9B")
+})
+
+test("only listed filters and Civitai-shaped cursors reach Civitai", () => {
+  const q = exampleQuery(
+    new URLSearchParams({
+      base: "Klein&nsfw=X",
+      sort: "Newest",
+      period: "Day",
+      cursor: "feed:633:147691806",
+    })
+  )
+  expect(q).toEqual({
+    base: "Anima",
+    sort: "Newest",
+    period: "Day",
+    cursor: "feed:633:147691806",
+  })
+  expect(exampleQuery(new URLSearchParams({ cursor: "a&b=c" })).cursor).toBe(
+    null
+  )
+})
+
+test("examples keep safe, prompted images from Civitai's host", () => {
+  const image = {
+    id: 1,
+    url: "https://image.civitai.com/x/abc/original=true/abc.jpeg",
+    width: 800,
+    height: 1200,
+    nsfwLevel: "None",
+    stats: { likeCount: 3, heartCount: 2 },
+    meta: {
+      prompt: "knight",
+      seed: 4,
+      steps: 30,
+      resources: [{ type: "lora", name: "flar", weight: 0.7 }],
+      comfy: JSON.stringify({
+        prompt: {
+          "2": { inputs: { a: { on: true, lora: "flar", strength: 0.7 } } },
+        },
+      }),
+    },
+  }
+  const ex = toExample(image)!
+  expect(ex.thumb).toBe("https://image.civitai.com/x/abc/width=450/abc.jpeg")
+  expect(ex.reactions).toBe(5)
+  expect(ex.steps).toBe(30)
+  expect(ex.meta.resources).toEqual([
+    { type: "lora", name: "flar", weight: 0.7 },
+  ])
+  expect(ex.meta).not.toHaveProperty("comfy")
+  expect(toExample({ ...image, nsfwLevel: "Mature" })).toBeNull()
+  expect(toExample({ ...image, meta: { seed: 1 } })).toBeNull()
+  expect(toExample({ ...image, url: "https://evil.example/a.jpeg" })).toBeNull()
 })
