@@ -3,6 +3,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   ArrowRight01Icon,
   AtIcon,
+  BulbIcon,
   CropIcon,
   GitCompareIcon,
   DashboardSpeed02Icon,
@@ -29,7 +30,10 @@ import { linkClass } from "@/components/auth/auth-ui"
 import { useT } from "@/i18n/core"
 import { INSUFFICIENT_CREDITS } from "@/lib/credits-store"
 
+import { civitaiBase } from "@/lib/civitai"
+
 import { Avatar, CastRow } from "./cast"
+import { CivitaiExamples } from "./civitai-examples"
 import { WorldRow } from "./world"
 import { CompareDialog } from "./compare-dialog"
 import { messages } from "./composer.messages"
@@ -49,6 +53,7 @@ import {
   hasPrompt,
   panelsToDraw,
   renderSize,
+  usesKlein,
   type Generator,
 } from "./use-generator"
 import { SignInNotice, needsSignIn } from "./sign-in-notice"
@@ -159,7 +164,14 @@ export function Composer({
   const [takes, setTakes] = React.useState(1)
   const [comparing, setComparing] = React.useState(false)
   const [open, setOpen] = React.useState<
-    "setup" | "cast" | "world" | "tags" | "advanced" | "takes" | null
+    | "setup"
+    | "cast"
+    | "world"
+    | "tags"
+    | "examples"
+    | "advanced"
+    | "takes"
+    | null
   >(null)
   const textareaRef = React.useRef<HTMLTextAreaElement>(null)
   React.useImperativeHandle(ref, () => ({
@@ -353,6 +365,14 @@ export function Composer({
             >
               <HugeiconsIcon icon={PlusSignIcon} strokeWidth={2} />
               {t("tags", { count: tags.length })}
+            </Chip>
+            <Chip
+              pressed={open === "examples"}
+              disabled={!panel}
+              onClick={() => setOpen(open === "examples" ? null : "examples")}
+            >
+              <HugeiconsIcon icon={BulbIcon} strokeWidth={2} />
+              {t("examples")}
             </Chip>
             <Chip
               pressed={open === "setup"}
@@ -562,6 +582,22 @@ export function Composer({
               onChange={(next) => update({ tags: next })}
             />
           </div>
+        </div>
+      )}
+
+      {open === "examples" && panel && (
+        <div className="absolute start-3 bottom-full z-30 mb-2 w-[44rem] max-w-[calc(100%-1.5rem)] rounded-xl bg-popover p-3 text-popover-foreground shadow-xl ring-1 ring-foreground/10">
+          <CivitaiExamples
+            base={civitaiBase(
+              usesKlein(panel, editor.project) ? "klein" : "anima"
+            )}
+            onClose={close}
+            onUse={(prompt, negative) => {
+              update({ prompt, ...(negative && { negative }) })
+              close()
+              textareaRef.current?.focus()
+            }}
+          />
         </div>
       )}
 

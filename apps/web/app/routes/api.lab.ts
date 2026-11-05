@@ -1,13 +1,12 @@
 import {
   allowed,
   cancelRender,
-  civitaiExamples,
   installed,
   render,
   renderFile,
   startComfy,
 } from "@/lib/lab/comfy.server"
-import { exampleQuery, toRequest } from "@/lib/lab/model"
+import { toRequest } from "@/lib/lab/model"
 
 import type { Route } from "./+types/api.lab"
 
@@ -16,14 +15,7 @@ const fail = (error: string, status: number) =>
 
 export async function loader({ request }: Route.LoaderArgs) {
   if (!allowed(request)) return fail("Not found", 404)
-  const params = new URL(request.url).searchParams
-  if (params.has("examples"))
-    try {
-      return Response.json(await civitaiExamples(exampleQuery(params)))
-    } catch (e) {
-      return fail(e instanceof Error ? e.message : String(e), 502)
-    }
-  const file = params.get("file")
+  const file = new URL(request.url).searchParams.get("file")
   if (file) {
     const body = renderFile(file)
     return body

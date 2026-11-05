@@ -78,6 +78,7 @@ export default [
   route("api/check", "routes/api.check.ts"),
   route("api/series", "routes/api.series.ts"),
   route("api/styles", "routes/api.styles.ts"),
+  route("api/civitai/examples", "routes/api.civitai.examples.ts"),
   route("api/series/check", "routes/api.series.check.ts"),
   route("api/instagram/accounts", "routes/api.instagram.accounts.ts"),
   route("api/instagram/connect", "routes/api.instagram.connect.ts"),

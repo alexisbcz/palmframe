@@ -18,6 +18,7 @@ import {
   type ExampleQuery,
   type LabRequest,
 } from "@/lib/lab/model"
+import { useCivitaiExamples } from "@/lib/use-civitai-examples"
 
 const PERIOD_LABELS: Record<ExampleQuery["period"], string> = {
   Day: "Today",
@@ -26,8 +27,6 @@ const PERIOD_LABELS: Record<ExampleQuery["period"], string> = {
   Year: "This year",
   AllTime: "All time",
 }
-
-type Page = { items: CivitaiExample[]; next: string | null }
 
 // Civitai's gallery for the family of the model on this Mac: pick an image
 // and its prompt becomes the starting point here.
@@ -40,55 +39,28 @@ export function Examples({
   loras: string[]
   onUse: (values: Partial<LabRequest>, missing: string[]) => void
 }) {
-  const [base, setBase] = React.useState<CivitaiBase>(() => civitaiBase(model))
-  const [sort, setSort] = React.useState<ExampleQuery["sort"]>("Most Reactions")
-  const [period, setPeriod] = React.useState<ExampleQuery["period"]>("Week")
-  const [items, setItems] = React.useState<CivitaiExample[]>([])
-  const [next, setNext] = React.useState<string | null>(null)
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
+  const {
+    base,
+    setBase,
+    sort,
+    setSort,
+    period,
+    setPeriod,
+    items,
+    loading,
+    error,
+    more,
+    retry,
+  } = useCivitaiExamples(civitaiBase(model))
   const [picked, setPicked] = React.useState<CivitaiExample | null>(null)
-  const request = React.useRef<AbortController>(null)
   const grid = React.useRef<HTMLDivElement>(null)
-
-  React.useEffect(() => setBase(civitaiBase(model)), [model])
-
-  const load = React.useCallback(
-    async (cursor: string | null) => {
-      request.current?.abort()
-      const controller = new AbortController()
-      request.current = controller
-      setLoading(true)
-      setError(null)
-      const q = new URLSearchParams({ examples: "1", base, sort, period })
-      if (cursor) q.set("cursor", cursor)
-      try {
-        const res = await fetch(`/api/lab?${q}`, { signal: controller.signal })
-        const body = (await res.json()) as Page & { error?: string }
-        if (!res.ok) throw new Error(body.error ?? `Failed (${res.status})`)
-        setItems((old) => {
-          const seen = new Set(cursor ? old.map((i) => i.id) : [])
-          const fresh = body.items.filter((i) => !seen.has(i.id))
-          return cursor ? [...old, ...fresh] : fresh
-        })
-        setNext(body.next)
-      } catch (e) {
-        if (!controller.signal.aborted)
-          setError(e instanceof Error ? e.message : String(e))
-      } finally {
-        if (request.current === controller) setLoading(false)
-      }
+  React.useEffect(
+    // Braced: Chrome's scrollTo returns a promise, which React takes for a cleanup.
+    () => {
+      grid.current?.scrollTo({ top: 0 })
     },
     [base, sort, period]
   )
-
-  React.useEffect(() => {
-    setItems([])
-    setNext(null)
-    grid.current?.scrollTo({ top: 0 })
-    void load(null)
-    return () => request.current?.abort()
-  }, [load])
 
   if (picked)
     return (
@@ -165,11 +137,7 @@ export function Examples({
         {error ? (
           <p className="lab-warn">
             {error}
-            <button
-              type="button"
-              className="lab-pill"
-              onClick={() => void load(items.length ? next : null)}
-            >
+            <button type="button" className="lab-pill" onClick={retry}>
               Try again
             </button>
           </p>
@@ -178,11 +146,11 @@ export function Examples({
             Nothing shared with a prompt in this period. Try a longer one.
           </p>
         ) : null}
-        {next && !loading && !error ? (
+        {more ? (
           <button
             type="button"
             className="lab-pill lab-examples-more"
-            onClick={() => void load(next)}
+            onClick={more}
           >
             Load more
           </button>

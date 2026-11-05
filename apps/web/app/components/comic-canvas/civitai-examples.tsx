@@ -1,0 +1,267 @@
+import * as React from "react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  ArrowLeft01Icon,
+  ArrowUpRight01Icon,
+  Cancel01Icon,
+  FavouriteIcon,
+} from "@hugeicons/core-free-icons"
+
+import { Button, buttonVariants } from "@workspace/ui/components/button"
+import {
+  NativeSelect,
+  NativeSelectOption,
+} from "@workspace/ui/components/native-select"
+import { cn } from "@workspace/ui/lib/utils"
+
+import { useT } from "@/i18n/core"
+import {
+  CIVITAI_BASES,
+  EXAMPLE_PERIODS,
+  EXAMPLE_SORTS,
+  plainPrompt,
+  type CivitaiBase,
+  type CivitaiExample,
+  type ExampleQuery,
+} from "@/lib/civitai"
+import { useCivitaiExamples } from "@/lib/use-civitai-examples"
+
+import { messages } from "./civitai-examples.messages"
+
+// Civitai's gallery inside the composer: browse what a model draws, open one
+// image and start the panel's prompt from the words behind it.
+export function CivitaiExamples({
+  base: initialBase,
+  onUse,
+  onClose,
+}: {
+  base: CivitaiBase
+  onUse: (prompt: string, negative: string | undefined) => void
+  onClose: () => void
+}) {
+  const t = useT(messages)
+  const g = useCivitaiExamples(initialBase)
+  const [picked, setPicked] = React.useState<CivitaiExample | null>(null)
+  const grid = React.useRef<HTMLDivElement>(null)
+  React.useEffect(
+    // Braced: Chrome's scrollTo returns a promise, which React takes for a cleanup.
+    () => {
+      grid.current?.scrollTo({ top: 0 })
+    },
+    [g.base, g.sort, g.period]
+  )
+
+  return (
+    <div className="flex h-[min(34rem,calc(100svh-10rem))] flex-col">
+      <div className="flex items-start justify-between gap-3 pb-2.5">
+        <div className="min-w-0">
+          <h3 className="text-sm font-semibold">{t("title")}</h3>
+          <p className="text-xs text-muted-foreground">{t("hint")}</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t("close")}
+          onClick={onClose}
+        >
+          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+        </Button>
+      </div>
+      {picked ? (
+        <Detail example={picked} onBack={() => setPicked(null)} onUse={onUse} />
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-2 pb-2.5">
+            <NativeSelect
+              size="sm"
+              aria-label={t("base")}
+              value={g.base}
+              onChange={(e) => g.setBase(e.target.value as CivitaiBase)}
+            >
+              {CIVITAI_BASES.map((b) => (
+                <NativeSelectOption key={b}>{b}</NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              aria-label={t("sort")}
+              value={g.sort}
+              onChange={(e) =>
+                g.setSort(e.target.value as ExampleQuery["sort"])
+              }
+            >
+              {EXAMPLE_SORTS.map((s) => (
+                <NativeSelectOption key={s} value={s}>
+                  {t(`sorts.${s}`)}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+            <NativeSelect
+              size="sm"
+              aria-label={t("period")}
+              value={g.period}
+              onChange={(e) =>
+                g.setPeriod(e.target.value as ExampleQuery["period"])
+              }
+            >
+              {EXAMPLE_PERIODS.map((p) => (
+                <NativeSelectOption key={p} value={p}>
+                  {t(`periods.${p}`)}
+                </NativeSelectOption>
+              ))}
+            </NativeSelect>
+          </div>
+          <div
+            ref={grid}
+            className="-me-1 min-h-0 flex-1 [scrollbar-width:thin] overflow-y-auto pe-1"
+          >
+            <div className="columns-2 gap-2 sm:columns-3">
+              {g.items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  title={item.meta.prompt}
+                  onClick={() => setPicked(item)}
+                  style={{ aspectRatio: `${item.width} / ${item.height}` }}
+                  className="group/example relative mb-2 block w-full cursor-pointer break-inside-avoid overflow-hidden rounded-lg bg-muted ring-1 ring-foreground/10 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <img
+                    src={item.thumb}
+                    alt=""
+                    loading="lazy"
+                    draggable={false}
+                    className="size-full object-cover transition-transform duration-300 ease-out group-hover/example:scale-[1.03] motion-reduce:transition-none"
+                  />
+                  <span className="absolute inset-x-0 bottom-0 line-clamp-3 bg-gradient-to-t from-black/85 to-transparent px-2 pt-6 pb-1.5 text-start text-[11px] leading-snug text-white opacity-0 transition-opacity duration-150 group-hover/example:opacity-100 group-focus-visible/example:opacity-100">
+                    {item.meta.prompt}
+                  </span>
+                </button>
+              ))}
+              {g.loading &&
+                Array.from({ length: g.items.length ? 3 : 9 }, (_, i) => (
+                  <div
+                    key={`wait-${i}`}
+                    className="mb-2 animate-pulse break-inside-avoid rounded-lg bg-muted motion-reduce:animate-none"
+                    style={{ aspectRatio: i % 3 === 1 ? "1" : "3 / 4" }}
+                  />
+                ))}
+            </div>
+            {g.error ? (
+              <p
+                role="alert"
+                className="flex items-center justify-between gap-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
+                <span className="min-w-0 break-words">{g.error}</span>
+                <Button variant="outline" size="sm" onClick={g.retry}>
+                  {t("retry")}
+                </Button>
+              </p>
+            ) : !g.loading && !g.items.length ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {t("empty")}
+              </p>
+            ) : null}
+            {g.more && (
+              <div className="flex justify-center pt-1 pb-2">
+                <Button variant="outline" size="sm" onClick={g.more}>
+                  {t("more")}
+                </Button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function Detail({
+  example,
+  onBack,
+  onUse,
+}: {
+  example: CivitaiExample
+  onBack: () => void
+  onUse: (prompt: string, negative: string | undefined) => void
+}) {
+  const t = useT(messages)
+  const prompt = plainPrompt(example.meta.prompt ?? "")
+  const negative = example.meta.negativePrompt?.trim() || undefined
+
+  return (
+    <div className="flex min-h-0 flex-1 gap-3 max-sm:flex-col max-sm:overflow-y-auto">
+      <div
+        className="flex min-h-0 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted bg-contain bg-center bg-no-repeat max-sm:h-56 sm:w-[42%]"
+        style={{ backgroundImage: `url(${example.thumb})` }}
+      >
+        <img
+          src={example.thumb.replace("/width=450/", "/width=900/")}
+          alt=""
+          className="max-h-full max-w-full object-contain"
+        />
+      </div>
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-3">
+        <div className="flex items-center justify-between gap-2">
+          <Button variant="ghost" size="sm" onClick={onBack}>
+            <HugeiconsIcon
+              icon={ArrowLeft01Icon}
+              strokeWidth={2}
+              className="rtl:rotate-180"
+            />
+            {t("back")}
+          </Button>
+          <span className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground tabular-nums">
+            <HugeiconsIcon
+              icon={FavouriteIcon}
+              strokeWidth={2}
+              className="size-3.5 shrink-0"
+            />
+            {example.reactions}
+            {example.username ? ` · ${example.username}` : ""}
+          </span>
+        </div>
+        <div className="flex min-h-0 flex-1 [scrollbar-width:thin] flex-col gap-3 overflow-y-auto pe-1">
+          <section>
+            <h4 className="pb-1 text-xs font-medium text-muted-foreground">
+              {t("prompt")}
+            </h4>
+            <p className="text-sm leading-relaxed break-words whitespace-pre-wrap">
+              {prompt}
+            </p>
+          </section>
+          {negative && (
+            <section>
+              <h4 className="pb-1 text-xs font-medium text-muted-foreground">
+                {t("negative")}
+              </h4>
+              <p className="text-sm leading-relaxed break-words whitespace-pre-wrap text-muted-foreground">
+                {negative}
+              </p>
+            </section>
+          )}
+          {example.model && (
+            <p className="text-xs text-muted-foreground">
+              {t("madeWith")}{" "}
+              <span className="text-foreground">{example.model}</span>
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 border-t pt-2.5">
+          <Button size="sm" onClick={() => onUse(prompt, negative)}>
+            {t("use")}
+          </Button>
+          <a
+            href={`https://civitai.com/images/${example.id}`}
+            target="_blank"
+            rel="noreferrer"
+            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+          >
+            {t("viewOn")}
+            <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={2} />
+          </a>
+          <span className="text-xs text-muted-foreground">{t("replaces")}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
