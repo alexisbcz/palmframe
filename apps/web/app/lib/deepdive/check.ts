@@ -4,11 +4,9 @@ import {
   type Article,
   type Fact,
   type Finding,
+  type Limits,
   type Source,
-  MAX_WORDS,
-  MIN_DOMAINS,
-  MIN_FACTS,
-  MIN_WORDS,
+  DEFAULT_LIMITS,
 } from "./model"
 
 const normal = (s: string) =>
@@ -33,6 +31,11 @@ const host = (url: string) => {
   }
 }
 
+const SOCIAL =
+  /(^|\.)(x\.com|twitter\.com|tiktok\.com|reddit\.com|instagram\.com|youtube\.com|youtu\.be|threads\.net|bsky\.app)$/
+
+export const isSocial = (url: string) => SOCIAL.test(host(url))
+
 export const wordCount = (s: string) => s.split(/\s+/).filter(Boolean).length
 
 // What stands between a draft and a person's eyes. Plain code, because the
@@ -41,17 +44,27 @@ export function checkArticle(
   article: Article,
   facts: Fact[],
   sources: Source[],
-  findings: Finding[]
+  findings: Finding[],
+  limits: Limits = DEFAULT_LIMITS
 ) {
   const problems: string[] = []
   const words = wordCount(article.body)
-  if (words < MIN_WORDS) problems.push(`${words} words, need ${MIN_WORDS}.`)
-  if (words > MAX_WORDS) problems.push(`${words} words, cut to ${MAX_WORDS}.`)
-  if (facts.length < MIN_FACTS)
-    problems.push(`${facts.length} recorded facts, need ${MIN_FACTS}.`)
+  if (words < limits.minWords)
+    problems.push(`${words} words, need ${limits.minWords}.`)
+  if (words > limits.maxWords)
+    problems.push(`${words} words, cut to ${limits.maxWords}.`)
+  if (facts.length < limits.minFacts)
+    problems.push(`${facts.length} recorded facts, need ${limits.minFacts}.`)
   const domains = new Set(facts.map((f) => host(f.url)))
-  if (domains.size < MIN_DOMAINS)
-    problems.push(`Facts come from ${domains.size} sites, need ${MIN_DOMAINS}.`)
+  if (domains.size < limits.minDomains)
+    problems.push(
+      `Facts come from ${domains.size} sites, need ${limits.minDomains}.`
+    )
+  const social = new Set(facts.filter((f) => isSocial(f.url)).map((f) => f.url))
+  if (social.size < limits.minSocial)
+    problems.push(
+      `Facts cite ${social.size} social posts or videos, need ${limits.minSocial}. Use search_social and record what people posted.`
+    )
 
   const evidence = sources.map((s) => s.text).join("\n")
   const ledger = facts.map((f) => `${f.claim} ${f.quote}`).join("\n")

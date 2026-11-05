@@ -3,13 +3,20 @@ import type { AgentTool } from "@earendil-works/pi-agent-core"
 import { Type } from "typebox"
 
 import { readArticle } from "@/lib/machines/feeds.server"
-import { fetchVideo } from "@/lib/studio/scrapecreators.server"
+import { fetchVideo, searchVideos } from "@/lib/studio/scrapecreators.server"
 
 import { checkArticle, isRecordable } from "./check"
+import {
+  brandFor,
+  contextDevAvailable,
+  scrapePage,
+  searchNews,
+  searchWeb,
+} from "./contextdev.server"
 import { factCheck } from "./factcheck.server"
 import { lintArticle } from "./lint.server"
-import type { Article, Fact, Finding, LogLine, Source } from "./model"
-import { MAX_SUBMITS } from "./model"
+import type { Article, Fact, Finding, Limits, LogLine, Source } from "./model"
+import { DEFAULT_LIMITS, MAX_SUBMITS } from "./model"
 
 const SC = "https://api.scrapecreators.com"
 const MAX_TEXT = 8_000
@@ -28,6 +35,22 @@ export interface Run {
   article: Article | null
   // The agent is finished: passed the checks, or out of submissions.
   done: boolean
+  // A picture for the cover, described by the agent: no text, no real face.
+  scene?: string
+}
+
+// What a template asks of a draft beyond the shared rules.
+export interface DeskRules {
+  limits: Limits
+  vale: Record<string, string>
+  // Shape problems found in code, like a missing dateline.
+  shape: (body: string) => string[]
+}
+
+const PLAIN: DeskRules = {
+  limits: DEFAULT_LIMITS,
+  vale: {},
+  shape: () => [],
 }
 
 const text = (t: string) => ({
@@ -98,9 +121,30 @@ async function webSearch(query: string, signal?: AbortSignal) {
   return { summary, urls }
 }
 
+const SOCIAL_PLATFORMS = ["tiktok", "youtube", "instagram", "reddit"] as const
+type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number]
+
+const redditLine = (p: any) =>
+  `[r/${p?.subreddit ?? "?"}, ${p?.created_at_iso ?? "?"}] "${String(p?.title ?? "").slice(0, 200)}" ${String(p?.selftext ?? "").slice(0, 300)} (${p?.score ?? 0} points, ${p?.num_comments ?? 0} comments) ${p?.url ?? ""}`
+
+// Comments arrive as a tree; the agent reads the top of it.
+function redditComments(comments: any[], depth = 0, out: string[] = []) {
+  for (const c of comments ?? []) {
+    if (out.length >= 40) break
+    if (!c?.body || c.author === "AutoModerator") continue
+    out.push(
+      `${"  ".repeat(depth)}- u/${c.author} (${c.score ?? c.ups ?? 0} points): ${String(c.body).slice(0, 400)}`
+    )
+    const kids = c.replies?.items ?? c.replies ?? []
+    if (Array.isArray(kids) && depth < 2) redditComments(kids, depth + 1, out)
+  }
+  return out
+}
+
 export function researchTools(
   run: Run,
-  logged: (tool: string, label: string) => void
+  logged: (tool: string, label: string) => void,
+  desk: DeskRules = PLAIN
 ): AgentTool<any>[] {
   const guarded =
     <P>(fn: (p: P, signal?: AbortSignal) => Promise<ReturnType<typeof text>>) =>
@@ -169,9 +213,154 @@ export function researchTools(
       parameters: Type.Object({ url: Type.String() }),
       execute: guarded(async ({ url }: { url: string }, signal) => {
         logged("page", url)
-        const body = await readArticle(url, signal)
-        remember(run, url, new URL(url).hostname, body)
-        return text(body || "That page had no readable text.")
+        let body = await readArticle(url, signal).catch(() => "")
+        let title = new URL(url).hostname
+        // Pages that block plain requests or need a browser go through Context.dev.
+        if (body.trim().length < 400 && contextDevAvailable()) {
+          const page = await scrapePage(url, signal)
+          if (page.markdown.trim()) {
+            body = page.markdown.slice(0, MAX_TEXT * 2)
+            title = page.title.slice(0, 200) || title
+          }
+        }
+        remember(run, url, title, body)
+        return text(
+          body.slice(0, MAX_TEXT) || "That page had no readable text."
+        )
+      }),
+    },
+    ...(contextDevAvailable()
+      ? [
+          {
+            name: "search_news",
+            label: "Search news",
+            description:
+              "Search recent news articles across outlets. Returns headline, outlet, date, summary and URL for each.",
+            parameters: Type.Object({ query: Type.String() }),
+            execute: guarded(async ({ query }: { query: string }, signal) => {
+              logged("news", query)
+              const hits = await searchNews(query, signal)
+              for (const h of hits.slice(0, 8))
+                if (h.url.startsWith("http"))
+                  remember(
+                    run,
+                    h.url,
+                    `${h.outlet}: ${h.title}`.slice(0, 200),
+                    `${h.title}\n${h.outlet}, ${h.published ?? "undated"}\n${h.summary}`
+                  )
+              return text(
+                hits.length
+                  ? hits
+                      .map(
+                        (h) =>
+                          `- ${h.title} (${h.outlet}, ${h.published?.slice(0, 10) ?? "undated"})\n  ${h.summary.slice(0, 500)}\n  ${h.url}`
+                      )
+                      .join("\n")
+                  : "No news found. Try other words."
+              )
+            }),
+          } satisfies AgentTool<any>,
+          {
+            name: "search_pages",
+            label: "Search pages",
+            description:
+              "Search the web and list the pages found, with snippets. Use read_page to open one.",
+            parameters: Type.Object({ query: Type.String() }),
+            execute: guarded(async ({ query }: { query: string }, signal) => {
+              logged("search", query)
+              const hits = await searchWeb(query, signal)
+              for (const h of hits.slice(0, MAX_LINKS_PER_SEARCH))
+                if (h.url.startsWith("http"))
+                  remember(run, h.url, h.title.slice(0, 200), h.snippet)
+              return text(
+                hits
+                  .map((h) => `- ${h.title}\n  ${h.snippet}\n  ${h.url}`)
+                  .join("\n") || "Nothing found."
+              )
+            }),
+          } satisfies AgentTool<any>,
+          {
+            name: "brand_profile",
+            label: "Brand",
+            description:
+              "A company's own description, slogan, brand colours and social accounts, from its domain (like stripe.com).",
+            parameters: Type.Object({ domain: Type.String() }),
+            execute: guarded(async ({ domain }: { domain: string }, signal) => {
+              const clean = domain
+                .replace(/^https?:\/\//, "")
+                .replace(/\/.*$/, "")
+                .toLowerCase()
+              logged("brand", clean)
+              const b = await brandFor(clean, signal)
+              const body = `${b.name}${b.slogan ? `: "${b.slogan}"` : ""}\n${b.description}\nColours: ${b.colors.join(", ") || "unknown"}\nAccounts: ${b.socials.join(", ") || "none listed"}`
+              remember(run, `https://${clean}`, `${b.name || clean}`, body)
+              return text(`Source URL: https://${clean}\n${body}`)
+            }),
+          } satisfies AgentTool<any>,
+        ]
+      : []),
+    {
+      name: "search_social",
+      label: "Search social",
+      description:
+        "Search what people are posting on TikTok, YouTube, Instagram or Reddit. Returns posts with their numbers and URLs.",
+      parameters: Type.Object({
+        platform: Type.Union(SOCIAL_PLATFORMS.map((p) => Type.Literal(p))),
+        query: Type.String(),
+      }),
+      execute: guarded(
+        async (
+          { platform, query }: { platform: SocialPlatform; query: string },
+          signal
+        ) => {
+          logged("social", `${platform}: ${query}`)
+          if (platform === "reddit") {
+            const d = await scrape(
+              `/v1/reddit/search?query=${encodeURIComponent(query)}`,
+              signal
+            )
+            const posts = (d.posts ?? []).slice(0, 12)
+            for (const p of posts)
+              if (typeof p?.url === "string" && p.url.startsWith("https://"))
+                remember(
+                  run,
+                  p.url,
+                  `r/${p.subreddit}: ${p.title}`.slice(0, 200),
+                  redditLine(p)
+                )
+            return text(posts.map(redditLine).join("\n") || "Nothing found.")
+          }
+          const videos = (await searchVideos(platform, query, signal)).slice(
+            0,
+            10
+          )
+          const line = (v: (typeof videos)[number]) =>
+            `[${v.platform}, ${v.postedAt ?? "?"}] ${v.author}: "${v.title.slice(0, 200)}" (${v.views} views, ${v.likes} likes, ${v.comments} comments) ${v.url}`
+          for (const v of videos)
+            remember(run, v.url, `${v.author} on ${v.platform}`, line(v))
+          return text(videos.map(line).join("\n") || "Nothing found.")
+        }
+      ),
+    },
+    {
+      name: "read_reddit_thread",
+      label: "Read thread",
+      description: "Read a Reddit post and its top comments, by URL.",
+      parameters: Type.Object({ url: Type.String() }),
+      execute: guarded(async ({ url }: { url: string }, signal) => {
+        logged("thread", url)
+        const d = await scrape(
+          `/v1/reddit/post/comments?url=${encodeURIComponent(url)}`,
+          signal
+        )
+        const body = `${redditLine(d.post)}\n\nComments:\n${redditComments(d.comments ?? []).join("\n")}`
+        remember(
+          run,
+          url,
+          `Reddit: ${d.post?.title ?? url}`.slice(0, 200),
+          body
+        )
+        return text(body.slice(0, MAX_TEXT))
       }),
     },
     {
@@ -221,35 +410,56 @@ export function researchTools(
         title: Type.String(),
         dek: Type.String({ description: "One line under the title." }),
         body: Type.String({ description: "Markdown, without the title." }),
+        cover: Type.Optional(
+          Type.String({
+            description:
+              "One sentence describing a cover picture: a scene, with no text and no real person's face.",
+          })
+        ),
       }),
-      execute: guarded(async (article: Article, signal) => {
-        run.submits++
-        run.article = article
-        const findings = await lintArticle(article.body)
-        run.findings = findings
-        run.problems = checkArticle(article, run.facts, run.sources, findings)
-        // The second reader is the costly one, so it reads only clean drafts.
-        if (!run.problems.length) {
-          logged("factcheck", "Second reader checking every claim")
-          const errors = await factCheck(article, run.sources, signal)
-          run.problems = errors.map((e) => `Fact check: "${e.claim}": ${e.why}`)
+      execute: guarded(
+        async (submitted: Article & { cover?: string }, signal) => {
+          const { cover, ...article } = submitted
+          run.submits++
+          run.article = article
+          if (cover?.trim()) run.scene = cover.trim().slice(0, 400)
+          const findings = await lintArticle(article.body, desk.vale)
+          run.findings = findings
+          run.problems = [
+            ...desk.shape(article.body),
+            ...checkArticle(
+              article,
+              run.facts,
+              run.sources,
+              findings,
+              desk.limits
+            ),
+          ]
+          // The second reader is the costly one, so it reads only clean drafts.
+          if (!run.problems.length) {
+            logged("factcheck", "Second reader checking every claim")
+            const errors = await factCheck(article, run.sources, signal)
+            run.problems = errors.map(
+              (e) => `Fact check: "${e.claim}": ${e.why}`
+            )
+          }
+          logged(
+            "check",
+            run.problems.length ? `${run.problems.length} to fix` : "passed"
+          )
+          if (!run.problems.length || run.submits >= MAX_SUBMITS) {
+            run.done = true
+            return { ...text("Filed."), terminate: true }
+          }
+          const notes = findings
+            .filter((f) => f.level === "warning")
+            .slice(0, 10)
+            .map((f) => `Line ${f.line}, ${f.rule}: ${f.message}`)
+          return text(
+            `Rejected, attempt ${run.submits} of ${MAX_SUBMITS}. Fix:\n${run.problems.join("\n")}${notes.length ? `\n\nAlso worth fixing:\n${notes.join("\n")}` : ""}`
+          )
         }
-        logged(
-          "check",
-          run.problems.length ? `${run.problems.length} to fix` : "passed"
-        )
-        if (!run.problems.length || run.submits >= MAX_SUBMITS) {
-          run.done = true
-          return { ...text("Filed."), terminate: true }
-        }
-        const notes = findings
-          .filter((f) => f.level === "warning")
-          .slice(0, 10)
-          .map((f) => `Line ${f.line}, ${f.rule}: ${f.message}`)
-        return text(
-          `Rejected, attempt ${run.submits} of ${MAX_SUBMITS}. Fix:\n${run.problems.join("\n")}${notes.length ? `\n\nAlso worth fixing:\n${notes.join("\n")}` : ""}`
-        )
-      }),
+      ),
     },
   ]
 }

@@ -194,8 +194,37 @@ fact-checks it. Formats live in `apps/web/app/lib/media/formats`, and code draws
 figures and maps in `apps/web/app/lib/media/assets`, so their numbers are exact.
 `.github/workflows/render-video.yml` renders video with ffmpeg.
 
-Vale runs only where `VALE_TS_ENTRY` points at a built `vale-ts`, because that
-package isn't published. Without it, a run skips the style rules and says so.
+Vale is [vale.ts](https://github.com/alexisbcz/vale.ts), which isn't on npm yet,
+so `packages/vale-ts` holds a one-file bundle of it. Rebuild it with
+`VALE_TS_SRC=~/Work/vale.ts bun packages/vale-ts/build.ts`; `VALE_TS_ENTRY` can
+point at another build. If it fails to load, a run skips the style rules and
+says so.
+
+### Newsroom
+
+The Newsroom is a Labs feature, off until someone turns it on under **Settings >
+Labs**. It lives at `/newsroom`: give it a lead, pick one of six templates, and
+the deep-dive agent above reports and files the story.
+
+- **Templates** (`lib/newsroom/templates.ts`): Wire (breaking news), The
+  Breakdown (business), Explainer, Longform, Profile and Pulse (internet
+  culture). Each sets word counts, how many facts and sites it needs, and for
+  Pulse how many social posts. `lib/newsroom/desks.server.ts` holds each one's
+  brief, its extra Vale rules, the shape checks Vale can't express (a wire
+  dateline, an explainer's "short version"), and its cover art direction.
+- **Sources:** Context.dev for news search, web search, pages that block plain
+  requests and brand facts (`CONTEXT_DEV_API_KEY`); ScrapeCreators for X,
+  TikTok, YouTube, Instagram and Reddit (`SCRAPECREATORS_API_KEY`); Claude's web
+  search. Studio's stories get the same tools.
+- **Covers:** drawn after filing by the person's OpenRouter account, or Pruna
+  when `PRUNA_API_KEY` is set. Without either, a story gets a typographic cover
+  in its template's colours.
+- **Front page:** `lib/newsroom/samples.json` holds one real story per template,
+  with sources and fact ledger, and `public/newsroom` their covers.
+
+A story is a `comic_deep_dives` row with a `template`, so it costs a deep dive's
+credits and also shows in Studio's Media, where it can be rendered into other
+formats. Run the unit tests with `bun test apps/web/app/lib/newsroom`.
 
 ### Websites
 

@@ -3,7 +3,7 @@ import { createModels } from "@earendil-works/pi-ai"
 import { anthropicProvider } from "@earendil-works/pi-ai/providers/anthropic"
 
 import { RESEARCH_METHOD, STYLE_GUIDE } from "./style"
-import { type Run, researchTools } from "./tools.server"
+import { type DeskRules, type Run, researchTools } from "./tools.server"
 
 const MODEL = "claude-sonnet-5-5"
 
@@ -30,7 +30,10 @@ export async function workOn(
   hooks: {
     log: (tool: string, label: string) => void
     checkpoint: (messages: AgentMessage[]) => Promise<void>
-  }
+  },
+  // A Newsroom template: its own brief and rules. Studio's stories use the
+  // house style.
+  desk?: { name: string; system: string; rules: DeskRules }
 ) {
   const models = createModels()
   models.setProvider(anthropicProvider())
@@ -38,9 +41,9 @@ export async function workOn(
   if (!model) throw new Error(`Model ${MODEL} isn't available.`)
   const agent = new Agent({
     initialState: {
-      systemPrompt: system(),
+      systemPrompt: desk?.system ?? system(),
       model,
-      tools: researchTools(run, hooks.log),
+      tools: researchTools(run, hooks.log, desk?.rules),
       messages: resumable(saved),
     },
     streamFn: models.streamSimple.bind(models),
@@ -55,7 +58,7 @@ export async function workOn(
       await agent.continue()
     else
       await agent.prompt(
-        `The lead: ${lead}\n\nResearch it and file the article.`
+        `The lead: ${lead}\n\n${desk ? `Template: ${desk.name}. ` : ""}Research it and file the article.`
       )
   } finally {
     clearTimeout(timer)

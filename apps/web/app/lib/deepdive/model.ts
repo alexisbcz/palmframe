@@ -52,3 +52,21 @@ export const MIN_DOMAINS = 3
 export const MIN_WORDS = 600
 export const MAX_WORDS = 1500
 export const MAX_SUBMITS = 5
+
+// What a draft must clear before it files. Newsroom templates set their own.
+export interface Limits {
+  minWords: number
+  maxWords: number
+  minFacts: number
+  minDomains: number
+  // Facts that must come from social posts or videos (X, TikTok, Reddit...).
+  minSocial: number
+}
+
+export const DEFAULT_LIMITS: Limits = {
+  minWords: MIN_WORDS,
+  maxWords: MAX_WORDS,
+  minFacts: MIN_FACTS,
+  minDomains: MIN_DOMAINS,
+  minSocial: 0,
+}

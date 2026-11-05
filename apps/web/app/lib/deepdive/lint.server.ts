@@ -21,14 +21,18 @@ interface Linter {
 
 const cached = new Map<string, Promise<Linter>>()
 
-// vale-ts isn't published yet, so a build can't depend on it. Where it can't be
-// loaded, the style rules are skipped and the run says so.
+// vale-ts isn't on npm yet: packages/vale-ts is a bundle of it, and
+// VALE_TS_ENTRY can point at another build. Where it can't be loaded, the style
+// rules are skipped and the run says so.
 async function loadVale() {
-  const entry = process.env.VALE_TS_ENTRY?.trim() || "vale-ts"
+  const entry = process.env.VALE_TS_ENTRY?.trim()
   try {
-    const module = await import(/* @vite-ignore */ entry)
+    const module = entry
+      ? await import(/* @vite-ignore */ entry)
+      : await import("vale-ts")
     return module.Vale as { fromString(ini: string): Promise<Linter> }
-  } catch {
+  } catch (e) {
+    console.error("Vale didn't load", e)
     return null
   }
 }
@@ -67,9 +71,22 @@ export async function lintArticle(
           "Vale isn't installed on this server, so style rules were skipped.",
       },
     ]
-  const files = (await vale(Vale, rules)).lintString(markdown, {
-    path: "article.md",
-  })
+  let files: ReturnType<Linter["lintString"]>
+  try {
+    files = (await vale(Vale, rules)).lintString(markdown, {
+      path: "article.md",
+    })
+  } catch (e) {
+    console.error("Vale failed", e)
+    return [
+      {
+        line: 1,
+        rule: "ValeSkipped",
+        level: "warning",
+        message: "Vale failed on this draft, so style rules were skipped.",
+      },
+    ]
+  }
   return files.flatMap((file) =>
     file.sortedAlerts().map((a) => ({
       line: a.line,

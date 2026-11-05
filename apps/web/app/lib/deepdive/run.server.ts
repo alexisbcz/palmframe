@@ -3,6 +3,7 @@ import type { AgentMessage } from "@earendil-works/pi-agent-core"
 import { supabaseAdmin } from "@/lib/supabase-admin.server"
 
 import { afterStory } from "@/lib/media/pipeline.server"
+import { drawCover, newsroomDesk } from "@/lib/newsroom/run.server"
 
 import { workOn } from "./agent.server"
 import type { LogLine } from "./model"
@@ -77,6 +78,7 @@ export async function runSlice(id: string, origin: string) {
       ? { title: row.title, dek: row.dek, body: row.body }
       : null,
     done: false,
+    scene: row.cover?.scene,
   }
   const save = (messages?: AgentMessage[]) =>
     table()
@@ -88,6 +90,7 @@ export async function runSlice(id: string, origin: string) {
         findings: run.findings,
         problems: run.problems,
         submits: run.submits,
+        ...(run.scene && { cover: { ...row.cover, scene: run.scene } }),
         ...(run.article && {
           title: run.article.title.slice(0, 300),
           dek: run.article.dek.slice(0, 500),
@@ -98,19 +101,26 @@ export async function runSlice(id: string, origin: string) {
 
   let messages: AgentMessage[]
   try {
-    messages = await workOn(row.lead, row.messages, run, SLICE_MS, {
-      log(tool, label) {
-        const line: LogLine = {
-          at: Date.now(),
-          tool,
-          label: label.slice(0, 200),
-        }
-        run.log.push(line)
+    messages = await workOn(
+      row.lead,
+      row.messages,
+      run,
+      SLICE_MS,
+      {
+        log(tool, label) {
+          const line: LogLine = {
+            at: Date.now(),
+            tool,
+            label: label.slice(0, 200),
+          }
+          run.log.push(line)
+        },
+        async checkpoint(m) {
+          await save(m)
+        },
       },
-      async checkpoint(m) {
-        await save(m)
-      },
-    })
+      newsroomDesk(row.template)
+    )
   } catch (e) {
     console.error("Deep dive failed", id, e)
     await fail(row, "The agent stopped with an error.")
@@ -119,6 +129,12 @@ export async function runSlice(id: string, origin: string) {
   await save(messages)
   if (run.done) {
     const status = run.problems.length ? "review" : "done"
+    // The cover is drawn before the story shows as finished, so it never
+    // appears without one and then jumps.
+    if (row.template && run.article)
+      await drawCover(row, run.scene ?? run.article.title).catch((e) =>
+        console.error("Cover failed", id, e)
+      )
     await table().update({ status, leased_until: null }).eq("id", id)
     if (status === "done" && row.machine_id)
       await afterStory(id, row.machine_id, origin).catch((e) =>

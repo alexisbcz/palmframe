@@ -4,6 +4,7 @@ import type {
   ComicProject,
   WorldItem,
 } from "@/components/comic-canvas/model"
+import type { TemplateId } from "@/lib/newsroom/templates"
 
 import type { AssetPayload } from "@/components/catalog/model"
 
@@ -347,6 +348,7 @@ export interface Database {
           lead: string
           job: string
           machine_id?: string | null
+          template?: TemplateId | null
         }
         Update: Partial<Omit<DeepDiveRow, "id" | "user_id" | "lead" | "job">>
         Relationships: []
@@ -805,6 +807,9 @@ export type DeepDiveRow = {
   leased_until: string | null
   job: string
   machine_id: string | null
+  // Newsroom stories follow a template; Studio's have none.
+  template: TemplateId | null
+  cover: { scene?: string; url?: string }
   created_at: string
   updated_at: string
 }

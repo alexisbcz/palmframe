@@ -1,0 +1,137 @@
+export const it = {
+  nav: {
+    home: "Home",
+    stories: "Le mie storie",
+    templates: "Modelli",
+    samples: "Prima pagina",
+    recent: "Storie",
+    new: "Nuova storia",
+    collapse: "Comprimi la barra laterale",
+  },
+  home: {
+    title: "Dai la notizia",
+    kicker: "Redazione IA",
+    samples: "Dalla prima pagina",
+    samplesHint:
+      "Sei storie consegnate dalla Redazione, una per modello, da fonti reali.",
+  },
+  composer: {
+    template: "Modello",
+    sources: "Fonti",
+    length: "Lunghezza",
+    words: "{min}–{max} parole",
+    checks: "Controlli",
+    checksValue: "Vale + verifica dei fatti",
+    cover: "Copertina",
+    coverValue: "Auto",
+    placeholder:
+      "Incolla un link o descrivi uno spunto: un post, un’azienda, una tendenza, una domanda",
+    minutes: "{min}–{max} min",
+    file: "Consegna la storia",
+    filing: "Consegna in corso…",
+    try: "Prova",
+    pick: "Scegli un modello",
+  },
+  source: {
+    news: "Ricerca di notizie",
+    web: "Pagine web",
+    social: "TikTok, Reddit, YouTube",
+    video: "Trascrizioni video",
+    brand: "Dati del brand",
+    x: "Post su X",
+  },
+  templates: {
+    title: "Modelli",
+    text: "Ogni modello è una redazione a sé, con il suo incarico, la sua struttura e le sue regole di stile. Ogni storia viene documentata, controllata con Vale e verificata rispetto a ciò che l’agente ha letto.",
+    use: "Usa il modello",
+    wire: {
+      tag: "Ultime notizie",
+      blurb:
+        "La notizia in meno di 550 parole. Dateline, un attacco di 35 parole, ogni affermazione attribuita, nessuna opinione.",
+    },
+    breakdown: {
+      tag: "Business",
+      blurb:
+        "Come guadagna davvero un’azienda: il fondatore, la decisione strana, i conti fatti sul retro di un tovagliolo e cosa potrebbe affondarla.",
+    },
+    explainer: {
+      tag: "Approfondimento",
+      blurb:
+        "Prima la versione breve, poi le domande di un lettore perspicace, con risposte in parole semplici.",
+    },
+    feature: {
+      tag: "Longform",
+      blurb:
+        "Un reportage narrativo con scene, una svolta e un’immagine finale. Almeno dodici fatti da cinque siti.",
+    },
+    profile: {
+      tag: "Profilo",
+      blurb:
+        "Una persona o un’azienda raccontata attraverso ciò che ha fatto e detto, i suoi post e i suoi critici.",
+    },
+    pulse: {
+      tag: "Cultura di internet",
+      blurb:
+        "Cosa si pubblica online e perché, da TikTok, Reddit e YouTube, con i numeri.",
+    },
+  },
+  stories: {
+    title: "Le mie storie",
+    empty: "Ancora nessuna storia. Consegnane una dalla Home.",
+    start: "Consegna una storia",
+  },
+  status: {
+    queued: "In coda",
+    running: "In inchiesta",
+    done: "Consegnata",
+    review: "Da rivedere",
+    failed: "Non riuscita",
+  },
+  story: {
+    back: "Indietro",
+    byline: "Inchiesta dell’agente IA della Redazione Palmframe",
+    sample: "Storia di esempio",
+    sources: "Fonti",
+    facts: "Registro dei fatti",
+    notes: "Note di stile",
+    noNotes: "Vale non ha trovato nulla da segnalare.",
+    review:
+      "Questa bozza non ha superato tutti i controlli. Leggila con attenzione.",
+    failed: "Non è stato possibile consegnare questa storia.",
+    desk: "Sulla scrivania",
+    deskHint:
+      "L’agente sta facendo ricerche. Puoi chiudere questa pagina: va avanti da solo.",
+    read: "{count} pagine lette",
+    recorded: "{count} fatti registrati",
+    copy: "Copia il Markdown",
+    copied: "Copiato",
+    download: "Scarica .md",
+    remove: "Elimina",
+    confirmRemove: "Fai clic di nuovo per eliminare",
+    lead: "Spunto",
+    disclaimer:
+      "Scritto da un agente IA a partire da fonti pubbliche e verificato da software e da un secondo modello. Possono esserci errori: controlla le fonti prima di fidarti.",
+  },
+  log: {
+    post: "Ha letto un post",
+    profile: "Ha letto un profilo",
+    search: "Ha cercato",
+    news: "Ha cercato nelle notizie",
+    page: "Ha letto",
+    video: "Ha guardato",
+    social: "Ha cercato sui social",
+    thread: "Ha letto un thread",
+    brand: "Ha cercato un brand",
+    fact: "Ha registrato",
+    factcheck: "Verifica dei fatti",
+    check: "Controlli",
+  },
+  errors: {
+    generic: "Non ha funzionato. Riprova.",
+    invalid: "Scrivi uno spunto di almeno tre caratteri, oppure un link https.",
+    busy: "Ci sono già due storie sulla scrivania. Aspetta che una venga consegnata.",
+    credits: "Hai finito i crediti per questa storia.",
+  },
+  credits: "{count} crediti",
+  untitled: "Storia senza titolo",
+}

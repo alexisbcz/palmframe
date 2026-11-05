@@ -1,0 +1,19 @@
+{
+  "name": "vale-ts",
+  "version": "0.1.0",
+  "private": true,
+  "description": "vale.ts, bundled for the server until it's published.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./lib/index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./lib/index.js"
+    }
+  },
+  "dependencies": {
+    "web-tree-sitter": "0.25.10"
+  },
+  "types": "./index.d.ts"
+}

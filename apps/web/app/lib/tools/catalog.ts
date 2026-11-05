@@ -19,6 +19,7 @@ export const LAB_FEATURES = [
   "dub",
   "desk",
   "sites",
+  "newsroom",
   ...TOOL_IDS,
 ] as const
 
