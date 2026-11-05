@@ -1,6 +1,7 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowUpRight01Icon,
   Cancel01Icon,
@@ -8,10 +9,6 @@ import {
 } from "@hugeicons/core-free-icons"
 
 import { Button, buttonVariants } from "@workspace/ui/components/button"
-import {
-  NativeSelect,
-  NativeSelectOption,
-} from "@workspace/ui/components/native-select"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
@@ -29,8 +26,6 @@ import {
   plainPrompt,
   type CivitaiBase,
   type CivitaiExample,
-  type ExampleQuery,
-  type ExampleRating,
 } from "@/lib/civitai"
 import { useCivitaiExamples, useLoadMore } from "@/lib/use-civitai-examples"
 
@@ -105,59 +100,35 @@ export function CivitaiExamples({
       )}
       {/* Kept mounted under the detail, so going back finds the same scroll. */}
       <div className={cn("flex min-h-0 flex-1 flex-col", picked && "hidden")}>
-        <div className="flex flex-wrap gap-2 pb-2.5">
-          <NativeSelect
-            size="sm"
-            aria-label={t("base")}
+        <div className="-mx-1 flex [scrollbar-width:none] gap-1.5 overflow-x-auto px-1 pt-0.5 pb-2.5">
+          <Filter
+            label={t("base")}
             value={g.base}
-            onChange={(e) => g.setBase(e.target.value as CivitaiBase)}
-          >
-            {CIVITAI_BASES.map((b) => (
-              <NativeSelectOption key={b}>{b}</NativeSelectOption>
-            ))}
-          </NativeSelect>
-          <NativeSelect
-            size="sm"
-            aria-label={t("sort")}
+            options={CIVITAI_BASES.map((b) => [b, b])}
+            onChange={g.setBase}
+          />
+          <Filter
+            label={t("sort")}
             value={g.sort}
-            onChange={(e) => g.setSort(e.target.value as ExampleQuery["sort"])}
-          >
-            {EXAMPLE_SORTS.map((s) => (
-              <NativeSelectOption key={s} value={s}>
-                {t(`sorts.${s}`)}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-          <NativeSelect
-            size="sm"
-            aria-label={t("period")}
+            options={EXAMPLE_SORTS.map((s) => [s, t(`sorts.${s}`)])}
+            onChange={g.setSort}
+            bare
+          />
+          <Filter
+            label={t("period")}
             value={g.period}
-            onChange={(e) =>
-              g.setPeriod(e.target.value as ExampleQuery["period"])
-            }
-          >
-            {EXAMPLE_PERIODS.map((p) => (
-              <NativeSelectOption key={p} value={p}>
-                {t(`periods.${p}`)}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
-          <NativeSelect
-            size="sm"
-            aria-label={t("rating")}
+            options={EXAMPLE_PERIODS.map((p) => [p, t(`periods.${p}`)])}
+            onChange={g.setPeriod}
+            bare
+          />
+          <Filter
+            label={t("rating")}
             value={g.rating}
-            onChange={(e) => g.setRating(e.target.value as ExampleRating)}
-            className={cn(
-              g.rating !== "None" &&
-                "[&_select]:border-destructive/50 [&_select]:text-destructive"
-            )}
-          >
-            {EXAMPLE_RATINGS.map((r) => (
-              <NativeSelectOption key={r} value={r}>
-                {t(`ratings.${r}`)}
-              </NativeSelectOption>
-            ))}
-          </NativeSelect>
+            options={EXAMPLE_RATINGS.map((r) => [r, t(`ratings.${r}`)])}
+            onChange={g.setRating}
+            mature={g.rating !== "None"}
+            className="ms-auto"
+          />
         </div>
         <div
           ref={grid}
@@ -224,6 +195,70 @@ export function CivitaiExamples({
           ) : null}
         </div>
       </div>
+    </div>
+  )
+}
+
+// A filter as a chip sized to its value. The native select lies invisibly
+// over it, so the system picker, keyboard and screen readers all still work.
+function Filter<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  mature,
+  bare,
+  className,
+}: {
+  label: string
+  value: T
+  options: [T, string][]
+  onChange: (value: T) => void
+  mature?: boolean
+  // The value says what it is ("This week"), so the label is only for
+  // screen readers.
+  bare?: boolean
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        "relative inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full ps-3 pe-2 text-xs whitespace-nowrap ring-1 transition-colors focus-within:ring-2 focus-within:ring-ring",
+        mature
+          ? "bg-destructive/10 ring-destructive/25"
+          : "bg-muted/50 ring-foreground/10 hover:bg-muted",
+        className
+      )}
+    >
+      {!bare && <span className="text-muted-foreground">{label}</span>}
+      <span
+        className={cn(
+          "flex items-center gap-1.5 font-medium",
+          mature && "text-destructive"
+        )}
+      >
+        {mature && (
+          <span aria-hidden className="size-1.5 rounded-full bg-destructive" />
+        )}
+        {options.find(([v]) => v === value)?.[1] ?? value}
+      </span>
+      <HugeiconsIcon
+        icon={ArrowDown01Icon}
+        strokeWidth={2}
+        className="size-3.5 text-muted-foreground"
+      />
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+        className="absolute inset-0 size-full cursor-pointer appearance-none opacity-0"
+      >
+        {options.map(([v, text]) => (
+          <option key={v} value={v}>
+            {text}
+          </option>
+        ))}
+      </select>
     </div>
   )
 }

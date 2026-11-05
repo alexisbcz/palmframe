@@ -1,6 +1,7 @@
 import * as React from "react"
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
+  ArrowDown01Icon,
   ArrowLeft01Icon,
   ArrowUpRight01Icon,
   FavouriteIcon,
@@ -36,6 +37,11 @@ const PERIOD_LABELS: Record<ExampleQuery["period"], string> = {
   AllTime: "All time",
 }
 
+const SORT_LABELS: Record<ExampleQuery["sort"], string> = {
+  "Most Reactions": "Most liked",
+  "Most Comments": "Most discussed",
+  Newest: "Newest",
+}
 const RATING_LABELS: Record<ExampleRating, string> = {
   None: "Safe",
   Soft: "Suggestive",
@@ -116,53 +122,33 @@ export function Examples({
       {/* Kept mounted under the detail, so going back finds the same scroll. */}
       <div className="lab-examples" hidden={!!picked}>
         <div className="lab-examples-bar">
-          <select
-            className="lab-input"
-            aria-label="Base model"
+          <Filter
+            label="Model"
             value={base}
-            onChange={(e) => setBase(e.target.value as CivitaiBase)}
-          >
-            {CIVITAI_BASES.map((b) => (
-              <option key={b}>{b}</option>
-            ))}
-          </select>
-          <select
-            className="lab-input"
-            aria-label="Sort"
+            options={CIVITAI_BASES.map((b) => [b, b])}
+            onChange={setBase}
+          />
+          <Filter
+            label="Sort"
             value={sort}
-            onChange={(e) => setSort(e.target.value as ExampleQuery["sort"])}
-          >
-            {EXAMPLE_SORTS.map((s) => (
-              <option key={s}>{s}</option>
-            ))}
-          </select>
-          <select
-            className="lab-input"
-            aria-label="Period"
+            options={EXAMPLE_SORTS.map((s) => [s, SORT_LABELS[s]])}
+            onChange={setSort}
+            bare
+          />
+          <Filter
+            label="Period"
             value={period}
-            onChange={(e) =>
-              setPeriod(e.target.value as ExampleQuery["period"])
-            }
-          >
-            {EXAMPLE_PERIODS.map((p) => (
-              <option key={p} value={p}>
-                {PERIOD_LABELS[p]}
-              </option>
-            ))}
-          </select>
-          <select
-            className="lab-input"
-            aria-label="Content"
-            data-loose={rating !== "None"}
+            options={EXAMPLE_PERIODS.map((p) => [p, PERIOD_LABELS[p]])}
+            onChange={setPeriod}
+            bare
+          />
+          <Filter
+            label="Content"
             value={rating}
-            onChange={(e) => setRating(e.target.value as ExampleRating)}
-          >
-            {EXAMPLE_RATINGS.map((r) => (
-              <option key={r} value={r}>
-                {RATING_LABELS[r]}
-              </option>
-            ))}
-          </select>
+            options={EXAMPLE_RATINGS.map((r) => [r, RATING_LABELS[r]])}
+            onChange={setRating}
+            mature={rating !== "None"}
+          />
         </div>
         <div className="lab-examples-grid" ref={grid} aria-busy={loading}>
           <Masonry items={tiles} columns={columns} ratio={ratioOf} gap={GAP}>
@@ -229,6 +215,51 @@ export function Examples({
         />
       ) : null}
     </>
+  )
+}
+
+// A filter as a chip sized to its value. The native select lies invisibly
+// over it, so the system picker, keyboard and screen readers all still work.
+function Filter<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  mature,
+  bare,
+}: {
+  label: string
+  value: T
+  options: [T, string][]
+  onChange: (value: T) => void
+  mature?: boolean
+  // The value says what it is ("This week"), so the label is only for
+  // screen readers.
+  bare?: boolean
+}) {
+  return (
+    <div className="lab-filter" data-mature={mature || undefined}>
+      {!bare && <span className="lab-filter-label">{label}</span>}
+      <span className="lab-filter-value">
+        {options.find(([v]) => v === value)?.[1] ?? value}
+      </span>
+      <HugeiconsIcon
+        icon={ArrowDown01Icon}
+        strokeWidth={2}
+        className="lab-filter-chevron"
+      />
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(e) => onChange(e.target.value as T)}
+      >
+        {options.map(([v, text]) => (
+          <option key={v} value={v}>
+            {text}
+          </option>
+        ))}
+      </select>
+    </div>
   )
 }
 

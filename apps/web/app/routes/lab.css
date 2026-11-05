@@ -683,13 +683,80 @@ textarea.lab-input {
 .lab-examples-bar {
   display: flex;
   flex: none;
-  gap: 8px;
-  padding: 14px 18px 10px;
+  gap: 6px;
+  padding: 14px 18px 12px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-.lab-examples-bar .lab-input {
-  height: 34px;
-  font-size: 13px;
+.lab-filter {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding-inline: 12px 9px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  white-space: nowrap;
+  background: rgb(255 255 255 / 0.05);
+  box-shadow: inset 0 0 0 1px var(--line);
+  transition:
+    background 140ms ease-out,
+    box-shadow 140ms ease-out;
+}
+@media (hover: hover) {
+  .lab-filter:hover {
+    background: rgb(255 255 255 / 0.09);
+  }
+}
+.lab-filter:focus-within {
+  box-shadow: inset 0 0 0 1px var(--lime);
+}
+.lab-filter-label {
+  color: var(--mute);
+}
+.lab-filter-value {
+  font-weight: 500;
+  color: var(--ink);
+}
+.lab-filter-chevron {
+  width: 13px;
+  height: 13px;
+  color: var(--mute);
+}
+.lab-filter select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
   cursor: pointer;
+  font-size: 16px;
+}
+.lab-filter select option {
+  color: var(--ink);
+  background: #1a1a1c;
+}
+/* Content sits apart: it changes what's shown, not how it's ordered. */
+.lab-filter:last-child {
+  margin-inline-start: auto;
+}
+.lab-filter[data-mature] {
+  background: rgb(255 120 100 / 0.1);
+  box-shadow: inset 0 0 0 1px rgb(255 120 100 / 0.22);
+}
+.lab-filter[data-mature] .lab-filter-value {
+  color: #ffb3a5;
+}
+.lab-filter[data-mature] .lab-filter-value::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-inline-end: 6px;
+  border-radius: 50%;
+  vertical-align: 1px;
+  background: #ff7864;
 }
 .lab-examples-grid {
   flex: 1;
@@ -739,10 +806,6 @@ textarea.lab-input {
   color: var(--ink);
   background: rgb(0 0 0 / 0.6);
   backdrop-filter: blur(8px);
-}
-.lab-examples-bar .lab-input[data-loose="true"] {
-  color: #ff9b8a;
-  box-shadow: inset 0 0 0 1px rgb(255 120 100 / 0.45);
 }
 .lab-example span {
   position: absolute;
