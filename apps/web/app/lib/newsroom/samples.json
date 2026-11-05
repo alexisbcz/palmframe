@@ -1,1 +1,1468 @@
-[]
+[
+  {
+    "slug": "spacex-starship-reaches-orbit-on-14th-test-flight-and-deploy",
+    "template": "wire",
+    "lead": "The latest SpaceX Starship flight test",
+    "title": "SpaceX Starship reaches orbit on 14th test flight and deploys 26 Starlink satellites",
+    "dek": "The Sept. 28 flight from Texas ended early after an engine problem, and a 15th flight with a planned ship catch awaits FAA approval.",
+    "body": "STARBASE: SpaceX's Starship reached orbit for the first time and deployed 26 Starlink V3 satellites on its 14th test flight, which lifted off from Starbase, Texas, at 8:50 a.m. ET on Sept. 28, ABC News reported.\n\nThe mission ended about seven hours earlier than planned, with Starship splashing down in the Pacific north of Hawaii just before noon ET, according to ABC News. SpaceX called the flight a success because it met both primary objectives: reaching orbit and adding satellites to the Starlink constellation.\n\nOne of the ship's vacuum engines went out during ascent, CNBC reported. ABC News said the company also had issues with two engines on the Super Heavy booster and one on the ship.\n\nCNBC said SpaceX had hoped the ship would circle the planet several times and land off the coast of Chile. The company instead brought it down at the first scheduled checkpoint.\n\nThe booster made a soft splashdown off the Starbase coast, CNBC reported. The network said SpaceX did not aim for orbit on any of the 13 earlier flights.\n\nSpaceX said one Starship can carry 60 Starlink V3 satellites, about 20 times the capacity of a Falcon 9 launch, according to CNBC. The network noted that the company has not yet demonstrated the reusability and reliability of the full system.\n\nFlight 15 is the next mission. SpaceX plans to try catching both the booster and the ship on its launch tower, a first for the upper stage, according to Tech Times. SpaceX has caught the booster three times.\n\nSpaceX finished ground tests for the flight on Oct. 28, Tech Times reported. Booster 22 fired all 33 engines on Oct. 25, and Ship 42 ran one engine on Oct. 27 and six engines on Oct. 28.\n\nThe ship catch awaits an FAA licence, Tech Times said. Searches found no issued licence and no official SpaceX launch date. Secondary reports give unofficial targets of Nov. 8 and Nov. 12.\n\nThe FAA is also preparing an environmental assessment of a SpaceX request to raise Starbase activity to 456 launches and 912 landings a year, according to SpacePolicyOnline. That total is 456 boosters and 456 ships.\n\nPublic scoping meetings are set for Nov. 17 and 19 in person and Nov. 18 online, SpacePolicyOnline said. Comments are due Nov. 30.\n\nFlight 13 flew on July 25 from Starbase. Its booster made a hard landing, and its ship survived splashdown in the Indian Ocean, SpacePolicyOnline reported. That ship reached Starbase on Oct. 12 after a trip via Christmas Island.\n\nCNBC reported that SpaceX is also preparing Starship for a NASA test flight in 2027.",
+    "cover": "/newsroom/spacex-starship-reaches-orbit-on-14th-test-flight-and-deploy.jpg",
+    "filed": "2026-11-05T13:01:24.43657+00:00",
+    "sources": [
+      {
+        "url": "https://npr.org/2026/09/28/nx-s1-5983418/spacex-starship-first-orbital-flight-14-nasa",
+        "title": "NPR: SpaceX's Starship launches on first orbital mission from Texas"
+      },
+      {
+        "url": "https://finance.yahoo.com/economy/articles/starbase-louisiana-spacex-announces-enormous-182722711.html",
+        "title": "Yahoo Finance: Starbase Louisiana: SpaceX announces enormous $100 billion Starbase launch site"
+      },
+      {
+        "url": "https://abcnews.com/US/spacex-attempt-starships-1st-orbital-flight-test/story?id=136805227",
+        "title": "ABC News: SpaceX Starship splashes down after successful 1st orbital flight test"
+      },
+      {
+        "url": "https://space.com/space-exploration/private-spaceflight/spacex-announces-enormous-usd100-billion-starbase-louisiana-starship-launch-site",
+        "title": "Space.com: Starbase Louisiana: SpaceX announces enormous $100 billion Starbase launch site"
+      },
+      {
+        "url": "https://spacepolicyonline.com/news/ship-40-back-at-starbase-after-surprise-reentry-survival",
+        "title": "SpacePolicyOnline: Ship 40 Back At Starbase After Surprise Reentry Survival"
+      },
+      {
+        "url": "https://cnbc.com/2026/09/28/spacex-prepares-to-send-starship-rocket-to-orbit-for-first-time.html",
+        "title": "CNBC: SpaceX launches its massive Starship rocket into orbit for the first time"
+      },
+      {
+        "url": "https://tech-insider.org/spacex-starship-flight-15-november-dual-catch-2026",
+        "title": "Tech Insider: SpaceX Starship Flight 15: November Dual Catch Plan"
+      },
+      {
+        "url": "https://channelnewsasia.com/business/spacexs-starship-launches-14th-flight-first-headed-orbit-6415906",
+        "title": "Channel NewsAsia: SpaceX's Starship launches on 14th flight, first headed to orbit"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Starship_flight_test_4",
+        "title": "Starship flight test 4"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Starship_flight_test_1",
+        "title": "Starship flight test 1"
+      },
+      {
+        "url": "https://www.cnn.com/2026/07/24/science/live-news/spacex-starship-flight-13-launch",
+        "title": "SpaceX Starship megarocket hits key milestones in ‘Lucky 13’ test flight as big hurdles loom"
+      },
+      {
+        "url": "https://spacenews.com/starship-successfully-completes-11th-flight-test/",
+        "title": "Starship successfully completes 11th flight test - SpaceNews"
+      },
+      {
+        "url": "https://www.cnn.com/2026/09/28/science/live-news/spacex-starship-flight-14-launch",
+        "title": "Highlights: SpaceX reaches orbit in unprecedented Starship test flight"
+      },
+      {
+        "url": "https://techtimes.com/articles/329384/20261022/spacex-starship-flight-15-plans-catch-ship-super-heavy.htm",
+        "title": "Tech Times: SpaceX Starship Flight 15 Plans to Catch Ship, Super Heavy"
+      },
+      {
+        "url": "https://techtimes.com/articles/329778/20261030/spacex-finishes-starship-flight-15-static-fire-first-ship-catch-attempt-awaits-faa.htm",
+        "title": "Tech Times: SpaceX Finishes Starship Flight 15 Static Fire; First Ship Catch Attempt Awaits FAA"
+      },
+      {
+        "url": "https://shattered.io/starship-flight-15-dual-catch-november-2026",
+        "title": "Shattered: Starship Flight 15: Nov. 8 Target, First Dual Catch"
+      },
+      {
+        "url": "https://thenews.com.pk/latest/1421389-spacex-fires-all-33-engines-on-super-heavy-booster-22-in-starship-flight-15-test",
+        "title": "The News International: SpaceX fires all 33 engines on super heavy booster 22 in Starship flight 15 test"
+      },
+      {
+        "url": "https://finance.yahoo.com/markets/stocks/articles/spacex-spcx-q3-2026-earnings-005829420.html",
+        "title": "Yahoo Finance: SpaceX (SPCX) Q3 2026 Earnings Call Transcript"
+      },
+      {
+        "url": "https://indiatoday.in/science/story/spacex-gears-up-for-15th-starship-super-heavy-flight-completes-key-booster-test-3026757-2026-10-28",
+        "title": "India Today: SpaceX gears up for 15th Starship-Super Heavy flight, completes key booster test"
+      },
+      {
+        "url": "https://tech-insider.org/spacex-starship-flight-15-analyst-100-ton-bet-2026",
+        "title": "Tech Insider: SpaceX Starship Flight 15: Analyst Flags 100-Ton Bet [2026]"
+      },
+      {
+        "url": "https://starlust.org/spacex-starship-flight-15-possible-launch-date-revealed/",
+        "title": "When will Starship Flight 15 launch? Possible date for SpaceX’s most ambitious flight test revealed - Starlust"
+      },
+      {
+        "url": "https://interestingengineering.com/space/spacex-starship-flight-15-launch-date-objectives",
+        "title": "Starship Flight 15: Launch date, recovery goals, and key tests"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Starship_flight_test_8",
+        "title": "Starship flight test 8"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Starship_flight_test_5",
+        "title": "Starship flight test 5"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Starship_flight_test_9",
+        "title": "Starship flight test 9"
+      }
+    ],
+    "facts": [
+      {
+        "url": "https://abcnews.com/US/spacex-attempt-starships-1st-orbital-flight-test/story?id=136805227",
+        "claim": "Flight 14 lifted off 8:50 a.m. ET Sept 28, 2026 from Starbase, Cameron County, Texas; Starship splashed down in the Pacific north of Hawaii just before noon ET; mission ended about seven hours earlier than planned; SpaceX called it a success for reaching orbit and adding Starlink satellites; issues with two engines on booster and one on ship.",
+        "quote": "SpaceX is calling flight 14 a success because it achieved both of its primary objectives"
+      },
+      {
+        "url": "https://cnbc.com/2026/09/28/spacex-prepares-to-send-starship-rocket-to-orbit-for-first-time.html",
+        "claim": "CNBC: Flight 14 deployed 26 Starlink V3 satellites; one vacuum engine went out on ascent; SpaceX had hoped for multiple orbits and a landing off Chile but returned early; none of 13 earlier flights aimed for orbit; one Starship can carry 60 V3 satellites, about 20 times a Falcon 9 launch per the company; booster made a soft splashdown.",
+        "quote": "the company has not yet demonstrated the re-usability and reliability of the Starship Super Heavy system"
+      },
+      {
+        "url": "https://techtimes.com/articles/329778/20261030/spacex-finishes-starship-flight-15-static-fire-first-ship-catch-attempt-awaits-faa.htm",
+        "claim": "Flight 15 ground tests: Booster 22 33-engine static fire Oct 25, Ship 42 single-engine Oct 27 and six-engine Oct 28; first attempted ship catch awaits FAA license, per Tech Times.",
+        "quote": ""
+      },
+      {
+        "url": "https://spacepolicyonline.com/news/ship-40-back-at-starbase-after-surprise-reentry-survival",
+        "claim": "FAA is preparing an environmental assessment on SpaceX request for 456 launches and 912 landings per year at Starbase; public scoping meetings Nov 17 and 19 in person, Nov 18 virtual; comments due Nov 30. Booster hard landing on Flight 13 July 25; three booster catches so far; first ship catch could come on Flight 15.",
+        "quote": ""
+      },
+      {
+        "url": "https://interestingengineering.com/space/spacex-starship-flight-15-launch-date-objectives",
+        "claim": "Flight 15 target is NET Nov 12 per secondary reports; no official SpaceX date or issued FAA licence confirmed in search results.",
+        "quote": ""
+      },
+      {
+        "url": "https://cnbc.com/2026/09/28/spacex-prepares-to-send-starship-rocket-to-orbit-for-first-time.html",
+        "claim": "CNBC: SpaceX is preparing Starship for a major NASA test flight next year (2027) and intends to use it to bring US astronauts to the moon's surface.",
+        "quote": "The company is preparing Starship for a major NASA test flight next year"
+      }
+    ],
+    "findings": [
+      {
+        "line": 15,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      },
+      {
+        "line": 17,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      },
+      {
+        "line": 21,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      }
+    ]
+  },
+  {
+    "slug": "why-coffee-is-still-so-expensive-even-though-bean-prices-hav",
+    "template": "explainer",
+    "lead": "Why are coffee prices so high?",
+    "title": "Why Coffee Is Still So Expensive, Even Though Bean Prices Have Fallen",
+    "dek": "Weather wrecked supply, tariffs added a shock, and shelf prices are slow to follow the market down.",
+    "body": "**The short version:** Coffee got expensive because bad weather in Brazil and Vietnam cut supply while demand kept growing. US tariffs on Brazil added to the pain in 2025. Bean prices have since dropped a lot, but store prices fall slowly. A pound of ground coffee cost about $9.33 in September 2026, roughly a third more than in January 2025.\n\n## What happened to coffee prices?\n\nStart with the bean. The main type traded on world markets is arabica, a higher-end variety. It trades on the Intercontinental Exchange (ICE) in New York as a futures contract. That is a standard deal to buy a set amount at a set price on a future date.\n\nRoasters watch it as the benchmark. Arabica cost under $2 a pound in January 2024. It reached a record $4.30 on Feb. 13, 2025, according to CBS News.\n\nRetail followed. The government's average price for ground coffee hit $7 a pound in January 2025, up 75% from $4 in January 2020.\n\n## Why did supply fall short?\n\nBrazil and Vietnam are the two biggest producers. Both had a rough stretch. CBS reported a drought and then an August frost in Brazil in 2024. Vietnam had flooding after a drought.\n\nDemand did not give way. CBS cites USDA data showing Chinese consumption up 150% over ten years. Coffee also has no real substitute. J.M. Smucker, which makes Folgers, calls it a \"pass-through category,\" meaning it passes cost changes on to shoppers.\n\nOther producers struggled too. Colombia's Coffee Federation reported that its 2025/26 output fell 15% to 12.65 million bags.\n\n## What did tariffs do?\n\nThe US put a 40% tariff on many Brazilian goods in the summer of 2025. Brazilian arabica supplies roughly 35% to 40% of the coffee Americans drink, according to the Wall Street Journal. Roasters had few other places to buy. Smucker raised prices twice that year.\n\nOn Nov. 20, 2025, President Trump signed an order removing the tariff on Brazilian coffee and other foods. Then the Supreme Court ruled 6-3 on Feb. 20, 2026 that the emergency-powers law behind the tariff does not allow tariffs. Those tariffs ended Feb. 24, according to the law firm White & Case.\n\nA new 25% tariff on Brazil took effect July 22, 2026, under a different trade law. Coffee is exempt, the National Coffee Association says.\n\nSo tariffs helped push prices up in 2025, but they are not driving them now. Fortune's April report tied March's retail price to the 40% tariff, though that tariff had already ended.\n\n## If beans are cheaper, why isn't my bag?\n\nArabica futures were 283.5 cents a pound on Nov. 2, 2026. That is down 27.56% in 12 months, per Trading Economics. By our arithmetic, it is about 34% below the record. Brazilian shipments were up 43.2% from a year earlier as of Oct. 22, according to Cecafé, a Brazilian exporters' group.\n\nRetail has barely moved. The Bureau of Labor Statistics figure was $9.33 a pound in September, up from $9.30 in August. We got that figure from a site that relays the BLS release.\n\nWhy the lag? Smucker said in June it was using temporary promotions and did not commit to permanent cuts. Cornell professor Alex Susskind told CNN that once retail prices rise, they tend not to come down.\n\nSmucker also expects low-single-digit cost inflation in packaging, ingredients and transport.\n\n## What do critics and skeptics say?\n\nShoppers and some analysts say companies are slow to share the savings. Smucker's CEO describes its approach as passing costs \"up and down\" to customers, and doing so \"prudently.\"\n\nThat is a company's account of its own pricing. We could not check it independently.\n\nIt is also unsettled whether bean prices keep falling. Certified arabica stocks in ICE warehouses were 225,068 bags on Oct. 29, near 27-year lows. That thin cushion means a surprise could send prices up again.\n\n## What happens next?\n\nThe next big swing factor is weather. Traders worry that El Niño, a Pacific climate pattern, could delay rain in Brazil during the flowering season and hurt the 2027 crop. Recent rain has helped so far, though it has been uneven.\n\nPolitics matters too. The US coffee industry asked the administration in July to keep the Brazil exemption. A change there would hit prices fast.\n\n**What to watch**\n\n- **The next BLS average-price release for ground coffee (due mid-month).** A drop below $9 a pound would be the first clear sign that shelf prices are following beans down.\n- **ICE certified arabica stocks.** A move well above 225,068 bags would ease the supply squeeze.\n- **Brazil's flowering and 2027 crop estimates.** A weather scare there is the likeliest trigger for a new price spike.\n",
+    "cover": "/newsroom/why-coffee-is-still-so-expensive-even-though-bean-prices-hav.jpg",
+    "filed": "2026-11-05T12:50:48.900746+00:00",
+    "sources": [
+      {
+        "url": "https://wsj.com/finance/commodities-futures/arabica-coffee-at-highest-price-since-1977-on-supply-concerns-ba8b8dd2",
+        "title": "The Wall Street Journal: Arabica Coffee at Highest Price Since 1977 on Supply Concerns"
+      },
+      {
+        "url": "https://livemint.com/news/world/arabica-coffee-at-highest-price-since-1977-on-supply-concerns-11732720529709.html",
+        "title": "mint: Arabica coffee at highest price since 1977 on supply concerns"
+      },
+      {
+        "url": "https://economictimes.indiatimes.com/news/international/business/coffee-drinkers-face-new-jolt-as-tariffs-fuel-price-increase/articleshow/123569556.cms",
+        "title": "The Economic Times: Coffee drinkers face new jolt as tariffs fuel price increase"
+      },
+      {
+        "url": "https://livemint.com/market/commodities/trouble-brewing-why-a-brazilian-tariff-may-cause-coffee-prices-to-soar-11753886568237.html",
+        "title": "mint: Trouble brewing: Why a Brazilian tariff may cause coffee prices to soar"
+      },
+      {
+        "url": "https://arabnews.com/node/2588328/offbeat",
+        "title": "Arab News: Coffee prices surge to record highs above $3.60 per lb"
+      },
+      {
+        "url": "https://arabnews.com/offbeat/coffee-prices-surge-to-record-highs-above-360-per-lb-2588328",
+        "title": "Arab News: Coffee prices surge to record highs above $3.60 per lb"
+      },
+      {
+        "url": "https://m.economictimes.com/news/international/business/coffee-drinkers-face-new-jolt-as-tariffs-fuel-price-increase/articleshow/123569556.cms",
+        "title": "The Economic Times (m.economictimes.com): Coffee drinkers face new jolt as tariffs fuel price increase"
+      },
+      {
+        "url": "https://investing.com/news/commodities-news/arabica-coffee-futures-reach-onemonth-high-on-supply-concerns-93CH-4958030",
+        "title": "Investing.com: Arabica coffee futures reach one-month high on supply concerns By Investing.com"
+      },
+      {
+        "url": "https://finance.yahoo.com/markets/commodities/articles/coffee-prices-surge-brazil-harvest-160727971.html",
+        "title": "Coffee Prices Surge as Brazil’s Harvest is Delayed"
+      },
+      {
+        "url": "https://finance.yahoo.com/markets/commodities/articles/brazil-coffee-harvest-pressures-weigh-182349933.html",
+        "title": "Brazil Coffee Harvest Pressures Weigh on Prices"
+      },
+      {
+        "url": "https://apps.fas.usda.gov/psdonline/circulars/coffee.pdf",
+        "title": "Coffee: World Markets and Trade"
+      },
+      {
+        "url": "https://j2t.com/solutions/blogview/coffee-price-forecast/",
+        "title": "Coffee price forecast from 2026 to 2030. Luckin coffee stock price prediction for 5 years ahead"
+      },
+      {
+        "url": "https://finimize.com/content/coffee-prices-rose-as-ice-stockpiles-stayed-near-lows-2",
+        "title": "Coffee Prices Rose As ICE Stockpiles Stayed Near Lows - Finimize"
+      },
+      {
+        "url": "https://economictimes.indiatimes.com/news/international/global-trends/trump-signs-order-to-remove-tariffs-from-brazilian-beef-coffee/articleshow/125474866.cms",
+        "title": "The Economic Times: Trump signs order to remove tariffs from Brazilian beef, coffee"
+      },
+      {
+        "url": "https://reuters.com/world/americas/us-coffee-industry-asks-trump-keep-tariff-exemption-brazil-beans-2026-07-08",
+        "title": "Reuters: US coffee industry asks Trump to keep tariff exemption on Brazil beans"
+      },
+      {
+        "url": "https://cnbc.com/2025/07/10/trump-brazil-tariffs-could-raise-coffee-prices.html",
+        "title": "CNBC: Trump's tariffs on Brazil could make your coffee even more expensive"
+      },
+      {
+        "url": "https://cbsnews.com/news/white-house-brazil-tariffs-foods-exempt",
+        "title": "cbsnews.com: White House cuts tariffs on more goods from Brazil"
+      },
+      {
+        "url": "https://fortune.com/2025/11/22/lula-trump-tariffs-brazil-coffee",
+        "title": "Fortune: Lula stares down Trump and scores tariff victory for Brazil | Fortune"
+      },
+      {
+        "url": "https://m.economictimes.com/news/international/global-trends/trump-signs-order-to-remove-tariffs-from-brazilian-beef-coffee/articleshow/125474866.cms",
+        "title": "The Economic Times (m.economictimes.com): Trump signs order to remove tariffs from Brazilian beef, coffee"
+      },
+      {
+        "url": "https://fortune.com/2025/11/21/trump-removes-brazil-tariffs-on-coffee-imports-bolsanaro",
+        "title": "Fortune: Brazil hails 'historic victory' after months of pressure as Trump removes 40% tariffs on coffee imports | Fortune"
+      },
+      {
+        "url": "https://economictimes.indiatimes.com/small-biz/trade/exports/insights/coffee-slides-on-report-us-lawmakers-to-seek-tariff-exemption/articleshow/124010467.cms",
+        "title": "The Economic Times: Coffee slides on report US lawmakers to seek tariff exemption"
+      },
+      {
+        "url": "https://businessinsider.com/coffee-prices-futures-soaring-climate-change-drought-bitter-beans-flavor-2025-2",
+        "title": "Business Insider: Coffee is about to get way more expensive — and mediocre"
+      },
+      {
+        "url": "https://npr.org/2024/12/17/nx-s1-5228008/coffee-prices-hover-near-record-highs-on-futures-market",
+        "title": "NPR: Coffee prices hover near record highs on futures market"
+      },
+      {
+        "url": "https://npr.org/2024/12/17/nx-s1-5228008/coffee-prices-brazil-drought-weather",
+        "title": "NPR: Coffee prices are higher than ever. Here's what it means for your cup"
+      },
+      {
+        "url": "https://cbsnews.com/news/why-are-coffee-prices-so-high-inflation",
+        "title": "cbsnews.com: Why are coffee prices rising in the U.S.?"
+      },
+      {
+        "url": "https://apnews.com/article/business-prices-fe05cb4ce02fd31393042a5985eb696d",
+        "title": "AP NEWS: EXPLAINER: Why coffee could cost more at groceries, cafes"
+      },
+      {
+        "url": "https://apnews.com/article/why-coffee-could-cost-more-fe05cb4ce02fd31393042a5985eb696d",
+        "title": "AP NEWS: EXPLAINER: Why coffee could cost more at groceries, cafes"
+      },
+      {
+        "url": "https://fortune.com/2026/04/10/inflation-consumer-price-index-march-cpi-one-percent-grocery-gas-prices",
+        "title": "Fortune: Inflation goes up by a whopping monthly rate of nearly 1%—and it's hitting you at the grocery store and gas station | Fortune"
+      },
+      {
+        "url": "https://wsj.com/business/hospitality/coffee-prices-inflation-tariffs-brazil-e3c26e3b",
+        "title": "The Wall Street Journal: Hell Hath No Fury Like a Coffee Drinker in 2025"
+      },
+      {
+        "url": "https://tradingeconomics.com/commodity/coffee/news/591484",
+        "title": "Arabica Coffee Futures Inch Higher"
+      },
+      {
+        "url": "https://tradingeconomics.com/commodity/coffee/news/590208",
+        "title": "Arabica Coffee Futures Falls From 1-Month High"
+      },
+      {
+        "url": "https://www.riotimesonline.com/arabica-coffee-one-month-high-brazil-real-oct-19-2026/",
+        "title": "Arabica Coffee Hits One-Month High"
+      },
+      {
+        "url": "https://bumpcoffee.co/blogs/field-notes/coffee-world-roundup-october-2026",
+        "title": "Coffee World Roundup: October 2026"
+      },
+      {
+        "url": "https://www.usinflationcalculator.com/inflation/coffee-prices-by-year-and-adjust-for-inflation/",
+        "title": "Coffee Prices Adjusted for Inflation"
+      },
+      {
+        "url": "https://fred.stlouisfed.org/series/PCOFFOTMUSDM",
+        "title": "Global price of Coffee, Other Mild Arabica (PCOFFOTMUSDM)"
+      },
+      {
+        "url": "https://evvytools.com/trackers/average-coffee-price/",
+        "title": "Average Coffee Price Today — $9.33"
+      },
+      {
+        "url": "https://shopcoffee.com/coffee-cost-per-cup",
+        "title": "Average Price of a Cup of Coffee in 2026: $3.65 at a Café, 57¢–$1.06 at Home · ShopCoffee"
+      },
+      {
+        "url": "https://dkbeanleaf.com/blogs/news/coffee-bean-price",
+        "title": "What $9.32 per Pound Actually Buys, U.S. Coffee Bean Prices 2026"
+      },
+      {
+        "url": "https://www.gcrmag.com/j-m-smucker-co-drops-coffee-prices",
+        "title": "J.M. Smucker Co. drops coffee prices? - Global Coffee Report"
+      },
+      {
+        "url": "https://www.supplychaindive.com/news/jm-smucker-eyes-margin-boost-with-lower-green-coffee-commodity-costs/823725/",
+        "title": "JM Smucker eyes margin boost with lower green coffee commodity costs"
+      },
+      {
+        "url": "https://www.bloomberg.com/news/articles/2026-06-09/smucker-profit-tops-expectations-buoyed-by-coffee-prices",
+        "title": "Smucker Plans to Lower Coffee Prices Next Year as Costs Drop - Bloomberg"
+      },
+      {
+        "url": "https://www.investing.com/news/transcripts/the-j-m-smucker-at-barclays-consumer-conference-growth-broadens-93CH-4892181",
+        "title": "The J. M. Smucker at barclays consumer conference: growth broadens By Investing.com"
+      },
+      {
+        "url": "https://kelo.com/2026/08/26/j-m-smucker-forecasts-smaller-than-expected-annual-sales-decline-on-steady-coffee-demand/",
+        "title": "J.M. Smucker forecasts smaller-than-expected annual sales decline on steady coffee demand"
+      },
+      {
+        "url": "https://www.strtrade.com/trade-news-resources/tariff-actions-resources/ieepa-tariffs-on-brazil",
+        "title": "IEEPA Tariffs on Brazil"
+      },
+      {
+        "url": "https://www.kavout.com/market-lens/beyond-ieepa-us-tariffs-cement-brazil-s-enduring-pivot-to-china",
+        "title": "Beyond IEEPA: US Tariffs Cement Brazil's Enduring Pivot to China"
+      },
+      {
+        "url": "https://royalcoffee.com/blogs/blog/what-does-the-supreme-court-tariff-hearing-means-for-coffee",
+        "title": "What Does The Supreme Court Tariff Hearing Mean For Coffee?"
+      },
+      {
+        "url": "https://www.whitecase.com/insight-alert/united-states-terminates-ieepa-based-tariffs-following-supreme-court-decision",
+        "title": "United States terminates IEEPA-based tariffs following supreme court decision"
+      },
+      {
+        "url": "https://www.wilmerhale.com/en/insights/client-alerts/20260220-supreme-court-strikes-down-ieepa-tariffs-what-now",
+        "title": "Supreme Court Strikes Down IEEPA Tariffs—What Now?"
+      },
+      {
+        "url": "https://www.ncausa.org/Newsroom/NCA-applauds-exemption-of-coffee-from-Section-301-tariffs-on-Brazil",
+        "title": "www.ncausa.org"
+      },
+      {
+        "url": "https://freshcup.com/tariffs-are-gone-yet-coffee-prices-will-likely-remain-high-heres-why/",
+        "title": "freshcup.com"
+      }
+    ],
+    "facts": [
+      {
+        "url": "https://tradingeconomics.com/commodity/coffee/news/591484",
+        "claim": "Arabica futures fell to 283.50 US cents per pound on Nov 2, 2026, down 27.56% over 12 months; certified ICE arabica stocks were 225,068 bags on Oct 29, near 27-year lows; Brazilian shipments reached about 3.30 million bags by Oct 22, up 43.2% from a year earlier (Cecafé); Colombia's 2025/26 output fell 15% to 12.65 million bags; El Niño could hurt Brazil's next crop.",
+        "quote": "Coffee decreased to 283.50 USd/Lbs, the lowest since October 2026. Over the past 4 weeks, Coffee lost 2.32%, and in the last 12 months, it decreased 27.56%."
+      },
+      {
+        "url": "https://cbsnews.com/news/why-are-coffee-prices-so-high-inflation",
+        "claim": "Arabica hit a record $4.30 a pound on Feb 13, 2025, up from under $2 in Jan 2024; retail ground coffee hit $7 a pound in Jan 2025, up 75% from $4 in Jan 2020. Drivers: drought and frost in Brazil, drought/flood in Vietnam; demand growth (China consumption up 150% in 10 years per USDA); Smucker CEO called coffee a pass-through category.",
+        "quote": "The retail price of ground coffee hit an all-time high of $7 a pound in January, up 75% from $4 in January 2020"
+      },
+      {
+        "url": "https://www.usinflationcalculator.com/inflation/coffee-prices-by-year-and-adjust-for-inflation/",
+        "claim": "BLS average price for a pound of ground roast coffee was $9.332 in September 2026, up from $9.299 in August, per data released Oct 14, 2026 (as relayed by usinflationcalculator.com).",
+        "quote": "The average price for a pound of coffee was $9.332 in September, compared to $9.299 in August"
+      },
+      {
+        "url": "https://fortune.com/2026/04/10/inflation-consumer-price-index-march-cpi-one-percent-grocery-gas-prices",
+        "claim": "In March 2026 the average retail price of ground roast coffee was $9.46 per pound, up 30.5% year over year, per Fortune citing BLS CPI.",
+        "quote": "the average retail price of ground roast coffee spiked 30.5% year over year to $9.46 per pound"
+      },
+      {
+        "url": "https://cbsnews.com/news/white-house-brazil-tariffs-foods-exempt",
+        "claim": "Trump signed an order on Nov 20, 2025 removing the 40% tariff on Brazilian coffee, beef and other foods; Brazil's coffee had been hit since July/August 2025.",
+        "quote": "removing tariffs on Brazilian beef, coffee and other goods that were previously subject to a 40% levy"
+      },
+      {
+        "url": "https://www.ncausa.org/Newsroom/NCA-applauds-exemption-of-coffee-from-Section-301-tariffs-on-Brazil",
+        "claim": "NCA statement July 16, 2026: USTR exempted coffee, including unflavored instant, from Section 301 tariffs on Brazil; NCA says two-thirds of American adults drink coffee daily.",
+        "quote": "The United States can’t grow coffee to meet our needs"
+      },
+      {
+        "url": "https://www.supplychaindive.com/news/jm-smucker-eyes-margin-boost-with-lower-green-coffee-commodity-costs/823725/",
+        "claim": "Smucker (Folgers) in June 2026 expected mid-single-digit deflation largely from lower green coffee costs, introduced temporary price reductions via promotions, but did not commit to permanent cuts. The Supreme Court ruling invalidated country-specific tariffs.",
+        "quote": "Coffee is a pass-through category, right? So we do pass through up and down costs to our customers and our consumers"
+      },
+      {
+        "url": "https://www.whitecase.com/insight-alert/united-states-terminates-ieepa-based-tariffs-following-supreme-court-decision",
+        "claim": "Supreme Court ruled 6-3 on Feb 20, 2026 that IEEPA doesn't authorize tariffs; IEEPA tariffs, including the 40% Brazil tariff, ended Feb 24, 2026. A separate 25% Section 301 tariff on Brazil began July 22, 2026, with coffee exempt.",
+        "quote": ""
+      },
+      {
+        "url": "https://freshcup.com/tariffs-are-gone-yet-coffee-prices-will-likely-remain-high-heres-why/",
+        "claim": "Retail prices stick: Cornell professor Alex Susskind said once retail prices go up they tend not to come down; Illycaffè CEO Cristina Scocchia said there is a limit to how much a company can absorb of high green coffee prices (Dec 2025).",
+        "quote": "retail prices are prone to stick, even when the market cools off"
+      },
+      {
+        "url": "https://apps.fas.usda.gov/psdonline/circulars/coffee.pdf",
+        "claim": "USDA FAS July circular: 2026/27 world coffee production forecast a record 189.7 million bags, 10.8 million higher, driven by Brazil, Ethiopia, Uganda, Vietnam; Brazil forecast record 71.9 million bags (+14%).",
+        "quote": ""
+      },
+      {
+        "url": "https://tradingeconomics.com/commodity/coffee/news/591484",
+        "claim": "Estimate: Arabica at 283.5 cents versus the $4.30 record of Feb 2025 is (4.30 - 2.835) / 4.30 = about 34% below the peak. Retail at $9.33 versus $7.00 in Jan 2025 is 9.33 / 7.00 = about 1.33, so about 33% higher.",
+        "quote": ""
+      }
+    ],
+    "findings": [
+      {
+        "line": 15,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      },
+      {
+        "line": 23,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      },
+      {
+        "line": 31,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      }
+    ]
+  },
+  {
+    "slug": "halfway-through-shore-leave-the-phone-rang",
+    "template": "feature",
+    "lead": "The people who repair the internet's undersea cables",
+    "title": "Halfway Through Shore Leave, the Phone Rang",
+    "dek": "A small, ageing fleet of ships and the crews who splice the internet back together at sea, and the argument over whether the system is fragile or just good at hiding it.",
+    "body": "When the *Léon Thévenin* eased into Cape Town in August 2025, Shuru Arendse had a month off and a list. Fix the leaky tap. Patch the hole in the roof. Take his two children to the trampoline park.\n\nHalfway through, the phone rang. An undersea cable off Angola was malfunctioning, and the Thévenin, the only cable repair ship permanently stationed in Africa, was going out again. Arendse is a cable jointer, one of a handful of people on the continent who know how to splice these lines together. The ship needed him. His wife was not pleased. \"Shuru, we didn't even get a chance to do anything yet,\" he recalled her saying, in an account by the outlet Rest of World, whose reporters spent two weeks aboard.\n\n\"I'm an absent parent,\" the 43-year-old told them. \"Because of that guilt, I spoil my children.\"\n\nPhone calls like that one are how the internet stays on. Roughly 150 to 200 undersea cable faults happen every year, according to the International Cable Protection Committee (ICPC), and a few dozen ships and their crews fix nearly all of them. Most of us never notice, because traffic routes around the break. But those ships are old, few and unevenly spread. A 2025 industry study says the shortage will worsen just as the world lays more cable than ever.\n\nIn 2026, a war around the Strait of Hormuz has put one question in the news: who can safely sail out to a broken cable? The people who do the sailing have started to look like a single point of failure.\n\n## Between construction and neurosurgery\n\nJosh Dzieza wrote in The Verge in 2024 that cable work occupies \"a lonely branch somewhere between heavy construction and neurosurgery\". His profile followed a different ship in a different ocean.\n\nThe method is old. A repair ship finds the fault by timing reflected light pulses sent down the fibre from shore. It hauls the cable up from the seabed with a grapnel or a remotely operated vehicle. The crew cuts out the damaged stretch, splices in a spare and lowers the line back down. The basic approach, Gigazine noted in summarising The Verge, has hardly changed since the transatlantic telegraph cable of 1866.\n\nA joint can take a team many hours. Tension on the line can reach 10 tons, according to one technical overview, and Dzieza notes that a snapped high-tension line can cut a person in half.\n\nOn March 11, 2011, Mitsuyoshi Hirai, chief engineer of the cable ship *Ocean Link*, sat in his cabin 20 miles off Japan's coast. He was doing the paperwork that closes a repair of the 13,000-mile cable between Kitaibaraki, Japan, and Point Arena, California. Then the ship began to shudder. A magnitude 9.0 earthquake had struck 130 miles northeast. The crew hoisted their submersible aboard and ran for deep water ahead of the tsunami. Hirai's creed, according to The Verge, was that \"you must always be cool.\"\n\nThe disaster that followed was the kind repair crews dread, because earthquakes break many cables at once. By the next morning, seven of Japan's 12 trans-Pacific cables were cut. The *Ocean Link* returned to Yokohama two days after the quake. With the Fukushima plant in crisis, nobody sent other repair ships from nearby waters. The crew got Geiger counters and training to use them.\n\nThey sailed again eight days after reaching port, alone, for a site 160 miles south of the plant. Hirai put on protective clothing and took the first radiation test before work began.\n\n## Sixty ships\n\nNobody agrees exactly how many ships there are. Scientific American says about 60 vessels lay and maintain the world's cables, and fewer than 20 of them do only repair. Rest of World says 62. A 2026 African Arguments analysis says 63, of which 60 percent also lay cable. A consultant's blog puts it between 60 and 80, depending on what you count. All agree the number has barely grown.\n\nThe money has. The industry now sees $4 billion to $5 billion in annual investment, close to double a decade ago, driven by new cable. Mike Constable, a consultant at Infra-Analytics who co-authored the study below, says almost none of it protects what it builds. He likens it to buying an expensive Mercedes without insurance. \"It's a huge investment going in,\" he told Scientific American, \"but there's very little investment, almost zero, in protecting it.\"\n\nConstable and TeleGeography published their estimate on June 30, 2025. By 2040, about two-thirds of the maintenance ships will have reached the end of their service lives, along with about half the whole cable-ship fleet. Keeping service levels and avoiding delays would take roughly $3 billion: 15 replacement ships and five new ones. The same study projects a 48 percent net increase in cable kilometres by 2040. More cable means more faults. Many recent additions to the fleet are secondhand, converted from oil and gas construction ships.\n\nThe Thévenin is the local example. Owned by France's Orange Marine, it is as long as a football field and carries up to 60 crew. It is among the world's oldest repair vessels, 43 years old when Rest of World wrote and 44 by African Arguments' count. Orange Marine says keeping a ship at sea costs $70,000 to $120,000 a day, depending on its age and condition. Its chief executive, Didier Dillard, says the standard is simple: \"We sail when we are required to sail, and we need to be ready to do it at any time.\"\n\n## The slow lanes\n\nReadiness does not mean arrival. The Thévenin covers a coast from Madagascar to Ghana. In March 2024, an undersea landslide off Côte d'Ivoire damaged four cables at once: MainOne, WACS, ACE and SAT-3. Ghana's regulator said its system had lost 90 to 100 percent of its capacity, and 13 countries felt the damage.\n\nThe CS *Sovereign* came from London for three of the cables. The Thévenin took SAT-3, reaching Ivory Coast on March 29. The last repair, on MainOne, finished on May 11, two months after the break.\n\nIn Sierra Leone and Liberia, most cables have no spurs, so one break can stop traffic. African Arguments says an ITU report in July 2026 used a hypothetical fault near Mombasa and a second near Dakar to show what one ship for a continent means. One vessel cannot be in both places. Even a ship at full readiness can lose weeks to paperwork. Sheryl Ong, head of Asia at Global Marine, says a government's sign-off to enter its territorial waters can take a month or more.\n\nWar lengthens the wait. After Houthi attacks in the Red Sea in 2024, cables stayed broken for months while companies and governments worked out whether it was safe and lawful to go in. GeoCables, a monitoring site, says repairs from the February 2024 cuts ran until July. On September 6, 2025, several more Red Sea cables were cut near Jeddah. The ICPC pointed to commercial shipping, probably a dragged anchor. Traffic rerouted, with some India-to-Europe paths stretching from about 90 milliseconds to 250 to 300.\n\n## The case that it works\n\nNot everyone reads these facts as a warning. Doug Madory, who studies internet infrastructure at Kentik, told the Guardian in May that many stories about cable sabotage are \"hyperbolic,\" and that most cuts are probably accidents, mainly dragged anchors. A plan floated in Iranian media to charge fees on Hormuz cables would, he said, rely on threats. Cutting them would be \"a suicide mission.\" Those cables mostly serve Gulf states, and they carry less than 1 percent of global international bandwidth, according to TeleGeography.\n\nTeleGeography's own research director, Alan Mauldin, made a similar point a month after the fleet report. Headlines about breaks, he wrote, miss the repairs. \"Where there have been faults, there have also been repairs,\" he wrote. \"And we've gotten good at it.\" He cited a Taiwan break detected in late January 2025. A ship arrived several weeks later and the cable was back by early March. Because large users spread capacity over many cables, he noted, most faults never reach a customer.\n\nMadory does not wave away the danger, though. \"Cable repair ships do not operate under fire,\" he said, and that is the weak point: a threatened ship may simply stay in port. Constable makes the same point from the other side. In his view the bigger risk in the Gulf is on land, where drones can reach cable landing stations. He also says the fleet is used inefficiently. A couple of Pacific ships, he says, make just two repairs a year and otherwise sit on standby, while other regions wait.\n\nSo the critic and the alarmist agree on more than the headlines suggest. A single cut is routine. The risk is several at once, in a place where ships cannot go. As the Red Sea showed, the system's slack lies in routes and rerouting. The slack in the repair fleet is thinner.\n\n## The tap\n\nThe Thévenin's crew know the other cost of this arithmetic. In 2023 the ship made its longest-ever voyage, close to four months almost continuously at sea, according to Jess Auerbach Jahajeeah, an anthropologist who joined it. In The Continent she described a four-person team splicing past midnight while a small Ghanaian navy boat kept pirates and fishing vessels away. Arendse had never been gone so long. Birthdays passed, and school exams came and went. The crew, mostly African, spoke isiZulu, French, Afrikaans, Malagasy, English and Tagalog.\n\nThe Rest of World reporters wrote that Arendse loves the work. \"I'm trying to save a country from losing its data or communication,\" he said. \"I love the challenge of it; it's never the same.\"\n\nThat August the call came about Angola, and the Thévenin sailed. The reporting does not say whether the tap ever got fixed.",
+    "cover": "/newsroom/halfway-through-shore-leave-the-phone-rang.jpg",
+    "filed": "2026-11-05T13:02:47.089452+00:00",
+    "sources": [
+      {
+        "url": "https://telecom.economictimes.indiatimes.com/news/internet/baltic-sea-submarine-telecoms-cable-has-been-repaired-operator-says/119029187",
+        "title": "ETTelecom.com: Baltic Sea submarine telecoms cable has been repaired, operator says - ET Telecom"
+      },
+      {
+        "url": "https://cnbc.com/2024/11/28/explainer-baltic-sea-undersea-cable-cuts-stoke-geopolitical-tensions.html",
+        "title": "CNBC: Undersea cable cuts in the Baltic Sea are stoking geopolitical tensions — here's what's going on"
+      },
+      {
+        "url": "https://japantimes.co.jp/news/2024/11/19/world/undersea-cables-baltic-germany-finland",
+        "title": "The Japan Times: Two undersea cables in Baltic Sea found to have been cut"
+      },
+      {
+        "url": "https://livemint.com/industry/telecom/undersea-cable-cuts-red-sea-impact-on-internet-11757332026416.html",
+        "title": "mint: The invisible wires of the internet: why do undersea cables matter?"
+      },
+      {
+        "url": "https://telecom.economictimes.indiatimes.com/news/industry/russian-telecoms-cable-joins-list-of-damaged-subsea-baltic-infrastructure/105017862",
+        "title": "ETTelecom.com: Russian telecoms cable joins list of damaged subsea Baltic infrastructure - ET Telecom"
+      },
+      {
+        "url": "https://reuters.com/article/finland-estonia-gas-idAFKBN3210XC",
+        "title": "U.S.: Russian telecoms cable joins list of damaged subsea Baltic infrastructure"
+      },
+      {
+        "url": "https://channelnewsasia.com/world/subsea-cables-cna-explains-undersea-internet-baltic-4783801",
+        "title": "CNA: CNA Explains: What are subsea cables and why are they important?"
+      },
+      {
+        "url": "https://theguardian.com/world/2026/may/18/iran-threat-internet-cables-strait-hormuz",
+        "title": "the Guardian: How realistic is threat of Iran charging to use internet cables under strait of Hormuz?"
+      },
+      {
+        "url": "https://maketecheasier.com/only-about-60-ships-in-the-world-can-fix-a-broken-undersea-cable-and-two-thirds-of-the-repair-fleet-will-hit-retirement-age-by-2040-without-a-3-billion-fix/",
+        "title": "Only about 60 ships in the world can fix a broken undersea cable — and two-thirds of the repair fleet will hit retirement age by 2040 without a $3 billion fix - Make Tech Easier"
+      },
+      {
+        "url": "https://www.scientificamerican.com/article/iran-threats-expose-the-aging-fleet-that-repairs-undersea-internet-cables/",
+        "title": "Iran threats expose the aging fleet that repairs undersea Internet cables"
+      },
+      {
+        "url": "https://thebulletin.org/2025/07/to-keep-the-worlds-data-flowing-countries-need-to-quickly-fix-broken-undersea-cables/",
+        "title": "To keep the world’s data flowing, countries need to quickly fix broken undersea cables - Bulletin of the Atomic Scientists"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Orange_Marine",
+        "title": "Orange Marine"
+      },
+      {
+        "url": "https://mapyourtech.com/overview-of-submarine-cable-repair-operations/",
+        "title": "Overview of Submarine Cable Repair Operations — MapYourTech"
+      },
+      {
+        "url": "https://www.ieresilience.com/sixty-ships/",
+        "title": "www.ieresilience.com"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=QtVOILETYqs",
+        "title": "Random Photographs on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=7ltIgheXw7Y",
+        "title": "Exploro on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=l1knCR6xAzo",
+        "title": "Fluctus on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=cKnwkxItL2M",
+        "title": "Business Insider and 2 more on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=Pz5XRyo5fiw",
+        "title": "CNBC on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=_r5jMbtqCbQ",
+        "title": "HISTORY on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=LSnxGbm3dvg",
+        "title": "Under The Keel on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=lTTUoikg458",
+        "title": "Engineered Wonders on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=ZJblHOGXKo4",
+        "title": "TelDaC on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=Iz7Tn8VzfTo",
+        "title": "Fluctus on youtube"
+      },
+      {
+        "url": "https://www.theverge.com/c/24070570/internet-cables-undersea-deep-repair-ships",
+        "title": "The invisible seafaring industry that keeps the internet afloat"
+      },
+      {
+        "url": "https://hindustantimes.com/ht-explainers/iran-us-war-tehran-threat-to-cut-gulf-undersea-cables-network-of-international-internet-traffic-red-sea-houthi-front-too-101792821634617.html",
+        "title": "Iran's threat to Gulf undersea cables and the network carrying nearly all international web traffic"
+      },
+      {
+        "url": "https://slate.com/news-and-politics/2008/02/how-do-you-fix-an-undersea-cable.html",
+        "title": "How do you fix an undersea cable?"
+      },
+      {
+        "url": "https://outlookindia.com/international/the-internet-beneath-the-strait-why-irans-cable-threat-matters-beyond-the-gulf",
+        "title": "The Internet Beneath The Strait: Why Iran’s Cable Threat Matters Beyond The Gulf | Outlook India"
+      },
+      {
+        "url": "https://restofworld.org/2025/africa-internet-cable-repair-ship/",
+        "title": "Africa’s only internet cable repair ship keeps the continent online - Rest of World"
+      },
+      {
+        "url": "https://gigazine.net/gsc_news/en/20240418-undersea-internet-cables-repair-ships-japan/",
+        "title": "The untold story of a Japanese submarine cable repair ship that began repairing undersea cables severed in the Great East Japan Earthquake immediately after the disaster - GIGAZINE"
+      },
+      {
+        "url": "https://www.networkworld.com/article/3989487/how-vulnerable-are-undersea-cables.html",
+        "title": "How vulnerable are undersea cables?"
+      },
+      {
+        "url": "https://thedailydiscourse.substack.com/p/the-hidden-heroes-who-keep-the-internet",
+        "title": "The Hidden Heroes Who Keep the Internet Afloat"
+      },
+      {
+        "url": "https://gulfnews.com/technology/red-sea-cable-chaos-subsea-cable-repairs-are-not-an-easy-fix-1.500290675",
+        "title": "Red Sea cable cuts: Subsea cable repairs are 'not an easy fix'"
+      },
+      {
+        "url": "https://elearncollege.com/technology/undersea-cables-a-hidden-lifeline/",
+        "title": "Undersea Cables A Hidden Lifeline"
+      },
+      {
+        "url": "https://www.datacenterdynamics.com/en/news/two-subsea-cables-damaged-in-west-africa-repairs-may-take-weeks/",
+        "title": "Two subsea cables damaged in West Africa; repairs may take weeks - DCD"
+      },
+      {
+        "url": "https://www.datacenterdynamics.com/en/news/first-cable-repair-ship-arrives-at-sat-3-site-in-west-africa/",
+        "title": "First cable repair ship arrives at SAT-3 site in West Africa - DCD"
+      },
+      {
+        "url": "https://continent.substack.com/p/down-to-the-wire-the-ship-fixing",
+        "title": "Down to the wire: The ship fixing our internet"
+      },
+      {
+        "url": "https://globalvoices.org/2024/07/15/the-maritime-crews-keeping-africa-connected-to-the-internet/",
+        "title": "The maritime crews keeping Africa connected to the internet · Global Voices"
+      },
+      {
+        "url": "https://africanarguments.org/2026/10/laying-on-thin-water-the-looming-danger-of-sub-saharan-africas-subsea-repair-vessel-deficit/",
+        "title": "africanarguments.org"
+      },
+      {
+        "url": "https://crisiscommunications.com/the-cloud-under-the-sea/",
+        "title": "The Cloud Under the Sea | Hennes Communications"
+      },
+      {
+        "url": "https://complexdiscovery.com/red-sea-cable-cuts-disrupt-connectivity-and-expose-global-infrastructure-risks/",
+        "title": "Red Sea Cable Cuts Disrupt Connectivity and Expose Global Infrastructure Risks"
+      },
+      {
+        "url": "https://themedialine.org/headlines/red-sea-cable-cut-slows-internet-from-pakistan-to-gulf/",
+        "title": "Red Sea Cable Cut Slows Internet From Pakistan to Gulf - The Media Line"
+      },
+      {
+        "url": "https://www.datacenterdynamics.com/en/news/peace-subsea-cable-cut-in-the-red-sea-repair-to-take-months/",
+        "title": "Peace subsea cable cut in the Red Sea, repair to take months - DCD"
+      },
+      {
+        "url": "https://medium.com/the-manifest-archive/iran-threatened-the-gulfs-cables-the-real-threat-is-the-repair-ship-82448e548c9f",
+        "title": "Iran Threatened the Gulf’s Cables. The Real Threat Is the Repair Ship."
+      },
+      {
+        "url": "https://vietnamnet.vn/en/submarine-cable-repairs-postponed-delaying-full-connectivity-for-vietnam-2337461.html",
+        "title": "Submarine cable repairs postponed, delaying full connectivity for Vietnam"
+      },
+      {
+        "url": "https://vietnamnet.vn/en/vn-s-internet-infrastructure-recovers-as-key-undersea-cables-undergo-repairs-2377870.html",
+        "title": "VN’s Internet infrastructure recovers as key undersea cables undergo repairs"
+      },
+      {
+        "url": "https://subtelforum.com/undersea-cables-repaired-in-vietnam/",
+        "title": "Undersea Cables Repaired in Vietnam - SubTel Forum"
+      },
+      {
+        "url": "https://www.datacenterdynamics.com/en/news/vietnam-urged-to-invest-in-new-subsea-cables-with-four-of-its-five-cables-in-need-of-repairs/",
+        "title": "Vietnam urged to invest in new subsea cables, with four of its five cables in need of repairs - DCD"
+      },
+      {
+        "url": "https://subtelforum.com/vietnams-undersea-cables-fixed-by-end-june/",
+        "title": "Vietnam's Undersea Cables Fixed by End June - SubTel Forum"
+      },
+      {
+        "url": "https://resources.telegeography.com/submarine-cable-maintenance-data",
+        "title": "It’s Going to Take $3 Billion to Ensure Submarine Cable Repair Ships Can Keep the World Connected"
+      },
+      {
+        "url": "https://www.interglobixmagazine.com/undersea-2025-the-year-the-subsea-cable-map-quietly-changed/",
+        "title": "UnderSea 2025 The Year The Subsea Cable Map Quietly Changed"
+      },
+      {
+        "url": "https://resources.telegeography.com/youve-read-a-lot-on-cable-breaks-lately.-have-you-read-about-the-repairs",
+        "title": "You've Read About Submarine Cable Breaks. Now Read About the Repairs."
+      },
+      {
+        "url": "https://geocables.com/research/red-sea-september-2025-cable-cuts",
+        "title": "geocables.com"
+      }
+    ],
+    "facts": [
+      {
+        "url": "https://restofworld.org/2025/africa-internet-cable-repair-ship/",
+        "claim": "Shuru Arendse, 43, a cable jointer on the Léon Thévenin, had a month off after the ship reached Cape Town in August 2025 with a to-do list (leaky tap, hole in roof, trampoline park with his two children), but halfway through his leave a call came about a malfunctioning cable off Angola and he was needed. His wife said: \"Shuru, we didn't even get a chance to do anything yet.\"",
+        "quote": "Shuru, we didn’t even get a chance to do anything yet"
+      },
+      {
+        "url": "https://restofworld.org/2025/africa-internet-cable-repair-ship/",
+        "claim": "Arendse told Rest of World: \"I'm an absent parent... Because of that guilt, I spoil my children.\" and \"I'm trying to save a country from losing its data or communication.\"",
+        "quote": "I’m an absent parent"
+      },
+      {
+        "url": "https://restofworld.org/2025/africa-internet-cable-repair-ship/",
+        "claim": "The Léon Thévenin, owned by France's Orange Marine, is the only cable repair ship permanently stationed in Africa; it is responsible for repairs from Madagascar to Ghana, is as long as a football field, is crewed by up to 60, and is among the world's oldest repair vessels. Orange Marine says keeping a vessel at sea can cost $70,000 to $120,000 a day depending on age and condition.",
+        "quote": "Depending on its age and condition, keeping a vessel at sea could cost $70,000 to $120,000 per day"
+      },
+      {
+        "url": "https://restofworld.org/2025/africa-internet-cable-repair-ship/",
+        "claim": "Orange Marine CEO Didier Dillard: \"We sail when we are required to sail, and we need to be ready to do it at any time.\"",
+        "quote": "We sail when we are required to sail, and we need to be ready to do it at any time."
+      },
+      {
+        "url": "https://restofworld.org/2025/africa-internet-cable-repair-ship/",
+        "claim": "In June 2025 South Africans noticed slow internet after a junction box where three West Africa Cable System cables meet off Namibia failed; the Thévenin was called in. WACS is a 14,500 km line linking Portugal to Africa's west coast.",
+        "quote": ""
+      },
+      {
+        "url": "https://continent.substack.com/p/down-to-the-wire-the-ship-fixing",
+        "claim": "In 2023 the Thévenin made its longest-ever voyage, close to four months almost continuously at sea. A four-person repair team worked a double shift past midnight splicing a cable; Arendse had never been away so long, birthdays and school exams were missed. The crew is mostly African, speaking isiZulu, French, Afrikaans, Malagasy, English and Tagalog; a small Ghanaian navy boat guarded the ship from pirates and kept fishing vessels away.",
+        "quote": ""
+      },
+      {
+        "url": "https://crisiscommunications.com/the-cloud-under-the-sea/",
+        "claim": "On March 11, 2011, Mitsuyoshi Hirai, chief engineer of cable ship Ocean Link, was in his cabin 20 miles off Japan's coast finishing paperwork on a repair of the 13,000-mile Kitaibaraki-Point Arena cable when the ship began to shudder; the earthquake struck 130 miles northeast. The ship fled to deeper water ahead of the tsunami. His motto: \"you must always be cool.\"",
+        "quote": "you must always be cool"
+      },
+      {
+        "url": "https://gigazine.net/gsc_news/en/20240418-undersea-internet-cables-repair-ships-japan/",
+        "claim": "After the 2011 quake, by next morning seven of Japan's 12 trans-Pacific cables were cut; Ocean Link returned to Yokohama two days after the disaster, crew got Geiger counters and training, and with no other repair ships sent because of Fukushima radiation risk, it sailed alone eight days after port call to a site 160 miles south of the Fukushima plant. Hirai did radiation tests in protective clothing.",
+        "quote": ""
+      },
+      {
+        "url": "https://www.theverge.com/c/24070570/internet-cables-undersea-deep-repair-ships",
+        "claim": "The Verge (Josh Dzieza, April 16, 2024) described submarine cable work as occupying \"a lonely branch somewhere between heavy construction and neurosurgery,\" with heavy hooks and high-tension lines that can cut a person in half.",
+        "quote": "somewhere between heavy construction and neurosurgery"
+      },
+      {
+        "url": "https://resources.telegeography.com/submarine-cable-maintenance-data",
+        "claim": "TeleGeography/Infra-Analytics report (June 30, 2025): about two-thirds of cable maintenance ships will reach end of service life by 2040, with about half the global cable-ship fleet; roughly $3 billion needed to sustain service levels and avoid delays, meaning 15 replacement ships and five additional ships. Projects 48% net increase in total cable kilometres by 2040. ICPC: about 200 faults annually.",
+        "quote": ""
+      },
+      {
+        "url": "https://www.scientificamerican.com/article/iran-threats-expose-the-aging-fleet-that-repairs-undersea-internet-cables/",
+        "claim": "Mike Constable (Infra-Analytics, SMART Cables) says the industry sees $4-5 billion annual investment, but \"very little, almost zero, in protecting it\"; likens it to buying an expensive Mercedes without insurance. A couple of Pacific repair ships do just two repairs a year and otherwise sit on standby while other regions face heavier demand. Around 60 specialized vessels, fewer than 20 dedicated solely to repair; 150-200 faults a year, 70-80% from fishing gear and anchors (ICPC). Many recent addi",
+        "quote": "It’s a huge investment going in, but there’s very little investment, almost zero, in protecting it"
+      },
+      {
+        "url": "https://www.scientificamerican.com/article/iran-threats-expose-the-aging-fleet-that-repairs-undersea-internet-cables/",
+        "claim": "Sheryl Ong of Global Marine says securing government sign-off to enter territorial waters can take a month or more. Repairs in the 2024 Red Sea were delayed for months after a commercial vessel struck by Houthi militants severed cables as it sank. Constable says the busiest repair zones are in Southeast Asia, esp. the South China Sea; and the more vulnerable targets in Hormuz are land-based landing stations.",
+        "quote": "Sometimes permitting takes a long time before we can actually get out to sea and get things done"
+      },
+      {
+        "url": "https://theguardian.com/world/2026/may/18/iran-threat-internet-cables-strait-hormuz",
+        "claim": "Doug Madory of Kentik told the Guardian (May 18, 2026) that many stories about cable sabotage were \"hyperbolic,\" that most cuts are likely dragged anchors, that cutting Hormuz cables would be \"a suicide mission,\" and that \"Cable repair ships do not operate under fire.\" Cuts happen a few each week and more than a dozen repair ships are constantly at work.",
+        "quote": "Cable repair ships do not operate under fire."
+      },
+      {
+        "url": "https://resources.telegeography.com/youve-read-a-lot-on-cable-breaks-lately.-have-you-read-about-the-repairs",
+        "claim": "TeleGeography research director Alan Mauldin (July 24, 2025): \"where there have been faults, there have also been repairs... And we've gotten good at it.\" Example: a cable break near Taiwan detected in late January; a repair vessel arrived several weeks later and the cable was back in service by early March. Most users never notice because networks spread capacity over multiple cables.",
+        "quote": "And we've gotten good at it"
+      },
+      {
+        "url": "https://geocables.com/research/red-sea-september-2025-cable-cuts",
+        "claim": "On September 6, 2025, multiple Red Sea cables (SEA-ME-WE-4, IMEWE, FALCON, EIG) were severed near Jeddah; the ICPC pointed to commercial shipping activity, likely a dragged anchor. Traffic rerouted, with some India-Europe routes rising from about 90 ms to 250-300 ms. GeoCables notes repairs for the February 2024 Red Sea cuts took until July 2024, about five months, and repair ships need transit permits from multiple nations.",
+        "quote": ""
+      },
+      {
+        "url": "https://globalvoices.org/2024/07/15/the-maritime-crews-keeping-africa-connected-to-the-internet/",
+        "claim": "March 2024 West Africa: an undersea landslide in the Trou Sans Fond Canyon off Côte d'Ivoire damaged four cables (MainOne, WACS, ACE, SAT-3). The CS Sovereign came from London for three; the Thévenin handled SAT-3. The Thévenin reached the Ivory Coast on March 29; ACE repair completed April 17, WACS April 30, MainOne May 11. Ghana's regulator said capacity loss was 90-100%; 13 countries were affected. In Sierra Leone and Liberia most cables lack spurs, so a break stops traffic.",
+        "quote": ""
+      },
+      {
+        "url": "https://africanarguments.org/2026/10/laying-on-thin-water-the-looming-danger-of-sub-saharan-africas-subsea-repair-vessel-deficit/",
+        "claim": "African Arguments (Oct 26, 2026, Chan Tsz Yung Frederick): the registered fleet is 63 ships with repair capability, 60% not dedicated solely to repairs; sub-Saharan Africa is served by the 44-year-old Léon Thévenin; ITU's July 2026 report used a hypothetical simultaneous fault near Mombasa and Dakar to show the one-ship baseline's weakness; forecasts predict decommissioning about 450,000 km of cable in 2026-2035 while 1,010,000 km of new cable is expected.",
+        "quote": ""
+      }
+    ],
+    "findings": [
+      {
+        "line": 29,
+        "rule": "Adverbs",
+        "level": "warning",
+        "message": "Cut the adverb 'very'."
+      },
+      {
+        "line": 33,
+        "rule": "Passive",
+        "level": "warning",
+        "message": "'are required' looks passive. Who did it?"
+      },
+      {
+        "line": 51,
+        "rule": "Passive",
+        "level": "warning",
+        "message": "'is used' looks passive. Who did it?"
+      }
+    ]
+  },
+  {
+    "slug": "arthur-mensch-wants-europe-to-build-its-own-frontier-ai-and",
+    "template": "profile",
+    "lead": "Arthur Mensch, co-founder and CEO of Mistral AI",
+    "title": "Arthur Mensch Wants Europe to Build Its Own Frontier AI, and Mistral Still Has to Prove It Can",
+    "dek": "The 34-year-old CEO of Mistral AI has turned open weights and European sovereignty into a €21 billion company. His rivals' lead is the part he has to close.",
+    "body": "On 29 September, Arthur Mensch went on CNBC and picked a fight with the biggest names in his industry. The American argument over AI safety, he said, \"has been a cover for the negligence of some of our competitors.\" The US labs' lead, he added, is \"not extremely large.\" His company's next model, he said, would close the gap \"very significantly.\"\n\nIt was a characteristic performance. Mensch, co-founder and CEO of Mistral AI, is a mathematician by training. He talks about AI the way an energy minister talks about the grid: supply, dependence, and who can switch whom off. He also has something to sell. Mistral tells governments and large companies that open-weight models on European infrastructure cannot be revoked from Washington.\n\nThat pitch is why he matters now. In September, Mistral closed a €3 billion round at a post-money valuation above €21 billion, according to CNBC. In October he published an essay arguing that Europe must build frontier AI itself. Yet Wired says Mistral \"has generally lagged behind on model performance, revenue, and the frequency of releases.\" The company carries a continent's hopes while still chasing the leaders.\n\n## From brain scans to DeepMind\n\nMensch was born on 17 July 1992 in Sèvres, near Paris, according to his Wikipedia entry. He studied at the École Polytechnique and Télécom Paris. He then took a master's at the École normale supérieure Paris-Saclay.\n\nFrom 2015 to 2018 he was a PhD student at Inria and the NeuroSpin lab. His work covered predictive models and optimisation for brain-imaging data. A postdoc at the ENS followed, with a stint at NYU's Courant Institute.\n\nIn late 2020 he joined DeepMind in Paris. He spent nearly three years there on large language models and related systems. He left in May 2023 and co-founded Mistral with Guillaume Lample and Timothée Lacroix, two researchers from Meta. Sources differ on whether the company dates from April or May of that year.\n\nThe first money arrived fast. In June 2023, about four weeks after founding, Mistral had no product and a one-page website. It still raised a €105 million seed round led by Lightspeed. Eric Schmidt, Xavier Niel and Bpifrance joined in. The Register put the valuation at €240 million and called it Europe's largest seed round, citing Dealroom.\n\n## The work\n\nMistral's first model came on 27 September 2023. Mensch announced it on X as \"the best 7B in town,\" under the Apache 2.0 licence. He added: \"We believe in open models and we'll push them to the frontier.\" He held a firm line on openness. In an interview TIME published in August 2024, conducted in May, he said: \"I don't see any risk associated with open sourcing models.\" He then added: \"I only see benefits.\"\n\nThe money grew in steps. Wikipedia's tally runs like this:\n\n- December 2023: €385 million at about €2 billion.\n- June 2024: €600 million at about €5.8 billion.\n- September 2025: €1.7 billion at €11.7 billion. ASML put in €1.3 billion for roughly 11%.\n\nThe September 2026 round had Samsung in the lead. The EU-backed Scaleup Europe Fund and PSG Equity also took part.\n\nThe business has shifted from selling models to selling control. Wired describes pay-as-you-go fees for running models in Mistral's cloud. It also describes engineers embedded with customers to tune models to their needs. ASML is both investor and client, since Mistral works on AI in the Dutch firm's manufacturing process.\n\nMensch told CNBC he expects annual recurring revenue to pass $1 billion this year. He declined to give a revised figure. Wired says earnings have reportedly risen 20-fold in about a year.\n\nCompute is where the bills are. In the etn. interview, as summarised by Dealroom, Mensch said Mistral began building its own capacity in March 2025. He put the cost of a gigawatt at roughly $50 billion over five years. He told CNBC the plan is to \"fully rely on capacity that we are building ourselves.\" Owned compute, he said, will grow \"around 100% in the next five years.\"\n\nIn October, Mistral released Mistral Large 4, nicknamed \"Le Chonk.\" It is a one-trillion-parameter open-weight model. Mistral calls it the strongest of its kind outside China.\n\n## In his words\n\nMensch repeats a few ideas. On open source, he told a Paris conference, as Wired reported in August, that the stakes are high. Without open source winning, he said, you give \"way too much power to companies that are going to become statelike.\" Otherwise, he added, the result is \"a pretty dark world.\"\n\nOn sovereignty, he told Wired that AI resembles electricity. \"You want to make sure that you have security of supply,\" he said. He wants \"diverse ways of sourcing the technology, so that nobody can turn you off.\"\n\nOn Europe, he posted on X on 16 October with a link to his \"Build or surrender\" essay. The post drew 445,726 views. It opened with a question and answered it. The idea that Europe should leave frontier AI to the Americans and the Chinese \"has gained ground in Europe. It is a fundamental mistake.\"\n\nHe is less alarmed about AI's tail risks than the American labs. In the Dealroom summary he dismisses out-of-control AI scenarios as science fiction. He treats misuse by bad actors and escaping agents as real problems. That matches his CNBC line about monitoring, and it also describes a product Mistral sells.\n\n## The other view\n\nThe sharpest criticism is that Mistral's moment owes more to geopolitics than to performance. Wired called Mensch's argument \"self-serving but effective.\" Andrea Renda, director of research at the Centre for European Policy Studies, told the magazine that European sovereignty plans and US hostility make \"a magic formula.\" In his telling, it puts a company whose performance \"has not been spectacular\" in a favorable position.\n\nLample, Mistral's chief scientist, framed the Le Chonk launch modestly. \"Mistral is still in the race of getting the best model,\" he told Wired.\n\nCustomers can also leave. Ecosia, the Berlin search engine, adopted Mistral in May 2026. About five months later it dropped Mistral for Alibaba's Qwen, Z.ai's GLM and Moonshot's Kimi, served through the German platform Melious. CEO Christian Kroll says the move roughly halved AI costs. That comes from Tech Insider, which cites TechNode. It is one customer and a secondhand account.\n\nBut it points at the rival Mensch worries about most: cheap Chinese open models. He has argued that European firms cannot count on long-term support for them. He told CNBC that \"the volatility in this space is actually quite extreme.\"\n\nThere is also the arithmetic of his own argument. If a gigawatt costs around $50 billion over five years, a €3 billion round is a down payment. His answer is that Mistral raised early and allied with industrial partners. Airbus, ASML and TotalEnergies are customers and backers, he says.\n\n## What he is betting on\n\nThe wager has three parts. The first is that sovereignty is a lasting purchase, not a passing mood. In 2023, he says, Mistral could only make the case for a €100 million raise. Three years on, states, companies and funds are at the table.\n\nThe second is that owning compute and training its own models is the only route to a promise customers want. They want to know that next year's model will beat today's. Only training in-house, he told CNBC, lets Mistral give that guarantee. The third is that a company with a fraction of the capital can close the open-weight gap with the closed US labs.\n\nThe tests are dated. The next-generation model he says will narrow the US lead has to ship. The compute build-out, which he says adds multiple hundreds of megawatts a year, has to arrive on schedule. And the revenue figure he declined to update has to appear. Until then, the most visible thing Mensch has built is an argument, and an unusually well-funded one.",
+    "cover": "/newsroom/arthur-mensch-wants-europe-to-build-its-own-frontier-ai-and.jpg",
+    "filed": "2026-11-05T13:05:53.663721+00:00",
+    "sources": [
+      {
+        "url": "https://economictimes.indiatimes.com/tech/funding/asml-becomes-mistral-ais-top-shareholder-after-leading-latest-funding-round/articleshow/123749464.cms",
+        "title": "The Economic Times: ASML becomes Mistral AI's top shareholder after leading latest funding round - The Economic Times"
+      },
+      {
+        "url": "https://cnbc.com/2025/09/09/ai-firm-mistral-valued-at-14-billion-as-asml-takes-major-stake.html",
+        "title": "CNBC: AI firm Mistral valued at $14 billion as chip giant ASML takes major stake"
+      },
+      {
+        "url": "https://telecom.economictimes.indiatimes.com/news/devices/asml-takes-control-of-mistral-ai-in-strategic-13-billion-investment/123755243",
+        "title": "ETTelecom.com: ASML becomes Mistral AI's top shareholder after leading latest funding round"
+      },
+      {
+        "url": "https://thehindu.com/sci-tech/technology/asml-becomes-mistral-ais-top-shareholder-after-leading-latest-funding-round-sources-say/article70024575.ece",
+        "title": "The Hindu: ASML becomes Mistral AI’s top shareholder after leading latest funding round, sources say"
+      },
+      {
+        "url": "https://finance.yahoo.com/technology/ai/articles/mistral-secures-3-5bn-series-093109401.html",
+        "title": "Yahoo Finance: Mistral secures $3.5bn in Series D, reaching $24bn valuation"
+      },
+      {
+        "url": "https://m.economictimes.com/tech/funding/asml-becomes-mistral-ais-top-shareholder-after-leading-latest-funding-round/articleshow/123749464.cms",
+        "title": "The Economic Times (m.economictimes.com): ASML becomes Mistral AI's top shareholder after leading latest funding round - The Economic Times"
+      },
+      {
+        "url": "https://cnbc.com/2026/09/08/mistral-ai-funding-valuation-samsung.html",
+        "title": "CNBC: Mistral bags $24 billion valuation as Samsung leads funding for Europe's AI champion"
+      },
+      {
+        "url": "https://businessinsider.com/mistral-funding-asml-chips-ai-europe-2025-9",
+        "title": "Business Insider: Europe's answer to OpenAI just got a $1.5 billion boost from ASML"
+      },
+      {
+        "url": "https://x.com/arthurmensch",
+        "title": "@arthurmensch on X"
+      },
+      {
+        "url": "https://www.cnbc.com/video/2026/02/18/watch-cnbcs-full-interview-with-mistral-ai-ceo-arthur-mensch.html",
+        "title": "Mistral AI CEO Arthur Mensch on growth, competition and strategy"
+      },
+      {
+        "url": "https://www.cnbc.com/video/2025/09/09/watch-cnbcs-full-interview-with-mistral-ai-founder-and-ceo-arthur-mensch.html",
+        "title": "Watch CNBC's full interview with Mistral AI founder and CEO Arthur Mensch"
+      },
+      {
+        "url": "https://app.dealroom.co/news/note/build-or-surrender-mensch-on-europe-s-ai-sovereignty-gigawatt-compute-and-the-open-source-trap",
+        "title": "Dealroom.co"
+      },
+      {
+        "url": "https://time.com/7007040/mistral-ai-ceo-arthur-mensch-interview/",
+        "title": "Mistral AI's CEO on Microsoft and Europe’s AI Ecosystem"
+      },
+      {
+        "url": "https://x.com/etnshow/status/2112547439726965139",
+        "title": "etn. on X: \"Mistral CEO @arthurmensch says he doesn't subscribe to doomsday scenario's and doesn't see any meaningful paths in which AI escapes out of control in a way we can't just turn off the computers it runs on: \"It's pretty clear that they are getting good enough to escape from non-hardened… / X"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Arthur_Mensch",
+        "title": "en.wikipedia.org"
+      },
+      {
+        "url": "https://arstechnica.com/ai/2026/10/mistral-says-le-chonk-can-challenge-the-best-ai-models",
+        "title": "Ars Technica: Mistral says \"Le Chonk\" can challenge the best AI models"
+      },
+      {
+        "url": "https://wired.com/story/mistral-is-in-the-right-place-at-the-right-time",
+        "title": "Wired: Mistral Is in the Right Place at the Right Time"
+      },
+      {
+        "url": "https://venturebeat.com/ai/mistral-raises-massive-640m-to-take-on-openai-anthropic-in-the-global-gen-ai-race",
+        "title": "VentureBeat: Mistral raises massive $640M to take on OpenAI, Anthropic in the global gen AI race"
+      },
+      {
+        "url": "https://wired.com/story/mistral-new-model-le-chonk-open-source-china-us-frontier",
+        "title": "Wired: Mistral Says Its New AI Model ‘Le Chonk’ Is the Best Open-Weight Offering Outside of China"
+      },
+      {
+        "url": "https://venturebeat.com/infrastructure/mistral-ai-wants-to-build-1-gigawatt-of-european-compute-by-2030-and-lock-in-customers-now",
+        "title": "VentureBeat: Mistral AI wants to build 1 gigawatt of European compute by 2030 — and lock in customers now."
+      },
+      {
+        "url": "https://techcrunch.com/2025/12/02/mistral-closes-in-on-big-ai-rivals-with-mistral-3-open-weight-frontier-and-small-models",
+        "title": "TechCrunch: Mistral closes in on Big AI rivals with new open-weight frontier and small models | TechCrunch"
+      },
+      {
+        "url": "https://livemint.com/ai/mistrals-3-billion-open-ai-bet-why-samsung-asml-are-backing-it-and-what-s-next-for-french-startup-11788872862928.html",
+        "title": "Mint: Mistral’s €3 billion open AI bet: Why Samsung, ASML are backing it and what’s next for French startup? | Mint"
+      },
+      {
+        "url": "https://tech-insider.org/ecosia-ditches-mistral-cuts-ai-costs-50-percent-2026",
+        "title": "Tech Insider: Ecosia Ditches Mistral, Cuts AI Costs 50% [2026]"
+      },
+      {
+        "url": "https://x.com/arthurmensch/status/2097232588490379686",
+        "title": "Post on X"
+      },
+      {
+        "url": "https://www.cnbc.com/2026/09/29/mistral-ai-safety-openai-anthropic.html",
+        "title": "Mistral CEO says U.S. AI safety debate masks competitors’ 'negligence'"
+      },
+      {
+        "url": "https://qz.com/mistral-ceo-ai-safety-debate-openai-anthropic-092926",
+        "title": "Mistral CEO Arthur Mensch slams U.S. AI safety debate"
+      },
+      {
+        "url": "https://thenextweb.com/news/mistral-ceo-mensch-ai-safety-debate-negligence-cnbc",
+        "title": "Mistral CEO tells CNBC US AI safety debate covers rivals’ ‘negligence’"
+      },
+      {
+        "url": "https://finance.yahoo.com/technology/ai/articles/mistral-ceo-blunt-ai-safety-183300402.html",
+        "title": "Mistral CEO has blunt take on AI safety fight, cites 'negligence'"
+      },
+      {
+        "url": "https://www.thestreet.com/technology/mistral-ceo-has-blunt-take-on-ai-safety-fight-cites-negligence",
+        "title": "Mistral CEO has blunt take on AI safety fight, cites 'negligence' - TheStreet"
+      },
+      {
+        "url": "https://cybernews.com/ai-news/mistral-europe-surrender/",
+        "title": "Build or surrender in the AI race, Mistral CEO Arthur Mensch tells Europe"
+      },
+      {
+        "url": "https://x.com/arthurmensch/status/2110990492930314712",
+        "title": "Arthur Mensch on X: \"Should Europe leave frontier AI to the Americans and the Chinese? The idea has gained ground in Europe. It is a fundamental mistake. Build or surrender: for now, the choice is still ours. Full article below. https://t.co/v1biuiXoYe\" / X"
+      },
+      {
+        "url": "https://www.techzine.eu/news/applications/145518/is-europe-in-a-complete-trap-without-frontier-ai/",
+        "title": "Is Europe in a 'complete trap' without frontier AI? - Techzine Global"
+      },
+      {
+        "url": "https://thenextweb.com/news/frontier-ai-europe-mistral-mensch-deepl",
+        "title": "Mistral’s Mensch warns Europe of ‘leftovers’ if it quits frontier AI"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Mistral_AI",
+        "title": "Mistral AI"
+      },
+      {
+        "url": "https://simple.wikipedia.org/wiki/Mistral_AI",
+        "title": "Mistral AI"
+      },
+      {
+        "url": "https://builtin.com/articles/mistral-ai",
+        "title": "Mistral AI: Models, Capabilities and Latest Developments"
+      },
+      {
+        "url": "https://techcrunch.com/2026/07/04/what-is-mistral-ai-everything-to-know-about-the-openai-competitor/",
+        "title": "What is Mistral AI? Everything to know about the OpenAI competitor"
+      },
+      {
+        "url": "https://startupintros.com/orgs/mistral-ai",
+        "title": "Mistral AI: Funding, Team & Investors"
+      },
+      {
+        "url": "https://www.theregister.com/2023/06/15/mistral_ai/",
+        "title": "www.theregister.com"
+      }
+    ],
+    "facts": [
+      {
+        "url": "https://x.com/arthurmensch/status/2110990492930314712",
+        "claim": "Mensch posted on X on 16 Oct 2026: \"Should Europe leave frontier AI to the Americans and the Chinese? The idea has gained ground in Europe. It is a fundamental mistake. Build or surrender: for now, the choice is still ours.\" The post showed about 445,726 views.",
+        "quote": "Build or surrender: for now, the choice is still ours."
+      },
+      {
+        "url": "https://x.com/arthurmensch/status/2097232588490379686",
+        "claim": "On 8 Sep 2026 Mensch posted on X: \"We've just raised 3B€ to scale our training and inference compute, and make open and sovereign AI the technology frontier.\"",
+        "quote": "We've just raised 3B€ to scale our training and inference compute, and make open and sovereign AI the technology frontier."
+      },
+      {
+        "url": "https://x.com/arthurmensch",
+        "claim": "In a Jan 2024 X post Mensch explained a leaked model: an early-access customer employee leaked a quantised, watermarked version of an old model; Mistral had retrained from Llama 2 to start quickly with customers.",
+        "quote": "we retrained this model from Llama 2 the minute we got access to our entire cluster"
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Arthur_Mensch",
+        "claim": "Mensch was born 17 July 1992 in Sèvres, studied at École Polytechnique and Télécom Paris, did the MVA master's, a PhD at Inria/NeuroSpin 2015-2018 on fMRI analysis, a postdoc at ENS, joined DeepMind Paris in late 2020 and left in May 2023 to co-found Mistral AI with Guillaume Lample and Timothée Lacroix (per Wikipedia; sources differ on April vs May 2023 founding).",
+        "quote": ""
+      },
+      {
+        "url": "https://www.theregister.com/2023/06/15/mistral_ai/",
+        "claim": "June 2023: four weeks after founding, with no product, Mistral raised a €105 million ($113M) seed led by Lightspeed, with Eric Schmidt, Xavier Niel and Bpifrance, valued at €240M; the largest seed in Europe per Dealroom. Mensch said then that Europe needed to act as regulator, customer and investor.",
+        "quote": "There is a rising awareness of the fact that this technology is transformative and Europe needs to do something about it, both as a regulator, as a customer and an investor."
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Arthur_Mensch",
+        "claim": "Funding timeline: Dec 2023 €385M (~€2B valuation); Jun 2024 €600M Series B (~€5.8B); Sep 2025 €1.7B Series C with ASML at 11%, €11.7B valuation; Mensch and co-founders reported billionaires. Knight of National Order of Merit 15 May 2025; Time100 AI 2024.",
+        "quote": ""
+      },
+      {
+        "url": "https://cnbc.com/2025/09/09/ai-firm-mistral-valued-at-14-billion-as-asml-takes-major-stake.html",
+        "claim": "ASML put €1.3B into Mistral's €1.7B round in Sept 2025, taking about 11% on a fully diluted basis.",
+        "quote": ""
+      },
+      {
+        "url": "https://cnbc.com/2026/09/08/mistral-ai-funding-valuation-samsung.html",
+        "claim": "On 8 Sep 2026 Mistral raised €3B led by Samsung, with the EU-backed Scaleup Europe Fund (managed by EQT) and PSG Equity, at a post-money valuation above €21B. Mensch told CNBC compute it owns would grow \"around 100% in the next five years\"; he expects ARR to exceed $1B in 2026 and declined a revised figure; Mistral integrates AI into ASML's manufacturing process.",
+        "quote": "Long term, the plan is to fully rely on capacity that we are building ourselves"
+      },
+      {
+        "url": "https://www.cnbc.com/2026/09/29/mistral-ai-safety-openai-anthropic.html",
+        "claim": "On CNBC 29 Sept 2026 Mensch said the US safety debate \"has been a cover for the negligence of some of our competitors\"; said US labs' lead is \"not extremely large\"; said Mistral has no plans to slow down; said agents given many tools \"can go and do things that you do not expect\" and enterprises need monitoring, which Mistral supplies.",
+        "quote": "The debate that we've seen in the U.S. has been a cover for the negligence of some of our competitors"
+      },
+      {
+        "url": "https://wired.com/story/mistral-new-model-le-chonk-open-source-china-us-frontier",
+        "claim": "Wired (Oct 2026): Mistral released Mistral Large 4 (\"Le Chonk\"), a 1-trillion-parameter open-weight model, optimized for coding and cyberdefense; Wired says Mistral has generally lagged US labs on model performance, revenue and release frequency; revenue reportedly up 20-fold in about a year; Mistral earns via pay-as-you-go cloud fees and embedded engineers. Lample: \"Mistral is still in the race of getting the best model.\"",
+        "quote": "Mistral is still in the race of getting the best model"
+      },
+      {
+        "url": "https://wired.com/story/mistral-is-in-the-right-place-at-the-right-time",
+        "claim": "Wired (4 Aug 2026): Mensch said \"If you don't end up in a situation where most people are building open source, you're giving way too much power to companies that are going to become statelike\"; compared AI to electricity (\"security of supply\"). Andrea Renda of CEPS said the EU sovereignty push plus US hostility \"is a magic formula that all of a sudden puts Mistral—whose performance has not been spectacular—in a favorable position.\" Wired called Mensch's argument \"self-serving but effective.\"",
+        "quote": "The alternative to open source winning is actually a pretty dark world."
+      },
+      {
+        "url": "https://tech-insider.org/ecosia-ditches-mistral-cuts-ai-costs-50-percent-2026",
+        "claim": "Ecosia, a Berlin search engine, dropped Mistral in Oct 2026, after about five months, for Qwen, GLM and Kimi via Melious; CEO Christian Kroll says costs roughly halved (per Tech Insider, citing TechNode).",
+        "quote": ""
+      },
+      {
+        "url": "https://app.dealroom.co/news/note/build-or-surrender-mensch-on-europe-s-ai-sovereignty-gigawatt-compute-and-the-open-source-trap",
+        "claim": "Dealroom summary of etn. interview (Oct 2026): Mistral began building own compute March 2025; Mensch says a gigawatt costs roughly $50B over five years; says in 2023 Mistral could only make a case for raising €100M; dismisses doomsday scenarios as science fiction; Airbus, ASML, TotalEnergies are customers and backers; relying on Chinese open models without contributing is \"precisely wrong\".",
+        "quote": ""
+      },
+      {
+        "url": "https://time.com/7007040/mistral-ai-ceo-arthur-mensch-interview/",
+        "claim": "TIME interview (published 4 Aug 2024, conducted in May): Mensch said Mistral burned \"a little north of 25 million\" euros in 12 months, and that he saw no risk in open-sourcing models: \"I don't see any risk associated with open sourcing models. I only see benefits.\" He estimated recruiting about 15 people who knew how to train such models, perhaps 10% of that pool. Mistral had a Microsoft compute-for-distribution deal from Feb 2024.",
+        "quote": "I don't see any risk associated with open sourcing models. I only see benefits."
+      },
+      {
+        "url": "https://x.com/arthurmensch",
+        "claim": "Mensch's Sept 27, 2023 X post announcing Mistral's first model: \"the best 7B in town (outperforming Llama 13B on all metrics, and good at code), Apache 2.0.\"",
+        "quote": "We believe in open models and we'll push them to the frontier"
+      }
+    ],
+    "findings": [
+      {
+        "line": 1,
+        "rule": "Adverbs",
+        "level": "warning",
+        "message": "Parr's rule: cut the adverb 'extremely'."
+      },
+      {
+        "line": 1,
+        "rule": "Adverbs",
+        "level": "warning",
+        "message": "Parr's rule: cut the adverb 'very'."
+      },
+      {
+        "line": 3,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      },
+      {
+        "line": 15,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      },
+      {
+        "line": 53,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      },
+      {
+        "line": 55,
+        "rule": "Adverbs",
+        "level": "warning",
+        "message": "Parr's rule: cut the adverb 'actually'."
+      },
+      {
+        "line": 55,
+        "rule": "Adverbs",
+        "level": "warning",
+        "message": "Parr's rule: cut the adverb 'quite'."
+      },
+      {
+        "line": 65,
+        "rule": "Passive",
+        "level": "warning",
+        "message": "'are dated' looks passive. Who did it?"
+      },
+      {
+        "line": 65,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      }
+    ]
+  },
+  {
+    "slug": "mistral-got-memed-into-naming-a-trillion-parameter-model-aft",
+    "template": "pulse",
+    "lead": "Why people online are posting about Mistral AI's cat-named models (Le Chat, Le Chaton)",
+    "title": "Mistral Got Memed Into Naming a Trillion-Parameter Model After a Fat Cat",
+    "dek": "A fake model called Le Chaton Fat began as grief over a rebrand, went viral as a geopolitics joke, and ended up as a real product nickname.",
+    "body": "On 16 June, a post on r/MistralAI announced that Mistral had blocked Le Chaton Fat outside the EU. It collected 1,620 points and 105 comments. The top reply, with 159 points, read: \"Uhm is this a satire thing? I didn’t even know of le chaton outside this reddit…\"\n\nIt was satire. There was no Le Chaton Fat. Nobody had blocked anything. The post was a joke about a model that did not exist, in a subreddit that had spent days pretending otherwise.\n\n## Here's what's going on\n\nMistral is a French AI company. Its chatbot carried the name Le Chat, which is French for *the cat* and doubles as the English word *chat*. This spring, according to Business Insider, CEO Arthur Mensch announced at the company's first Paris summit that Le Chat would become Vibe. Users did not take it well.\n\nBy 2 June, one r/MistralAI thread with 556 points was asking everyone to pretend the rebrand had not happened.\n\nBusiness Insider says the exact origin of the cat joke is unclear. It places the first jokes after the rename, on Mistral's own subreddit. Users invented a successor, Le Chaton Fat (roughly *the fat kitten*), with 30T+ params, 1000 meows per second and maximum chonk. *Chonk* is internet slang for a huge cat.\n\nThe timing helped. The US government had just barred foreign users from Anthropic's Mythos 5 and Fable 5 models. A giant European cat that nobody could switch off became the obvious counter-joke. Wharton professor Ethan Mollick wrote that he expected questions about it from corporate leaders. Mensch replied on X on 15 June: \"It's actually le gros chaton.\"\n\n## The posts\n\n- **Reddit, r/MistralAI, 15 June, 680 points:** ITS COMING 30T OPEN WEIGHTS: LE CHATON FAT. Top reply, 143 points: \"Stop. Stop giving me false hope.\" Another, 72 points, played fact-checker: \"Fake news, sources don't check out, no X post, no Bloomberg page, no benchmarks\"\n- **Reddit, r/MistralAI, 16 June, 1,620 points:** The EU-only post above. The comments keep a straight face. One user asks whether two cats and several cats on their walking route count as character references.\n- **Reddit, r/singularity, 6 October, 691 points:** LE CHATON FAT IS REAL. Mistral had announced Large 4, a trillion-parameter model nicknamed Le Chonk. Top reply, 388 points: \"Europe's best AI model being called Le Chonk makes me feel patriotic somehow\"\n- **TikTok, promptolog, 7 October, 1,206 views:** A ginger cat knocks over a giant 4 in a museum, under a famous French revolution painting. The caption runs through the model's specs in French.\n- **Reddit, r/MistralAI, 3 November, 189 points:** Seriously Mistral? No cat? One user answered with a homemade vibe-cat command-line tool. Another wrote: \"do not worry he is coming\"\n\n## Why it landed\n\nThe cat carries two grievances.\n\nThe first is small. People liked a quirky name, and the company swapped it for Vibe, a word many associate with sloppy vibe coding. One poster in August said they \"Unironically stopped paying for the subscription because of the new naming.\" On 26 October, Reddit users noticed that Mistral's pixel-art M doubles as the cat's head.\n\nThe top reply, with 81 points, blamed a consultant: \"So clever and thoughtful, then some brainless consultant said call the thing vibe.\" The cat was a protest first.\n\nThe second grievance is large. TNW argued the meme worked because it dressed up a real sentiment. American models can be switched off, and a European model nobody can revoke was the punchline everyone reached for. Mensch has warned for two years about depending on foreign AI. The cat said it in a chart and a pun.\n\nThen the company joined in. VentureBeat reports that Large 4 carries the internal nickname Le Chonk. It says executives described the name as a deliberate nod to the community.\n\nChief scientist Guillaume Lample told VentureBeat the model could be seen as an initial version of the Le Chaton Fat idea, with larger ones to come. TestingCatalog says a plump cartoon cat now greets visitors on the Vibe landing page. A joke that began as a complaint about branding became branding.\n\n## The other side\n\nThe model is real, but it is not the one from the memes. The Decoder, covering the 29 October open-weights release, says Le Chonk still trails China's best. It scored 26 against 32 for DeepSeek V4.1 Flash and GLM-5.3.\n\nVentureBeat found Mistral's coding chart looked competitive without showing an outright lead. Mensch has said as much himself: \"Today, we do not yet own the best language models.\"\n\nThe fake also fooled a few people. TestingCatalog says some researchers and reporters briefly treated it as an unreleased model. In the 16 June thread, users were still asking whether the cat was real.\n\nThe rebrand has not been forgiven either. The 3 November thread shows users still asking for the cat, and the product is still called Vibe.\n\nMistral's lesson from the internet: if users won't let go of the old name, name the next model after a huge fat cat.",
+    "cover": "/newsroom/mistral-got-memed-into-naming-a-trillion-parameter-model-aft.jpg",
+    "filed": "2026-11-05T12:43:09.076516+00:00",
+    "sources": [
+      {
+        "url": "https://economist.com/europe/2025/02/13/is-frances-le-chat-in-fact-a-cat",
+        "title": "The Economist: Le Chat, the cat-bot France has pinned its AI hopes on"
+      },
+      {
+        "url": "https://livemint.com/ai/artificial-intelligence/mistral-ai-le-chat-french-chatgpt-competitor-le-chat-app-france-arthur-mensch-mistral-european-ai-champion-macron-11744889612514.html",
+        "title": "mint: Le Chat, the cat-bot France has pinned its AI hopes on | Mint"
+      },
+      {
+        "url": "https://economictimes.indiatimes.com/tech/artificial-intelligence/mistral-the-french-generative-ai-underdog-taking-on-us-giants/articleshow/117281988.cms",
+        "title": "The Economic Times: Mistral, the French generative AI underdog taking on US giants"
+      },
+      {
+        "url": "https://techcrunch.com/2025/07/17/mistrals-le-chat-chatbot-gets-a-productivity-push-with-new-deep-research-mode",
+        "title": "TechCrunch: Mistral's Le Chat chatbot gets a productivity push with new ‘deep research' mode | TechCrunch"
+      },
+      {
+        "url": "https://moneycontrol.com/technology/le-chat-from-mistral-ai-is-the-new-rival-to-chatgpt-gemini-deepseek-all-the-details-article-12933351.html",
+        "title": "Moneycontrol: Le Chat from Mistral AI is the new rival to ChatGPT, Gemini, DeepSeek: All the details"
+      },
+      {
+        "url": "https://venturebeat.com/ai/mistrals-le-chat-adds-deep-research-agent-and-voice-mode-to-challenge-openais-enterprise-dominance",
+        "title": "VentureBeat: Mistral’s Le Chat adds deep research agent and voice mode to challenge OpenAI’s enterprise dominance"
+      },
+      {
+        "url": "https://venturebeat.com/orchestration/mistrals-le-chat-adds-deep-research-agent-and-voice-mode-to-challenge-openais-enterprise-dominance",
+        "title": "VentureBeat: Mistral launches Deep Research in Le Chat | VentureBeat"
+      },
+      {
+        "url": "https://m.economictimes.com/tech/artificial-intelligence/mistral-the-french-generative-ai-underdog-taking-on-us-giants/articleshow/117281988.cms",
+        "title": "The Economic Times (m.economictimes.com): Mistral, the French generative AI underdog taking on US giants - The Economic Times"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1xg1wu6/just_realized_mistrals_pixel_art_m_is_the_cat/",
+        "title": "r/MistralAI: Just realized Mistral's pixel art 'M' is the cat logo's head! 😮"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1tuc09e/can_we_all_just_agree_to_pretend_the_cringe/",
+        "title": "r/MistralAI: Can we all just agree to pretend the cringe rebrand didn’t happen and keep calling it Le Chat?"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1x71psn/silently_mistral_added_this_option_in_le_chat/",
+        "title": "r/MistralAI: Silently, Mistral added this option in Le Chat"
+      },
+      {
+        "url": "https://www.reddit.com/r/unsloth/comments/1xiljxd/mistral_le_chonk_out_now/",
+        "title": "r/unsloth: Mistral Le Chonk out now!"
+      },
+      {
+        "url": "https://www.reddit.com/r/DesignPorn/comments/1ipjy1u/just_realised_the_logo_for_the_le_chat_ai_bot_by/",
+        "title": "r/DesignPorn: Just realised the logo for the Le Chat AI bot by Mistral is both an M and a cat (chat is French for cat)"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1xn2nnu/seriously_mistral_no_cat/",
+        "title": "r/MistralAI: Seriously Mistral? No cat?"
+      },
+      {
+        "url": "https://www.reddit.com/r/ClaudeAIJailbreak/comments/1wz8dgf/mistral_4_large_le_chonk_jb/",
+        "title": "r/ClaudeAIJailbreak: Mistral 4 large \"LE CHONK\" jb"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1x9s2zc/le_chonk_on_mistral_vibe/",
+        "title": "r/MistralAI: Le Chonk on Mistral Vibe"
+      },
+      {
+        "url": "https://www.reddit.com/r/BuyFromEU/comments/1xmtnqk/mistral_is_a_great_alternative_to_chatgpt/",
+        "title": "r/BuyFromEU: Mistral is a great alternative to ChatGPT"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1vsukqb/i_still_miss_my_le_chat/",
+        "title": "r/MistralAI: I still miss my Le Chat"
+      },
+      {
+        "url": "https://www.reddit.com/r/vibecoding/comments/1x6dtr1/le_mistral_le_stupid_cat/",
+        "title": "r/vibecoding: Le mistral le stupid cat"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1sm7onp/running_mistral_small_4_through_hermes_agent/",
+        "title": "r/MistralAI: Running Mistral Small 4 through Hermes agent harness + Open WebUI absolutely demolishes Le Chat  imo."
+      },
+      {
+        "url": "https://www.tiktok.com/@crosstalksolutions/video/7470303788801215775",
+        "title": "crosstalksolutions on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@willfrancis24/video/7469165019385564449",
+        "title": "willfrancis24 on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@mathew.paquet/video/7698413300614237461",
+        "title": "mathew.paquet on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@aisavvy/video/7341987135781752070",
+        "title": "aisavvy on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@ahmedazazyfilms/video/7704424150244298005",
+        "title": "ahmedazazyfilms on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@migueltorrez.ai/video/7697275786813803809",
+        "title": "migueltorrez.ai on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@thequadrilogue/video/7700404234851716365",
+        "title": "thequadrilogue on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@ia.en60s/video/7701281397754957078",
+        "title": "ia.en60s on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@lacouchedinferenc/video/7697665689586388257",
+        "title": "lacouchedinferenc on tiktok"
+      },
+      {
+        "url": "https://www.tiktok.com/@promptolog/video/7693943889765403936",
+        "title": "promptolog on tiktok"
+      },
+      {
+        "url": "https://x.com/gavinpurcell/status/2066545380528144748",
+        "title": "Gavin Purcell on X: \"official statement from mistral on 'le chat faton' model\" / X"
+      },
+      {
+        "url": "https://x.com/etnshow/status/2066492938457133362",
+        "title": "etn. on X: \"BREAKING: Mistral Co-Founder & CEO corrects timelines mistake thinking the Mistral model was called Le Chaton Fat. Saying it's actually called \"Le Gros Chaton\" - which translates to \"The Fat Kitten\". https://t.co/RV2Dt9acaL\" / X"
+      },
+      {
+        "url": "https://letsdatascience.com/news/viral-le-chaton-fat-meme-misattributes-fake-model-to-mistral-6ab0f2c7",
+        "title": "Viral `Le Chaton Fat` Meme Misattributes Fake Model to Mistral"
+      },
+      {
+        "url": "https://thenextweb.com/news/mistral-sovereignty-moment-anthropic-shutdown-le-chaton-fat",
+        "title": "Mistral spent two years warning the US could switch off its rivals. A fat-cat meme just made the point for it."
+      },
+      {
+        "url": "https://en.wikipedia.org/wiki/Mistral_(film)",
+        "title": "Mistral (film)"
+      },
+      {
+        "url": "https://www.testingcatalog.com/mistral-embraces-cat-mascot-after-le-chaton-fat-ai-meme-goes-viral/",
+        "title": "www.testingcatalog.com"
+      },
+      {
+        "url": "https://www.businessinsider.com/what-is-le-chaton-fat-mistral-meme-explained-ai-model-2026-6",
+        "title": "www.businessinsider.com"
+      },
+      {
+        "url": "https://theverge.com/ai-artificial-intelligence/1022184/mistral-ai-has-officially-released-its-large-4-le-chonk-model",
+        "title": "The Verge: Mistral AI has officially released its Large 4 (Le Chonk) model."
+      },
+      {
+        "url": "https://cnet.com/tech/services-and-software/mistral-new-le-chonk-ai-model-open-source-available",
+        "title": "CNET: Mistral’s New ‘Le Chonk’ AI Model Is Big, Open and Now Available for Download - CNET"
+      },
+      {
+        "url": "https://siliconangle.com/2026/10/29/mistral-releases-open-weights-for-mistral-large-4-providing-sovereign-control-for-the-companys-le-chonk-ai-model",
+        "title": "SiliconANGLE: Mistral releases open-weights for Mistral Large 4, providing sovereign control for the company’s ‘Le Chonk’ AI model - SiliconANGLE"
+      },
+      {
+        "url": "https://cnet.com/tech/services-and-software/mistrals-new-le-chonk-ai-model-is-big-open-and-built-for-agents",
+        "title": "CNET: Mistral’s New ‘Le Chonk’ AI Model Is Big, Open and Built for Agents - CNET"
+      },
+      {
+        "url": "https://aiweekly.co/alerts/mistral-opens-1t-le-chonk-large-4-under-modified-mit-license",
+        "title": "AI Weekly: Mistral Opens 1T 'Le Chonk' Large 4 Under Modified MIT License | AI Weekly"
+      },
+      {
+        "url": "https://the-decoder.com/paris-based-mistral-releases-le-chonk-a-strong-coding-model-that-still-trails-china-overall",
+        "title": "The Decoder: Paris-based Mistral releases \"Le Chonk,\" a strong coding model that still trails China overall"
+      },
+      {
+        "url": "https://theverge.com/ai-artificial-intelligence/1005560/the-next-hot-open-ai-model-is-named-le-chonk",
+        "title": "The Verge: The next hot open AI model is named Le Chonk."
+      },
+      {
+        "url": "https://venturebeat.com/technology/mistral-debuts-large-4-le-chonk-a-1-trillion-parameter-text-output-model-with-high-benchmarks-planned-for-open-weights-release",
+        "title": "VentureBeat: Mistral debuts Large 4 ‘Le Chonk', a 1-trillion parameter text output model with high benchmarks planned for open weights release"
+      },
+      {
+        "url": "https://x.com/arthurmensch/status/2066492938457133362",
+        "title": "Post on X"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=bIi-NyZTu7Q",
+        "title": "Julian Goldie SEO on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=iTvwyCz6dC0",
+        "title": "AI Profit Boardroom on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=HnfTl3yyOR4",
+        "title": "Julian Goldie Agency on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=LDj9Tp590bk",
+        "title": "Numerama on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=Ry-IMZOnJ-w",
+        "title": "Wetter in Österreich on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=8DHa2fcXYsY",
+        "title": "Product Teardowns on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=UZOA2cEXrVU",
+        "title": "Next Level AI on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=TjJcq9W0GXE",
+        "title": "Fred M - AI Online Business on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=5qfYhzP5wf8",
+        "title": "AI Profit Boardroom on youtube"
+      },
+      {
+        "url": "https://www.youtube.com/watch?v=k4uTJixF-R0",
+        "title": "Jeanviet on youtube"
+      },
+      {
+        "url": "https://www.reddit.com/r/PeterExplainsTheJoke/comments/1u6uo4z/whats_with_mistrals_le_chaton_fat/",
+        "title": "r/PeterExplainsTheJoke: What's with Mistral's Le Chaton Fat?"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1u652aj/its_coming_30t_open_weights_le_chaton_fat/",
+        "title": "r/MistralAI: ITS COMING 30T OPEN WEIGHTS: LE CHATON FAT"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1u6j1c9/le_chaton_fat_is_outta_this_world/",
+        "title": "r/MistralAI: Le Chaton Fat is outta this world."
+      },
+      {
+        "url": "https://www.reddit.com/r/actutech/comments/1u82ngy/le_chaton_fat_lia_française_surpuissante_qui/",
+        "title": "r/actutech: Le Chaton Fat — L’IA française surpuissante qui écrase OpenAI (et qui n’existe absolument pas)"
+      },
+      {
+        "url": "https://www.reddit.com/r/Numerama/comments/1u6fpg5/cest_quoi_le_chaton_fat_le_modèle_de_mistral_ai/",
+        "title": "r/Numerama: C’est quoi Le Chaton Fat, le « modèle » de Mistral AI qui affole les réseaux sociaux ?"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1u7gswf/guys_it_happened_mistral_blocked_le_chaton_fat/",
+        "title": "r/MistralAI: Guys… it happened. Mistral blocked Le Chaton Fat outside the EU."
+      },
+      {
+        "url": "https://www.reddit.com/r/Frandroid/comments/1u6qqcm/tout_le_monde_parle_dun_monstre_ia_français_nommé/",
+        "title": "r/Frandroid: Tout le monde parle d’un monstre IA français nommé « Le Chaton Fat » : il n’existe pas, et les Américains adorent s’en moquer"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1u7gpe8/after_fable_5_from_usa_europe_reportedly_shut/",
+        "title": "r/MistralAI: After Fable 5 from USA, Europe reportedly shut down Le Chaton Fat over climate change risk"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1ualx7x/so_sorry_for_being_yet_another_le_chaton_fat_but/",
+        "title": "r/MistralAI: So sorry for being yet another Le Chaton Fat, but I love how this came up"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1u6x01q/le_chaton_fat_benched_looks_like_a_new_generation/",
+        "title": "r/MistralAI: Le Chaton Fat benched, looks like a new generation of Mistral"
+      },
+      {
+        "url": "https://www.reddit.com/r/singularity/comments/1wz2r59/le_chaton_fat_is_real/",
+        "title": "r/singularity: LE CHATON FAT IS REAL"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1u9jrjf/business_insider_the_le_chaton_fat_meme/",
+        "title": "r/MistralAI: Business Insider: The 'Le Chaton Fat' meme"
+      }
+    ],
+    "facts": [
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1u7gswf/guys_it_happened_mistral_blocked_le_chaton_fat/",
+        "claim": "Reddit post \"Guys… it happened. Mistral blocked Le Chaton Fat outside the EU.\" on r/MistralAI, 16 June 2026, had 1620 points and 105 comments; top reply (159 points): \"Uhm is this a satire thing? I didn't even know of le chaton outside this reddit…\"",
+        "quote": "Uhm is this a satire thing? I didn’t even know of le chaton outside this reddit…"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1u652aj/its_coming_30t_open_weights_le_chaton_fat/",
+        "claim": "r/MistralAI post \"ITS COMING 30T OPEN WEIGHTS: LE CHATON FAT\" (15 June 2026) had 680 points and 74 comments; top comment (143 points): \"Stop. Stop giving me false hope\"; another (72 points) \"Fake news, sources don't check out, no X post, no Bloomberg page, no benchmarks\"",
+        "quote": "Stop. Stop giving me false hope"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1tuc09e/can_we_all_just_agree_to_pretend_the_cringe/",
+        "claim": "r/MistralAI post \"Can we all just agree to pretend the cringe rebrand didn't happen and keep calling it Le Chat?\" (2 June 2026) had 556 points and 92 comments; calls \"Vibe\" a \"tech-bro-ified slop name\"",
+        "quote": "nauseatingly tech-bro-ified slop name"
+      },
+      {
+        "url": "https://www.reddit.com/r/singularity/comments/1wz2r59/le_chaton_fat_is_real/",
+        "claim": "r/singularity post \"LE CHATON FAT IS REAL\" (6 Oct 2026), announcing Mistral Large 4 aka Le Chonk, had 691 points and 87 comments; top comment (388 points): \"Europe's best AI model being called Le Chonk makes me feel patriotic somehow\"",
+        "quote": "Europe's best AI model being called Le Chonk makes me feel patriotic somehow"
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1xn2nnu/seriously_mistral_no_cat/",
+        "claim": "r/MistralAI post \"Seriously Mistral? No cat?\" (3 Nov 2026) had 189 points and 9 comments; a commenter shared a GitHub \"vibe-cat\" CLI command; another (u/cornmonger_) wrote \"do not worry he is coming\"",
+        "quote": ""
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1vsukqb/i_still_miss_my_le_chat/",
+        "claim": "r/MistralAI post \"I still miss my Le Chat\" (19 Aug 2026), 208 points, 35 comments: poster says they \"Unironically stopped paying for the subscription because of the new naming.\" A commenter (26 points) noted Vibe is not a searchable term.",
+        "quote": "Unironically stopped paying for the subscription because of the new naming."
+      },
+      {
+        "url": "https://www.reddit.com/r/MistralAI/comments/1xg1wu6/just_realized_mistrals_pixel_art_m_is_the_cat/",
+        "claim": "r/MistralAI post \"Just realized Mistral's pixel art 'M' is the cat logo's head!\" (26 Oct 2026), 166 points, 13 comments. Top comment (81 points): \"So clever and thoughtful, then some brainless consultant said call the thing vibe.\"",
+        "quote": "So clever and thoughtful, then some brainless consultant said call the thing vibe."
+      },
+      {
+        "url": "https://www.tiktok.com/@promptolog/video/7693943889765403936",
+        "claim": "TikTok by promptolog (7 Oct 2026), 1206 views and 6 likes: describes Mistral naming its biggest model \"Le Chonk\" (internet slang for a big cat) and shows a ginger cat knocking over a giant \"4\" in a museum beneath La Liberté guidant le peuple.",
+        "quote": ""
+      },
+      {
+        "url": "https://www.tiktok.com/@migueltorrez.ai/video/7697275786813803809",
+        "claim": "TikTok by migueltorrez.ai (16 Oct 2026), 1097 views, 20 likes: \"Mistral's newest model is a fat cat. Mistral Large 4, aka Le Chonk, is their largest model yet at one trillion parameters.\"",
+        "quote": ""
+      },
+      {
+        "url": "https://www.businessinsider.com/what-is-le-chaton-fat-mistral-meme-explained-ai-model-2026-6",
+        "claim": "Business Insider (16 June 2026): meme's exact origin unclear; jokes emerged after Mensch announced at Mistral's first summit in Paris that Le Chat would be rebranded Vibe. Posts advertised \"Le Chaton Fat\" with \"30T+ params,\" \"1000 meows per second,\" and \"maximum chonk\"; fake EU notice said it was \"too heavy to regulate\". Numerama says it doesn't exist. Spread fuelled by US bar on foreign use of Anthropic's Mythos 5 and Fable 5. Mollick wrote: \"The le chaton fat meme is leaking to the outside wor",
+        "quote": "It's actually le gros chaton"
+      },
+      {
+        "url": "https://venturebeat.com/technology/mistral-debuts-large-4-le-chonk-a-1-trillion-parameter-text-output-model-with-high-benchmarks-planned-for-open-weights-release",
+        "claim": "VentureBeat (6 Oct 2026): Mistral Large 4, nicknamed \"Le Chonk\", is a 1-trillion-parameter multimodal model with 49 billion active parameters, trained on 4,000 Nvidia Grace Blackwell GPUs. Mistral executives said the name deliberately nods to the community. Lample said Mistral enjoyed the meme and ML4 could be viewed as an initial version of the idea, with larger models to come. VentureBeat noted the live DeepSWE leaderboard does not show an outright coding lead.",
+        "quote": ""
+      },
+      {
+        "url": "https://the-decoder.com/paris-based-mistral-releases-le-chonk-a-strong-coding-model-that-still-trails-china-overall",
+        "claim": "The Decoder (29 Oct 2026): Mistral released the weights for Large 4 \"Le Chonk\"; it still can't match China's top models, scoring 26 to the 32 of DeepSeek V4.1 Flash and GLM-5.3.",
+        "quote": ""
+      },
+      {
+        "url": "https://thenextweb.com/news/mistral-sovereignty-moment-anthropic-shutdown-le-chaton-fat",
+        "claim": "TNW (17 June 2026): the meme caught because it dressed up a real sentiment about US models being switchable off; \"Sovereign is not the same as good\": Mistral trails Anthropic and OpenAI; Mensch said \"Today, we do not yet own the best language models\".",
+        "quote": "Today, we do not yet own the best language models"
+      },
+      {
+        "url": "https://www.testingcatalog.com/mistral-embraces-cat-mascot-after-le-chaton-fat-ai-meme-goes-viral/",
+        "claim": "TestingCatalog: Mistral added a plump cartoon cat mascot to the Vibe landing page, with a relaxed version for chat mode and a tie-wearing one for work mode; some researchers and reporters briefly treated the fake as real.",
+        "quote": ""
+      },
+      {
+        "url": "https://economist.com/europe/2025/02/13/is-frances-le-chat-in-fact-a-cat",
+        "claim": "The Economist (13 Feb 2025) noted Le Chat plays on French \"cat\" and English \"chat\"; it became the most-downloaded iOS app in France around the Paris AI summit.",
+        "quote": ""
+      }
+    ],
+    "findings": [
+      {
+        "line": 13,
+        "rule": "Adverbs",
+        "level": "warning",
+        "message": "Parr's rule: cut the adverb 'actually'."
+      },
+      {
+        "line": 19,
+        "rule": "Passive",
+        "level": "warning",
+        "message": "'being called' looks passive. Who did it?"
+      },
+      {
+        "line": 31,
+        "rule": "ParagraphLength",
+        "level": "warning",
+        "message": "Too long for a phone. Keep paragraphs to four sentences."
+      }
+    ]
+  }
+]
