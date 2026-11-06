@@ -81,6 +81,13 @@ export function LabsSection({
       open: t("labs.openNewsroom"),
     },
     {
+      id: "autopilot",
+      name: t("labs.autopilot"),
+      hint: t("labs.autopilotHint"),
+      to: "/autopilot",
+      open: t("labs.openAutopilot"),
+    },
+    {
       id: "dub",
       name: t("labs.dub"),
       hint: t("labs.dubHint"),

@@ -143,6 +143,11 @@ export async function action({ request }: Route.ActionArgs) {
         .from("comic_newsroom_beats")
         .update({ enabled: false })
         .eq("user_id", viewer.id)
+    if (!r.on && r.feature === "autopilot")
+      await supabaseAdmin()
+        .from("comic_autopilot_agents")
+        .update({ enabled: false, next_run_at: null })
+        .eq("user_id", viewer.id)
     if (!r.on && r.feature === "machines")
       await supabase
         .from("comic_machines")

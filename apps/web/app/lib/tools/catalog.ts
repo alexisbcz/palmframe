@@ -20,6 +20,7 @@ export const LAB_FEATURES = [
   "desk",
   "sites",
   "newsroom",
+  "autopilot",
   ...TOOL_IDS,
 ] as const
 

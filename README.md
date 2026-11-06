@@ -256,6 +256,47 @@ A story is a `comic_deep_dives` row with a `template`, so it costs a deep dive's
 credits and also shows in Studio's Media, where it can be rendered into other
 formats. Run the unit tests with `bun test apps/web/app/lib/newsroom`.
 
+### Autopilot
+
+Autopilot is a Labs feature, off until someone turns it on under **Settings >
+Labs**. It lives at `/autopilot`: a fleet of content agents that research on a
+schedule and write posts, with or without the owner's review.
+
+- **Agents** (`lib/autopilot/model.ts`): eight jobs (trend surfer, thought
+  leader, newsjacker, meme desk, daily teacher, contrarian, launch crier, data
+  nerd), each with a brief, a voice, topics, networks (X, LinkedIn, Bluesky,
+  Threads), a cadence, posts per run and a weekly credit cap. **Spawn a squad**
+  (`squad.server.ts`) asks Claude for up to 12 agents for one niche that don't
+  overlap, and starts them a few seconds apart.
+- **Durable runs** (`agent.server.ts`): each agent is one
+  [`@earendil-works/pi-durable`](https://www.npmjs.com/package/@earendil-works/pi-durable)
+  conversation in a SQLite file, kept in the private `autopilot` bucket at
+  `<user>/<agent>.sqlite`. A worker leases the agent, downloads the file, opens
+  the Harness, submits the run (its `requestId` makes it idempotent), waits at
+  most `SLICE_MS` (230 s), closes and uploads. Unfinished work stays in the file:
+  the next worker reopens it and the Harness resumes the run where it stopped,
+  replaying only read-only tool calls (`replay: "safe"`). `file_post` is
+  `replay: "unsafe"`, so a crash never files a post twice.
+- **Tools:** `search_x`, `search_reddit`, `search_web` and `search_tiktok` go
+  through ScrapeCreators (`SCRAPECREATORS_API_KEY`); `read_page` reads any public
+  page; `recent_posts` stops repeats; `remember` keeps notes that render into
+  every later prompt; `file_post` checks each network's length limit.
+- **Scheduling** (`run.server.ts`): pg_cron calls `/api/autopilot/tick` every
+  minute with `MACHINES_CRON_SECRET`. The tick kicks `/api/autopilot/work` for
+  due agents and for runs a worker dropped. Each run costs `autopilot_run`
+  credits, refunded if it fails. Turning the Labs switch off pauses every agent.
+- **Watching and steering:** while a worker runs an agent, it watches the
+  conversation and mirrors the newest lines to the agent's `live` column, so
+  the agent page follows the run. A message to an agent waits in its `inbox` and
+  goes in as a steer the next time a worker holds the session.
+- **Publishing** (`publish.server.ts`): review-mode posts wait in the queue;
+  approving one, or an agent on full autopilot, sends it through Zernio. This
+  is mocked (logged, with a fake id) unless `AUTOPILOT_ZERNIO_LIVE=1`.
+
+Test it locally with a tick loop standing in for pg_cron:
+`curl -X POST -H "Authorization: Bearer $MACHINES_CRON_SECRET" http://127.0.0.1:5173/api/autopilot/tick`.
+Set `AUTOPILOT_SLICE_MS=25000` to watch a run hand over between workers.
+
 ### Websites
 
 Frontage is a Labs feature, off until someone turns it on under **Settings >

@@ -501,6 +501,8 @@ const KINDS = [
   "studio_lookup",
   "deep_dive",
   "media_render",
+  "autopilot_run",
+  "autopilot_squad",
   "studio_board",
   "edit",
   "vary",

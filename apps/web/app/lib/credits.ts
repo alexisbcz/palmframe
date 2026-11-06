@@ -69,6 +69,8 @@ export const COSTS = {
   site_draft: 10, // an LLM choosing a template and writing a whole site
   site_text: 1, // an LLM rewriting one piece of copy
   newsroom_posts: 2, // an LLM drafting a story's posts for four networks
+  autopilot_run: 3, // one agent run: research, then up to four posts
+  autopilot_squad: 4, // an LLM inventing a squad of distinct agents
   media_render: 12, // adapting a Story to one format, with its fact-check
 } as const
 

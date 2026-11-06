@@ -255,11 +255,17 @@ export const messages = defineMessages({
     },
     labs: {
       sites: "Websites",
-      sitesHint: "Frontage: build and publish full websites with templates, stores, bookings and more. Turning this off closes the builder; published sites stay online.",
+      sitesHint:
+        "Frontage: build and publish full websites with templates, stores, bookings and more. Turning this off closes the builder; published sites stay online.",
       openSites: "Open Frontage",
       newsroom: "Newsroom",
-      newsroomHint: "Newsroom: an AI reporter researches a lead with news, web and social sources, then files a checked article in one of six templates. Turning this off closes the Newsroom; your stories are kept.",
+      newsroomHint:
+        "Newsroom: an AI reporter researches a lead with news, web and social sources, then files a checked article in one of six templates. Turning this off closes the Newsroom; your stories are kept.",
       openNewsroom: "Open Newsroom",
+      autopilot: "Autopilot",
+      autopilotHint:
+        "Autopilot: a fleet of AI agents that research X, Reddit, TikTok and the web on a schedule and post for you, with or without your review. Each agent is durable: a run cut off mid-way picks up where it stopped. Turning this off pauses every agent; they and their posts are kept.",
+      openAutopilot: "Open Autopilot",
       dub: "The Booth",
       dubHint: "Dub existing episodes on your own Mac, with cloned voices.",
       openDub: "Open the Booth",
@@ -675,13 +681,20 @@ export const messages = defineMessages({
     },
     labs: {
       sites: "Sites web",
-      sitesHint: "Frontage : créez et publiez des sites complets avec modèles, boutique, réservations et plus encore. Désactiver cette option ferme l’éditeur ; les sites publiés restent en ligne.",
+      sitesHint:
+        "Frontage : créez et publiez des sites complets avec modèles, boutique, réservations et plus encore. Désactiver cette option ferme l’éditeur ; les sites publiés restent en ligne.",
       openSites: "Ouvrir Frontage",
       newsroom: "Rédaction",
-      newsroomHint: "Rédaction : un reporter IA enquête sur un sujet à partir de l’actualité, du web et des réseaux sociaux, puis rend un article vérifié dans l’un des six modèles. Désactiver cette option ferme la Rédaction ; vos articles sont conservés.",
+      newsroomHint:
+        "Rédaction : un reporter IA enquête sur un sujet à partir de l’actualité, du web et des réseaux sociaux, puis rend un article vérifié dans l’un des six modèles. Désactiver cette option ferme la Rédaction ; vos articles sont conservés.",
       openNewsroom: "Ouvrir la Rédaction",
+      autopilot: "Autopilot",
+      autopilotHint:
+        "Autopilot : une flotte d’agents IA qui explorent X, Reddit, TikTok et le web selon un planning et publient pour vous, avec ou sans votre relecture. Chaque agent est durable : une exécution interrompue reprend là où elle s’était arrêtée. Désactiver cette option met tous les agents en pause ; eux et leurs posts sont conservés.",
+      openAutopilot: "Ouvrir Autopilot",
       dub: "La Cabine",
-      dubHint: "Doublez des épisodes existants sur votre Mac, avec des voix clonées.",
+      dubHint:
+        "Doublez des épisodes existants sur votre Mac, avec des voix clonées.",
       openDub: "Ouvrir la Cabine",
       title: "Labo",
       nav: "Des fonctionnalités encore à l’essai.",
@@ -1096,11 +1109,17 @@ export const messages = defineMessages({
     },
     labs: {
       sites: "Sitios web",
-      sitesHint: "Frontage: crea y publica sitios completos con plantillas, tienda, reservas y más. Al desactivarlo se cierra el editor; los sitios publicados siguen en línea.",
+      sitesHint:
+        "Frontage: crea y publica sitios completos con plantillas, tienda, reservas y más. Al desactivarlo se cierra el editor; los sitios publicados siguen en línea.",
       openSites: "Abrir Frontage",
       newsroom: "Redacción",
-      newsroomHint: "Redacción: un reportero de IA investiga un tema con noticias, web y redes sociales, y entrega un artículo verificado en una de seis plantillas. Al desactivarlo se cierra la Redacción; tus artículos se conservan.",
+      newsroomHint:
+        "Redacción: un reportero de IA investiga un tema con noticias, web y redes sociales, y entrega un artículo verificado en una de seis plantillas. Al desactivarlo se cierra la Redacción; tus artículos se conservan.",
       openNewsroom: "Abrir la Redacción",
+      autopilot: "Autopilot",
+      autopilotHint:
+        "Autopilot: una flota de agentes de IA que investigan X, Reddit, TikTok y la web según un horario y publican por ti, con o sin tu revisión. Cada agente es duradero: una ejecución interrumpida continúa donde se quedó. Al desactivarlo se pausan todos los agentes; se conservan con sus publicaciones.",
+      openAutopilot: "Abrir Autopilot",
       dub: "La Cabina",
       dubHint: "Dobla episodios existentes en tu Mac, con voces clonadas.",
       openDub: "Abrir la Cabina",
@@ -1515,13 +1534,20 @@ export const messages = defineMessages({
     },
     labs: {
       sites: "Websites",
-      sitesHint: "Frontage: Erstelle und veröffentliche komplette Websites mit Vorlagen, Shop, Buchungen und mehr. Beim Ausschalten schließt der Editor; veröffentlichte Websites bleiben online.",
+      sitesHint:
+        "Frontage: Erstelle und veröffentliche komplette Websites mit Vorlagen, Shop, Buchungen und mehr. Beim Ausschalten schließt der Editor; veröffentlichte Websites bleiben online.",
       openSites: "Frontage öffnen",
       newsroom: "Newsroom",
-      newsroomHint: "Newsroom: Ein KI-Reporter recherchiert ein Thema in Nachrichten, im Web und in sozialen Medien und liefert einen geprüften Artikel in einer von sechs Vorlagen. Beim Ausschalten schließt der Newsroom; deine Artikel bleiben erhalten.",
+      newsroomHint:
+        "Newsroom: Ein KI-Reporter recherchiert ein Thema in Nachrichten, im Web und in sozialen Medien und liefert einen geprüften Artikel in einer von sechs Vorlagen. Beim Ausschalten schließt der Newsroom; deine Artikel bleiben erhalten.",
       openNewsroom: "Newsroom öffnen",
+      autopilot: "Autopilot",
+      autopilotHint:
+        "Autopilot: eine Flotte von KI-Agenten, die nach Zeitplan X, Reddit, TikTok und das Web durchsuchen und für dich posten, mit oder ohne deine Freigabe. Jeder Agent ist dauerhaft: ein unterbrochener Lauf macht dort weiter, wo er aufgehört hat. Ausschalten pausiert alle Agenten; sie und ihre Posts bleiben erhalten.",
+      openAutopilot: "Autopilot öffnen",
       dub: "Die Kabine",
-      dubHint: "Synchronisiere vorhandene Folgen auf deinem Mac, mit geklonten Stimmen.",
+      dubHint:
+        "Synchronisiere vorhandene Folgen auf deinem Mac, mit geklonten Stimmen.",
       openDub: "Kabine öffnen",
       title: "Labs",
       nav: "Funktionen in der Testphase.",
@@ -1938,11 +1964,17 @@ export const messages = defineMessages({
     },
     labs: {
       sites: "Siti web",
-      sitesHint: "Frontage: crea e pubblica siti completi con modelli, negozio, prenotazioni e altro. Disattivandolo si chiude l’editor; i siti pubblicati restano online.",
+      sitesHint:
+        "Frontage: crea e pubblica siti completi con modelli, negozio, prenotazioni e altro. Disattivandolo si chiude l’editor; i siti pubblicati restano online.",
       openSites: "Apri Frontage",
       newsroom: "Redazione",
-      newsroomHint: "Redazione: un reporter IA indaga su uno spunto con notizie, web e social, poi consegna un articolo verificato in uno di sei modelli. Disattivandolo si chiude la Redazione; i tuoi articoli restano.",
+      newsroomHint:
+        "Redazione: un reporter IA indaga su uno spunto con notizie, web e social, poi consegna un articolo verificato in uno di sei modelli. Disattivandolo si chiude la Redazione; i tuoi articoli restano.",
       openNewsroom: "Apri la Redazione",
+      autopilot: "Autopilot",
+      autopilotHint:
+        "Autopilot: una flotta di agenti IA che esplorano X, Reddit, TikTok e il web secondo un programma e pubblicano per te, con o senza la tua revisione. Ogni agente è durevole: un’esecuzione interrotta riprende da dove si era fermata. Disattivandolo metti in pausa tutti gli agenti; loro e i loro post restano.",
+      openAutopilot: "Apri Autopilot",
       dub: "La Cabina",
       dubHint: "Doppia episodi esistenti sul tuo Mac, con voci clonate.",
       openDub: "Apri la Cabina",
@@ -2357,13 +2389,20 @@ export const messages = defineMessages({
     },
     labs: {
       sites: "ウェブサイト",
-      sitesHint: "Frontage: テンプレート、ストア、予約などを備えたサイトを作成して公開します。オフにするとエディターは閉じますが、公開済みのサイトはオンラインのままです。",
+      sitesHint:
+        "Frontage: テンプレート、ストア、予約などを備えたサイトを作成して公開します。オフにするとエディターは閉じますが、公開済みのサイトはオンラインのままです。",
       openSites: "Frontage を開く",
       newsroom: "ニュースルーム",
-      newsroomHint: "ニュースルーム：AI 記者がニュース、ウェブ、SNS を使ってテーマを取材し、6 つのテンプレートのいずれかで検証済みの記事を書きます。オフにするとニュースルームは閉じますが、記事は保存されたままです。",
+      newsroomHint:
+        "ニュースルーム：AI 記者がニュース、ウェブ、SNS を使ってテーマを取材し、6 つのテンプレートのいずれかで検証済みの記事を書きます。オフにするとニュースルームは閉じますが、記事は保存されたままです。",
       openNewsroom: "ニュースルームを開く",
+      autopilot: "オートパイロット",
+      autopilotHint:
+        "オートパイロット：スケジュールに沿って X、Reddit、TikTok、ウェブをリサーチし、あなたの代わりに投稿する AI エージェントの群れ。確認あり・なしを選べます。各エージェントは中断しても途中から再開します。オフにすると全エージェントが一時停止し、エージェントと投稿は残ります。",
+      openAutopilot: "オートパイロットを開く",
       dub: "ブース",
-      dubHint: "既存のエピソードを、クローンした声でお使いのMac上で吹き替えます。",
+      dubHint:
+        "既存のエピソードを、クローンした声でお使いのMac上で吹き替えます。",
       openDub: "ブースを開く",
       title: "ラボ",
       nav: "試験中の機能です。",

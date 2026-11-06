@@ -10,6 +10,7 @@ import type { AssetPayload } from "@/components/catalog/model"
 
 import type { AnimeTables } from "./anime/database"
 import type { NewsroomTables } from "./newsroom/database"
+import type { AutopilotTables } from "./autopilot/database"
 import type { BookFunctions, BookTables } from "./books/database"
 import type { StyleAnalysis } from "./comic-import/style"
 import type { Labs } from "./tools/catalog"
@@ -561,7 +562,8 @@ export interface Database {
       }
     } & BookTables &
       AnimeTables &
-      NewsroomTables
+      NewsroomTables &
+      AutopilotTables
     Views: {}
     Functions: BookFunctions & {
       my_credits: { Args: Record<string, never>; Returns: number }
