@@ -1,6 +1,7 @@
 import { owned } from "./archives"
 import { naturalCompare } from "./entries"
 import { ImportError } from "./errors"
+import type { InstagramImage } from "./instagram"
 import type { WorkerRequest, WorkerResponse } from "./import.worker"
 import {
   DECODE_TIMEOUT_MS,
@@ -482,4 +483,27 @@ export async function pageJpeg(page: ImportPage) {
   )
   if (!blob) throw new ImportError("corrupt")
   return blob
+}
+
+// Instagram images as pages, through our proxy. The thumbnail address is
+// enough for the picking grid; the page itself is drawn from the largest.
+// `fetchImage` returns null when the address no longer works.
+export function instagramPages(
+  images: InstagramImage[],
+  fetchImage: (url: string) => Promise<Uint8Array | null> = fetchProxied
+): ImportPage[] {
+  return images.map((image) => ({
+    id: image.id,
+    label: image.label,
+    async draw(side: number) {
+      const bytes = await fetchImage(side <= 480 ? image.thumb : image.full)
+      if (!bytes) throw new ImportError("corrupt")
+      return drawBytes(bytes, side)
+    },
+  }))
+}
+
+async function fetchProxied(url: string) {
+  const res = await withDeadline(fetch(url), READ_TIMEOUT_MS).catch(() => null)
+  return res?.ok ? new Uint8Array(await res.arrayBuffer()) : null
 }

@@ -16,6 +16,7 @@ export const messages = defineMessages({
     library: {
       title: "Your styles",
       import: "Import a comic",
+      instagram: "From Instagram",
       signIn: "Sign in to learn a style from a comic you own.",
       empty: "Upload a comic and draw in its style.",
       stop: "Stop using",
@@ -75,6 +76,20 @@ export const messages = defineMessages({
       page_too_large: "a page is too large",
       timed_out: "it took too long to open",
     },
+    instagram: {
+      pick: "Pick up to {max} images",
+      title: "Learn a style from Instagram",
+      description:
+        "Paste an account or a few post links, then pick the images that show the look best. New panels copy the line, palette, light and texture, never the people, logos or text.",
+      source: "Account or post links",
+      placeholder: "@account or instagram.com/p/…",
+      find: "Find images",
+      hint: "An @handle shows its latest posts. Post links bring every slide of a carousel.",
+      notInstagram: "That isn't an Instagram account or post link.",
+      more: "Load more posts",
+      device:
+        "Images come through Palmframe from Instagram. Only the ones you pick are kept, downscaled and private to you.",
+    },
     styleErrors: {
       invalid: "That request wasn't valid.",
       sign_in: "Sign in to use styles.",
@@ -97,6 +112,11 @@ export const messages = defineMessages({
         "This style is gone, or it belongs to someone else. Pick another one in Look.",
       needs_openrouter:
         "Drawing from reference pages needs a connected OpenRouter account here. Connect one in Settings.",
+      instagram_not_set_up: "Instagram import isn't available here yet.",
+      instagram_missing:
+        "Couldn't find that on Instagram. It may be private, deleted or expired. Try again.",
+      instagram_busy: "Instagram didn't answer. Try again in a moment.",
+      instagram_empty: "No images there to learn from.",
       failed: "That didn't work. Try again.",
     },
   },
@@ -104,6 +124,7 @@ export const messages = defineMessages({
     library: {
       title: "Vos styles",
       import: "Importer une BD",
+      instagram: "Depuis Instagram",
       signIn:
         "Connectez-vous pour apprendre le style d'une BD qui vous appartient.",
       empty: "Importez une BD et dessinez dans son style.",
@@ -166,6 +187,20 @@ export const messages = defineMessages({
       page_too_large: "une page est trop grande",
       timed_out: "l'ouverture a pris trop de temps",
     },
+    instagram: {
+      pick: "Choisissez jusqu'à {max} images",
+      title: "Apprendre un style depuis Instagram",
+      description:
+        "Collez un compte ou quelques liens de posts, puis choisissez les images qui montrent le mieux le style. Les nouvelles cases reprennent le trait, la palette, la lumière et la texture, jamais les personnes, logos ou textes.",
+      source: "Compte ou liens de posts",
+      placeholder: "@compte ou instagram.com/p/…",
+      find: "Trouver les images",
+      hint: "Un @compte affiche ses derniers posts. Un lien de post apporte toutes les images d'un carrousel.",
+      notInstagram: "Ce n'est pas un compte ou un lien de post Instagram.",
+      more: "Charger plus de posts",
+      device:
+        "Les images passent par Palmframe depuis Instagram. Seules celles que vous choisissez sont gardées, réduites et privées.",
+    },
     styleErrors: {
       invalid: "Cette requête n'est pas valide.",
       sign_in: "Connectez-vous pour utiliser les styles.",
@@ -188,6 +223,12 @@ export const messages = defineMessages({
         "Ce style n'existe plus ou appartient à quelqu'un d'autre. Choisissez-en un autre dans Look.",
       needs_openrouter:
         "Dessiner à partir de pages de référence nécessite ici un compte OpenRouter connecté. Connectez-en un dans les réglages.",
+      instagram_not_set_up:
+        "L'import Instagram n'est pas encore disponible ici.",
+      instagram_missing:
+        "Introuvable sur Instagram. Le contenu est peut-être privé, supprimé ou expiré. Réessayez.",
+      instagram_busy: "Instagram n'a pas répondu. Réessayez dans un instant.",
+      instagram_empty: "Aucune image à étudier ici.",
       failed: "Ça n'a pas marché. Réessayez.",
     },
   },
@@ -195,6 +236,7 @@ export const messages = defineMessages({
     library: {
       title: "Tus estilos",
       import: "Importar un cómic",
+      instagram: "Desde Instagram",
       signIn: "Inicia sesión para aprender el estilo de un cómic tuyo.",
       empty: "Sube un cómic y dibuja con su estilo.",
       stop: "Dejar de usar",
@@ -256,6 +298,20 @@ export const messages = defineMessages({
       page_too_large: "una página es demasiado grande",
       timed_out: "ha tardado demasiado en abrirse",
     },
+    instagram: {
+      pick: "Elige hasta {max} imágenes",
+      title: "Aprender un estilo de Instagram",
+      description:
+        "Pega una cuenta o algunos enlaces de publicaciones y elige las imágenes que mejor muestran el estilo. Las nuevas viñetas copian el trazo, la paleta, la luz y la textura, nunca las personas, logotipos ni textos.",
+      source: "Cuenta o enlaces de publicaciones",
+      placeholder: "@cuenta o instagram.com/p/…",
+      find: "Buscar imágenes",
+      hint: "Un @usuario muestra sus últimas publicaciones. Un enlace trae todas las imágenes de un carrusel.",
+      notInstagram: "Eso no es una cuenta ni un enlace de Instagram.",
+      more: "Cargar más publicaciones",
+      device:
+        "Las imágenes llegan de Instagram a través de Palmframe. Solo se guardan las que eliges, reducidas y privadas.",
+    },
     styleErrors: {
       invalid: "Esa solicitud no es válida.",
       sign_in: "Inicia sesión para usar estilos.",
@@ -279,6 +335,12 @@ export const messages = defineMessages({
         "Este estilo ya no existe o pertenece a otra persona. Elige otro en Look.",
       needs_openrouter:
         "Dibujar a partir de páginas de referencia requiere aquí una cuenta de OpenRouter conectada. Conecta una en Ajustes.",
+      instagram_not_set_up:
+        "La importación de Instagram aún no está disponible aquí.",
+      instagram_missing:
+        "No se encontró en Instagram. Puede ser privado, borrado o caducado. Inténtalo de nuevo.",
+      instagram_busy: "Instagram no respondió. Inténtalo en un momento.",
+      instagram_empty: "No hay imágenes de las que aprender.",
       failed: "No ha funcionado. Inténtalo de nuevo.",
     },
   },
@@ -286,6 +348,7 @@ export const messages = defineMessages({
     library: {
       title: "Deine Stile",
       import: "Comic importieren",
+      instagram: "Von Instagram",
       signIn: "Melde dich an, um den Stil eines eigenen Comics zu lernen.",
       empty: "Lade einen Comic hoch und zeichne in seinem Stil.",
       stop: "Nicht mehr verwenden",
@@ -345,6 +408,20 @@ export const messages = defineMessages({
       page_too_large: "eine Seite ist zu groß",
       timed_out: "das Öffnen hat zu lange gedauert",
     },
+    instagram: {
+      pick: "Wähle bis zu {max} Bilder",
+      title: "Stil von Instagram lernen",
+      description:
+        "Füge einen Account oder ein paar Beitragslinks ein und wähle die Bilder, die den Look am besten zeigen. Neue Panels übernehmen Strich, Palette, Licht und Textur, nie Personen, Logos oder Text.",
+      source: "Account oder Beitragslinks",
+      placeholder: "@account oder instagram.com/p/…",
+      find: "Bilder suchen",
+      hint: "Ein @Handle zeigt die neuesten Beiträge. Ein Beitragslink bringt jedes Bild eines Karussells.",
+      notInstagram: "Das ist kein Instagram-Account oder Beitragslink.",
+      more: "Mehr Beiträge laden",
+      device:
+        "Die Bilder kommen über Palmframe von Instagram. Nur die gewählten werden verkleinert und privat gespeichert.",
+    },
     styleErrors: {
       invalid: "Diese Anfrage ist ungültig.",
       sign_in: "Melde dich an, um Stile zu verwenden.",
@@ -371,6 +448,13 @@ export const messages = defineMessages({
         "Dieser Stil existiert nicht mehr oder gehört jemand anderem. Wähle unter Look einen anderen.",
       needs_openrouter:
         "Zum Zeichnen nach Referenzseiten braucht es hier ein verbundenes OpenRouter-Konto. Verbinde eines in den Einstellungen.",
+      instagram_not_set_up:
+        "Der Instagram-Import ist hier noch nicht verfügbar.",
+      instagram_missing:
+        "Auf Instagram nicht gefunden. Vielleicht privat, gelöscht oder abgelaufen. Versuch es noch einmal.",
+      instagram_busy:
+        "Instagram hat nicht geantwortet. Versuch es gleich noch einmal.",
+      instagram_empty: "Dort gibt es keine Bilder zum Lernen.",
       failed: "Das hat nicht geklappt. Versuche es noch einmal.",
     },
   },
@@ -378,6 +462,7 @@ export const messages = defineMessages({
     library: {
       title: "I tuoi stili",
       import: "Importa un fumetto",
+      instagram: "Da Instagram",
       signIn: "Accedi per imparare lo stile di un fumetto tuo.",
       empty: "Carica un fumetto e disegna nel suo stile.",
       stop: "Non usare più",
@@ -438,6 +523,20 @@ export const messages = defineMessages({
       page_too_large: "una pagina è troppo grande",
       timed_out: "l'apertura ha richiesto troppo tempo",
     },
+    instagram: {
+      pick: "Scegli fino a {max} immagini",
+      title: "Impara uno stile da Instagram",
+      description:
+        "Incolla un account o alcuni link di post, poi scegli le immagini che mostrano meglio lo stile. Le nuove vignette copiano tratto, palette, luce e texture, mai persone, loghi o testi.",
+      source: "Account o link dei post",
+      placeholder: "@account o instagram.com/p/…",
+      find: "Trova immagini",
+      hint: "Un @handle mostra i suoi ultimi post. Un link porta tutte le immagini di un carosello.",
+      notInstagram: "Non è un account o un link di post Instagram.",
+      more: "Carica altri post",
+      device:
+        "Le immagini arrivano da Instagram tramite Palmframe. Solo quelle che scegli vengono salvate, ridotte e private.",
+    },
     styleErrors: {
       invalid: "Questa richiesta non è valida.",
       sign_in: "Accedi per usare gli stili.",
@@ -460,6 +559,12 @@ export const messages = defineMessages({
         "Questo stile non esiste più o appartiene a qualcun altro. Scegline un altro in Look.",
       needs_openrouter:
         "Per disegnare da pagine di riferimento serve qui un account OpenRouter collegato. Collegane uno nelle impostazioni.",
+      instagram_not_set_up:
+        "L'importazione da Instagram non è ancora disponibile qui.",
+      instagram_missing:
+        "Non trovato su Instagram. Potrebbe essere privato, eliminato o scaduto. Riprova.",
+      instagram_busy: "Instagram non ha risposto. Riprova tra poco.",
+      instagram_empty: "Nessuna immagine da cui imparare.",
       failed: "Non ha funzionato. Riprova.",
     },
   },
@@ -467,6 +572,7 @@ export const messages = defineMessages({
     library: {
       title: "マイスタイル",
       import: "コミックを取り込む",
+      instagram: "Instagramから",
       signIn: "自分のコミックからスタイルを学習するにはログインしてください。",
       empty: "コミックをアップロードして、そのスタイルで描けます。",
       stop: "使用をやめる",
@@ -526,6 +632,20 @@ export const messages = defineMessages({
       page_too_large: "ページが大きすぎます",
       timed_out: "開くのに時間がかかりすぎました",
     },
+    instagram: {
+      pick: "最大{max}枚選んでください",
+      title: "Instagramからスタイルを学ぶ",
+      description:
+        "アカウントか投稿リンクを貼り付けて、見た目がよく分かる画像を選んでください。新しいコマは線、色、光、質感を写し、人物・ロゴ・文字は写しません。",
+      source: "アカウントまたは投稿リンク",
+      placeholder: "@アカウント または instagram.com/p/…",
+      find: "画像を探す",
+      hint: "@ハンドルは最新の投稿を表示します。投稿リンクはカルーセルの全画像を読み込みます。",
+      notInstagram: "Instagramのアカウントまたは投稿リンクではありません。",
+      more: "さらに読み込む",
+      device:
+        "画像はPalmframe経由でInstagramから取得します。選んだ画像だけが縮小され、非公開で保存されます。",
+    },
     styleErrors: {
       invalid: "リクエストが無効です。",
       sign_in: "スタイルを使うにはサインインしてください。",
@@ -549,6 +669,12 @@ export const messages = defineMessages({
         "このスタイルは削除されたか、他の人のものです。Look で別のスタイルを選んでください。",
       needs_openrouter:
         "ここで参照ページから描くには、OpenRouter アカウントの接続が必要です。設定で接続してください。",
+      instagram_not_set_up: "Instagramからの読み込みはまだ利用できません。",
+      instagram_missing:
+        "Instagramで見つかりません。非公開、削除済み、または期限切れの可能性があります。もう一度お試しください。",
+      instagram_busy:
+        "Instagramから応答がありません。少し待ってからお試しください。",
+      instagram_empty: "学べる画像がありません。",
       failed: "うまくいきませんでした。もう一度お試しください。",
     },
   },

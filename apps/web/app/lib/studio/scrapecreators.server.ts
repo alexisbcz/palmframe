@@ -1,4 +1,9 @@
 import {
+  fromFeedItem,
+  fromPost,
+  type InstagramListing,
+} from "@/lib/comic-import/instagram"
+import {
   type Ad,
   type Advertiser,
   type Platform,
@@ -160,4 +165,51 @@ export async function fetchVideo(
   ])
   if (!video) throw new SourceError("Nothing readable at that link", "missing")
   return { ...video, transcript: transcript.slice(0, MAX_TRANSCRIPT) }
+}
+
+// An account's recent posts, as images, for learning a style. One page is
+// about a dozen posts; `after` continues from the last one.
+export async function instagramAccountImages(
+  handle: string,
+  after: string | null,
+  signal?: AbortSignal
+): Promise<InstagramListing> {
+  const d = await get(
+    "/v2/instagram/user/posts",
+    { handle, ...(after ? { next_max_id: after } : {}) },
+    signal
+  )
+  const items: unknown[] = Array.isArray(d.items) ? d.items : []
+  return {
+    author: String(d.user?.username ?? handle),
+    images: items.flatMap((i) => fromFeedItem(i as Record<string, any>)),
+    next:
+      d.more_available && typeof d.next_max_id === "string"
+        ? d.next_max_id
+        : null,
+  }
+}
+
+// A few post links. One that's gone is skipped, as long as one is left.
+export async function instagramPostImages(
+  urls: string[],
+  signal?: AbortSignal
+): Promise<InstagramListing> {
+  const posts = await Promise.allSettled(
+    urls.map((url) => get("/v1/instagram/post", { url }, signal).then(fromPost))
+  )
+  const found = posts.flatMap((p) =>
+    p.status === "fulfilled" ? [p.value] : []
+  )
+  if (!found.some((p) => p.images.length)) {
+    const failure = posts.find((p) => p.status === "rejected")
+    throw failure?.reason instanceof SourceError
+      ? failure.reason
+      : new SourceError("Nothing readable at those links", "missing")
+  }
+  return {
+    author: found.find((p) => p.author)?.author ?? "",
+    images: found.flatMap((p) => p.images),
+    next: null,
+  }
 }

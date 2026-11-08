@@ -42,6 +42,10 @@ export const STYLE_ERROR_CODES = [
   "openrouter_credits",
   "style_unavailable",
   "needs_openrouter",
+  "instagram_not_set_up",
+  "instagram_missing",
+  "instagram_busy",
+  "instagram_empty",
   "failed",
 ] as const
 

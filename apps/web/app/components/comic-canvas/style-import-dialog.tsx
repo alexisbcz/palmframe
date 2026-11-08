@@ -19,11 +19,17 @@ import { useT } from "@/i18n/core"
 import {
   FILE_ACCEPT,
   comicOpener,
+  instagramPages,
   pageJpeg,
   type ImportPage,
   type OpenedComic,
 } from "@/lib/comic-import/client"
 import { ImportError } from "@/lib/comic-import/errors"
+import {
+  INSTAGRAM_IMAGE_PATH,
+  parseInstagramSource,
+  type InstagramListing,
+} from "@/lib/comic-import/instagram"
 import { MAX_STYLE_NAME, MAX_STYLE_PAGES } from "@/lib/comic-import/limits"
 import {
   StyleRequestError,
@@ -158,6 +164,19 @@ async function post(body: object) {
   return json
 }
 
+// One page of an account's posts, or the images of some post links.
+async function listInstagram(source: string, after: string | null) {
+  const params = new URLSearchParams({ source })
+  if (after) params.set("after", after)
+  const res = await fetch(`${INSTAGRAM_IMAGE_PATH}?${params}`)
+  const json = await res.json().catch(() => null)
+  if (!res.ok)
+    throw new StyleRequestError(
+      isStyleErrorCode(json?.code) ? json.code : "instagram_busy"
+    )
+  return json as InstagramListing
+}
+
 export const analyzeStyle = async (id: string) =>
   (await post({ intent: "analyze", id })).analysis as StyleAnalysis
 
@@ -171,13 +190,16 @@ type Step =
   | { name: "analyzing" }
 
 // Drop a comic, pick pages, name it: the file is read here in the browser, and
-// only the picked pages travel, directly to private storage.
+// only the picked pages travel, directly to private storage. With `instagram`,
+// the pages are an account's posts or some post links instead of a file.
 export function StyleImportDialog({
   onClose,
   onSaved,
+  instagram = false,
 }: {
   onClose: () => void
   onSaved: () => void
+  instagram?: boolean
 }) {
   const t = useT(messages)
   const supabase = useSupabase()
@@ -198,6 +220,42 @@ export function StyleImportDialog({
   const prepared = React.useRef<PreparedUpload | null>(null)
   const [locked, setLocked] = React.useState(false)
   const [dragging, setDragging] = React.useState(false)
+
+  const [query, setQuery] = React.useState("")
+  // The source and where its next page starts, for "Load more".
+  const [listed, setListed] = React.useState<{
+    source: string
+    next: string | null
+  } | null>(null)
+  const [listing, setListing] = React.useState(false)
+  const validQuery = !!parseInstagramSource(query)
+
+  const findInstagram = async (more = false) => {
+    const source = more ? listed?.source : query.trim()
+    if (!source || listing) return
+    setError(null)
+    setListing(true)
+    try {
+      const found = await listInstagram(source, more ? listed!.next : null)
+      const pages = instagramPages(found.images)
+      setComic((c) => {
+        const kept = more && c ? c.pages : []
+        const ids = new Set(kept.map((p) => p.id))
+        return {
+          pages: [...kept, ...pages.filter((p) => !ids.has(p.id))],
+          failures: [],
+          close() {},
+        }
+      })
+      if (!more) setPicked([])
+      setListed({ source, next: found.next })
+      if (found.author) setName((n) => n || `@${found.author}`)
+    } catch (e) {
+      setError(t(errorKey(e)))
+    } finally {
+      setListing(false)
+    }
+  }
 
   const [opener] = React.useState(() => comicOpener())
   React.useEffect(() => () => opener.close(), [opener])
@@ -306,8 +364,12 @@ export function StyleImportDialog({
       className="sm:max-w-2xl"
     >
       <DialogHeader>
-        <DialogTitle className="studio-title">{t("dialog.title")}</DialogTitle>
-        <DialogDescription>{t("dialog.description")}</DialogDescription>
+        <DialogTitle className="studio-title">
+          {t(instagram ? "instagram.title" : "dialog.title")}
+        </DialogTitle>
+        <DialogDescription>
+          {t(instagram ? "instagram.description" : "dialog.description")}
+        </DialogDescription>
       </DialogHeader>
 
       <input
@@ -324,7 +386,51 @@ export function StyleImportDialog({
         }}
       />
 
-      {!comic && (
+      {instagram && (
+        <form
+          className="flex flex-col gap-1.5"
+          onSubmit={(e) => {
+            e.preventDefault()
+            if (validQuery) void findInstagram()
+          }}
+        >
+          <label
+            htmlFor="style-instagram-source"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            {t("instagram.source")}
+          </label>
+          <div className="flex gap-2">
+            <Input
+              id="style-instagram-source"
+              value={query}
+              autoFocus
+              autoComplete="off"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder={t("instagram.placeholder")}
+              disabled={busy || locked}
+              onChange={(e) => setQuery(e.target.value)}
+              className="flex-1"
+            />
+            <Button
+              type="submit"
+              variant="outline"
+              isDisabled={!validQuery || listing || busy || locked}
+            >
+              {listing && !comic && <Spinner data-icon="inline-start" />}
+              {t("instagram.find")}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {query.trim() && !validQuery
+              ? t("instagram.notInstagram")
+              : t("instagram.hint")}
+          </p>
+        </form>
+      )}
+
+      {!comic && !instagram && (
         <div
           onDragOver={(e) => {
             e.preventDefault()
@@ -387,7 +493,9 @@ export function StyleImportDialog({
         <>
           <div className="flex items-baseline justify-between gap-2">
             <h3 className="font-medium">
-              {t("dialog.pick", { max: MAX_STYLE_PAGES })}
+              {t(instagram ? "instagram.pick" : "dialog.pick", {
+                max: MAX_STYLE_PAGES,
+              })}
             </h3>
             <span className="text-xs text-muted-foreground tabular-nums">
               {t("dialog.picked", {
@@ -396,7 +504,7 @@ export function StyleImportDialog({
               })}
             </span>
           </div>
-          <div className="grid max-h-80 grid-cols-3 gap-2 overflow-y-auto p-0.5 sm:grid-cols-5">
+          <div className="grid max-h-80 auto-rows-max grid-cols-3 gap-2 overflow-y-auto p-0.5 sm:grid-cols-5">
             {comic.pages.map((page) => (
               <PageThumb
                 key={page.id}
@@ -407,6 +515,18 @@ export function StyleImportDialog({
               />
             ))}
           </div>
+          {instagram && listed?.next && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="self-center"
+              isDisabled={listing || busy || locked}
+              onPress={() => void findInstagram(true)}
+            >
+              {listing && <Spinner data-icon="inline-start" />}
+              {t("instagram.more")}
+            </Button>
+          )}
           <label className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-muted-foreground">
               {t("dialog.name")}
@@ -439,7 +559,9 @@ export function StyleImportDialog({
         </>
       )}
 
-      <p className="text-xs text-muted-foreground">{t("dialog.device")}</p>
+      <p className="text-xs text-muted-foreground">
+        {t(instagram ? "instagram.device" : "dialog.device")}
+      </p>
 
       {error && (
         <p role="alert" className="text-sm text-destructive">
@@ -462,13 +584,15 @@ export function StyleImportDialog({
                 : t(`dialog.${step.name}`)}
             </span>
           )}
-          <Button
-            variant="outline"
-            isDisabled={busy || locked}
-            onPress={() => input.current?.click()}
-          >
-            {t("dialog.another")}
-          </Button>
+          {!instagram && (
+            <Button
+              variant="outline"
+              isDisabled={busy || locked}
+              onPress={() => input.current?.click()}
+            >
+              {t("dialog.another")}
+            </Button>
+          )}
           <Button variant="outline" isDisabled={!canSave} onPress={save}>
             {busy && <Spinner data-icon="inline-start" />}
             {error

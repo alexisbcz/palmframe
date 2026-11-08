@@ -1,7 +1,7 @@
 import * as React from "react"
 import { Link } from "react-router"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { Upload01Icon } from "@hugeicons/core-free-icons"
+import { InstagramIcon, Upload01Icon } from "@hugeicons/core-free-icons"
 
 import { Button } from "@workspace/ui/components/button"
 import { Spinner } from "@workspace/ui/components/spinner"
@@ -56,7 +56,9 @@ export function StyleLibrary({
   const [styles, setStyles] = React.useState<ComicStyle[] | null>(null)
   const [references, setReferences] = React.useState(true)
   const [failed, setFailed] = React.useState(false)
-  const [importing, setImporting] = React.useState(false)
+  const [importing, setImporting] = React.useState<"file" | "instagram" | null>(
+    null
+  )
   const [finishing, setFinishing] = React.useState<string | null>(null)
   const [error, setError] = React.useState<string | null>(null)
   // The style one more press deletes.
@@ -140,14 +142,32 @@ export function StyleLibrary({
         <h4 className="text-xs font-medium text-muted-foreground">
           {t("library.title")}
         </h4>
-        <Button variant="outline" size="sm" onPress={() => setImporting(true)}>
-          {t("library.import")}
-          <HugeiconsIcon
-            icon={Upload01Icon}
-            strokeWidth={2}
-            data-icon="inline-end"
-          />
-        </Button>
+        <div className="flex flex-wrap justify-end gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => setImporting("instagram")}
+          >
+            {t("library.instagram")}
+            <HugeiconsIcon
+              icon={InstagramIcon}
+              strokeWidth={2}
+              data-icon="inline-end"
+            />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onPress={() => setImporting("file")}
+          >
+            {t("library.import")}
+            <HugeiconsIcon
+              icon={Upload01Icon}
+              strokeWidth={2}
+              data-icon="inline-end"
+            />
+          </Button>
+        </div>
       </div>
 
       {failed && (
@@ -266,7 +286,8 @@ export function StyleLibrary({
 
       {importing && (
         <StyleImportDialog
-          onClose={() => setImporting(false)}
+          instagram={importing === "instagram"}
+          onClose={() => setImporting(null)}
           onSaved={() => void load()}
         />
       )}
